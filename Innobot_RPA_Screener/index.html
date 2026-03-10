@@ -1,0 +1,389 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Innobot RPA Screener</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="brand-bar">
+      <div class="brand-text">
+        <p class="brand-kicker">Innobot Organization</p>
+        <h1>Innobot RPA Technical Screener</h1>
+        <p>Technical assessment platform for modern automation talent</p>
+      </div>
+      <div class="brand-signal" aria-hidden="true">
+        <span>Live Candidate Screening</span>
+        <strong>RPA v2.2</strong>
+      </div>
+    </header>
+
+    <main class="main-wrap">
+      <section id="view-landing" class="view">
+        <div class="panel">
+          <h2 id="landing-title">RPA Technical Screener</h2>
+          <p id="mode-chip" class="status-chip hidden"></p>
+          <div id="landing-stepper" class="landing-stepper" aria-label="Assessment setup progress">
+            <div id="step-candidate" class="step-pill">1. Candidate Info</div>
+            <div id="step-role" class="step-pill">2. Role & Stack</div>
+            <div id="step-start" class="step-pill">3. Start</div>
+          </div>
+          <ul id="landing-rules" class="rules-list"></ul>
+
+          <section id="candidate-intake" class="candidate-intake">
+            <h3>Candidate Details</h3>
+            <div class="candidate-grid">
+              <label for="candidate-name">Full Name</label>
+              <input id="candidate-name" class="candidate-input" type="text" autocomplete="name" placeholder="Enter candidate full name" />
+              <label for="candidate-email">Email</label>
+              <input id="candidate-email" class="candidate-input" type="email" autocomplete="email" placeholder="name@email.com" />
+              <label for="candidate-phone">Phone</label>
+              <input id="candidate-phone" class="candidate-input" type="tel" autocomplete="tel" placeholder="+94 77 123 4567" />
+            </div>
+            <p id="candidate-hint" class="muted">Candidate details are required for score tracking and automated reporting.</p>
+          </section>
+
+          <div class="role-picker">
+            <label for="role-select">Assignment Role</label>
+            <select id="role-select" class="role-select"></select>
+          </div>
+
+          <div id="stack-picker" class="stack-picker">
+            <label id="stack-label">Tech Stack</label>
+            <div id="stack-options" class="stack-options"></div>
+            <p id="stack-summary" class="muted"></p>
+          </div>
+
+          <div id="admin-override-wrap" class="toggle-row hidden">
+            <label class="toggle-label" for="admin-override-toggle">
+              <input id="admin-override-toggle" type="checkbox" />
+              Admin Override (Allow Start with Shortage Warnings)
+            </label>
+          </div>
+
+          <div id="role-summary" class="role-summary hidden"></div>
+
+          <div id="practice-row" class="toggle-row">
+            <label class="toggle-label" for="practice-toggle">
+              <input id="practice-toggle" type="checkbox" />
+              Practice Mode
+            </label>
+            <span class="muted">(OFF by default)</span>
+          </div>
+
+          <p id="diagnostics-status" class="status-chip hidden"></p>
+
+          <div class="landing-actions">
+            <button id="start-btn" class="btn btn-primary" type="button">Start Assessment</button>
+            <button id="resume-btn" class="btn btn-secondary hidden" type="button">Resume Attempt</button>
+          </div>
+
+          <div id="resume-card" class="resume-card hidden">
+            <p id="resume-summary" class="resume-summary"></p>
+          </div>
+
+          <p id="landing-error" class="message error hidden"></p>
+          <p id="storage-warning" class="message warn hidden"></p>
+
+          <button id="open-diagnostics-btn" class="btn btn-link" type="button">Diagnostics</button>
+        </div>
+      </section>
+
+      <section id="view-assessment" class="view hidden">
+        <div class="top-bar">
+          <div class="top-item">
+            <strong>Context:</strong> <span id="assessment-context">-</span>
+          </div>
+          <div class="top-item">
+            <strong>Timer:</strong> <span id="timer-label">--:--</span>
+          </div>
+          <div class="top-item">
+            <strong>Progress:</strong> <span id="progress-label">Q 0 / 0</span>
+          </div>
+          <div class="top-item autosave">
+            <span id="autosave-indicator">Saving enabled</span>
+          </div>
+          <div class="top-item top-item-right">
+            <button id="submit-btn" class="btn btn-danger" type="button">Submit</button>
+          </div>
+        </div>
+
+        <div class="progress-strip">
+          <div class="progress-strip-head">
+            <span id="answered-label">Answered 0 / 0</span>
+            <span class="muted">Shortcuts: Alt+Left/Right, Ctrl+Enter</span>
+          </div>
+          <div class="progress-track" aria-hidden="true">
+            <div id="answered-progress-bar" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <div id="time-warning-banner" class="time-warning-banner hidden">Less than 5 minutes remaining.</div>
+        <div id="timeup-banner" class="timeup-banner hidden">Time is up. Submitting...</div>
+
+        <article id="question-panel" class="question-panel">
+          <h3 id="question-title">Question 1</h3>
+          <p id="question-meta" class="question-meta"></p>
+          <p id="question-prompt" class="question-prompt"></p>
+          <pre id="question-log" class="question-log hidden"><code></code></pre>
+          <div id="answer-container" class="answer-container"></div>
+
+          <div id="practice-tools" class="practice-tools hidden">
+            <button id="check-answer-btn" class="btn btn-secondary" type="button">Check Answer</button>
+            <div id="practice-feedback" class="practice-feedback hidden"></div>
+          </div>
+        </article>
+
+        <div class="nav-row">
+          <button id="prev-btn" class="btn btn-secondary" type="button">Previous</button>
+          <button id="next-btn" class="btn btn-secondary" type="button">Next</button>
+        </div>
+
+        <section class="navigator-panel">
+          <h4>Question Navigator</h4>
+          <div id="question-grid" class="question-grid"></div>
+        </section>
+      </section>
+
+      <section id="view-practical" class="view hidden">
+        <div class="panel practical-panel">
+          <h2 id="practical-title">Practical Scenario</h2>
+          <p id="practical-meta" class="muted">Complete this short practical before final results.</p>
+          <div id="practical-time-warning-banner" class="time-warning-banner hidden">Less than 5 minutes remaining.</div>
+          <p id="practical-prompt" class="question-prompt"></p>
+          <div class="practical-controls">
+            <label for="practical-response"><strong>Your Response</strong></label>
+            <textarea id="practical-response" class="practical-response" rows="10" placeholder="Describe your approach..."></textarea>
+            <p id="practical-word-count" class="muted">Word count: 0</p>
+            <p id="practical-live-score" class="muted">Practical auto-score preview: 0.0%</p>
+          </div>
+          <div class="result-actions">
+            <button id="practical-submit-btn" class="btn btn-primary" type="button">Submit Practical</button>
+            <button id="practical-back-btn" class="btn btn-secondary" type="button">Back to MCQ</button>
+          </div>
+          <p id="practical-error" class="message error hidden"></p>
+        </div>
+      </section>
+
+      <section id="view-results" class="view hidden">
+        <div class="panel">
+          <h2>Assessment Results</h2>
+
+          <div class="summary-grid">
+            <div class="summary-card">
+              <span class="label">Final Weighted Score</span>
+              <strong id="result-percent">0.0%</strong>
+            </div>
+            <div class="summary-card">
+              <span id="result-mcq-label" class="label">MCQ Score (70%)</span>
+              <strong id="result-mcq-percent">0.0%</strong>
+            </div>
+            <div class="summary-card">
+              <span id="result-practical-label" class="label">Practical (30%)</span>
+              <strong id="result-practical-percent">0.0%</strong>
+            </div>
+            <div class="summary-card">
+              <span class="label">Points</span>
+              <strong id="result-points">0 / 0</strong>
+            </div>
+            <div class="summary-card">
+              <span class="label">Status</span>
+              <strong id="result-pass-badge" class="badge">Pending</strong>
+            </div>
+            <div class="summary-card">
+              <span class="label">Time Used</span>
+              <strong id="result-time">00:00</strong>
+            </div>
+          </div>
+
+          <div class="result-meta">
+            <p>Candidate: <strong id="result-candidate">-</strong></p>
+            <p>Role: <strong id="result-role">-</strong></p>
+            <p>Stacks: <strong id="result-stacks">-</strong></p>
+            <p>Pass Target: <strong id="result-pass-target">-</strong></p>
+            <p>Override Used: <strong id="result-override">No</strong></p>
+            <p>Invite Validation: <strong id="result-invite-status">-</strong></p>
+            <p>Attention Risk: <strong id="result-attention-risk">-</strong></p>
+            <p>Confidence Band: <strong id="result-confidence-band">-</strong></p>
+            <p>Practical Components: <strong id="result-practical-components">-</strong></p>
+            <p>Seed: <strong id="result-seed">-</strong></p>
+            <p>Started: <strong id="result-start">-</strong></p>
+            <p>Ended: <strong id="result-end">-</strong></p>
+            <p>Auto Sync: <strong id="result-sync-status">Not configured</strong></p>
+          </div>
+
+          <div id="attention-panel" class="attention-panel hidden">
+            <h3>Attention Metrics</h3>
+            <p>Tab Hidden Events: <strong id="attention-tab-hidden">0</strong></p>
+            <p>Tab Hidden Time (s): <strong id="attention-tab-hidden-seconds">0</strong></p>
+            <p>Copy Events: <strong id="attention-copy">0</strong></p>
+            <p>Paste Events: <strong id="attention-paste">0</strong></p>
+          </div>
+
+          <h3>Category Breakdown</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Correct / Total</th>
+                <th>Percent</th>
+              </tr>
+            </thead>
+            <tbody id="breakdown-body"></tbody>
+          </table>
+
+          <div id="practical-breakdown-wrap" class="hidden">
+            <h3>Practical Rubric Breakdown</h3>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Criterion</th>
+                  <th>Points</th>
+                  <th>Signals Matched</th>
+                </tr>
+              </thead>
+              <tbody id="practical-breakdown-body"></tbody>
+            </table>
+          </div>
+
+          <div class="result-actions">
+            <button id="download-json-btn" class="btn btn-primary" type="button">Download Result JSON</button>
+            <button id="copy-json-btn" class="btn btn-secondary" type="button">Copy JSON to Clipboard</button>
+            <button id="download-csv-btn" class="btn btn-secondary" type="button">Download Result CSV</button>
+            <button id="retry-sync-btn" class="btn btn-secondary hidden" type="button">Retry Auto Sync</button>
+            <button id="start-new-btn" class="btn btn-danger" type="button">Start New Attempt</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Per-Question Review</h3>
+          <div id="review-list" class="review-list"></div>
+        </div>
+      </section>
+
+      <section id="view-diagnostics" class="view hidden">
+        <div class="panel">
+          <h2>Diagnostics (HR)</h2>
+          <p id="diag-role-meta" class="muted"></p>
+          <p>Total Questions: <strong id="diag-total-questions">0</strong></p>
+
+          <h3>Counts by Category</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="diag-category-body"></tbody>
+          </table>
+
+          <h3>Counts by Format</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="diag-type-body"></tbody>
+          </table>
+
+          <h3>Counts by Stack</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Stack</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="diag-stack-body"></tbody>
+          </table>
+
+          <h3>Counts by Difficulty</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Difficulty</th>
+                <th>Count</th>
+              </tr>
+            </thead>
+            <tbody id="diag-difficulty-body"></tbody>
+          </table>
+
+          <h3>Requirements vs Available</h3>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Requirement</th>
+                <th>Required</th>
+                <th>Available</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="diag-requirement-body"></tbody>
+          </table>
+
+          <h3>Blocking Issues</h3>
+          <ul id="diag-errors" class="diagnostic-errors"></ul>
+
+          <h3>Warnings</h3>
+          <ul id="diag-warnings" class="diagnostic-errors"></ul>
+
+          <div class="result-actions">
+            <button id="export-template-btn" class="btn btn-secondary" type="button">Export Question Bank Template JSON</button>
+            <button id="diag-back-btn" class="btn btn-primary" type="button">Back to Landing</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-recruiter" class="view hidden">
+        <div class="panel recruiter-panel">
+          <h2>Recruiter Report View</h2>
+          <p id="recruiter-meta" class="muted">Ranked submissions by weighted score.</p>
+          <div class="result-actions">
+            <button id="recruiter-refresh-btn" class="btn btn-secondary" type="button">Refresh</button>
+            <button id="recruiter-export-btn" class="btn btn-primary" type="button">Export Ranking CSV</button>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Candidate</th>
+                <th>Role</th>
+                <th>Final</th>
+                <th>MCQ</th>
+                <th>Practical</th>
+                <th>Status</th>
+                <th>Tab/Copy/Paste</th>
+                <th>Confidence</th>
+                <th>Sync</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody id="recruiter-body"></tbody>
+          </table>
+          <p id="recruiter-error" class="message error hidden"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <h3 id="modal-title">Confirm</h3>
+      <p id="modal-message" class="modal-message"></p>
+      <div class="modal-actions">
+        <button id="modal-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="modal-confirm" class="btn btn-danger" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="questions.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
