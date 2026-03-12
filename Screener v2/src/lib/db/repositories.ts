@@ -335,7 +335,7 @@ export async function startAttempt(input: {
   roleId: RoleId;
   stacks: StackId[];
 }) {
-  const selectionSeed = Math.floor(Math.random() * 0xffffffff) >>> 0;
+  const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
   const selection = buildSelection(input.roleId, input.stacks, selectionSeed, questionBank);
   const attemptId = cuidLike();
   const startedAt = new Date();
