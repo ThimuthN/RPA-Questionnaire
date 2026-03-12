@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String
+  createdAt DateTime @default(now())
+}
+
+model AssessmentTemplate {
+  id          String   @id @default(cuid())
+  title       String
+  status      String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AssessmentVersion {
+  id               String   @id @default(cuid())
+  templateId       String
+  versionNumber    Int
+  blueprintJson    Json
+  questionBankRef  String
+  practicalPackRef String
+  isPublished      Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
+
+model Invite {
+  id                  String   @id @default(cuid())
+  assessmentVersionId String
+  mode                String
+  slug                String   @unique
+  tokenHash           String   @unique
+  passcodeHash        String?
+  roleLocked          Boolean  @default(true)
+  stackLocked         Boolean  @default(true)
+  roleId              String?
+  stacksJson          Json?
+  maxAttempts         Int      @default(1)
+  usedAttempts        Int      @default(0)
+  expiresAt           DateTime?
+  createdAt           DateTime @default(now())
+
+  @@index([assessmentVersionId])
+}
+
+model Participant {
+  id         String   @id @default(cuid())
+  kind       String
+  fullName   String
+  email      String
+  phone      String?
+  employeeId String?
+  createdAt  DateTime @default(now())
+
+  @@unique([kind, email])
+}
+
+model Attempt {
+  id                     String   @id @default(cuid())
+  assessmentVersionId    String
+  inviteId               String?
+  participantId          String
+  roleId                 String
+  stacksJson             Json
+  seed                   Int
+  stage                  String
+  status                 String
+  coreQuestionIdsJson    Json
+  coreAnswersJson        Json
+  practicalAnswerJson    Json
+  practicalEarned        Float    @default(0)
+  practicalPossible      Float    @default(0)
+  remainingCoreSeconds   Int
+  remainingPracticalSeconds Int
+  integrityJson          Json
+  startedAt              DateTime @default(now())
+  submittedAt            DateTime?
+
+  @@index([inviteId])
+  @@index([participantId])
+  @@index([status, startedAt])
+}
+
+model Result {
+  id               String   @id @default(cuid())
+  attemptId        String   @unique
+  corePercent      Float
+  practicalPercent Float
+  finalPercent     Float
+  pass             Boolean
+  borderline       Boolean
+  breakdownJson    Json
+  exportedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  @@index([finalPercent])
+}
+
+model MagicToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
