@@ -1,0 +1,204 @@
+window.ASSESSMENT_CONFIG = {
+  appVersion: "1.3.0",
+  timeLimitSeconds: 1800,
+  questionsPerAttempt: 12,
+  passPercent: 70,
+  blueprintCounts: {
+    exception_handling: 8,
+    retry_boundaries: 6,
+    idempotency_rerun: 4,
+    logging_observability: 4,
+    scalability_rate_limits: 3
+  },
+  minLogAnalysisInLogging: 2,
+  scoringPointsByType: {
+    single_choice: 1,
+    log_analysis_single_choice: 1,
+    multi_select: 2,
+    ordering: 2
+  },
+  showAttentionMetricsOnResults: true,
+  practiceModeEnabled: true,
+  localStorageKey: "innobot_rpa_screener_state_v1"
+};
+
+window.ASSESSMENT_CONFIG_V2 = {
+  schemaVersion: "2.2.0",
+  questionBankVersion: "2.7.0",
+  localStorageKey: "innobot_rpa_screener_state_v2_2",
+  practiceModeEnabled: true,
+  showAttentionMetricsOnResults: true,
+  borderlineReviewBandPercent: 10,
+  stackSelectionRequired: true,
+  allowAdminOverride: false,
+  defaultRoleId: "Associate",
+  canonicalRoleOrder: ["Intern", "Associate", "SE", "SeniorSE", "TechLead"],
+  stacks: ["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"],
+  stackLabels: {
+    UiPath: "UiPath",
+    AutomationAnywhere: "Automation Anywhere (AA)",
+    Python: "Python",
+    PowerAutomate: "Power Automate"
+  },
+  stackCategoryMap: {
+    UiPath: "UiPath Specific",
+    AutomationAnywhere: "Automation Anywhere Specific",
+    Python: "Python Automation",
+    PowerAutomate: "Power Automate Specific"
+  },
+  validCategories: [
+    "Core RPA Concepts",
+    "Workflow Design",
+    "Data Handling & Validation",
+    "UI Automation Reliability (Selectors/Waits)",
+    "Exception Handling & Retries",
+    "Debugging & Logs",
+    "Queues / Work Items",
+    "Performance & Stability",
+    "Deployment & Configuration",
+    "UiPath Specific",
+    "Automation Anywhere Specific",
+    "Python Automation",
+    "Power Automate Specific",
+    "Framework & Maintainability (Senior+)",
+    "Architecture & Design (Senior+)",
+    "Operations & Monitoring (Senior+)",
+    "Governance & Security (Lead-only)",
+    "CI/CD & Release Strategy (Lead-only or Senior+)"
+  ],
+  validFormats: [
+    "single_choice",
+    "multi_select",
+    "ordering",
+    "log_analysis_single_choice",
+    "match_pairs",
+    "best_next_step",
+    "trace_execution",
+    "fill_in_blank_constrained",
+    "case_triage"
+  ],
+  validScoringMethods: [
+    "all_or_nothing",
+    "partial_with_penalty",
+    "partial_position",
+    "partial_pairs_with_penalty",
+    "partial_by_blank"
+  ],
+  minPerStackRules: [
+    { maxQuestions: 20, min: 3 },
+    { maxQuestions: 35, min: 5 },
+    { maxQuestions: 9999, min: 7 }
+  ],
+  roles: {
+    Intern: {
+      label: "Intern",
+      time_limit_minutes: 30,
+      question_count: 12,
+      log_analysis_minimum: 1,
+      pass_percentage: 55,
+      general_minimum: 10,
+      stack_minimum: 2,
+      senior_only_minimum: 0,
+      lead_only_minimum: 0,
+      format_targets: {
+        single_or_best_next_step: 4,
+        log_analysis_single_choice: 1,
+        multi_select: 2,
+        ordering: 1,
+        match_pairs: 1,
+        trace_execution: 1,
+        fill_in_blank_constrained: 1,
+        case_triage: 1
+      },
+      difficulty_targets: { 2: 12 }
+    },
+    Associate: {
+      label: "Associate",
+      time_limit_minutes: 30,
+      question_count: 12,
+      log_analysis_minimum: 1,
+      pass_percentage: 60,
+      general_minimum: 10,
+      stack_minimum: 2,
+      senior_only_minimum: 0,
+      lead_only_minimum: 0,
+      format_targets: {
+        single_or_best_next_step: 4,
+        log_analysis_single_choice: 1,
+        multi_select: 2,
+        ordering: 1,
+        match_pairs: 1,
+        trace_execution: 1,
+        fill_in_blank_constrained: 1,
+        case_triage: 1
+      },
+      difficulty_targets: { 3: 12 }
+    },
+    SE: {
+      label: "Software Engineer (SE)",
+      time_limit_minutes: 30,
+      question_count: 12,
+      pass_percentage: 66,
+      log_analysis_minimum: 1,
+      general_minimum: 10,
+      stack_minimum: 2,
+      senior_only_minimum: 0,
+      lead_only_minimum: 0,
+      format_targets: {
+        single_or_best_next_step: 4,
+        log_analysis_single_choice: 1,
+        multi_select: 2,
+        ordering: 1,
+        match_pairs: 1,
+        trace_execution: 1,
+        fill_in_blank_constrained: 1,
+        case_triage: 1
+      },
+      difficulty_targets: { 3: 12 }
+    },
+    SeniorSE: {
+      label: "Senior Software Engineer",
+      time_limit_minutes: 30,
+      question_count: 12,
+      pass_percentage: 72,
+      log_analysis_minimum: 2,
+      general_minimum: 10,
+      stack_minimum: 2,
+      senior_only_minimum: 0,
+      lead_only_minimum: 0,
+      format_targets: {
+        single_or_best_next_step: 3,
+        log_analysis_single_choice: 2,
+        multi_select: 2,
+        ordering: 1,
+        match_pairs: 1,
+        trace_execution: 1,
+        fill_in_blank_constrained: 1,
+        case_triage: 1
+      },
+      difficulty_targets: { 4: 12 }
+    },
+    TechLead: {
+      label: "Tech Lead",
+      time_limit_minutes: 30,
+      question_count: 12,
+      pass_percentage: 78,
+      log_analysis_minimum: 2,
+      general_minimum: 10,
+      stack_minimum: 2,
+      senior_only_minimum: 0,
+      lead_only_minimum: 0,
+      format_targets: {
+        single_or_best_next_step: 3,
+        log_analysis_single_choice: 2,
+        multi_select: 2,
+        ordering: 1,
+        match_pairs: 1,
+        trace_execution: 1,
+        fill_in_blank_constrained: 1,
+        case_triage: 1
+      },
+      difficulty_targets: { 4: 12 }
+    }
+  }
+};

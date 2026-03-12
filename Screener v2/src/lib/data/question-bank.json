@@ -1,0 +1,2827 @@
+[
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0013",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "You are automating invoice entry into an internal system. Login, navigation, and validation logic are duplicated in 4 places. What is the best improvement?",
+    "options": [
+      "Add more comments",
+      "Extract common steps into reusable workflows/components",
+      "Copy the logic into 2 more places for consistency",
+      "Add random delays"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Reusable components reduce duplication and maintenance effort.",
+    "rationale": "Tests modular design judgment."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0014",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Data Handling & Validation",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "A bot reads pending claims from a database. Which SQL query is most appropriate?",
+    "options": [
+      "SELECT * FROM Claims WHERE Status = 'Pending'",
+      "DELETE FROM Claims",
+      "DROP TABLE Claims",
+      "SELECT Pending FROM Status"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Select the pending records without destructive operations.",
+    "rationale": "Tests basic data retrieval."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-ASC-0015",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the sentence. Keep environment URLs, paths, and secrets in ____ so the same workflow can run in dev, UAT, and prod.",
+    "explanation": "Configuration separates environment data from process logic.",
+    "rationale": "Tests maintainable deployment practice.",
+    "blank": "Keep environment values in ____.",
+    "choices": [
+      "configuration",
+      "source comments",
+      "hardcoded literals",
+      "personal notebook"
+    ],
+    "accepted_answers": [
+      "configuration"
+    ]
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0016",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace this queue transaction flow and choose the final status.",
+    "options": [
+      "Business exception",
+      "Manual stop required",
+      "System exception retried then success",
+      "Permanent failure with no log"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "A temporary app outage is retried and later succeeds.",
+    "rationale": "Tests transaction retry reasoning.",
+    "log_snippet": "Attempt\tError\tAction\n1\tApp timeout\tRetry\n2\tApp timeout\tRetry\n3\tNo error\tMark successful"
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0017",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: Sprint has two hotfixes, one new feature, and one UAT defect. Team capacity is limited. What is the best planning action?",
+    "options": [
+      "Start all items in parallel with no owner",
+      "Prioritize by business risk and assign clear owners",
+      "Skip defect work until next release",
+      "Let developers choose work randomly"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Risk-based prioritization with clear ownership keeps delivery controlled.",
+    "rationale": "Tests practical sprint control decision.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-ASC-0018",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "multi_select",
+    "question_text": "Which are valid signs of good workflow organization? Select all that apply.",
+    "options": [
+      "A. Reusable components",
+      "B. Clear transaction boundaries",
+      "C. Hardcoded file paths everywhere",
+      "D. Consistent logging",
+      "E. Separate config handling"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D",
+      "E"
+    ],
+    "explanation": "Reuse, boundaries, consistent logs, and config separation are good signs.",
+    "rationale": "Tests workflow organization."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-ASC-0019",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 3,
+    "format": "multi_select",
+    "question_text": "A bot works in UAT but fails in production. Which checks are valid? Select all that apply.",
+    "options": [
+      "A. Compare selectors/UI versions",
+      "B. Check credentials and permissions",
+      "C. Confirm production input data shape",
+      "D. Rewrite the whole solution first",
+      "E. Review environment-specific config values"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "Environment drift, permissions, data shape, and config are common causes.",
+    "rationale": "Tests environment discrepancy checks."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-ASC-0020",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 3,
+    "format": "match_pairs",
+    "question_text": "Match the item to the most appropriate purpose.\nGit branch\nBusiness exception\nConfig file\nRetry mechanism\nA. Handle temporary failures in controlled fashion\nB. Separate work safely before merge\nC. Store environment-specific values\nD. Invalid input/rule violation",
+    "left_items": [
+      "Git branch",
+      "Business exception",
+      "Config file",
+      "Retry mechanism"
+    ],
+    "right_items": [
+      "A. Handle temporary failures in controlled fashion",
+      "B. Separate work safely before merge",
+      "C. Store environment-specific values",
+      "D. Invalid input/rule violation"
+    ],
+    "correct_pairs": {
+      "Git branch": "B. Separate work safely before merge",
+      "Business exception": "D. Invalid input/rule violation",
+      "Config file": "C. Store environment-specific values",
+      "Retry mechanism": "A. Handle temporary failures in controlled fashion"
+    },
+    "explanation": "Maps delivery artifacts and exception concepts to their purposes.",
+    "rationale": "Tests terminology alignment."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-ASC-0021",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 3,
+    "format": "ordering",
+    "question_text": "Arrange these deployment-related steps.",
+    "items": [
+      "Validate requirements with business",
+      "Build and unit test",
+      "UAT",
+      "Production deployment",
+      "Fix issues found in testing"
+    ],
+    "correct_order": [
+      0,
+      1,
+      2,
+      4,
+      3
+    ],
+    "correct_answer": [
+      "0",
+      "1",
+      "2",
+      "4",
+      "3"
+    ],
+    "explanation": "Validate, build, test, fix, then deploy.",
+    "rationale": "Tests deployment sequence."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-ASC-0022",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 3,
+    "format": "match_pairs",
+    "question_text": "Classify each issue.\nCategories:\nBusiness exception\nSystem exception\nItems:\nMandatory claim ID missing\nApplication server not responding\nInvalid invoice amount format from source file\nDatabase connection timeout",
+    "left_items": [
+      "Mandatory claim ID missing",
+      "Application server not responding",
+      "Invalid invoice amount format from source file",
+      "Database connection timeout"
+    ],
+    "right_items": [
+      "Business exception",
+      "System exception"
+    ],
+    "correct_pairs": {
+      "Mandatory claim ID missing": "Business exception",
+      "Application server not responding": "System exception",
+      "Invalid invoice amount format from source file": "Business exception",
+      "Database connection timeout": "System exception"
+    },
+    "explanation": "Invalid business data is a business exception; outages are system exceptions.",
+    "rationale": "Tests exception classification."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0023",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Data Handling & Validation",
+    "difficulty": 3,
+    "format": "log_analysis_single_choice",
+    "question_text": "What is the best conclusion?",
+    "log_snippet": "Transaction\tResult\tNote\n101\tFailed\tMissing member ID\n102\tSuccess\t-\n103\tFailed\tMissing member ID\n104\tSuccess\t-",
+    "options": [
+      "Selector issue in the target app",
+      "Bot should be removed from production",
+      "Repeated data-quality problem in source input",
+      "Git branch conflict"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Repeated missing IDs point to source data quality issues.",
+    "rationale": "Tests log-based data diagnosis."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0024",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "A workflow processes transactions from a queue. One transaction fails because the application freezes temporarily. What is the best handling choice?",
+    "options": [
+      "Mark as business exception immediately",
+      "Skip all future transactions",
+      "Remove logging to improve speed",
+      "Retry according to controlled system-exception logic"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "A temporary freeze is a system issue that should be retried safely.",
+    "rationale": "Tests system exception handling."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0069",
+    "role_level_min": "Associate",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "A UiPath process repeats the same login steps in five workflows. What is the best improvement?",
+    "options": [
+      "Create one reusable login workflow and call it",
+      "Copy the same steps into two more workflows",
+      "Remove login logs to save time",
+      "Ask operations to log in manually"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Reusable workflows reduce duplication and support easier fixes.",
+    "rationale": "Tests maintainable UiPath design."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0070",
+    "role_level_min": "Associate",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace this UiPath deployment check and choose the right fix.",
+    "options": [
+      "Keep one shared URL for all environments",
+      "Ask user to edit workflow each release",
+      "Load URL from environment-specific config",
+      "Hardcode production URL in main flow"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Environment config prevents repeated code edits across stages.",
+    "rationale": "Tests deployment portability in UiPath.",
+    "log_snippet": "Env\tURL Source\nDev\tConfig\nUAT\tConfig\nProd\tConfig\nResult\tSame package works in all envs"
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0071",
+    "role_level_min": "Associate",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: An AA bot credential leaks in a local file shared by mistake. What is the best immediate action?",
+    "options": [
+      "Keep file but hide extension",
+      "Rotate leaked secret and move to Credential Vault",
+      "Store credential in task comments",
+      "Continue using leaked credential for now"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "You should rotate exposed credentials and move storage to secure vault.",
+    "rationale": "Tests practical credential incident response.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0072",
+    "role_level_min": "Associate",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "An Automation Anywhere bot downloads 100 reports. One report fails due to network timeout. What should it do?",
+    "options": [
+      "Retry failed report with limit, log, continue others",
+      "Stop the whole run on first timeout",
+      "Delete all downloaded reports",
+      "Ignore the timeout without logging"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Per-item retry with logging keeps processing stable and traceable.",
+    "rationale": "Tests transactional handling in AA flows."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-ASC-0073",
+    "role_level_min": "Associate",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 3,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the Python validation rule. If policyId is missing, ____ the record and continue processing.",
+    "explanation": "Safe processing logs bad records and continues with valid ones.",
+    "rationale": "Tests robust data-validation behavior.",
+    "blank": "If policyId is missing, ____ the record and continue.",
+    "choices": [
+      "log and skip",
+      "crash",
+      "delete input file",
+      "guess random id"
+    ],
+    "accepted_answers": [
+      "log and skip",
+      "skip"
+    ]
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0074",
+    "role_level_min": "Associate",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "A Python automation works locally but fails on server due to package version mismatch. Best fix?",
+    "options": [
+      "Install latest packages on every run",
+      "Copy local site-packages folder manually",
+      "Use pinned requirements and controlled environment setup",
+      "Disable virtual environments"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Pinned dependency versions create repeatable runtime behavior.",
+    "rationale": "Tests deployment reliability for Python automation."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0075",
+    "role_level_min": "Associate",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "Three Power Automate flows repeat the same approval steps. Best design improvement?",
+    "options": [
+      "Keep copying steps in each flow",
+      "Move common steps into a child flow",
+      "Remove approval from two flows",
+      "Ask approvers to work by email only"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Child flows reduce duplication and keep updates consistent.",
+    "rationale": "Tests reusable flow design."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0076",
+    "role_level_min": "Associate",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace this Power Automate HTTP call behavior and choose the correct action.",
+    "options": [
+      "Apply exponential backoff retry policy",
+      "Disable retries on 429",
+      "Ignore 429 and mark success",
+      "Add random delay without policy"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "429 means throttling; controlled exponential retry is appropriate.",
+    "rationale": "Tests API rate-limit handling in flows.",
+    "log_snippet": "Call\tStatus\n1\t429\n2\t429\n3\t200 after backoff retry"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0001",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "single_choice",
+    "question_text": "A team wants to automate copying customer IDs from an Excel file into a web portal every morning. Which factor most strongly suggests this is a good candidate for RPA?",
+    "options": [
+      "The process needs legal judgment",
+      "The portal changes every day",
+      "The process is repetitive and rule-based",
+      "The output is always unstructured handwriting"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Repetitive, rule-based steps are strong RPA candidates.",
+    "rationale": "Tests process suitability basics."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0002",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 2,
+    "format": "single_choice",
+    "question_text": "A bot fails because an invoice file is missing a required field that the business user forgot to enter. What is the best classification?",
+    "options": [
+      "System exception",
+      "Deployment issue",
+      "Selector failure",
+      "Business exception"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Missing required business data is a business exception.",
+    "rationale": "Tests exception classification."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-INT-0003",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the sentence. Teams use ____ to track changes, review work, and roll back safely when needed.",
+    "explanation": "Version control supports safe collaboration, history, and rollback.",
+    "rationale": "Tests core engineering habit for automation work.",
+    "blank": "Teams use ____ to track and review code safely.",
+    "choices": [
+      "version control",
+      "manual file overwrite",
+      "shared USB copy",
+      "email attachments only"
+    ],
+    "accepted_answers": [
+      "version control"
+    ]
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0004",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 2,
+    "format": "trace_execution",
+    "question_text": "Trace this run and choose the final result.",
+    "options": [
+      "Run fails and stops before any test",
+      "Run completes after one fixed data issue",
+      "Run loops forever",
+      "Run skips all rows"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "The workflow validates, fixes one data row, and completes successfully.",
+    "rationale": "Tests basic step-by-step execution reading.",
+    "log_snippet": "Step\tResult\nValidate input file\tPass\nCheck row 8 email\tInvalid\nCorrect row 8 email\tDone\nSend emails\tCompleted"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0005",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "case_triage",
+    "question_text": "Case: A production run fails because one field selector changed after a minor UI update. You have 15 minutes before next scheduled run. What is the best first action?",
+    "options": [
+      "Disable selector checks and rerun",
+      "Delete all failed transactions",
+      "Verify the changed field and update selector safely",
+      "Retry the same old selector many times"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "First fix is to validate and update the broken selector safely before rerun.",
+    "rationale": "Tests practical first response to common UI break.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-INT-0006",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 2,
+    "format": "multi_select",
+    "question_text": "A bot works on one machine but not on another. Which checks are reasonable first steps? Select all that apply.",
+    "options": [
+      "A. Compare application versions",
+      "B. Check user permissions",
+      "C. Delete the entire project",
+      "D. Verify file paths and environment settings",
+      "E. Assume the business rule is wrong"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D"
+    ],
+    "explanation": "Environment versions, permissions, and paths are common causes.",
+    "rationale": "Tests environment troubleshooting basics."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-INT-0007",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "multi_select",
+    "question_text": "Which tasks are suitable for a beginner intern to help with under guidance? Select all that apply.",
+    "options": [
+      "A. Testing a workflow with sample inputs",
+      "B. Documenting process steps",
+      "C. Designing enterprise automation architecture alone",
+      "D. Fixing simple selector issues",
+      "E. Identifying basic validation rules"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D",
+      "E"
+    ],
+    "explanation": "Guided testing, documentation, simple fixes, and validation checks are appropriate.",
+    "rationale": "Tests intern-appropriate tasks."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-INT-0008",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "match_pairs",
+    "question_text": "Match each term to the best description.\nBusiness exception\nSystem exception\nTest case\nRepository\nA. A stored place for project versions\nB. Failure caused by invalid business data\nC. A defined condition used to verify behavior\nD. Failure caused by application/system issue",
+    "left_items": [
+      "Business exception",
+      "System exception",
+      "Test case",
+      "Repository"
+    ],
+    "right_items": [
+      "A. A stored place for project versions",
+      "B. Failure caused by invalid business data",
+      "C. A defined condition used to verify behavior",
+      "D. Failure caused by application/system issue"
+    ],
+    "correct_pairs": {
+      "Business exception": "B. Failure caused by invalid business data",
+      "System exception": "D. Failure caused by application/system issue",
+      "Test case": "C. A defined condition used to verify behavior",
+      "Repository": "A. A stored place for project versions"
+    },
+    "explanation": "Maps core terms to standard definitions.",
+    "rationale": "Tests foundational vocabulary."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-INT-0009",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 2,
+    "format": "ordering",
+    "question_text": "Arrange the steps in the best development order.",
+    "items": [
+      "Build workflow",
+      "Gather requirements",
+      "Test with sample data",
+      "Deploy",
+      "Review expected output"
+    ],
+    "correct_order": [
+      1,
+      4,
+      0,
+      2,
+      3
+    ],
+    "correct_answer": [
+      "1",
+      "4",
+      "0",
+      "2",
+      "3"
+    ],
+    "explanation": "Requirements and expected output come before build and test.",
+    "rationale": "Tests basic delivery sequence."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-INT-0010",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Core RPA Concepts",
+    "difficulty": 2,
+    "format": "match_pairs",
+    "question_text": "Place each item into the correct category.\nCategories:\nGood fit for RPA\nPoor fit for RPA\nItems:\nDaily copy-paste of fixed-format data\nA process with undocumented rules changing every day\nSending standard email alerts on SLA breaches\nHuman negotiation of disputed insurance claims",
+    "left_items": [
+      "Daily copy-paste of fixed-format data",
+      "A process with undocumented rules changing every day",
+      "Sending standard email alerts on SLA breaches",
+      "Human negotiation of disputed insurance claims"
+    ],
+    "right_items": [
+      "Good fit for RPA",
+      "Poor fit for RPA"
+    ],
+    "correct_pairs": {
+      "Daily copy-paste of fixed-format data": "Good fit for RPA",
+      "A process with undocumented rules changing every day": "Poor fit for RPA",
+      "Sending standard email alerts on SLA breaches": "Good fit for RPA",
+      "Human negotiation of disputed insurance claims": "Poor fit for RPA"
+    },
+    "explanation": "Stable, rule-based tasks fit RPA; unstable or judgment-heavy tasks do not.",
+    "rationale": "Tests RPA fit criteria."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0011",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Debugging & Logs",
+    "difficulty": 2,
+    "format": "log_analysis_single_choice",
+    "question_text": "A bot ran 4 times. What is the most likely first area to investigate?",
+    "log_snippet": "Run\tStep Failed\tError\n1\tOpen Portal\tTimeout\n2\tOpen Portal\tTimeout\n3\tOpen Portal\tTimeout\n4\tOpen Portal\tTimeout",
+    "options": [
+      "Business rules in invoice validation",
+      "Email subject line formatting",
+      "Excel formula accuracy",
+      "Portal/environment availability"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Repeated timeouts on the same step point to portal or environment availability.",
+    "rationale": "Tests log-based triage."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0012",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Data Handling & Validation",
+    "difficulty": 2,
+    "format": "single_choice",
+    "question_text": "A bot reads 20 rows from Excel and sends one email per row. Row 8 has an invalid email address. What is the best basic behavior?",
+    "options": [
+      "Crash immediately and send nothing",
+      "Delete the Excel file",
+      "Skip row 8, log it, continue remaining rows",
+      "Retry forever"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Skip invalid data, log it, and continue processing the rest.",
+    "rationale": "Tests row-level error handling."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0061",
+    "role_level_min": "Intern",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 2,
+    "format": "best_next_step",
+    "question_text": "In UiPath, a Click works in Studio but fails on robot machine. The selector uses a changing id. What is the best next step?",
+    "options": [
+      "Use stable selector attributes and validate in UI Explorer",
+      "Use image clicks for the whole process",
+      "Add a 30-second delay before every click",
+      "Run only when no one uses the machine"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Use stable selector attributes first, then validate on target UI.",
+    "rationale": "Tests basic UiPath selector troubleshooting."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0062",
+    "role_level_min": "Intern",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 2,
+    "format": "trace_execution",
+    "question_text": "Trace this UiPath queue item handling and pick the final status.",
+    "options": [
+      "System exception retried then success",
+      "Business exception logged and next item continues",
+      "Queue item deleted with no trace",
+      "Whole queue run stops"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Missing required customer number is a business data issue, so item is logged and flow continues.",
+    "rationale": "Tests practical queue handling for invalid business data.",
+    "log_snippet": "Step\tOutcome\nRead queue item\tCustomerNo empty\nValidate mandatory fields\tFailed\nHandle exception\tMark business exception\nContinue run\tNext item started"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0063",
+    "role_level_min": "Intern",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 2,
+    "format": "best_next_step",
+    "question_text": "An Automation Anywhere step fails because the app window is not ready after login. What is the best fix?",
+    "options": [
+      "Increase mouse speed",
+      "Remove login from the task",
+      "Add wait for the window state before next action",
+      "Turn off logs"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Wait conditions are safer than blind speed changes.",
+    "rationale": "Tests AA timing stability basics."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0064",
+    "role_level_min": "Intern",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 2,
+    "format": "case_triage",
+    "question_text": "Case: Automation Anywhere table extraction fails only for one dynamic column. What is the best first action?",
+    "options": [
+      "Switch entire process to coordinate clicks",
+      "Delete the table step permanently",
+      "Run without saving extracted data",
+      "Re-map the column with object capture and test again"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Re-mapping unstable object capture is safer than downgrading whole process.",
+    "rationale": "Tests practical AA extraction triage.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0065",
+    "role_level_min": "Intern",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 2,
+    "format": "best_next_step",
+    "question_text": "A Python bot calling an API gets temporary HTTP 503 errors. What should it do?",
+    "options": [
+      "Retry with short backoff and a max retry count",
+      "Ignore status code and continue",
+      "Retry forever with no limit",
+      "Exit with no log"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Bounded retry with backoff handles transient errors safely.",
+    "rationale": "Tests basic Python API resiliency."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-INT-0066",
+    "role_level_min": "Intern",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 2,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the sentence for Python file handling. To avoid broken names like Jose in CSV, use ____ encoding.",
+    "explanation": "UTF-8 preserves common international characters in data files.",
+    "rationale": "Tests practical encoding awareness.",
+    "blank": "Use ____ encoding for CSV read/write.",
+    "choices": [
+      "UTF-8",
+      "ASCII-only",
+      "binary random",
+      "screen text capture"
+    ],
+    "accepted_answers": [
+      "UTF-8",
+      "utf-8"
+    ]
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0067",
+    "role_level_min": "Intern",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 2,
+    "format": "trace_execution",
+    "question_text": "Trace this Power Automate incident and pick the best conclusion.",
+    "options": [
+      "Trigger schedule is too fast",
+      "Flow needs more parallel branches",
+      "Connector token became invalid after password reset",
+      "Mailbox does not exist"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Password reset often invalidates stored connector credentials.",
+    "rationale": "Tests practical connector-auth troubleshooting.",
+    "log_snippet": "Run\tAction\tResult\n1\tGet emails\t401 Unauthorized\n2\tRetry\t401 Unauthorized\n3\tManual connector re-auth\tSuccess"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0068",
+    "role_level_min": "Intern",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 2,
+    "format": "best_next_step",
+    "question_text": "A flow creates duplicate tickets when the same email is forwarded twice. What is the best protection?",
+    "options": [
+      "Turn off mailbox forwarding",
+      "Split into two separate flows",
+      "Remove error handling",
+      "Add idempotency check using message id before create"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Idempotency check prevents duplicate creates on repeat events.",
+    "rationale": "Tests duplicate prevention basics."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0025",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "A business process updates records in a web portal, but the portal also exposes stable APIs. Which option is generally better for a production-grade solution?",
+    "options": [
+      "UI automation only, because it looks more visible",
+      "API-first where feasible, with UI only where needed",
+      "Screen scraping for all cases",
+      "Manual updates in parallel forever"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "APIs are more stable and reliable than UI automation when available.",
+    "rationale": "Tests API vs UI judgment."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0026",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "A bot contains repeated login, file-read, and logging patterns across multiple projects. What should an engineer do?",
+    "options": [
+      "Build reusable components/libraries",
+      "Leave duplication to save time",
+      "Put everything into one giant workflow",
+      "Remove logs to simplify maintenance"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Reusable components reduce duplication and improve maintainability.",
+    "rationale": "Tests reuse strategy."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-SE-0027",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Debugging & Logs",
+    "difficulty": 3,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the logging rule. Every transaction log should include a ____ so support can trace one item across systems.",
+    "explanation": "A correlation id enables end-to-end troubleshooting across systems.",
+    "rationale": "Tests production support logging basics.",
+    "blank": "Every transaction log should include a ____.",
+    "choices": [
+      "correlation id",
+      "random emoji",
+      "screen resolution",
+      "machine wallpaper"
+    ],
+    "accepted_answers": [
+      "correlation id",
+      "correlation-id"
+    ]
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0028",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace the release sequence and choose the final outcome.",
+    "options": [
+      "Release succeeds with no checks",
+      "Release rolls back after two weeks",
+      "Release blocked before production due to failed smoke check",
+      "Release skips UAT and passes"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Smoke failure should stop the production deployment immediately.",
+    "rationale": "Tests release gate reasoning.",
+    "log_snippet": "Step\tResult\nDeploy to UAT\tDone\nRun smoke test\tFailed critical login\nDeploy to production\tNot executed"
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0029",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: One API call in a batch job is timing out, but others pass. SLA still allows completion in 30 minutes. What is the best action?",
+    "options": [
+      "Mark whole batch failed immediately",
+      "Retry only the failed call with backoff and continue",
+      "Remove timeout handling to save time",
+      "Disable logs until run ends"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Targeted retry with backoff protects SLA and keeps processing stable.",
+    "rationale": "Tests practical API failure handling.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-SE-0030",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "multi_select",
+    "question_text": "Which are good indicators that an engineer is thinking end-to-end? Select all that apply.",
+    "options": [
+      "A. Environment-specific configuration strategy",
+      "B. Monitoring/logging plan",
+      "C. Reusable error handling",
+      "D. Ignoring deployment concerns until production",
+      "E. Recovery/fallback behavior"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "End-to-end thinking includes config, monitoring, recovery, and error handling.",
+    "rationale": "Tests holistic design thinking."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-SE-0031",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "multi_select",
+    "question_text": "You are reviewing a fragile bot. Which changes are likely to improve maintainability? Select all that apply.",
+    "options": [
+      "A. Move common logic into reusable components",
+      "B. Replace stable selectors with image clicks everywhere",
+      "C. Centralize config handling",
+      "D. Introduce structured exception handling",
+      "E. Add clear logging around critical steps"
+    ],
+    "correct_answer": [
+      "A",
+      "C",
+      "D",
+      "E"
+    ],
+    "explanation": "Reuse, config centralization, structured handling, and logging improve maintainability.",
+    "rationale": "Tests maintainability improvements."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-SE-0032",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "match_pairs",
+    "question_text": "Match each design concept to the best description.\nReusable component\nConfig-driven design\nTransaction isolation\nStructured logging\nA. Records meaningful execution details for support\nB. Separates each item so one failure does not break all work\nC. Common functionality used across solutions\nD. Behavior controlled through external settings",
+    "left_items": [
+      "Reusable component",
+      "Config-driven design",
+      "Transaction isolation",
+      "Structured logging"
+    ],
+    "right_items": [
+      "A. Records meaningful execution details for support",
+      "B. Separates each item so one failure does not break all work",
+      "C. Common functionality used across solutions",
+      "D. Behavior controlled through external settings"
+    ],
+    "correct_pairs": {
+      "Reusable component": "C. Common functionality used across solutions",
+      "Config-driven design": "D. Behavior controlled through external settings",
+      "Transaction isolation": "B. Separates each item so one failure does not break all work",
+      "Structured logging": "A. Records meaningful execution details for support"
+    },
+    "explanation": "Aligns core design concepts with their meanings.",
+    "rationale": "Tests architecture vocabulary."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-SE-0033",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "ordering",
+    "question_text": "Arrange these solution steps for a robust automation effort.",
+    "items": [
+      "Identify integration options",
+      "Analyze requirements and edge cases",
+      "Design reusable structure",
+      "Build and test",
+      "Prepare deployment/config strategy"
+    ],
+    "correct_order": [
+      1,
+      0,
+      2,
+      3,
+      4
+    ],
+    "correct_answer": [
+      "1",
+      "0",
+      "2",
+      "3",
+      "4"
+    ],
+    "explanation": "Understand requirements, then integration options, then design, build, and deploy.",
+    "rationale": "Tests solution planning."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-SE-0034",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 3,
+    "format": "match_pairs",
+    "question_text": "Place each item into the best category.\nCategories:\nBetter handled by API/integration\nBetter handled by UI automation\nItems:\nStable endpoint for member-status updates\nLegacy desktop app with no service layer\nBulk record retrieval via documented service\nHuman-facing internal app with no backend access",
+    "left_items": [
+      "Stable endpoint for member-status updates",
+      "Legacy desktop app with no service layer",
+      "Bulk record retrieval via documented service",
+      "Human-facing internal app with no backend access"
+    ],
+    "right_items": [
+      "Better handled by API/integration",
+      "Better handled by UI automation"
+    ],
+    "correct_pairs": {
+      "Stable endpoint for member-status updates": "Better handled by API/integration",
+      "Legacy desktop app with no service layer": "Better handled by UI automation",
+      "Bulk record retrieval via documented service": "Better handled by API/integration",
+      "Human-facing internal app with no backend access": "Better handled by UI automation"
+    },
+    "explanation": "APIs are preferred where available; UI automation fits when no service layer exists.",
+    "rationale": "Tests integration choice."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0035",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Debugging & Logs",
+    "difficulty": 3,
+    "format": "log_analysis_single_choice",
+    "question_text": "What is the most likely root cause?",
+    "log_snippet": "Time\tStep\tMessage\n09:00\tLogin\tSuccess\n09:02\tFetch Claims API\t401 Unauthorized\n09:03\tRetry API\t401 Unauthorized\n09:04\tStop\tAuthentication failure",
+    "options": [
+      "API authentication/config issue",
+      "Missing business data",
+      "PDF parsing failure",
+      "Selector drift"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Repeated 401s indicate an authentication or config issue.",
+    "rationale": "Tests log-based root cause identification."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0036",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 3,
+    "format": "single_choice",
+    "question_text": "A bot loops through transactions. Which approach is best?",
+    "options": [
+      "Put all records in one try-catch so one error stops all",
+      "Handle each transaction individually with logging and status update",
+      "Disable exception handling to improve speed",
+      "Store production credentials inside code comments"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Isolating each transaction prevents one failure from stopping all work.",
+    "rationale": "Tests transaction isolation."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0077",
+    "role_level_min": "SE",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "A UiPath selector keeps breaking because row index changes daily. What is the best selector strategy?",
+    "options": [
+      "Keep strict index in selector",
+      "Replace with full-image automation",
+      "Use stable attributes/anchors instead of volatile index",
+      "Add fixed waits only"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Stable attributes and anchors are more resilient to dynamic rows.",
+    "rationale": "Tests resilient selector design in UiPath."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0078",
+    "role_level_min": "SE",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace this UiPath transaction sequence and choose final handling.",
+    "options": [
+      "Business exception and no retry",
+      "Drop item without status",
+      "Stop whole process immediately",
+      "System exception retried per policy"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "HTTP 500 is handled as system failure with bounded retry.",
+    "rationale": "Tests practical retry policy application.",
+    "log_snippet": "Attempt\tAPI Status\n1\t500\n2\t500\n3\t200\nPolicy\tRetry up to 2 then fail"
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0079",
+    "role_level_min": "SE",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: AA bot works in UAT but executable path differs in production. What is best engineering fix?",
+    "options": [
+      "Use environment config variable for app path",
+      "Duplicate workflow for each environment",
+      "Ask operator to browse path manually every run",
+      "Hardcode production path in one step"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Path should be externalized so one package can run across environments.",
+    "rationale": "Tests maintainable environment configuration.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0080",
+    "role_level_min": "SE",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "Automation Anywhere bot uses Send Keys right after opening app and fails randomly. Best fix?",
+    "options": [
+      "Add wait for ready state before typing",
+      "Add fixed delays after every action regardless UI state",
+      "Type before verifying the target field is ready",
+      "Switch to coordinate typing without object checks"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Readiness checks are more reliable than blind delays or coordinate-only actions.",
+    "rationale": "Tests synchronization strategy with realistic alternatives."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-SE-0081",
+    "role_level_min": "SE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 3,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete API paging rule. Keep requesting next page until ____ is empty.",
+    "explanation": "Token-driven paging ensures complete extraction.",
+    "rationale": "Tests practical API pagination control.",
+    "blank": "Request next page until ____ is empty.",
+    "choices": [
+      "next page token",
+      "first page only",
+      "manual note",
+      "random counter"
+    ],
+    "accepted_answers": [
+      "next page token",
+      "token"
+    ]
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0082",
+    "role_level_min": "SE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "Where should a production Python bot keep API secrets?",
+    "options": [
+      "Hardcoded in source file",
+      "In plain text config in repo",
+      "Secret manager or secure environment variables",
+      "Inside run logs"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Secrets should be externalized and secured, never hardcoded.",
+    "rationale": "Tests secure secret management in Python bots."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0083",
+    "role_level_min": "SE",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "A Power Automate flow updates the same record from parallel runs and causes conflicts. Best control?",
+    "options": [
+      "Increase trigger frequency",
+      "Enable concurrency control/locking for the update path",
+      "Remove conflict handling",
+      "Duplicate the update step"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Concurrency control prevents race conditions on shared records.",
+    "rationale": "Tests concurrent update safety in Power Automate."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0084",
+    "role_level_min": "SE",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 3,
+    "format": "trace_execution",
+    "question_text": "Trace this Power Automate deployment path and choose the final outcome.",
+    "options": [
+      "Controlled promotion using solution-aware ALM",
+      "Uncontrolled hotfix in production",
+      "Flow copied manually with missing refs",
+      "Personal account owns production flow"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Solution-aware ALM keeps references and release control intact.",
+    "rationale": "Tests production-ready deployment practice.",
+    "log_snippet": "Stage\tAction\nTest\tManaged solution validated\nRelease\tConnection references mapped\nProd\tImport succeeded"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0037",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "single_choice",
+    "question_text": "A junior developer built a bot with repeated logic, weak logs, and no config separation. What is the best senior-level response?",
+    "options": [
+      "Approve it because it works once",
+      "Reject it without explanation",
+      "Guide refactoring toward reusability, config separation, and logging standards",
+      "Deploy first and fix later"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Senior engineers should guide refactoring toward maintainable standards.",
+    "rationale": "Tests mentoring and quality ownership."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0038",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "case_triage",
+    "question_text": "Case: You can ship quickly with fragile selectors, or ship two days later with reusable API-first design. Process is business-critical. Best call?",
+    "options": [
+      "Ship fragile selectors now",
+      "Cancel all automation",
+      "Use OCR for every step",
+      "Choose API-first design for long-term stability"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "For critical processes, stable design is the better senior decision.",
+    "rationale": "Tests senior tradeoff judgment.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0039",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Operations & Monitoring (Senior+)",
+    "difficulty": 4,
+    "format": "single_choice",
+    "question_text": "After a framework cleanup, which metric best proves production quality improved?",
+    "options": [
+      "Fewer repeat failures and faster recovery time",
+      "Number of meetings held",
+      "Number of comments in code",
+      "Size of the release note document"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Lower repeat failures and faster recovery directly show better operational quality.",
+    "rationale": "Tests outcome-based quality thinking."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0040",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "UI Automation Reliability (Selectors/Waits)",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "Based on this incident log, what should be fixed first?",
+    "options": [
+      "Selector strategy in ClaimsBot",
+      "Email template wording",
+      "Dashboard color theme",
+      "Robot machine wallpaper"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Highest-frequency failure source should be prioritized first.",
+    "rationale": "Tests incident-priority decision making.",
+    "log_snippet": "Bot\tIssue\tCount\nClaimsBot\tSelector not found\t18\nPolicyBot\tAPI timeout\t3\nMailBot\tSMTP delay\t1"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-SEN-0041",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the sentence. Senior ownership means defining standards and ____ so team quality rises consistently.",
+    "explanation": "Senior engineers scale quality through standards and mentoring.",
+    "rationale": "Tests senior team-impact mindset.",
+    "blank": "Senior ownership means defining standards and ____.",
+    "choices": [
+      "mentoring",
+      "shortcuts",
+      "random fixes",
+      "manual workarounds"
+    ],
+    "accepted_answers": [
+      "mentoring"
+    ]
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-SEN-0042",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "multi_select",
+    "question_text": "Which actions best reduce rework across multiple automations? Select all that apply.",
+    "options": [
+      "A. Standard component templates",
+      "B. Common exception-handling pattern",
+      "C. Environment-specific hardcoding",
+      "D. Review checklist for deployments",
+      "E. Shared logging conventions"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D",
+      "E"
+    ],
+    "explanation": "Templates, shared patterns, review checklists, and logging reduce rework.",
+    "rationale": "Tests rework reduction controls."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-SEN-0043",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "multi_select",
+    "question_text": "A senior engineer is evaluating a new automation opportunity. Which factors should be considered? Select all that apply.",
+    "options": [
+      "A. Process stability",
+      "B. Rule clarity",
+      "C. Expected exception profile",
+      "D. Whether the process owner likes blue dashboards",
+      "E. Integration complexity"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "Stability, rule clarity, exception profile, and integration complexity matter.",
+    "rationale": "Tests opportunity assessment."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-SEN-0044",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "match_pairs",
+    "question_text": "Match the issue to the best preventive action.\nHigh duplication across bots\nFrequent production failures with poor diagnosis\nSlow onboarding of junior devs\nRepeated deployment mistakes\nA. Create reusable libraries/framework patterns\nB. Standardize logs and support diagnostics\nC. Introduce release checklist and deployment standards\nD. Add mentoring guides and design examples",
+    "left_items": [
+      "High duplication across bots",
+      "Frequent production failures with poor diagnosis",
+      "Slow onboarding of junior devs",
+      "Repeated deployment mistakes"
+    ],
+    "right_items": [
+      "A. Create reusable libraries/framework patterns",
+      "B. Standardize logs and support diagnostics",
+      "C. Introduce release checklist and deployment standards",
+      "D. Add mentoring guides and design examples"
+    ],
+    "correct_pairs": {
+      "High duplication across bots": "A. Create reusable libraries/framework patterns",
+      "Frequent production failures with poor diagnosis": "B. Standardize logs and support diagnostics",
+      "Slow onboarding of junior devs": "D. Add mentoring guides and design examples",
+      "Repeated deployment mistakes": "C. Introduce release checklist and deployment standards"
+    },
+    "explanation": "Maps recurring issues to the most effective preventive actions.",
+    "rationale": "Tests preventive governance."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-SEN-0045",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "ordering",
+    "question_text": "Arrange these senior-level improvement steps.",
+    "items": [
+      "Identify repeated quality problems",
+      "Define standards/patterns",
+      "Coach team on adoption",
+      "Review implementations against standards",
+      "Measure reduction in failures/rework"
+    ],
+    "correct_order": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "correct_answer": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "explanation": "Standardize and coach before measuring improvements.",
+    "rationale": "Tests continuous improvement flow."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-SEN-0046",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Framework & Maintainability (Senior+)",
+    "difficulty": 4,
+    "format": "match_pairs",
+    "question_text": "Classify each activity.\nCategories:\nSenior engineer ownership\nMid-level engineer ownership\nItems:\nDefine reusable exception-handling standard\nBuild a single moderate workflow independently\nMentor junior dev through design flaws\nImplement a validated module based on agreed architecture",
+    "left_items": [
+      "Define reusable exception-handling standard",
+      "Build a single moderate workflow independently",
+      "Mentor junior dev through design flaws",
+      "Implement a validated module based on agreed architecture"
+    ],
+    "right_items": [
+      "Senior engineer ownership",
+      "Mid-level engineer ownership"
+    ],
+    "correct_pairs": {
+      "Define reusable exception-handling standard": "Senior engineer ownership",
+      "Build a single moderate workflow independently": "Mid-level engineer ownership",
+      "Mentor junior dev through design flaws": "Senior engineer ownership",
+      "Implement a validated module based on agreed architecture": "Mid-level engineer ownership"
+    },
+    "explanation": "Senior ownership focuses on standards and mentorship; mid-level focuses on implementation.",
+    "rationale": "Tests role responsibility judgment."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0047",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Operations & Monitoring (Senior+)",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "What should be the highest-priority senior action?",
+    "log_snippet": "Bot\tFailures This Week\tMain Cause\nClaimsBot\t12\tSelector not found\nInvoiceBot\t2\tInvalid invoice total\nMailBot\t1\tSMTP timeout",
+    "options": [
+      "Rewrite MailBot first",
+      "Improve selector strategy and resilience in ClaimsBot",
+      "Remove all business validations",
+      "Stop code reviews"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "High-volume selector failures in ClaimsBot are the highest risk.",
+    "rationale": "Tests prioritization based on impact."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0048",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this modular workflow and pick the final status.",
+    "options": [
+      "Two systems update, third fails, transaction marked retry",
+      "Run stops at first validation warning",
+      "All systems skipped",
+      "Run deletes all queued work"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Modular boundaries allow partial execution and controlled retry on failed leg.",
+    "rationale": "Tests architecture behavior understanding.",
+    "log_snippet": "Step\tStatus\nUpdate CRM\tSuccess\nUpdate Billing\tSuccess\nUpdate Claims\tTimeout\nPolicy\tMark transaction for retry"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0085",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Different UiPath teams use different naming and exception patterns. As a senior engineer, what should you do first?",
+    "options": [
+      "Let each team keep their own style",
+      "Focus only on new features",
+      "Remove shared libraries",
+      "Define a common template and review checklist"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Shared standards and reviews reduce defects and maintenance cost.",
+    "rationale": "Tests senior-level standardization action."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0086",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this design decision and choose expected result.",
+    "options": [
+      "UI-only design always more stable",
+      "OCR-only path reduces all failures",
+      "API-first with UI fallback reduces break rate",
+      "No impact on reliability"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "API-first for stable steps usually lowers UI break incidents.",
+    "rationale": "Tests architecture outcome reasoning.",
+    "log_snippet": "Design\tCoverage\nAPI path\t80%\nUI fallback\t20%\nNext quarter\tLower selector failures"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0087",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Automation Anywhere bots fail under peak load due to shared resource contention. Best senior-level fix?",
+    "options": [
+      "Run all bots at same start time",
+      "Use queue-based workload distribution and controlled runner limits",
+      "Increase bot speed setting only",
+      "Disable logs to improve performance"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Queue distribution and runner limits improve throughput and stability.",
+    "rationale": "Tests AA scaling strategy."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0088",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 4,
+    "format": "case_triage",
+    "question_text": "Case: Long AA job fails at record 420/1000. Business asks restart now. Best design choice for future runs?",
+    "options": [
+      "Add checkpoint per transaction with restart-safe state",
+      "Restart full 1000 each time",
+      "Disable failure logging to speed run",
+      "Split into random manual chunks"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Checkpointed transaction state prevents duplicate work and speeds recovery.",
+    "rationale": "Tests senior resiliency design judgement.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-SEN-0089",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 4,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete maintainability rule. Reused Python helpers should be packaged as ____ modules with tests.",
+    "explanation": "Versioned shared modules reduce drift and improve control.",
+    "rationale": "Tests long-term maintainability practice.",
+    "blank": "Reused helpers should be ____ modules with tests.",
+    "choices": [
+      "versioned",
+      "hidden",
+      "one-off",
+      "temporary"
+    ],
+    "accepted_answers": [
+      "versioned"
+    ]
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0090",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Support team cannot trace failed Python transactions across systems. What should be added?",
+    "options": [
+      "Random debug prints only",
+      "Structured logs with correlation id per transaction",
+      "Fewer logs to reduce file size",
+      "Screenshot on every line of code"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Correlation ids and structured logs enable cross-system tracing.",
+    "rationale": "Tests observability design."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0091",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Critical Power Automate flow fails at night and business sees delay in morning. Best improvement?",
+    "options": [
+      "Wait for users to report manually",
+      "Disable run history",
+      "Add failure alerts and controlled retry/reprocess path",
+      "Move flow to personal account"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Automated alerting and reprocess path reduce incident impact.",
+    "rationale": "Tests operational readiness in Power Automate."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0092",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this Power Automate environment model and pick the best conclusion.",
+    "options": [
+      "Single environment gives strongest control",
+      "Personal connectors are best for enterprise",
+      "Production-first build is safest",
+      "Separate dev/test/prod improves release safety"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Environment separation plus managed solutions improves governance.",
+    "rationale": "Tests environment strategy understanding.",
+    "log_snippet": "Env\tPurpose\nDev\tBuild\nTest\tValidation\nProd\tControlled release\nAudit\tTraceable changes"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0049",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "single_choice",
+    "question_text": "A team uses different naming, logging, and exception patterns across projects. What should the technical lead do first?",
+    "options": [
+      "Ignore it until failures increase more",
+      "Ask every developer to invent their own framework",
+      "Remove reusable components",
+      "Define architecture and engineering standards for consistency"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Standards are the first step to consistency and quality.",
+    "rationale": "Tests governance leadership."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0050",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "case_triage",
+    "question_text": "Case: Three squads deliver fast but with inconsistent quality and rising rework. What should you do first as tech lead?",
+    "options": [
+      "Allow each squad to keep own standards",
+      "Set shared standards, review gates, and reusable patterns",
+      "Pause all releases for one quarter",
+      "Focus only on UI naming style"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Common standards and gates are first controls for predictable quality.",
+    "rationale": "Tests lead-level governance start point.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-TL-0051",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the platform decision rule. Select tools based on integration fit, security, scale, and ____.",
+    "explanation": "Team capability strongly affects delivery success and maintainability.",
+    "rationale": "Tests practical platform selection governance.",
+    "blank": "Select tools based on fit, security, scale, and ____.",
+    "choices": [
+      "team capability",
+      "personal preference",
+      "logo color",
+      "vendor popularity only"
+    ],
+    "accepted_answers": [
+      "team capability"
+    ]
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0052",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "CI/CD & Release Strategy (Lead-only or Senior+)",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "Review this release log. What control should be strengthened first?",
+    "options": [
+      "Reduce logging to speed release",
+      "Skip peer review for urgent items",
+      "Deploy directly from developer machines",
+      "Enforce release checklist with rollback and smoke gates"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Recurring release misses require mandatory checklist and gate controls.",
+    "rationale": "Tests release-governance prioritization.",
+    "log_snippet": "Release\tIssue\tCount\nR1\tMissing rollback plan\t4\nR2\tNo smoke check evidence\t3\nR3\tLate config changes\t2"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0053",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "single_choice",
+    "question_text": "Which KPI best shows a tech lead is improving team delivery quality?",
+    "options": [
+      "Better standard adoption and lower production defect rate",
+      "Personal lines of code",
+      "Number of status meetings",
+      "Size of email inbox"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Team standard adoption plus fewer production defects reflects lead-level impact.",
+    "rationale": "Tests leadership KPI selection."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-TL-0054",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "multi_select",
+    "question_text": "Which actions support scalable RPA delivery at team level? Select all that apply.",
+    "options": [
+      "A. Standard architecture templates",
+      "B. Shared reusable libraries",
+      "C. Team-wide code review process",
+      "D. Different logging approach for every developer",
+      "E. CI/CD-aware deployment discipline"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "Shared standards, libraries, code review, and CI/CD discipline scale delivery.",
+    "rationale": "Tests team-level scaling practices."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-TL-0055",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "multi_select",
+    "question_text": "A lead is deciding whether to use UiPath, Power Automate, or another platform for a client. Which factors matter? Select all that apply.",
+    "options": [
+      "A. Existing ecosystem/integration fit",
+      "B. Security/governance needs",
+      "C. Team capability and maintainability",
+      "D. Random personal preference",
+      "E. Scale and support requirements"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "Platform choice should consider fit, security, team capability, and scale.",
+    "rationale": "Tests platform evaluation."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-TL-0056",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "match_pairs",
+    "question_text": "Match the lead responsibility to the most relevant outcome.\nCode review coverage\nReusable library investment\nGovernance standards\nMentoring junior engineers\nA. Improved consistency and lower defect leakage\nB. Faster delivery through shared building blocks\nC. Better long-term team capability growth\nD. Stronger alignment and predictable engineering quality",
+    "left_items": [
+      "Code review coverage",
+      "Reusable library investment",
+      "Governance standards",
+      "Mentoring junior engineers"
+    ],
+    "right_items": [
+      "A. Improved consistency and lower defect leakage",
+      "B. Faster delivery through shared building blocks",
+      "C. Better long-term team capability growth",
+      "D. Stronger alignment and predictable engineering quality"
+    ],
+    "correct_pairs": {
+      "Code review coverage": "A. Improved consistency and lower defect leakage",
+      "Reusable library investment": "B. Faster delivery through shared building blocks",
+      "Governance standards": "D. Stronger alignment and predictable engineering quality",
+      "Mentoring junior engineers": "C. Better long-term team capability growth"
+    },
+    "explanation": "Links lead responsibilities to the outcomes they drive.",
+    "rationale": "Tests governance outcomes."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-TL-0057",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "CI/CD & Release Strategy (Lead-only or Senior+)",
+    "difficulty": 4,
+    "format": "ordering",
+    "question_text": "Arrange these lead-level rollout steps for a new automation framework.",
+    "items": [
+      "Assess recurring delivery pain points",
+      "Define target architecture and standards",
+      "Build reusable shared components",
+      "Train project teams",
+      "Track adoption and quality metrics"
+    ],
+    "correct_order": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "correct_answer": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4"
+    ],
+    "explanation": "Assess, define, build, train, then measure adoption and outcomes.",
+    "rationale": "Tests rollout planning."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-TL-0058",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "match_pairs",
+    "question_text": "Place each item into the best category.\nCategories:\nGovernance artifact\nSolution artifact\nItems:\nNaming standard for workflows\nReusable login component\nRelease checklist\nClaims API integration module",
+    "left_items": [
+      "Naming standard for workflows",
+      "Reusable login component",
+      "Release checklist",
+      "Claims API integration module"
+    ],
+    "right_items": [
+      "Governance artifact",
+      "Solution artifact"
+    ],
+    "correct_pairs": {
+      "Naming standard for workflows": "Governance artifact",
+      "Reusable login component": "Solution artifact",
+      "Release checklist": "Governance artifact",
+      "Claims API integration module": "Solution artifact"
+    },
+    "explanation": "Governance artifacts define standards; solution artifacts are reusable components.",
+    "rationale": "Tests governance vs solution artifacts."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0059",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Operations & Monitoring (Senior+)",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "Which initiative should be prioritized first?",
+    "log_snippet": "Team Issue\tFrequency\tImpact\nDuplicated code across bots\tHigh\tHigh\nMinor typo in internal docs\tMedium\tLow\nInconsistent logging\tHigh\tHigh\nOne delayed status update email\tLow\tLow",
+    "options": [
+      "Cosmetic document cleanup only",
+      "Ignore duplicated code",
+      "Standardize reusable components and logging conventions",
+      "Focus only on status email formatting"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "High-frequency, high-impact issues should be prioritized first.",
+    "rationale": "Tests prioritization using impact and frequency."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0060",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this program rollout and choose the outcome.",
+    "options": [
+      "All bots become manual processes",
+      "No measurable change possible",
+      "Quality improves after shared standards and monitoring adoption",
+      "Audit controls are removed"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Standards plus monitoring reduce defects and improve predictability.",
+    "rationale": "Tests rollout outcome reasoning.",
+    "log_snippet": "Phase\tAction\n1\tShared architecture standards introduced\n2\tReusable components adopted\n3\tCentral monitoring enabled\n4\tDefect leakage down over 2 releases"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0093",
+    "role_level_min": "TechLead",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "UiPath projects across teams have inconsistent quality and high rework. What should a tech lead do first?",
+    "options": [
+      "Set common architecture standards, templates, and review gates",
+      "Let each team optimize alone",
+      "Freeze all automation work",
+      "Focus only on UI styling"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Shared standards and governance are first steps to predictable quality.",
+    "rationale": "Tests lead governance action in UiPath programs."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0094",
+    "role_level_min": "TechLead",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this UiPath capacity plan and pick the expected outcome.",
+    "options": [
+      "Month-end jobs collide and fail randomly",
+      "Queue priority plus schedule windows stabilizes peak runs",
+      "All jobs require manual trigger",
+      "Monitoring no longer needed"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Priority scheduling reduces peak contention and protects SLAs.",
+    "rationale": "Tests lead-level capacity planning reasoning.",
+    "log_snippet": "Plan\tAction\nPeak window\tCritical queue first\nRunner usage\tLicense-aware schedule\nOutcome\tSLA misses reduced"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0095",
+    "role_level_min": "TechLead",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Multiple Automation Anywhere teams are rebuilding similar components. What should a lead implement?",
+    "options": [
+      "Keep separate team solutions forever",
+      "Block reuse to protect autonomy",
+      "Shared reusable component library with governance ownership",
+      "Require manual work for common steps"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "Shared libraries with ownership reduce duplication and support quality.",
+    "rationale": "Tests portfolio-level reuse strategy in AA."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0096",
+    "role_level_min": "TechLead",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 4,
+    "format": "case_triage",
+    "question_text": "Case: Production incidents rise after AA releases. What should be implemented first?",
+    "options": [
+      "Release straight to prod to save time",
+      "Disable run history",
+      "Remove release checklist",
+      "Staged rollout with smoke checks and rollback plan"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Staged rollout and rollback readiness are first-line release controls.",
+    "rationale": "Tests incident-prevention governance decision.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-TL-0097",
+    "role_level_min": "TechLead",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 4,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete security baseline. For Python bots handling PII, enforce least privilege, secret storage, and ____ logs.",
+    "explanation": "Audit logs are required for accountability and compliance.",
+    "rationale": "Tests security governance essentials.",
+    "blank": "Enforce least privilege, secure secrets, and ____ logs.",
+    "choices": [
+      "audit",
+      "silent",
+      "temporary",
+      "personal"
+    ],
+    "accepted_answers": [
+      "audit"
+    ]
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0098",
+    "role_level_min": "TechLead",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Nightly Python workload grows from 100k to 1M records. What architecture is best next step?",
+    "options": [
+      "Keep single-thread script and hope hardware solves it",
+      "Queue-based worker model with idempotency and retry controls",
+      "Split file manually every night",
+      "Remove validation checks"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Worker queues with safe retries scale better and keep data integrity.",
+    "rationale": "Tests scale architecture decisions."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0099",
+    "role_level_min": "TechLead",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Hundreds of Power Automate flows are built by many teams with little control. What is the best first governance action?",
+    "options": [
+      "Allow all connectors everywhere",
+      "Turn off run history",
+      "Apply DLP policies and managed solution process",
+      "Remove environment separation"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "DLP plus managed solution lifecycle creates core enterprise guardrails.",
+    "rationale": "Tests enterprise governance strategy in Power Automate."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0100",
+    "role_level_min": "TechLead",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this Power Automate operations model and pick the best conclusion.",
+    "options": [
+      "Weekly manual checks are enough for SLA flows",
+      "Disable alerts to reduce noise",
+      "Incidents should be handled ad hoc",
+      "Central monitoring and alert routing improves MTTR"
+    ],
+    "correct_answer": [
+      "D"
+    ],
+    "explanation": "Central monitoring with routing speeds detection and recovery.",
+    "rationale": "Tests lead-level operations readiness.",
+    "log_snippet": "Control\tStatus\nCentral dashboard\tEnabled\nAlert routing\tOn-call team\nRunbook link\tAttached\nOutcome\tFaster recovery"
+  }
+]

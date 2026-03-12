@@ -1,0 +1,68 @@
+"use client";
+
+import { questionRegistry } from "@/lib/question-types";
+import { StagePanel } from "@/components/scene/StagePanel";
+import { StatusPill } from "@/components/primitives/StatusPill";
+
+interface QuestionRuntimeCardProps {
+  question: any;
+  answer: any;
+  onChange: (value: any) => void;
+}
+
+const formatLabel: Record<string, string> = {
+  single_select: "Single select",
+  multi_select: "Multi select",
+  ordering: "Ordering",
+  matching: "Matching",
+  fill_blank_constrained: "Fill in the blank",
+  log_analysis_single_select: "Log analysis",
+  trace_execution: "Trace execution",
+  best_next_step: "Best next step",
+  case_triage: "Case triage"
+};
+
+const formatHint: Record<string, string> = {
+  single_select: "Choose the one best answer.",
+  multi_select: "Select all options that are correct.",
+  ordering: "Arrange the items in the safest working order.",
+  matching: "Match each item once.",
+  fill_blank_constrained: "Pick the most precise completion.",
+  log_analysis_single_select: "Base your answer on the log evidence only.",
+  trace_execution: "Follow the sequence and pick the final outcome.",
+  best_next_step: "Choose the highest-impact next action.",
+  case_triage: "Prioritize the first action that reduces risk."
+};
+
+export function QuestionRuntimeCard({ question, answer, onChange }: QuestionRuntimeCardProps) {
+  const formatKey = String(question?.format || "") as keyof typeof questionRegistry;
+  const def = questionRegistry[formatKey];
+  if (!def) {
+    return (
+      <StagePanel>
+        <p className="text-red-200">Unsupported question format: {String(question.format)}</p>
+      </StagePanel>
+    );
+  }
+  const Renderer = def.Renderer as any;
+  return (
+    <StagePanel className="space-y-5 border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))]">
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusPill label={question.category} tone="blue" />
+          <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
+        </div>
+        <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{question.prompt}</h3>
+        <p className="text-sm text-slate-300">
+          {formatHint[question.format] || "Answer carefully and move to the next question."}
+        </p>
+        {question.logSnippet ? (
+          <pre className="overflow-auto rounded-[18px] border border-white/10 bg-black/55 p-4 text-xs leading-6 text-blue-100">
+            <code>{question.logSnippet}</code>
+          </pre>
+        ) : null}
+      </div>
+      <Renderer question={question} answer={answer} onChange={onChange} />
+    </StagePanel>
+  );
+}
