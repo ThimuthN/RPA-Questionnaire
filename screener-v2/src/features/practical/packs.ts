@@ -38,18 +38,18 @@ export interface PracticalPack {
 const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks: PracticalSubtask[] }> = {
   UiPath: {
     title: "UiPath Incident Drill",
-    prompt: "Invoice posting duplicates after retry in Orchestrator. Stabilize safely.",
+    prompt: "A UiPath bot posts invoices into an ERP. After a short ERP issue, retries caused some invoices to be posted twice.",
     subtasks: [
       {
         id: "first_action",
         type: "single_select",
         label: "Best first action",
         points: 2,
-        expected: "pause_and_trace",
+        expected: "pause_and_find",
         options: [
-          { id: "pause_and_trace", label: "Pause queue and trace duplicate transaction id" },
-          { id: "raise_retry_limit", label: "Increase retries globally" },
-          { id: "manual_recovery_only", label: "Move all items to manual processing" }
+          { id: "pause_and_find", label: "Pause the queue, find the affected transaction references, and stop more duplicates" },
+          { id: "increase_retry", label: "Increase retry settings in Orchestrator so the backlog clears faster" },
+          { id: "continue_and_fix", label: "Let the bot continue and fix duplicate invoices later" }
         ]
       },
       {
@@ -58,61 +58,61 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         label: "Map failure to safest control",
         points: 4,
         leftItems: [
-          "Selector fails after UI patch",
-          "API returns 429",
-          "Timeout then duplicate post"
+          "Selector breaks after an ERP screen update",
+          "The bot times out after clicking Save, but the invoice may already be posted",
+          "The same invoice gets processed twice after a retry"
         ],
         rightOptions: [
-          { id: "selector_hardening", label: "Use stable selector/anchor strategy" },
-          { id: "backoff_policy", label: "Use bounded retry with exponential backoff" },
-          { id: "idempotency_key", label: "Enforce transaction idempotency key check" }
+          { id: "stable_selector", label: "Fix the selector using stable attributes and test before rerun" },
+          { id: "check_posted", label: "Check whether the invoice was already posted before retrying" },
+          { id: "unique_check", label: "Add a unique invoice check before posting again" }
         ],
         expected: {
-          "Selector fails after UI patch": "selector_hardening",
-          "API returns 429": "backoff_policy",
-          "Timeout then duplicate post": "idempotency_key"
+          "Selector breaks after an ERP screen update": "stable_selector",
+          "The bot times out after clicking Save, but the invoice may already be posted": "check_posted",
+          "The same invoice gets processed twice after a retry": "unique_check"
         }
       },
       {
-        id: "stack_control",
+        id: "execution_control",
         type: "single_select",
         label: "Best UiPath execution control",
         points: 2,
-        expected: "reframework_txn_guard",
+        expected: "transaction_processing",
         options: [
-          { id: "reframework_txn_guard", label: "REFramework retry with transaction guard key" },
-          { id: "fixed_delay", label: "Add fixed delay before every transaction" },
-          { id: "disable_retry", label: "Disable retries to avoid duplicates" }
+          { id: "transaction_processing", label: "Use transaction-based processing with duplicate checks and controlled retries" },
+          { id: "try_catch_whole", label: "Put the full queue in one Try Catch and restart the whole job on error" },
+          { id: "delay_every", label: "Add a delay after every activity" }
         ]
       },
       {
-        id: "release_gate",
+        id: "required_gate",
         type: "single_select",
         label: "Required gate before resuming prod",
         points: 2,
-        expected: "canary_with_rollback",
+        expected: "small_test_batch",
         options: [
-          { id: "canary_with_rollback", label: "Canary run with rollback plan and metric watch" },
-          { id: "resume_full_load", label: "Resume all queues immediately" },
-          { id: "skip_post_incident", label: "Skip incident review and continue" }
+          { id: "small_test_batch", label: "Run a small test batch, confirm no duplicates, then resume slowly" },
+          { id: "resume_full", label: "Resume the full queue once the selector is fixed" },
+          { id: "restart_robots", label: "Restart robots on full load immediately" }
         ]
       }
     ]
   },
   AutomationAnywhere: {
     title: "Automation Anywhere Incident Drill",
-    prompt: "Credential rotation + timeout spikes are breaking report bots. Stabilize safely.",
+    prompt: "An Automation Anywhere bot creates daily reports and uploads them to a portal. After a password change and runner issues, some reports fail and some reruns overwrite files.",
     subtasks: [
       {
         id: "first_action",
         type: "single_select",
         label: "Best first action",
         points: 2,
-        expected: "contain_and_rotate",
+        expected: "stop_verify_isolate",
         options: [
-          { id: "contain_and_rotate", label: "Contain runs, rotate secret, move to Credential Vault" },
-          { id: "hardcode_secret", label: "Hardcode a temporary credential" },
-          { id: "ignore_timeout", label: "Ignore timeout alerts for now" }
+          { id: "stop_verify_isolate", label: "Stop scheduled runs, verify the updated credential, and isolate the affected reports" },
+          { id: "hardcode_password", label: "Hardcode the new password so reports can resume quickly" },
+          { id: "add_runners", label: "Add more runners before checking the failures" }
         ]
       },
       {
@@ -121,61 +121,61 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         label: "Map failure to safest control",
         points: 4,
         leftItems: [
-          "Credential exposed in file",
-          "One report fails by network timeout",
-          "Runner drift between environments"
+          "A credential is stored in a file on the runner",
+          "One upload fails because the network drops",
+          "The bot works on one runner but fails on another"
         ],
         rightOptions: [
-          { id: "vault_rotation", label: "Rotate secret and enforce Credential Vault usage" },
-          { id: "bounded_item_retry", label: "Retry failed item with cap and continue queue" },
-          { id: "env_config", label: "Use environment-scoped config/device variables" }
+          { id: "vault_and_update", label: "Move it to Credential Vault and update the bot to use it" },
+          { id: "checkpoint_retry", label: "Retry only the failed report using checkpointed progress" },
+          { id: "compare_setup", label: "Compare bot version, config, and runner setup before rerun" }
         ],
         expected: {
-          "Credential exposed in file": "vault_rotation",
-          "One report fails by network timeout": "bounded_item_retry",
-          "Runner drift between environments": "env_config"
+          "A credential is stored in a file on the runner": "vault_and_update",
+          "One upload fails because the network drops": "checkpoint_retry",
+          "The bot works on one runner but fails on another": "compare_setup"
         }
       },
       {
-        id: "stack_control",
+        id: "execution_control",
         type: "single_select",
-        label: "Best AA execution control",
+        label: "Best Automation Anywhere execution control",
         points: 2,
-        expected: "checkpoint_and_resume",
+        expected: "checkpoint_tracking",
         options: [
-          { id: "checkpoint_and_resume", label: "Checkpoint progress and resume per work item" },
-          { id: "restart_full_batch", label: "Restart full batch on single failure" },
-          { id: "remove_logging", label: "Reduce logs to improve speed" }
+          { id: "checkpoint_tracking", label: "Use checkpoints and track each report so finished work is not rerun" },
+          { id: "restart_whole", label: "Restart the whole batch when one report fails" },
+          { id: "keep_running", label: "Keep going without tracking completed reports" }
         ]
       },
       {
-        id: "release_gate",
+        id: "required_gate",
         type: "single_select",
         label: "Required gate before resuming prod",
         points: 2,
-        expected: "pilot_window",
+        expected: "pilot_scale",
         options: [
-          { id: "pilot_window", label: "Pilot window with alert threshold and rollback trigger" },
-          { id: "full_scale_immediately", label: "Scale all runners immediately" },
-          { id: "defer_validation", label: "Resume now, validate later" }
+          { id: "pilot_scale", label: "Run a small pilot, check report accuracy and overwrite rate, then scale up" },
+          { id: "return_all", label: "Return it to all runners after one successful run" },
+          { id: "resume_and_wait", label: "Resume and wait for operations to report issues" }
         ]
       }
     ]
   },
   Python: {
     title: "Python Automation Incident Drill",
-    prompt: "Batch API posting is flaky and occasionally double-posts on retry.",
+    prompt: "A Python batch job reads records from a file and sends them to an API. During temporary failures, retries sometimes create duplicate submissions, and one input file is sometimes incomplete.",
     subtasks: [
       {
         id: "first_action",
         type: "single_select",
         label: "Best first action",
         points: 2,
-        expected: "stop_and_reconcile",
+        expected: "pause_and_check_duplicates",
         options: [
-          { id: "stop_and_reconcile", label: "Pause job and reconcile duplicate transaction ids" },
-          { id: "increase_threads", label: "Increase thread count to clear backlog" },
-          { id: "disable_exceptions", label: "Suppress exceptions and continue" }
+          { id: "pause_and_check_duplicates", label: "Pause the batch, identify affected record IDs, and check for duplicate submissions before replay" },
+          { id: "increase_threads", label: "Increase thread count so backlog finishes faster" },
+          { id: "catch_all", label: "Catch all exceptions and let the batch continue" }
         ]
       },
       {
@@ -184,19 +184,19 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         label: "Map failure to safest control",
         points: 4,
         leftItems: [
-          "HTTP 429 throttling",
-          "Partial file read during handoff",
-          "Retry causes duplicate API side effect"
+          "The API starts returning HTTP 429",
+          "The batch reads a file before the upstream copy is complete",
+          "A POST may already have succeeded before retry"
         ],
         rightOptions: [
-          { id: "backoff_jitter", label: "Bounded backoff with jitter and max attempts" },
-          { id: "atomic_handoff", label: "Atomic temp-write then rename ready file" },
-          { id: "idempotency_header", label: "Idempotency key/header with dedupe check" }
+          { id: "backoff_and_slowdown", label: "Use bounded retries with backoff and slow down requests" },
+          { id: "check_file_complete", label: "Check that the file is complete before processing" },
+          { id: "idempotent_key", label: "Use an idempotency key or duplicate check before posting again" }
         ],
         expected: {
-          "HTTP 429 throttling": "backoff_jitter",
-          "Partial file read during handoff": "atomic_handoff",
-          "Retry causes duplicate API side effect": "idempotency_header"
+          "The API starts returning HTTP 429": "backoff_and_slowdown",
+          "The batch reads a file before the upstream copy is complete": "check_file_complete",
+          "A POST may already have succeeded before retry": "idempotent_key"
         }
       },
       {
@@ -204,41 +204,41 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         type: "single_select",
         label: "Best Python execution control",
         points: 2,
-        expected: "structured_retry_wrapper",
+        expected: "per_record_retries",
         options: [
-          { id: "structured_retry_wrapper", label: "Structured retry wrapper + correlation id logging" },
-          { id: "sleep_only", label: "Use fixed sleep before each API call" },
-          { id: "retry_forever", label: "Retry forever without upper bound" }
+          { id: "per_record_retries", label: "Use per-record retries with backoff, clear tracking, and duplicate-safe posting" },
+          { id: "fixed_sleep", label: "Add a fixed sleep before every API call" },
+          { id: "restart_all", label: "Restart the whole batch whenever one record fails" }
         ]
       },
       {
-        id: "release_gate",
+        id: "required_gate",
         type: "single_select",
         label: "Required gate before resuming prod",
         points: 2,
-        expected: "canary_and_slo_watch",
+        expected: "small_monitored_batch",
         options: [
-          { id: "canary_and_slo_watch", label: "Canary batch with SLO/error budget watch" },
-          { id: "resume_all_partitions", label: "Resume all partitions immediately" },
-          { id: "disable_alerts", label: "Disable alerts during catch-up" }
+          { id: "small_monitored_batch", label: "Run a small monitored batch, check duplicates and errors, then scale up" },
+          { id: "resume_partitions", label: "Resume all partitions once one record succeeds" },
+          { id: "disable_alerts", label: "Turn off alerts during catch-up" }
         ]
       }
     ]
   },
   PowerAutomate: {
     title: "Power Automate Incident Drill",
-    prompt: "Flow retries are creating duplicate approvals during connector throttling.",
+    prompt: "A Power Automate flow creates approvals from a SharePoint list. During connector throttling, retries and overlapping runs started creating duplicate approvals.",
     subtasks: [
       {
         id: "first_action",
         type: "single_select",
         label: "Best first action",
         points: 2,
-        expected: "pause_and_trace",
+        expected: "turn_off_trigger",
         options: [
-          { id: "pause_and_trace", label: "Pause trigger and trace duplicate correlation ids" },
-          { id: "increase_parallelism", label: "Increase parallelism to clear queue" },
-          { id: "remove_retry", label: "Remove retry policy completely" }
+          { id: "turn_off_trigger", label: "Turn off the trigger, identify duplicate runs, and isolate the affected items" },
+          { id: "increase_concurrency", label: "Increase trigger concurrency so pending approvals process faster" },
+          { id: "remove_retries", label: "Remove all retries from the flow immediately" }
         ]
       },
       {
@@ -247,19 +247,19 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         label: "Map failure to safest control",
         points: 4,
         leftItems: [
-          "Connector returns 429",
-          "Approval email sent twice on retry",
-          "Shared gateway drift across envs"
+          "A connector starts returning 429 errors",
+          "The same approval email is sent twice after retry",
+          "The flow behaves differently in Dev and Prod"
         ],
         rightOptions: [
-          { id: "bounded_backoff", label: "Bounded exponential backoff policy" },
-          { id: "idempotent_guard", label: "Status/idempotency guard before send action" },
-          { id: "owned_gateway", label: "Owned gateway config with controlled change" }
+          { id: "bounded_retry", label: "Use bounded retry/backoff and reduce concurrency pressure" },
+          { id: "duplicate_check", label: "Add a check so the flow confirms whether an approval already exists before sending again" },
+          { id: "env_check", label: "Check connection references, environment variables, and dependencies" }
         ],
         expected: {
-          "Connector returns 429": "bounded_backoff",
-          "Approval email sent twice on retry": "idempotent_guard",
-          "Shared gateway drift across envs": "owned_gateway"
+          "A connector starts returning 429 errors": "bounded_retry",
+          "The same approval email is sent twice after retry": "duplicate_check",
+          "The flow behaves differently in Dev and Prod": "env_check"
         }
       },
       {
@@ -267,23 +267,23 @@ const stackScenarios: Record<StackId, { title: string; prompt: string; subtasks:
         type: "single_select",
         label: "Best Power Automate execution control",
         points: 2,
-        expected: "child_flow_guarded",
+        expected: "controlled_execution",
         options: [
-          { id: "child_flow_guarded", label: "Child flow with guarded retries and concurrency cap" },
-          { id: "manual_retrigger", label: "Manual retrigger by operators only" },
-          { id: "disable_tracking", label: "Disable run tracking to reduce noise" }
+          { id: "controlled_execution", label: "Use controlled execution with limited concurrency and duplicate-safe checks" },
+          { id: "manual_retrigger", label: "Ask operators to manually retrigger failed runs" },
+          { id: "disable_history", label: "Disable run history during the incident" }
         ]
       },
       {
-        id: "release_gate",
+        id: "required_gate",
         type: "single_select",
         label: "Required gate before resuming prod",
         points: 2,
-        expected: "pilot_then_promote",
+        expected: "small_pilot",
         options: [
-          { id: "pilot_then_promote", label: "Pilot scope, validate metrics, then promote" },
-          { id: "global_enable", label: "Enable globally in one step" },
-          { id: "skip_postmortem", label: "Skip postmortem to save time" }
+          { id: "small_pilot", label: "Re-enable on a small pilot, confirm approvals are unique, then expand" },
+          { id: "full_restart", label: "Re-enable full flow once one item works" },
+          { id: "resume_complaint", label: "Resume and wait for users to report issues" }
         ]
       }
     ]

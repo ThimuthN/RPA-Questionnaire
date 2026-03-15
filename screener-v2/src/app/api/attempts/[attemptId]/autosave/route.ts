@@ -26,7 +26,7 @@ export async function PATCH(
     const body = autosaveSchema.parse(await request.json());
     const updated = await patchAttempt(attemptId, body);
     if (!updated) {
-      return NextResponse.json({ ok: false, message: "Attempt not found." }, { status: 404 });
+      return NextResponse.json({ ok: false, message: "Attempt not found or already submitted." }, { status: 404 });
     }
     return NextResponse.json({
       ok: true,

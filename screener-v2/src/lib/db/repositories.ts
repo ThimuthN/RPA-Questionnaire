@@ -393,6 +393,9 @@ export async function patchAttempt(
   if (!currentRow) return null;
 
   const current = mapAttempt(currentRow);
+  if (current.status === "submitted") {
+    return null;
+  }
   const updated = await prisma.attempt.update({
     where: { id: attemptId },
     data: {
@@ -428,6 +431,9 @@ export async function submitAttempt(input: {
   if (!currentRow) return null;
 
   const current = mapAttempt(currentRow);
+  if (current.status === "submitted") {
+    return null;
+  }
   const practicalPack = pickPracticalPack(current.roleId, current.stacks);
   const practicalQuestion = buildPracticalQuestion(practicalPack);
   const practicalScore = scorePracticalQuestion(practicalQuestion, current.practicalAnswer);

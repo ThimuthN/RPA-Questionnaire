@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
 import { pickPracticalPack } from "@/features/practical/packs";
 import { getAttempt } from "@/lib/db/repositories";
@@ -21,6 +22,9 @@ export default async function AttemptRuntimePage({
         </StagePanel>
       </section>
     );
+  }
+  if (attempt.status === "submitted") {
+    redirect(`/a/${slug}/result/${attempt.id}`);
   }
   const questions = getQuestionsByIds(attempt.coreQuestionIds);
   const practicalPack = pickPracticalPack(attempt.roleId, attempt.stacks);
