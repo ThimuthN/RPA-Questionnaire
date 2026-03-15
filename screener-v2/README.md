@@ -32,10 +32,13 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
    - `npm run dev`
 
 ## Deploy
-- Vercel is configured to run:
-  - `npm run build:vercel`
-- That executes:
-  - `prisma migrate deploy`
-  - `next build`
+- From this folder, use:
+  - `npm run deploy:preview`
+  - `npm run deploy:prod`
+
+## Notes for Windows
+- If `npm install` ever hits a Prisma `EPERM ... query_engine-windows.dll.node` lock:
+  - close running `next dev` / `node` processes
+  - run `npm run prisma:generate`
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for the exact Neon + Vercel steps.

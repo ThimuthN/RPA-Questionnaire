@@ -10,10 +10,12 @@
     "lint": "next lint",
     "clean": "node scripts/clean-next.mjs",
     "validate:questions": "node scripts/validate-question-bank.mjs",
-    "postinstall": "prisma generate",
+    "postinstall": "node scripts/postinstall-prisma.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy"
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "deploy:preview": "npx vercel --cwd .. --yes",
+    "deploy:prod": "npx vercel --cwd .. --prod --yes"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

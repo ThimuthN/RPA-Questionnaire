@@ -23,7 +23,12 @@ npm run prisma:migrate:deploy
 - Push the repo to GitHub.
 - Import the project into Vercel.
 - Confirm the environment variables are present for Preview and Production.
-- Deploy.
+- From `screener-v2`, run:
+```bash
+npm run deploy:preview
+# or
+npm run deploy:prod
+```
 
 ## Notes
 - Invite links and employee verify URLs use `APP_URL` when present.
