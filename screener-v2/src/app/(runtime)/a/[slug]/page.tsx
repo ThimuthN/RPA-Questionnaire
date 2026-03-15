@@ -7,15 +7,15 @@ import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 
-export default async function InviteLandingPage({
+export default function InviteLandingPage({
   params,
   searchParams
 }: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: { slug: string };
+  searchParams: Record<string, string | string[] | undefined>;
 }) {
-  const { slug } = await params;
-  const query = await searchParams;
+  const { slug } = params;
+  const query = searchParams;
   const token = typeof query.t === "string" ? query.t : "";
   const passcode = typeof query.passcode === "string" ? query.passcode : "";
   const startNow = typeof query.startNow === "string" ? query.startNow : "";
@@ -31,7 +31,7 @@ export default async function InviteLandingPage({
 
   return (
     <SceneTransition>
-      <SceneShell variant="run" eyebrow="Assessment Briefing" title="Your 30-minute mission starts here.">
+      <SceneShell variant="run" eyebrow="Assessment Briefing" title="This assessment takes about 30 minutes, and your answers will be saved automatically as you go">
         <div className="mx-auto max-w-3xl">
           <StagePanel className="space-y-5">
             <p className="text-slate-200">20-minute core + 10-minute practical. Autosave is enabled.</p>

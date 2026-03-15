@@ -1,73 +1,73 @@
 export const copy = {
   nav: {
-    create: "Create test",
-    run: "Run test",
+    create: "Create assessment",
+    run: "Start assessment",
     results: "Results"
   },
   landing: {
-    headline: "Role-based screening in 30 minutes",
-    subtext: "20-minute core + 10-minute practical. Auto-scored and ready to share.",
-    primaryCta: "Create test",
-    secondaryCta: "Run test"
+    headline: "A better way to assess candidates",
+    subtext: "Includes core and practical sections, with results ready to review.",
+    primaryCta: "Create assessment",
+    secondaryCta: "Start assessment"
   },
   create: {
-    eyebrow: "Create test",
-    title: "Set up the test",
-    subtitle: "Role, stack, and sharing in one place.",
+    eyebrow: "Create assessment",
+    title: "Set up your assessment",
+    subtitle: "Choose the role, skills, and sharing details.",
     role: "Role",
-    stack: "Stack",
-    advanced: "Advanced settings",
+    stack: "Skills",
+    advanced: "More options",
     summary: "Summary",
-    share: "Share test",
-    generate: "Generate link",
+    share: "Share assessment",
+    generate: "Create link",
     startNow: "Start now",
     ready: "Ready to share",
-    testLink: "Test link",
-    testId: "Test ID",
-    passcode: "Passcode",
+    testLink: "Assessment link",
+    testId: "Assessment ID",
+    passcode: "Access code",
     copyLink: "Copy link",
     copyDetails: "Copy details",
-    startTest: "Start test"
+    startTest: "Begin assessment"
   },
   run: {
-    eyebrow: "Run test",
-    title: "Start a test",
-    subtitle: "30 minutes total. Autosave is on."
+    eyebrow: "Start assessment",
+    title: "Begin",
+    subtitle: "This assessment takes around 30 minutes. Your answers are saved automatically."
   },
   runModes: {
-    link: "Link",
-    testId: "Test ID",
-    live: "Live call",
-    employee: "Employee",
-    selectedMethod: "Selected method",
-    nextStep: "Next step",
-    testFlow: "Test flow",
-    start: "Start test"
+    link: "Use a link",
+    testId: "Use an assessment ID",
+    live: "Join a live session",
+    employee: "Team access",
+    selectedMethod: "Selected option",
+    nextStep: "What’s next",
+    testFlow: "What to expect",
+    start: "Continue"
   },
   runtime: {
-    core: "Core",
-    practical: "Practical",
-    navigator: "Navigator",
+    core: "Core section",
+    practical: "Practical section",
+    navigator: "Questions",
     back: "Back",
-    timeLeft: "Time Left",
+    timeLeft: "Time left",
     startPractical: "Start practical",
-    reviewSubmit: "Review & submit",
-    submitTitle: "Submit test?",
+    reviewSubmit: "Review and submit",
+    submitTitle: "Submit assessment?",
     finalScore: "Final score",
     outcome: "Outcome",
-    openResult: "Open result",
+    openResult: "View results",
     finish: "Finish"
   },
   results: {
     eyebrow: "Results",
     title: "Results",
-    subtitle: "Review submissions and decisions.",
+    subtitle: "Review completed assessments and outcomes.",
     finalScore: "Final score",
     outcome: "Outcome",
-    topStrength: "Top strength",
-    mainRisk: "Main risk",
+    topStrength: "Strongest area",
+    mainRisk: "Main concern",
     confidence: "Confidence",
-    categoryBreakdown: "Category breakdown",
-    watchout: "Watchout"
+    categoryBreakdown: "Score breakdown",
+    watchout: "Things to watch"
   }
 } as const;

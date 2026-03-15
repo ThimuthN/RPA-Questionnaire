@@ -23,8 +23,8 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Innobot Premium Screener v1",
-  description: "Role-aware deterministic assessment runtime with premium UX."
+  title: "Assessment Hub",
+  description: "A platform for creating, taking, and reviewing technical assessments."
 };
 
 export default function RootLayout({
@@ -39,7 +39,7 @@ export default function RootLayout({
           <header className="sticky top-0 z-30 border-b border-white/10 bg-ink-950/68 backdrop-blur-xl">
             <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
               <Link href="/" className="font-display text-lg tracking-wide text-white">
-                Innobot Premium Screener
+                Assessment Hub
               </Link>
               <MainNav />
             </nav>
