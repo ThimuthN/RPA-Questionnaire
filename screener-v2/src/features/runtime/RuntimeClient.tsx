@@ -7,7 +7,7 @@ import { PracticalRuntimeCard } from "@/components/runtime/PracticalRuntimeCard"
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { ActionRail } from "@/components/primitives/ActionRail";
-import { practicalTaskDef } from "@/lib/question-types/practical-task";
+import { isPracticalSubtaskAnswered } from "@/features/practical/grading";
 import type { PracticalPack } from "@/features/practical/packs";
 import type { Question, ResultSummary, RoleId, StackId } from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
@@ -71,11 +71,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const unansweredCount = totalQuestions - answeredCount;
   const practicalTotal = props.practicalPack.subtasks.length;
   const practicalCompleted = props.practicalPack.subtasks.filter((subtask) => {
-    const value = practicalAnswer[subtask.id];
-    if (value == null) return false;
-    if (typeof value === "string") return value.trim().length > 0;
-    if (Array.isArray(value)) return value.length > 0;
-    return true;
+    return isPracticalSubtaskAnswered(subtask, practicalAnswer[subtask.id]);
   }).length;
   const coreRatio = totalQuestions ? answeredCount / totalQuestions : 0;
   const practicalRatio = practicalTotal ? practicalCompleted / practicalTotal : 0;
@@ -213,20 +209,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
     setUiStatus(RuntimeUiStatus.Submitting);
     if (auto) setShowSubmitReview(false);
 
-    const practicalQuestion = {
-      id: `${props.practicalPack.id}_practical`,
-      prompt: props.practicalPack.prompt,
-      points: props.practicalPack.subtasks.reduce((sum, item) => sum + Number(item.points || 0), 0),
-      subtasks: props.practicalPack.subtasks
-    };
-    const scored = practicalTaskDef.score(practicalQuestion, practicalAnswer);
     const response = await fetch(`/api/attempts/${props.attemptId}/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        practicalEarned: scored.pointsEarned,
-        practicalPossible: practicalQuestion.points
-      })
+      body: JSON.stringify({})
     });
     const data = (await response.json()) as { ok: boolean; result: ResultSummary };
     if (data.ok) {

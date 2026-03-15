@@ -2,63 +2,55 @@ import { z } from "zod";
 import type { QuestionTypeDef } from "@/lib/question-types/types";
 import { PracticalTaskRenderer } from "@/components/runtime/renderers/PracticalTaskRenderer";
 import { GenericReviewRenderer } from "@/components/runtime/renderers/ReviewRenderer";
+import {
+  scorePracticalQuestion,
+  validatePracticalAnswer
+} from "@/features/practical/grading";
+
+const practicalOptionSchema = z.object({
+  id: z.string(),
+  label: z.string()
+});
+
+const practicalSingleSelectSubtaskSchema = z.object({
+  id: z.string(),
+  type: z.literal("single_select"),
+  label: z.string(),
+  points: z.number(),
+  expected: z.string(),
+  options: z.array(practicalOptionSchema).min(2)
+});
+
+const practicalMatchingSubtaskSchema = z.object({
+  id: z.string(),
+  type: z.literal("matching"),
+  label: z.string(),
+  points: z.number(),
+  leftItems: z.array(z.string()).min(1),
+  rightOptions: z.array(practicalOptionSchema).min(2),
+  expected: z.record(z.string(), z.string())
+});
+
+const practicalSubtaskSchema = z.union([
+  practicalSingleSelectSubtaskSchema,
+  practicalMatchingSubtaskSchema
+]);
 
 const practicalSchema = z.object({
   id: z.string(),
   prompt: z.string(),
   points: z.number(),
-  subtasks: z.array(
-    z.object({
-      id: z.string(),
-      type: z.enum(["text", "ordering", "single_select"]),
-      label: z.string(),
-      points: z.number(),
-      expected: z.any().optional(),
-      items: z.array(z.string()).optional()
-    })
-  )
+  subtasks: z.array(practicalSubtaskSchema)
 });
 
 const practicalAnswerSchema = z.record(z.string(), z.any());
 
 function validatePractical(question: any, answer: Record<string, unknown>) {
-  const subtasks = Array.isArray(question.subtasks) ? question.subtasks : [];
-  const missing = subtasks.filter((task: any) => answer[task.id] == null || answer[task.id] === "");
-  if (missing.length) {
-    return { ok: false, reason: `Complete all practical subtasks (${missing.length} missing).` };
-  }
-  return { ok: true };
+  return validatePracticalAnswer(question, answer);
 }
 
 function scorePractical(question: any, answer: Record<string, unknown>) {
-  const subtasks = Array.isArray(question.subtasks) ? question.subtasks : [];
-  let earned = 0;
-  let possible = 0;
-  for (const task of subtasks) {
-    const points = Number(task.points || 1);
-    possible += points;
-    const expected = task.expected;
-    const actual = answer[task.id];
-    if (task.type === "ordering") {
-      const exp = JSON.stringify(expected || []);
-      const act = JSON.stringify(actual || []);
-      if (exp === act) earned += points;
-      continue;
-    }
-    if (Array.isArray(expected)) {
-      if (expected.includes(actual)) earned += points;
-      continue;
-    }
-    if (String(expected || "").toLowerCase() === String(actual || "").toLowerCase()) {
-      earned += points;
-    }
-  }
-  const normalized = possible ? earned / possible : 0;
-  return {
-    normalized,
-    pointsEarned: Math.round(earned * 100) / 100,
-    isCorrect: normalized >= 0.999
-  };
+  return scorePracticalQuestion(question, answer);
 }
 
 function practicalReview(question: any, answer: Record<string, unknown>) {

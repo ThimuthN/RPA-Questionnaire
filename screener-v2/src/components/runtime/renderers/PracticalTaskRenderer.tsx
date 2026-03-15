@@ -12,44 +12,80 @@ export function PracticalTaskRenderer({ question, answer, onChange }: BaseQuesti
         const key = String(task.id || task.label || Math.random());
         const taskType = String(task.type || "text");
         const current = value[key];
-        if (taskType === "ordering") {
-          const items = Array.isArray(task.items) ? task.items : [];
+        if (taskType === "single_select") {
+          const options = Array.isArray(task.options) ? task.options : [];
           return (
             <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
               <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
-              <select
-                className="w-full rounded-md border border-white/20 bg-ink-950 px-3 py-2 text-slate-100"
-                value={Array.isArray(current) ? JSON.stringify(current) : ""}
-                onChange={(event) =>
-                  onChange({
-                    ...value,
-                    [key]: JSON.parse(event.target.value)
-                  })
-                }
-              >
-                <option value="">Select ordering</option>
-                {[items, [...items].reverse()].map((candidate, index) => (
-                  <option key={`${key}-${index}`} value={JSON.stringify(candidate.map((_: any, i: number) => i))}>
-                    {candidate.join(" -> ")}
-                  </option>
+              <div className="space-y-2">
+                {options.map((option: any) => (
+                  <label key={`${key}-${option.id}`} className="flex items-center gap-2 text-sm text-slate-200">
+                    <input
+                      type="radio"
+                      name={key}
+                      value={String(option.id)}
+                      checked={String(current || "") === String(option.id)}
+                      onChange={() =>
+                        onChange({
+                          ...value,
+                          [key]: String(option.id)
+                        })
+                      }
+                    />
+                    <span>{option.label}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
           );
         }
+
+        if (taskType === "matching") {
+          const leftItems = Array.isArray(task.leftItems) ? task.leftItems : [];
+          const rightOptions = Array.isArray(task.rightOptions) ? task.rightOptions : [];
+          const currentMap =
+            current && typeof current === "object" && !Array.isArray(current)
+              ? (current as Record<string, unknown>)
+              : {};
+
+          return (
+            <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
+              <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
+              <div className="space-y-2">
+                {leftItems.map((left: string) => (
+                  <div key={`${key}-${left}`} className="grid gap-2 md:grid-cols-[1fr_1fr] md:items-center">
+                    <p className="text-sm text-slate-200">{left}</p>
+                    <select
+                      className="w-full rounded-md border border-white/20 bg-ink-950 px-3 py-2 text-slate-100"
+                      value={String(currentMap[left] || "")}
+                      onChange={(event) =>
+                        onChange({
+                          ...value,
+                          [key]: {
+                            ...currentMap,
+                            [left]: event.target.value
+                          }
+                        })
+                      }
+                    >
+                      <option value="">Select control</option>
+                      {rightOptions.map((option: any) => (
+                        <option key={`${left}-${option.id}`} value={String(option.id)}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
             <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
-            <input
-              className="w-full rounded-md border border-white/20 bg-ink-950 px-3 py-2 text-slate-100"
-              value={String(current || "")}
-              onChange={(event) =>
-                onChange({
-                  ...value,
-                  [key]: event.target.value
-                })
-              }
-            />
+            <p className="text-sm text-amber-200">Unsupported practical task type.</p>
           </div>
         );
       })}

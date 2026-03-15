@@ -5,6 +5,8 @@ import { buildSelection } from "@/lib/assessment-engine/selection";
 import { buildResultSummary } from "@/lib/assessment-engine/scoring";
 import { questionBank } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
+import { pickPracticalPack } from "@/features/practical/packs";
+import { buildPracticalQuestion, scorePracticalQuestion } from "@/features/practical/grading";
 import { hashValue, nowIso, randomPasscode, randomToken } from "@/lib/tokens/token-service";
 
 interface InviteRecord {
@@ -421,21 +423,24 @@ export async function patchAttempt(
 
 export async function submitAttempt(input: {
   attemptId: string;
-  practicalEarned: number;
-  practicalPossible: number;
 }) {
   const currentRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
   if (!currentRow) return null;
 
   const current = mapAttempt(currentRow);
+  const practicalPack = pickPracticalPack(current.roleId, current.stacks);
+  const practicalQuestion = buildPracticalQuestion(practicalPack);
+  const practicalScore = scorePracticalQuestion(practicalQuestion, current.practicalAnswer);
+  const practicalEarned = practicalScore.pointsEarned;
+  const practicalPossible = practicalQuestion.points;
   const result = buildResultSummary({
     attemptId: current.id,
     roleId: current.roleId,
     stacks: current.stacks,
     coreQuestionIds: current.coreQuestionIds,
     coreAnswers: current.coreAnswers,
-    practicalEarned: input.practicalEarned,
-    practicalPossible: input.practicalPossible
+    practicalEarned,
+    practicalPossible
   });
 
   await prisma.$transaction(async (tx) => {
@@ -444,8 +449,8 @@ export async function submitAttempt(input: {
       data: {
         status: "submitted",
         stage: "submitted",
-        practicalEarned: input.practicalEarned,
-        practicalPossible: input.practicalPossible,
+        practicalEarned,
+        practicalPossible,
         submittedAt: new Date()
       }
     });

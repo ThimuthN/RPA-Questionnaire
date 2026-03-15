@@ -3,8 +3,8 @@ import { z } from "zod";
 import { submitAttempt } from "@/lib/db/repositories";
 
 const submitSchema = z.object({
-  practicalEarned: z.number().min(0).default(0),
-  practicalPossible: z.number().min(0).default(0)
+  practicalEarned: z.number().min(0).optional(),
+  practicalPossible: z.number().min(0).optional()
 });
 
 export async function POST(
@@ -13,11 +13,10 @@ export async function POST(
 ) {
   try {
     const { attemptId } = await context.params;
-    const body = submitSchema.parse(await request.json());
+    const body = await request.json().catch(() => ({}));
+    submitSchema.parse(body);
     const result = await submitAttempt({
-      attemptId,
-      practicalEarned: body.practicalEarned,
-      practicalPossible: body.practicalPossible
+      attemptId
     });
     if (!result) {
       return NextResponse.json({ ok: false, message: "Attempt not found." }, { status: 404 });
