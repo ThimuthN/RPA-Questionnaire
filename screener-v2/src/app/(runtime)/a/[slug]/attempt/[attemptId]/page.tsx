@@ -24,7 +24,22 @@ export default async function AttemptRuntimePage({
     );
   }
   if (attempt.status === "submitted") {
-    redirect(`/a/${slug}/result/${attempt.id}`);
+    return (
+      <section className="space-y-4">
+        <StagePanel>
+          <h1 className="text-3xl text-white">This attempt is complete.</h1>
+          <p className="mt-2 text-slate-300">Viewing results... you cannot resume the assessment.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <a href={`/a/${slug}/result/${attempt.id}`}>
+              <button className="rounded-[12px] bg-brand-500 px-4 py-2 text-white">Continue to results</button>
+            </a>
+            <a href="/">
+              <button className="rounded-[12px] border border-white/20 bg-white/5 px-4 py-2 text-white">Return home</button>
+            </a>
+          </div>
+        </StagePanel>
+      </section>
+    );
   }
   const questions = getQuestionsByIds(attempt.coreQuestionIds);
   const practicalPack = pickPracticalPack(attempt.roleId, attempt.stacks);
