@@ -2823,5 +2823,574 @@
     "explanation": "Central monitoring with routing speeds detection and recovery.",
     "rationale": "Tests lead-level operations readiness.",
     "log_snippet": "Control\tStatus\nCentral dashboard\tEnabled\nAlert routing\tOn-call team\nRunbook link\tAttached\nOutcome\tFaster recovery"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0101",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 2,
+    "format": "trace_execution",
+    "question_text": "Trace this bot retry flow and choose the best final status.",
+    "options": [
+      "Business exception because the file was bad",
+      "Manual intervention required immediately",
+      "System exception retried, then the transaction succeeded",
+      "Delete the file and continue without logging"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "A temporary file lock is a system issue. The retry succeeds on the next attempt.",
+    "rationale": "Tests basic retry-path reasoning.",
+    "log_snippet": "Attempt\tError\tAction\n1\tFile locked by another process\tRetry after 15s\n2\tNo error\tPost invoice"
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-INT-0102",
+    "role_level_min": "Intern",
+    "tech_stack": "General",
+    "category": "Workflow Design",
+    "difficulty": 2,
+    "format": "multi_select",
+    "question_text": "A support handover note for a bot should include which items? Select all that apply.",
+    "options": [
+      "A. Input and output locations",
+      "B. Recovery steps for common failures",
+      "C. Personal passwords kept by the developer",
+      "D. Support contact or owner",
+      "E. Schedule or trigger details"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D",
+      "E"
+    ],
+    "explanation": "A useful handover covers inputs, outputs, recovery, ownership, and execution details. Personal passwords should never be included.",
+    "rationale": "Tests operational readiness basics."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-INT-0103",
+    "role_level_min": "Intern",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 2,
+    "format": "best_next_step",
+    "question_text": "A UiPath click selector includes a changing invoice number, so it fails on the next case. What is the best fix?",
+    "options": [
+      "Use stable attributes or an anchor-based selector",
+      "Add a 30-second delay before every click",
+      "Ask the user to click the field manually",
+      "Keep the selector and rerun until it works"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Stable selectors should avoid dynamic values and rely on durable attributes or anchors.",
+    "rationale": "Tests selector reliability fundamentals."
+  },
+  {
+    "role_level_max": "Intern",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-INT-0104",
+    "role_level_min": "Intern",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 2,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the rule. When reading a finance CSV, validate required columns before ____ each row.",
+    "explanation": "Validation should happen before processing so bad files fail safely and early.",
+    "rationale": "Tests safe input-handling practice.",
+    "blank": "Validate required columns before ____ each row.",
+    "choices": [
+      "processing",
+      "renaming",
+      "emailing",
+      "deleting"
+    ],
+    "accepted_answers": [
+      "processing"
+    ]
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0105",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Queues / Work Items",
+    "difficulty": 3,
+    "format": "log_analysis_single_choice",
+    "question_text": "What is the best conclusion from this queue log?",
+    "log_snippet": "Txn\tAttempt\tResult\tNote\n9001\t1\tTimeout\tERP did not respond\n9001\t2\tSuccess\tPosted invoice\n9001\t3\tSuccess\tPosted invoice again",
+    "options": [
+      "The queue item was processed twice because duplicate protection is missing",
+      "The process should delete the queue item after the first timeout",
+      "The issue is definitely caused by Git merge conflict",
+      "There is no issue because every line says success"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "The same transaction succeeded twice after retry, which points to missing idempotency or duplicate-post protection.",
+    "rationale": "Tests queue and retry diagnostics."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-ASC-0106",
+    "role_level_min": "Associate",
+    "tech_stack": "General",
+    "category": "Deployment & Configuration",
+    "difficulty": 3,
+    "format": "match_pairs",
+    "question_text": "Match each item to its most appropriate use.\nEnvironment config\nRetry policy\nQueue name\nCorrelation ID\nA. Track one transaction across logs\nB. Control behavior for temporary failures\nC. Point the same package to the right environment values\nD. Identify the work list used by the bot",
+    "left_items": [
+      "Environment config",
+      "Retry policy",
+      "Queue name",
+      "Correlation ID"
+    ],
+    "right_items": [
+      "A. Track one transaction across logs",
+      "B. Control behavior for temporary failures",
+      "C. Point the same package to the right environment values",
+      "D. Identify the work list used by the bot"
+    ],
+    "correct_pairs": {
+      "Environment config": "C. Point the same package to the right environment values",
+      "Retry policy": "B. Control behavior for temporary failures",
+      "Queue name": "D. Identify the work list used by the bot",
+      "Correlation ID": "A. Track one transaction across logs"
+    },
+    "explanation": "Each artifact solves a different operational concern: environment portability, retry control, queue routing, and traceability.",
+    "rationale": "Tests terminology and deployment understanding."
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0107",
+    "role_level_min": "Associate",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: A Power Automate flow sends approval emails twice when an operator retries a timed-out run. What is the best improvement?",
+    "options": [
+      "Remove timeout handling so retries are impossible",
+      "Add a status check or idempotency guard before sending the email again",
+      "Increase the email body length to make duplicates obvious",
+      "Ask users to ignore duplicate emails during busy periods"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "A retry-safe flow checks whether the action already completed before sending again.",
+    "rationale": "Tests duplicate-prevention thinking in flow automation.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "Associate",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-ASC-0108",
+    "role_level_min": "Associate",
+    "tech_stack": "AutomationAnywhere",
+    "category": "Automation Anywhere Specific",
+    "difficulty": 3,
+    "format": "best_next_step",
+    "question_text": "An Automation Anywhere bot uses a hardcoded download folder, so it fails on another runner. What is the best fix?",
+    "options": [
+      "Store the path in environment-aware config or a device variable",
+      "Create a different bot for every machine",
+      "Ask support to rename folders before every run",
+      "Disable file validation checks"
+    ],
+    "correct_answer": [
+      "A"
+    ],
+    "explanation": "Environment-aware configuration keeps one bot package portable across runners.",
+    "rationale": "Tests deployment portability in AA."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_position",
+    "id": "RPA-SE-0109",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Debugging & Logs",
+    "difficulty": 3,
+    "format": "ordering",
+    "question_text": "Arrange these incident-triage actions for a failing automation.",
+    "items": [
+      "Capture the correlation ID and failing transaction details",
+      "Check recent logs and screenshots for the exact failure point",
+      "Apply a safe workaround or retry if appropriate",
+      "Document the root cause and preventive fix"
+    ],
+    "correct_order": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "correct_answer": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ],
+    "explanation": "Start with evidence, inspect the failure, apply a safe recovery, then document prevention.",
+    "rationale": "Tests practical incident response sequence."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0110",
+    "role_level_min": "SE",
+    "tech_stack": "General",
+    "category": "Performance & Stability",
+    "difficulty": 3,
+    "format": "case_triage",
+    "question_text": "Case: During month-end, an API returns rate-limit errors and retries cause more congestion. What is the best next step?",
+    "options": [
+      "Increase parallel calls so the backlog clears faster",
+      "Add throttle control with backoff and queue pacing",
+      "Disable logging to reduce API latency",
+      "Retry forever with no upper limit"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Backoff and controlled throughput reduce pressure on the API and stabilize processing.",
+    "rationale": "Tests scale and stability judgment.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SE-0111",
+    "role_level_min": "SE",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 3,
+    "format": "log_analysis_single_choice",
+    "question_text": "What is the best conclusion from this UiPath deployment log?",
+    "log_snippet": "Env\tResult\tNote\nDev\tSuccess\tSelector uses idx=4\nUAT\tFail\tButton moved after app patch\nProd\tNot deployed\tWaiting on fix",
+    "options": [
+      "The issue is environment credentials only",
+      "The selector relies on unstable UI position and should be redesigned",
+      "The package should be copied manually into production",
+      "The logs show a database problem"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "An index-based selector often breaks when the target layout changes after a patch.",
+    "rationale": "Tests UiPath selector-drift diagnosis."
+  },
+  {
+    "role_level_max": "SE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-SE-0112",
+    "role_level_min": "SE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 3,
+    "format": "multi_select",
+    "question_text": "Which controls improve file handoff reliability between Python automation stages? Select all that apply.",
+    "options": [
+      "A. Write to a temp file and rename atomically when complete",
+      "B. Use a ready marker or completion signal",
+      "C. Read files while they are still growing",
+      "D. Validate checksum or record count before processing",
+      "E. Depend only on a fixed sleep delay"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "D"
+    ],
+    "explanation": "Atomic handoff, explicit readiness, and integrity checks reduce partial-read failures. Fixed sleeps alone are unreliable.",
+    "rationale": "Tests resilient file-processing design."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_pairs_with_penalty",
+    "id": "RPA-SEN-0113",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Architecture & Design (Senior+)",
+    "difficulty": 4,
+    "format": "match_pairs",
+    "question_text": "Match each engineering pattern to its primary purpose.\nIdempotency key\nQueue decoupling\nCircuit breaker\nFeature flag\nA. Stop hammering an unhealthy dependency\nB. Prevent duplicate side effects on retry\nC. Separate intake from workers for smoother scaling\nD. Turn risky changes on gradually",
+    "left_items": [
+      "Idempotency key",
+      "Queue decoupling",
+      "Circuit breaker",
+      "Feature flag"
+    ],
+    "right_items": [
+      "A. Stop hammering an unhealthy dependency",
+      "B. Prevent duplicate side effects on retry",
+      "C. Separate intake from workers for smoother scaling",
+      "D. Turn risky changes on gradually"
+    ],
+    "correct_pairs": {
+      "Idempotency key": "B. Prevent duplicate side effects on retry",
+      "Queue decoupling": "C. Separate intake from workers for smoother scaling",
+      "Circuit breaker": "A. Stop hammering an unhealthy dependency",
+      "Feature flag": "D. Turn risky changes on gradually"
+    },
+    "explanation": "These patterns solve different reliability and rollout problems and should not be treated as interchangeable.",
+    "rationale": "Tests senior-level architecture vocabulary."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0114",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "General",
+    "category": "Exception Handling & Retries",
+    "difficulty": 4,
+    "format": "trace_execution",
+    "question_text": "Trace this payment-posting flow and choose the best final conclusion.",
+    "options": [
+      "Duplicate payment was created because retries are always unsafe",
+      "The retry failed because logs were too detailed",
+      "The system safely retried and avoided a duplicate by checking an idempotency key",
+      "The payment should never be retried under any condition"
+    ],
+    "correct_answer": [
+      "C"
+    ],
+    "explanation": "The first response was lost, but the retry checked the same idempotency key and returned the existing result instead of posting again.",
+    "rationale": "Tests safe retry design at transaction level.",
+    "log_snippet": "Attempt\tAPI result\tAction\n1\tTimeout after request sent\tCheck transaction key\n2\tExisting record found for same key\tReturn prior success"
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-SEN-0115",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "What is the best conclusion from this Power Automate run log?",
+    "log_snippet": "Minute\tCalls\tResult\n09:00\t620\tConnector throttled\n09:01\t610\tRetry storm continues\n09:02\t605\tBacklog growing",
+    "options": [
+      "The flow needs more random retries only",
+      "The design needs controlled concurrency or batching to avoid connector throttling",
+      "The issue is definitely user permissions",
+      "The fastest fix is to disable retry tracking"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "When the connector is already throttling, uncontrolled retries worsen the backlog. The flow should reduce concurrency or batch work.",
+    "rationale": "Tests senior-level throughput diagnosis."
+  },
+  {
+    "role_level_max": "SeniorSE",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_by_blank",
+    "id": "RPA-SEN-0116",
+    "role_level_min": "SeniorSE",
+    "tech_stack": "Python",
+    "category": "Python Automation",
+    "difficulty": 4,
+    "format": "fill_in_blank_constrained",
+    "question_text": "Complete the reliability rule. For safe re-runs, write and check an ____ key before posting a payment to an API.",
+    "explanation": "An idempotency key lets the system detect whether the business action already happened.",
+    "rationale": "Tests safe API integration design.",
+    "blank": "Write and check an ____ key before posting.",
+    "choices": [
+      "idempotency",
+      "animation",
+      "temporary",
+      "debug"
+    ],
+    "accepted_answers": [
+      "idempotency"
+    ]
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "partial_with_penalty",
+    "id": "RPA-TL-0117",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Governance & Security (Lead-only)",
+    "difficulty": 4,
+    "format": "multi_select",
+    "question_text": "Which controls support scalable enterprise automation governance? Select all that apply.",
+    "options": [
+      "A. Shared engineering standards and templates",
+      "B. Clear service ownership for shared components",
+      "C. Secret management and connector/DLP guardrails",
+      "D. Unreviewed production access for every squad",
+      "E. Release metrics and incident-review feedback loops"
+    ],
+    "correct_answer": [
+      "A",
+      "B",
+      "C",
+      "E"
+    ],
+    "explanation": "Shared standards, ownership, guardrails, and measurable feedback loops create repeatable control. Broad unreviewed production access does the opposite.",
+    "rationale": "Tests program-level governance judgment."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0118",
+    "role_level_min": "TechLead",
+    "tech_stack": "General",
+    "category": "Operations & Monitoring (Senior+)",
+    "difficulty": 4,
+    "format": "log_analysis_single_choice",
+    "question_text": "Which initiative should the tech lead prioritize first from this portfolio report?",
+    "log_snippet": "Team\tIssue\tFrequency\tImpact\nA\tNo named bot owner\tHigh\tHigh\nB\tNo recovery KPI\tHigh\tHigh\nC\tMinor dashboard color issue\tMedium\tLow",
+    "options": [
+      "Cosmetic dashboard cleanup",
+      "Establish service ownership and operational KPIs for live automations",
+      "Remove reporting to reduce overhead",
+      "Delay all fixes until the next quarter"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "High-frequency, high-impact operational gaps should be fixed before cosmetic issues.",
+    "rationale": "Tests portfolio-level prioritization."
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0119",
+    "role_level_min": "TechLead",
+    "tech_stack": "UiPath",
+    "category": "UiPath Specific",
+    "difficulty": 4,
+    "format": "case_triage",
+    "question_text": "Case: UiPath queues from multiple squads compete for the same runners during month-end, causing SLA misses. What should the lead do first?",
+    "options": [
+      "Let every squad keep its own unmanaged schedule",
+      "Introduce central capacity rules with queue priority and runner windows",
+      "Disable queue metrics so contention is less visible",
+      "Move all jobs to manual start"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "Shared runners need central prioritization and scheduling controls to protect critical workloads.",
+    "rationale": "Tests lead-level capacity governance.",
+    "case_triage_variant": "single_choice"
+  },
+  {
+    "role_level_max": "TechLead",
+    "senior_only": false,
+    "lead_only": false,
+    "points": 2,
+    "time_estimate_seconds": 110,
+    "scoring_method": "all_or_nothing",
+    "id": "RPA-TL-0120",
+    "role_level_min": "TechLead",
+    "tech_stack": "PowerAutomate",
+    "category": "Power Automate Specific",
+    "difficulty": 4,
+    "format": "best_next_step",
+    "question_text": "Hundreds of Power Automate flows depend on one on-premises gateway with frequent drift and unclear ownership. What is the best next step?",
+    "options": [
+      "Keep the single shared gateway and let teams change it ad hoc",
+      "Establish owned gateway operations with environment separation and controlled changes",
+      "Turn off gateway monitoring to reduce noise",
+      "Move every production flow to personal accounts"
+    ],
+    "correct_answer": [
+      "B"
+    ],
+    "explanation": "A shared gateway is production infrastructure and needs ownership, environment separation, and change control.",
+    "rationale": "Tests platform-governance decisions in Power Automate."
   }
 ]

@@ -5,3 +5,6 @@ node_modules
 prisma/dev.db
 tmp-next-dev.log
 tmp-next-dev.err.log
+
+.vercel
+.env*.local

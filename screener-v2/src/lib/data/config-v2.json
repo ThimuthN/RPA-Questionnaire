@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.2.0",
-  "questionBankVersion": "2.7.0",
+  "questionBankVersion": "2.8.0",
   "localStorageKey": "innobot_rpa_screener_state_v2_2",
   "practiceModeEnabled": true,
   "showAttentionMetricsOnResults": true,
