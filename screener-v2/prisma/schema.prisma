@@ -47,7 +47,6 @@ model Invite {
   stackLocked         Boolean  @default(true)
   roleId              String?
   stacksJson          Json?
-  addonsJson          Json?
   sectionsJson        Json?
   maxAttempts         Int      @default(1)
   usedAttempts        Int      @default(0)
@@ -76,7 +75,6 @@ model Attempt {
   participantId          String
   roleId                 String
   stacksJson             Json
-  addonsJson             Json?
   sectionsJson           Json
   sectionStateJson       Json?
   seed                   Int
