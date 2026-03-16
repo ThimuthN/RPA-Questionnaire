@@ -4,6 +4,12 @@ import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { copy } from "@/lib/design/copy";
 
 export function ResultHero({ row }: { row: ResultSummary }) {
+  const sectionText = row.sections
+    .map((sectionId) => row.sectionBreakdown[sectionId])
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .map((entry) => `${entry.label} ${entry.percent.toFixed(1)}%`)
+    .join(" | ");
+
   return (
     <Card className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
       <div className="space-y-2">
@@ -11,9 +17,7 @@ export function ResultHero({ row }: { row: ResultSummary }) {
         <h2 className="font-display text-3xl text-white">
           {row.pass ? "Pass" : row.borderline ? "Borderline Review" : "Fail"}
         </h2>
-        <p className="text-slate-200">
-          Core {row.corePercent.toFixed(1)}% | Practical {row.practicalPercent.toFixed(1)}%
-        </p>
+        <p className="text-slate-200">{sectionText || "No section data"}</p>
       </div>
       <ScoreReveal value={row.finalPercent} />
     </Card>

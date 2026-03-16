@@ -1,13 +1,12 @@
-import type {
-  Question,
-  ResultSummary,
-  RoleId,
-  ScoreOutput,
-  ScoringMethod,
-  StackId
-} from "@/lib/assessment-engine/types";
-import { clamp, toInt, uniqueInts } from "@/lib/assessment-engine/utils";
+import type { Question, ResultSummary, RoleId, ScoreOutput, ScoringMethod, StackId } from "@/lib/assessment-engine/types";
+import { buildLogicReasoningQuestion, scoreLogicReasoningQuestion } from "@/features/logic-reasoning/grading";
+import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
+import { buildPracticalQuestion, scorePracticalQuestion } from "@/features/practical/grading";
+import { pickPracticalPack } from "@/features/practical/packs";
 import { configV2, getRoleConfig, questionBank } from "@/lib/data/question-bank";
+import { sectionRegistry } from "@/lib/sections/registry";
+import type { SectionId, SectionState } from "@/lib/sections/types";
+import { clamp, toInt, uniqueInts } from "@/lib/assessment-engine/utils";
 
 function tokenToIndex(token: string | number, options: string[]): number {
   if (Number.isInteger(token)) return Number(token);
@@ -125,68 +124,111 @@ export interface BuildResultInput {
   attemptId: string;
   roleId: RoleId;
   stacks: StackId[];
+  sections: SectionId[];
   coreQuestionIds: string[];
-  coreAnswers: Record<string, unknown>;
-  practicalEarned: number;
-  practicalPossible: number;
+  sectionState: Partial<Record<SectionId, SectionState>>;
+}
+
+function roundOne(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
 export function buildResultSummary(input: BuildResultInput): ResultSummary {
   const role = getRoleConfig(input.roleId);
   const passPercent = toInt(role.pass_percentage, 60);
-  const practicalMinPercent = 50;
-  const practicalWeightPercent = 30;
-  const coreWeightPercent = 70;
-  let coreEarned = 0;
-  let corePossible = 0;
+  const selectedSections = input.sections.filter((sectionId) => Boolean(sectionRegistry[sectionId]));
   const byCategory: Record<string, { correctCount: number; totalCount: number; percent: number }> = {};
+  const sectionBreakdown: ResultSummary["sectionBreakdown"] = {};
+  let weightedPercentSum = 0;
+  let weightSum = 0;
 
-  for (const questionId of input.coreQuestionIds) {
-    const question = questionBank.find((x) => x.id === questionId);
-    if (!question) continue;
-    const score = scoreQuestion(question, input.coreAnswers[questionId]);
-    coreEarned += score.pointsEarned;
-    corePossible += score.pointsPossible;
-    if (!byCategory[question.category]) {
-      byCategory[question.category] = { correctCount: 0, totalCount: 0, percent: 0 };
+  for (const sectionId of selectedSections) {
+    const section = sectionRegistry[sectionId];
+    let pointsEarned = 0;
+    let pointsPossible = 0;
+
+    if (sectionId === "core") {
+      for (const questionId of input.coreQuestionIds) {
+        const question = questionBank.find((item) => item.id === questionId);
+        if (!question) continue;
+        const answer = input.sectionState.core?.answers?.[questionId];
+        const score = scoreQuestion(question, answer);
+        pointsEarned += score.pointsEarned;
+        pointsPossible += score.pointsPossible;
+        if (!byCategory[question.category]) {
+          byCategory[question.category] = { correctCount: 0, totalCount: 0, percent: 0 };
+        }
+        byCategory[question.category].totalCount += 1;
+        if (score.isCorrect) byCategory[question.category].correctCount += 1;
+      }
     }
-    byCategory[question.category].totalCount += 1;
-    if (score.isCorrect) byCategory[question.category].correctCount += 1;
+
+    if (sectionId === "practical") {
+      const practicalPack = pickPracticalPack(input.roleId, input.stacks);
+      const practicalQuestion = buildPracticalQuestion(practicalPack);
+      const practicalScore = scorePracticalQuestion(practicalQuestion, input.sectionState.practical?.answers ?? {});
+      pointsEarned = practicalScore.pointsEarned;
+      pointsPossible = practicalQuestion.points;
+    }
+
+    if (sectionId === "applied_logic_reasoning") {
+      const logicPack = pickLogicReasoningPack(input.roleId, input.stacks);
+      const logicQuestion = buildLogicReasoningQuestion(logicPack);
+      const logicScore = scoreLogicReasoningQuestion(logicQuestion, input.sectionState.applied_logic_reasoning?.answers ?? {});
+      pointsEarned = logicScore.earned;
+      pointsPossible = logicScore.possible;
+    }
+
+    const percent = pointsPossible > 0 ? roundOne((pointsEarned / pointsPossible) * 100) : 0;
+    sectionBreakdown[sectionId] = {
+      label: section.label,
+      pointsEarned: roundOne(pointsEarned),
+      pointsPossible: roundOne(pointsPossible),
+      percent
+    };
+
+    weightedPercentSum += percent * section.weight;
+    weightSum += section.weight;
   }
 
-  Object.keys(byCategory).forEach((category) => {
+  for (const category of Object.keys(byCategory)) {
     const row = byCategory[category];
-    row.percent = row.totalCount ? Math.round((row.correctCount / row.totalCount) * 1000) / 10 : 0;
-  });
+    row.percent = row.totalCount ? roundOne((row.correctCount / row.totalCount) * 100) : 0;
+  }
 
-  const corePercent = corePossible ? Math.round((coreEarned / corePossible) * 1000) / 10 : 0;
-  const practicalPercent = input.practicalPossible
-    ? Math.round((input.practicalEarned / input.practicalPossible) * 1000) / 10
+  const finalPercent = weightSum > 0 ? roundOne(weightedPercentSum / weightSum) : 0;
+  const practicalPercent = sectionBreakdown.practical?.percent ?? 0;
+  const practicalMinPercent = selectedSections.includes("practical")
+    ? (sectionRegistry.practical.minPercentRequired ?? 0)
     : 0;
-  const finalPercent =
-    Math.round((corePercent * coreWeightPercent + practicalPercent * practicalWeightPercent)) / 100;
+
+  let sectionGatesOk = true;
+  for (const sectionId of selectedSections) {
+    const minPercentRequired = sectionRegistry[sectionId].minPercentRequired;
+    if (typeof minPercentRequired === "number" && minPercentRequired > 0) {
+      const currentPercent = sectionBreakdown[sectionId]?.percent ?? 0;
+      if (currentPercent < minPercentRequired) {
+        sectionGatesOk = false;
+      }
+    }
+  }
+
+  const pass = finalPercent >= passPercent && sectionGatesOk;
   const borderline = finalPercent >= passPercent - toInt(configV2.borderlineReviewBandPercent, 10);
-  const pass = finalPercent >= passPercent && practicalPercent >= practicalMinPercent;
 
   return {
     attemptId: input.attemptId,
     roleId: input.roleId,
     stacks: input.stacks,
-    corePercent,
+    sections: selectedSections,
+    corePercent: sectionBreakdown.core?.percent ?? 0,
     practicalPercent,
     finalPercent,
     passPercent,
     practicalMinPercent,
     pass,
     borderline: !pass && borderline,
-    sectionBreakdown: {
-      core: { pointsEarned: coreEarned, pointsPossible: corePossible, percent: corePercent },
-      practical: {
-        pointsEarned: input.practicalEarned,
-        pointsPossible: input.practicalPossible,
-        percent: practicalPercent
-      }
-    },
+    sectionBreakdown,
     breakdownByCategory: byCategory
   };
 }

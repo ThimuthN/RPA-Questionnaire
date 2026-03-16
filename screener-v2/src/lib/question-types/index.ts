@@ -3,6 +3,7 @@ import { bestNextStepDef } from "@/lib/question-types/best-next-step";
 import { caseTriageDef } from "@/lib/question-types/case-triage";
 import { fillBlankDef } from "@/lib/question-types/fill-blank";
 import { logAnalysisDef } from "@/lib/question-types/log-analysis";
+import { logicReasoningDef } from "@/lib/question-types/logic-reasoning";
 import { matchingDef } from "@/lib/question-types/matching";
 import { multiSelectDef } from "@/lib/question-types/multi-select";
 import { orderingDef } from "@/lib/question-types/ordering";
@@ -21,7 +22,8 @@ export const questionRegistry: Record<QuestionFormatId, QuestionTypeDef<any, any
   trace_execution: traceExecutionDef,
   best_next_step: bestNextStepDef,
   case_triage: caseTriageDef,
-  practical_task: practicalTaskDef
+  practical_task: practicalTaskDef,
+  logic_reasoning: logicReasoningDef
 };
 
 export const formatAliasMap: Record<string, QuestionFormatId> = {

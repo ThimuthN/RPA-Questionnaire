@@ -11,25 +11,21 @@ function fmt(seconds: number) {
 }
 
 export function HudBar({
-  stage,
+  stageLabel,
   roleId,
   stacks,
-  answeredCount,
-  totalQuestions,
-  practicalCompleted,
-  practicalTotal,
+  sectionProgressLabel,
+  sectionProgressValue,
   overallProgress,
   remainingSeconds,
   statusLabel,
   statusTone
 }: {
-  stage: "core" | "practical";
+  stageLabel: string;
   roleId: string;
   stacks: string[];
-  answeredCount: number;
-  totalQuestions: number;
-  practicalCompleted: number;
-  practicalTotal: number;
+  sectionProgressLabel: string;
+  sectionProgressValue: string;
   overallProgress: number;
   remainingSeconds: number;
   statusLabel: string;
@@ -43,7 +39,7 @@ export function HudBar({
       <div className="grid gap-4 lg:grid-cols-[1fr_minmax(320px,1.2fr)_auto] lg:items-center">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <StatusPill label={stage === "core" ? "Core" : "Practical"} tone={stage === "core" ? "blue" : "teal"} />
+            <StatusPill label={stageLabel} tone={stageLabel.toLowerCase().includes("core") ? "blue" : "teal"} />
             <StatusPill label={roleId} tone="neutral" />
           </div>
           <p className="text-sm text-slate-200">{stacks.join(", ")}</p>
@@ -51,8 +47,8 @@ export function HudBar({
 
         <div className="space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.18em] text-slate-300">
-            <span>Core {answeredCount}/{totalQuestions}</span>
-            <span>Practical {practicalCompleted}/{practicalTotal}</span>
+            <span>{sectionProgressLabel}</span>
+            <span>{sectionProgressValue}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-white/10">
             <div

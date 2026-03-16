@@ -6,6 +6,9 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { validateInvite } from "@/lib/db/repositories";
+import { getTotalDurationMinutes, sectionRegistry } from "@/lib/sections/registry";
+import type { SectionId } from "@/lib/sections/types";
 
 export default async function InviteLandingPage({
   params,
@@ -24,6 +27,12 @@ export default async function InviteLandingPage({
   if (token) nextQuery.set("t", token);
   if (passcode) nextQuery.set("passcode", passcode);
   const startHref = nextQuery.toString() ? `/a/${slug}/start?${nextQuery.toString()}` : `/a/${slug}/start`;
+  const inviteCheck = await validateInvite(token ? { token, passcode: passcode || undefined } : { slug, passcode: passcode || undefined });
+  const roleId = inviteCheck.ok && inviteCheck.invite?.roleId ? inviteCheck.invite.roleId : "Associate";
+  const sections: SectionId[] =
+    inviteCheck.ok && inviteCheck.invite?.sections ? inviteCheck.invite.sections : ["core", "practical"];
+  const totalMinutes = getTotalDurationMinutes(sections, roleId);
+  const sectionLabels = sections.map((sectionId) => sectionRegistry[sectionId]?.label ?? sectionId);
 
   if (startNow === "1") {
     redirect(startHref as Route);
@@ -31,13 +40,22 @@ export default async function InviteLandingPage({
 
   return (
     <SceneTransition>
-      <SceneShell variant="run" eyebrow="Assessment Briefing" title="This assessment takes about 30 minutes, and your answers will be saved automatically as you go">
+      <SceneShell
+        variant="run"
+        eyebrow="Assessment Briefing"
+        title={`This assessment takes about ${totalMinutes} minutes, and your answers will be saved automatically as you go`}
+      >
         <div className="mx-auto max-w-3xl">
           <StagePanel className="space-y-5">
-            <p className="text-slate-200">20-minute core + 10-minute practical. Autosave is enabled.</p>
+            <p className="text-slate-200">{sectionLabels.join(" + ")}. Autosave is enabled.</p>
             <div className="flex flex-wrap gap-2">
-              <StatusPill label="Core 20m" tone="blue" />
-              <StatusPill label="Practical 10m" tone="teal" />
+              {sections.map((sectionId) => (
+                <StatusPill
+                  key={sectionId}
+                  label={sectionRegistry[sectionId]?.label ?? sectionId}
+                  tone={sectionId === "core" ? "blue" : "teal"}
+                />
+              ))}
               <StatusPill label="Autosave on" tone="emerald" />
             </div>
             <Link href={startHref as Route}>

@@ -7,14 +7,20 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { copy } from "@/lib/design/copy";
 
 export function SectionHandoff({
-  unansweredCount,
-  practicalLength,
+  pendingCount,
+  nextSectionLength,
+  currentSectionLabel = "Current section",
+  nextSectionLabel = copy.runtime.practical,
+  startLabel = copy.runtime.startPractical,
   onStart,
   onBack,
   showBack = true
 }: {
-  unansweredCount: number;
-  practicalLength: number;
+  pendingCount: number;
+  nextSectionLength: number;
+  currentSectionLabel?: string;
+  nextSectionLabel?: string;
+  startLabel?: string;
   onStart: () => void;
   onBack?: () => void;
   showBack?: boolean;
@@ -32,24 +38,24 @@ export function SectionHandoff({
         <StagePanel className="overflow-hidden border-teal-400/20 bg-[linear-gradient(180deg,rgba(18,179,168,0.12),rgba(255,255,255,0.05))] p-0">
           <div className="space-y-5 p-6">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <StatusPill label={copy.runtime.practical} tone="teal" />
+              <StatusPill label={nextSectionLabel} tone="teal" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-3xl text-white">{copy.runtime.startPractical}</h3>
+              <h3 className="text-3xl text-white">{startLabel}</h3>
               <p className="max-w-md text-sm text-slate-200">Move to the final section when you are ready.</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Core unanswered</p>
-                <p className="mt-2 text-2xl text-white">{unansweredCount}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{currentSectionLabel} pending</p>
+                <p className="mt-2 text-2xl text-white">{pendingCount}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Practical subtasks</p>
-                <p className="mt-2 text-2xl text-white">{practicalLength}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{nextSectionLabel} items</p>
+                <p className="mt-2 text-2xl text-white">{nextSectionLength}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={onStart}>{copy.runtime.startPractical}</Button>
+              <Button onClick={onStart}>{startLabel}</Button>
               {showBack && onBack ? (
                 <Button variant="secondary" onClick={onBack}>
                   {copy.runtime.back}

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { validateInvite } from "@/lib/db/repositories";
+import { getTotalDurationMinutes } from "@/lib/sections/registry";
 
 const validateSchema = z
   .object({
@@ -34,8 +35,13 @@ export async function POST(request: Request) {
         roleLocked: checked.invite.roleLocked,
         stackLocked: checked.invite.stackLocked,
         roleId: checked.invite.roleId ?? null,
-        stacks: checked.invite.stacks ?? []
+        stacks: checked.invite.stacks ?? [],
+        sections: checked.invite.sections ?? []
       },
+      totalDurationMinutes:
+        checked.invite.roleId && checked.invite.sections?.length
+          ? getTotalDurationMinutes(checked.invite.sections, checked.invite.roleId)
+          : null,
       remainingAttempts: checked.remainingAttempts ?? 0
     });
   } catch (error) {

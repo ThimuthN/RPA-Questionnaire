@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { SectionId } from "@/lib/sections/types";
+import { getDefaultSelectedSections, sectionRegistry } from "@/lib/sections/registry";
 import { configV2 } from "@/lib/data/question-bank";
 import { Button } from "@/components/primitives/Button";
 import { StepRail } from "@/components/primitives/StepRail";
@@ -28,18 +30,39 @@ interface CreateInviteError {
 export default function CreateTestPage() {
   const [roleId, setRoleId] = useState<RoleId>("Associate");
   const [selectedStacks, setSelectedStacks] = useState<StackId[]>(["UiPath"]);
+  const [selectedSections, setSelectedSections] = useState<SectionId[]>(getDefaultSelectedSections());
   const [passTarget, setPassTarget] = useState(configV2.roles.Associate.pass_percentage);
   const [invite, setInvite] = useState<(InviteCredentials & { slug: string; inviteId: string }) | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const roleConfig = configV2.roles[roleId];
+  const selectedSectionConfigs = useMemo(
+    () =>
+      selectedSections
+        .map((id) => sectionRegistry[id])
+        .filter(Boolean)
+        .sort((a, b) => a.order - b.order),
+    [selectedSections]
+  );
+  const totalTimeMinutes = useMemo(
+    () =>
+      selectedSectionConfigs.reduce((sum, section) => {
+        const sectionDuration = section.id === "core" ? roleConfig.time_limit_minutes : section.durationMinutes;
+        return sum + sectionDuration;
+      }, 0),
+    [roleConfig.time_limit_minutes, selectedSectionConfigs]
+  );
   const testId = useMemo(() => (invite?.slug ? invite.slug.toUpperCase() : "--"), [invite?.slug]);
   const primaryStack = selectedStacks[0] || "None";
 
   async function onGenerateAccess() {
     if (selectedStacks.length === 0) {
       setError("Select at least one tech stack.");
+      return;
+    }
+    if (selectedSections.length === 0) {
+      setError("Select at least one section.");
       return;
     }
     setLoading(true);
@@ -55,6 +78,7 @@ export default function CreateTestPage() {
         stackLocked: true,
         roleId,
         stacks: selectedStacks,
+        sections: selectedSections,
         withPasscode: true,
         maxAttempts: 1
       })
@@ -85,6 +109,17 @@ export default function CreateTestPage() {
     setSelectedStacks((prev) => (prev.includes(stack) ? prev.filter((item) => item !== stack) : [...prev, stack]));
   }
 
+  function toggleSection(sectionId: SectionId) {
+    setSelectedSections((prev) => {
+      if (prev.includes(sectionId)) {
+        // Ensure at least one section remains selected
+        if (prev.length <= 1) return prev;
+        return prev.filter((item) => item !== sectionId);
+      }
+      return [...prev, sectionId];
+    });
+  }
+
   return (
     <SceneShell
       variant="create"
@@ -94,8 +129,17 @@ export default function CreateTestPage() {
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label={`${roleConfig.question_count} questions`} tone="blue" />
-          <StatusPill label={`${roleConfig.time_limit_minutes}m core`} tone="neutral" />
-          <StatusPill label="10m practical" tone="teal" />
+          <StatusPill label={`${totalTimeMinutes}m total`} tone="neutral" />
+          {selectedSectionConfigs.map((section) => {
+            const duration = section.id === "core" ? roleConfig.time_limit_minutes : section.durationMinutes;
+            return (
+              <StatusPill
+                key={section.id}
+                label={`${duration}m ${section.label}`}
+                tone={section.id === "applied_logic_reasoning" ? "purple" : "teal"}
+              />
+            );
+          })}
         </div>
       }
     >
@@ -143,6 +187,32 @@ export default function CreateTestPage() {
                           {stack}
                         </button>
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-200">Sections</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.values(sectionRegistry)
+                        .filter((section) => section.enabled)
+                        .sort((a, b) => a.order - b.order)
+                        .map((section) => {
+                          const selected = selectedSections.includes(section.id);
+                          return (
+                            <button
+                              key={section.id}
+                              type="button"
+                              onClick={() => toggleSection(section.id)}
+                              className={`rounded-full border px-4 py-2 text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
+                                selected
+                                  ? "border-brand-300 bg-brand-500/18 text-white shadow-[0_14px_32px_rgba(31,111,255,0.18)]"
+                                  : "border-white/16 bg-white/[0.05] text-slate-200 hover:border-brand-300/50 hover:bg-white/[0.08]"
+                              }`}
+                            >
+                              {section.label}
+                            </button>
+                          );
+                        })}
                     </div>
                   </div>
                 </div>
@@ -205,7 +275,7 @@ export default function CreateTestPage() {
                 <summary className="cursor-pointer list-none px-4 py-3 text-sm text-slate-200">{copy.create.advanced}</summary>
                 <div className="border-t border-white/10 p-4">
                   <pre className="max-h-56 overflow-auto rounded-[18px] border border-white/10 bg-black/40 p-3 text-xs text-slate-100">
-                    <code>{JSON.stringify({ roleId, selectedStacks, passTarget, roleConfig }, null, 2)}</code>
+                    <code>{JSON.stringify({ roleId, selectedStacks, selectedSections, passTarget, roleConfig }, null, 2)}</code>
                   </pre>
                 </div>
               </details>

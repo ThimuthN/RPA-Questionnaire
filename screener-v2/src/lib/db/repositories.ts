@@ -1,13 +1,19 @@
 import { Prisma } from "@prisma/client";
 import crypto from "node:crypto";
 import type { ResultSummary, RoleId, StackId } from "@/lib/assessment-engine/types";
-import { buildSelection } from "@/lib/assessment-engine/selection";
 import { buildResultSummary } from "@/lib/assessment-engine/scoring";
+import { buildSelection } from "@/lib/assessment-engine/selection";
 import { questionBank } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
-import { pickPracticalPack } from "@/features/practical/packs";
-import { buildPracticalQuestion, scorePracticalQuestion } from "@/features/practical/grading";
-import { hashValue, nowIso, randomPasscode, randomToken } from "@/lib/tokens/token-service";
+import {
+  createSectionState,
+  getDefaultSelectedSections,
+  normalizeSelectedSections,
+  orderedSections,
+  sectionRegistry
+} from "@/lib/sections/registry";
+import type { SectionId, SectionState } from "@/lib/sections/types";
+import { hashValue, randomPasscode, randomToken } from "@/lib/tokens/token-service";
 
 interface InviteRecord {
   id: string;
@@ -20,6 +26,7 @@ interface InviteRecord {
   stackLocked: boolean;
   roleId?: RoleId;
   stacks?: StackId[];
+  sections: SectionId[];
   maxAttempts: number;
   usedAttempts: number;
   expiresAt?: string;
@@ -42,22 +49,29 @@ interface AttemptRecord {
   participantId: string;
   roleId: RoleId;
   stacks: StackId[];
+  sections: SectionId[];
+  sectionState: Partial<Record<SectionId, SectionState>>;
   seed: number;
-  stage: "core" | "practical" | "submitted";
+  stage: SectionId | "submitted";
   status: "in_progress" | "submitted";
   coreQuestionIds: string[];
   coreAnswers: Record<string, unknown>;
   practicalAnswer: Record<string, unknown>;
+  logicReasoningAnswer?: Record<string, unknown>;
   practicalEarned: number;
   practicalPossible: number;
+  logicReasoningEarned: number;
+  logicReasoningPossible: number;
   remainingCoreSeconds: number;
   remainingPracticalSeconds: number;
+  remainingLogicReasoningSeconds?: number;
   integrity: { tabHiddenCount: number; copyCount: number; pasteCount: number };
   startedAt: string;
   submittedAt?: string;
 }
 
 interface PersistedBreakdown {
+  sections: SectionId[];
   passPercent: number;
   practicalMinPercent: number;
   sectionBreakdown: ResultSummary["sectionBreakdown"];
@@ -76,6 +90,13 @@ function toStacks(value: Prisma.JsonValue | null | undefined): StackId[] {
   return Array.isArray(value) ? (value as StackId[]) : [];
 }
 
+function toSections(value: Prisma.JsonValue | null | undefined): SectionId[] {
+  if (Array.isArray(value)) {
+    return normalizeSelectedSections(value as SectionId[]);
+  }
+  return getDefaultSelectedSections();
+}
+
 function toStringArray(value: Prisma.JsonValue | null | undefined): string[] {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
 }
@@ -85,6 +106,113 @@ function toObject<T>(value: Prisma.JsonValue | null | undefined, fallback: T): T
     return value as T;
   }
   return fallback;
+}
+
+function normalizeStage(stage: string, sections: SectionId[], status: string): SectionId | "submitted" {
+  if (status === "submitted") return "submitted";
+  if (stage && sections.includes(stage as SectionId)) {
+    return stage as SectionId;
+  }
+  return sections[0] ?? "core";
+}
+
+function ensureSectionState(args: {
+  roleId: RoleId;
+  stacks: StackId[];
+  sections: SectionId[];
+  stored: Partial<Record<SectionId, SectionState>>;
+  legacy: {
+    coreAnswers: Record<string, unknown>;
+    practicalAnswer: Record<string, unknown>;
+    logicAnswer: Record<string, unknown>;
+    remainingCoreSeconds: number;
+    remainingPracticalSeconds: number;
+    remainingLogicReasoningSeconds: number | null;
+    practicalEarned: number;
+    practicalPossible: number;
+    logicReasoningEarned: number;
+    logicReasoningPossible: number;
+  };
+}): Partial<Record<SectionId, SectionState>> {
+  const baseline = createSectionState({
+    roleId: args.roleId,
+    stacks: args.stacks,
+    sections: args.sections
+  });
+
+  for (const sectionId of args.sections) {
+    const existing = args.stored[sectionId];
+    const fallback = baseline[sectionId] ?? { answers: {}, remainingSeconds: 0 };
+
+    if (sectionId === "core") {
+      baseline.core = {
+        answers: { ...args.legacy.coreAnswers, ...(existing?.answers ?? {}) },
+        remainingSeconds:
+          existing?.remainingSeconds ?? args.legacy.remainingCoreSeconds ?? fallback.remainingSeconds
+      };
+      continue;
+    }
+
+    if (sectionId === "practical") {
+      baseline.practical = {
+        answers: { ...args.legacy.practicalAnswer, ...(existing?.answers ?? {}) },
+        remainingSeconds:
+          existing?.remainingSeconds ?? args.legacy.remainingPracticalSeconds ?? fallback.remainingSeconds,
+        earned:
+          typeof existing?.earned === "number"
+            ? existing.earned
+            : args.legacy.practicalEarned > 0
+              ? args.legacy.practicalEarned
+              : undefined,
+        possible:
+          typeof existing?.possible === "number"
+            ? existing.possible
+            : args.legacy.practicalPossible > 0
+              ? args.legacy.practicalPossible
+              : undefined
+      };
+      continue;
+    }
+
+    if (sectionId === "applied_logic_reasoning") {
+      baseline.applied_logic_reasoning = {
+        answers: { ...args.legacy.logicAnswer, ...(existing?.answers ?? {}) },
+        remainingSeconds:
+          existing?.remainingSeconds ??
+          args.legacy.remainingLogicReasoningSeconds ??
+          fallback.remainingSeconds,
+        earned:
+          typeof existing?.earned === "number"
+            ? existing.earned
+            : args.legacy.logicReasoningEarned > 0
+              ? args.legacy.logicReasoningEarned
+              : undefined,
+        possible:
+          typeof existing?.possible === "number"
+            ? existing.possible
+            : args.legacy.logicReasoningPossible > 0
+              ? args.legacy.logicReasoningPossible
+              : undefined
+      };
+    }
+  }
+
+  return baseline;
+}
+
+function splitSectionState(sectionState: Partial<Record<SectionId, SectionState>>) {
+  return {
+    coreAnswers: sectionState.core?.answers ?? {},
+    practicalAnswer: sectionState.practical?.answers ?? {},
+    logicReasoningAnswer: sectionState.applied_logic_reasoning?.answers ?? {},
+    remainingCoreSeconds: sectionState.core?.remainingSeconds ?? 0,
+    remainingPracticalSeconds: sectionState.practical?.remainingSeconds ?? 0,
+    remainingLogicReasoningSeconds: sectionState.applied_logic_reasoning?.remainingSeconds ?? null,
+    practicalEarned: sectionState.practical?.earned ?? 0,
+    practicalPossible: sectionState.practical?.possible ?? 0,
+    logicReasoningEarned: sectionState.applied_logic_reasoning?.earned ?? 0,
+    logicReasoningPossible: sectionState.applied_logic_reasoning?.possible ?? 0
+  };
 }
 
 function mapInvite(row: {
@@ -98,6 +226,7 @@ function mapInvite(row: {
   stackLocked: boolean;
   roleId: string | null;
   stacksJson: Prisma.JsonValue | null;
+  sectionsJson: Prisma.JsonValue | null;
   maxAttempts: number;
   usedAttempts: number;
   expiresAt: Date | null;
@@ -114,6 +243,7 @@ function mapInvite(row: {
     stackLocked: row.stackLocked,
     roleId: (row.roleId as RoleId | null) ?? undefined,
     stacks: toStacks(row.stacksJson),
+    sections: toSections(row.sectionsJson),
     maxAttempts: row.maxAttempts,
     usedAttempts: row.usedAttempts,
     expiresAt: row.expiresAt?.toISOString(),
@@ -146,6 +276,8 @@ function mapAttempt(row: {
   participantId: string;
   roleId: string;
   stacksJson: Prisma.JsonValue;
+  sectionsJson: Prisma.JsonValue | null;
+  sectionStateJson: Prisma.JsonValue | null;
   seed: number;
   stage: string;
   status: string;
@@ -154,29 +286,64 @@ function mapAttempt(row: {
   practicalAnswerJson: Prisma.JsonValue;
   practicalEarned: number;
   practicalPossible: number;
+  logicReasoningAnswerJson: Prisma.JsonValue | null;
+  logicReasoningEarned: number;
+  logicReasoningPossible: number;
   remainingCoreSeconds: number;
   remainingPracticalSeconds: number;
+  remainingLogicReasoningSeconds: number | null;
   integrityJson: Prisma.JsonValue;
   startedAt: Date;
   submittedAt: Date | null;
 }): AttemptRecord {
+  const roleId = row.roleId as RoleId;
+  const stacks = toStacks(row.stacksJson);
+  const sections = toSections(row.sectionsJson);
+  const storedSectionState = toObject<Partial<Record<SectionId, SectionState>>>(row.sectionStateJson, {});
+  const sectionState = ensureSectionState({
+    roleId,
+    stacks,
+    sections,
+    stored: storedSectionState,
+    legacy: {
+      coreAnswers: toObject<Record<string, unknown>>(row.coreAnswersJson, {}),
+      practicalAnswer: toObject<Record<string, unknown>>(row.practicalAnswerJson, {}),
+      logicAnswer: toObject<Record<string, unknown>>(row.logicReasoningAnswerJson, {}),
+      remainingCoreSeconds: row.remainingCoreSeconds,
+      remainingPracticalSeconds: row.remainingPracticalSeconds,
+      remainingLogicReasoningSeconds: row.remainingLogicReasoningSeconds,
+      practicalEarned: row.practicalEarned,
+      practicalPossible: row.practicalPossible,
+      logicReasoningEarned: row.logicReasoningEarned,
+      logicReasoningPossible: row.logicReasoningPossible
+    }
+  });
+
+  const split = splitSectionState(sectionState);
+
   return {
     id: row.id,
     assessmentVersionId: row.assessmentVersionId,
     inviteId: row.inviteId ?? undefined,
     participantId: row.participantId,
-    roleId: row.roleId as RoleId,
-    stacks: toStacks(row.stacksJson),
+    roleId,
+    stacks,
+    sections,
+    sectionState,
     seed: row.seed,
-    stage: row.stage as AttemptRecord["stage"],
+    stage: normalizeStage(row.stage, sections, row.status),
     status: row.status as AttemptRecord["status"],
     coreQuestionIds: toStringArray(row.coreQuestionIdsJson),
-    coreAnswers: toObject<Record<string, unknown>>(row.coreAnswersJson, {}),
-    practicalAnswer: toObject<Record<string, unknown>>(row.practicalAnswerJson, {}),
-    practicalEarned: row.practicalEarned,
-    practicalPossible: row.practicalPossible,
-    remainingCoreSeconds: row.remainingCoreSeconds,
-    remainingPracticalSeconds: row.remainingPracticalSeconds,
+    coreAnswers: split.coreAnswers,
+    practicalAnswer: split.practicalAnswer,
+    logicReasoningAnswer: split.logicReasoningAnswer,
+    practicalEarned: split.practicalEarned,
+    practicalPossible: split.practicalPossible,
+    logicReasoningEarned: split.logicReasoningEarned,
+    logicReasoningPossible: split.logicReasoningPossible,
+    remainingCoreSeconds: split.remainingCoreSeconds,
+    remainingPracticalSeconds: split.remainingPracticalSeconds,
+    remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds ?? undefined,
     integrity: toObject<AttemptRecord["integrity"]>(row.integrityJson, {
       tabHiddenCount: 0,
       copyCount: 0,
@@ -187,16 +354,43 @@ function mapAttempt(row: {
   };
 }
 
-function parseBreakdown(value: Prisma.JsonValue | null | undefined): PersistedBreakdown {
-  return toObject<PersistedBreakdown>(value, {
-    passPercent: 0,
-    practicalMinPercent: 0,
-    sectionBreakdown: {
-      core: { pointsEarned: 0, pointsPossible: 0, percent: 0 },
-      practical: { pointsEarned: 0, pointsPossible: 0, percent: 0 }
-    },
-    breakdownByCategory: {}
-  });
+function normalizeBreakdown(
+  raw: ResultSummary["sectionBreakdown"] | Record<string, any>
+): ResultSummary["sectionBreakdown"] {
+  const normalized: ResultSummary["sectionBreakdown"] = {};
+  for (const section of orderedSections) {
+    const row = (raw as Record<string, any>)[section.id];
+    if (!row) continue;
+    normalized[section.id] = {
+      label: typeof row.label === "string" ? row.label : section.label,
+      pointsEarned: Number(row.pointsEarned ?? 0),
+      pointsPossible: Number(row.pointsPossible ?? 0),
+      percent: Number(row.percent ?? 0)
+    };
+  }
+  return normalized;
+}
+
+function parseBreakdown(
+  value: Prisma.JsonValue | null | undefined,
+  attempt: AttemptRecord | null
+): PersistedBreakdown {
+  const fallbackSections = attempt?.sections ?? getDefaultSelectedSections();
+  const parsed = toObject<Record<string, unknown>>(value, {});
+  const rawSections = Array.isArray(parsed.sections) ? (parsed.sections as SectionId[]) : fallbackSections;
+  const sections = normalizeSelectedSections(rawSections);
+  const rawSectionBreakdown = toObject<Record<string, unknown>>(parsed.sectionBreakdown as Prisma.JsonValue, {});
+
+  return {
+    sections,
+    passPercent: Number(parsed.passPercent ?? 0),
+    practicalMinPercent: Number(parsed.practicalMinPercent ?? 0),
+    sectionBreakdown: normalizeBreakdown(rawSectionBreakdown),
+    breakdownByCategory: toObject<ResultSummary["breakdownByCategory"]>(
+      parsed.breakdownByCategory as Prisma.JsonValue,
+      {}
+    )
+  };
 }
 
 function toResultSummary(
@@ -212,13 +406,17 @@ function toResultSummary(
   attempt: AttemptRecord | null
 ): ResultSummary | null {
   if (!attempt) return null;
-  const breakdown = parseBreakdown(resultRow.breakdownJson);
+  const breakdown = parseBreakdown(resultRow.breakdownJson, attempt);
+  const corePercent = breakdown.sectionBreakdown.core?.percent ?? resultRow.corePercent;
+  const practicalPercent = breakdown.sectionBreakdown.practical?.percent ?? resultRow.practicalPercent;
+
   return {
     attemptId: resultRow.attemptId,
     roleId: attempt.roleId,
     stacks: attempt.stacks,
-    corePercent: resultRow.corePercent,
-    practicalPercent: resultRow.practicalPercent,
+    sections: breakdown.sections,
+    corePercent,
+    practicalPercent,
     finalPercent: resultRow.finalPercent,
     passPercent: breakdown.passPercent,
     practicalMinPercent: breakdown.practicalMinPercent,
@@ -236,12 +434,15 @@ export async function createInvite(input: {
   stackLocked?: boolean;
   roleId?: RoleId;
   stacks?: StackId[];
+  sections?: SectionId[];
   maxAttempts?: number;
   expiresAt?: string;
   withPasscode?: boolean;
 }) {
   const token = randomToken(24);
   const passcode = input.withPasscode ? randomPasscode() : undefined;
+  const selectedSections = normalizeSelectedSections(input.sections);
+
   const row = await prisma.invite.create({
     data: {
       id: cuidLike(),
@@ -254,6 +455,8 @@ export async function createInvite(input: {
       stackLocked: input.stackLocked ?? true,
       roleId: input.roleId ?? null,
       stacksJson: input.stacks?.length ? toJsonValue(input.stacks) : Prisma.JsonNull,
+      addonsJson: Prisma.JsonNull,
+      sectionsJson: toJsonValue(selectedSections),
       maxAttempts: input.maxAttempts ?? 1,
       usedAttempts: 0,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
@@ -336,11 +539,20 @@ export async function startAttempt(input: {
   participantId: string;
   roleId: RoleId;
   stacks: StackId[];
+  sections?: SectionId[];
 }) {
+  const selectedSections = normalizeSelectedSections(input.sections);
   const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
   const selection = buildSelection(input.roleId, input.stacks, selectionSeed, questionBank);
+  const sectionState = createSectionState({
+    roleId: input.roleId,
+    stacks: input.stacks,
+    sections: selectedSections
+  });
+  const split = splitSectionState(sectionState);
   const attemptId = cuidLike();
   const startedAt = new Date();
+
   const attempt = await prisma.$transaction(async (tx) => {
     const created = await tx.attempt.create({
       data: {
@@ -350,16 +562,25 @@ export async function startAttempt(input: {
         participantId: input.participantId,
         roleId: input.roleId,
         stacksJson: toJsonValue(input.stacks),
+        addonsJson: Prisma.JsonNull,
+        sectionsJson: toJsonValue(selectedSections),
+        sectionStateJson: toJsonValue(sectionState),
         seed: selection.seed,
-        stage: "core",
+        stage: selectedSections[0] ?? "core",
         status: "in_progress",
-        coreQuestionIdsJson: toJsonValue(selection.selectedIds),
-        coreAnswersJson: toJsonValue({}),
-        practicalAnswerJson: toJsonValue({}),
+        coreQuestionIdsJson: toJsonValue(selectedSections.includes("core") ? selection.selectedIds : []),
+        coreAnswersJson: toJsonValue(split.coreAnswers),
+        practicalAnswerJson: toJsonValue(split.practicalAnswer),
         practicalEarned: 0,
         practicalPossible: 0,
-        remainingCoreSeconds: 20 * 60,
-        remainingPracticalSeconds: 10 * 60,
+        logicReasoningAnswerJson: selectedSections.includes("applied_logic_reasoning")
+          ? toJsonValue(split.logicReasoningAnswer)
+          : Prisma.JsonNull,
+        logicReasoningEarned: 0,
+        logicReasoningPossible: 0,
+        remainingCoreSeconds: split.remainingCoreSeconds,
+        remainingPracticalSeconds: split.remainingPracticalSeconds,
+        remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
         integrityJson: toJsonValue({ tabHiddenCount: 0, copyCount: 0, pasteCount: 0 }),
         startedAt
       }
@@ -381,36 +602,58 @@ export async function startAttempt(input: {
 export async function patchAttempt(
   attemptId: string,
   patch: Partial<
-    Pick<
-      AttemptRecord,
-      "stage" | "coreAnswers" | "practicalAnswer" | "remainingCoreSeconds" | "remainingPracticalSeconds"
-    >
-  > & {
-    integrity?: Partial<AttemptRecord["integrity"]>;
-  }
+    Pick<AttemptRecord, "stage"> & {
+      integrity: Partial<AttemptRecord["integrity"]>;
+      sectionState: Partial<Record<SectionId, SectionState>>;
+    }
+  >
 ) {
   const currentRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
   if (!currentRow) return null;
 
   const current = mapAttempt(currentRow);
-  if (current.status === "submitted") {
-    return null;
+  if (current.status === "submitted") return null;
+
+  const mergedSectionState: Partial<Record<SectionId, SectionState>> = {
+    ...current.sectionState
+  };
+
+  if (patch.sectionState) {
+    for (const sectionId of current.sections) {
+      const incoming = patch.sectionState[sectionId];
+      if (!incoming) continue;
+      const existing = mergedSectionState[sectionId] ?? { answers: {}, remainingSeconds: 0 };
+      mergedSectionState[sectionId] = {
+        answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
+        remainingSeconds:
+          typeof incoming.remainingSeconds === "number"
+            ? incoming.remainingSeconds
+            : existing.remainingSeconds,
+        earned: typeof incoming.earned === "number" ? incoming.earned : existing.earned,
+        possible: typeof incoming.possible === "number" ? incoming.possible : existing.possible
+      };
+    }
   }
+
+  const split = splitSectionState(mergedSectionState);
+  const nextStage =
+    patch.stage && (patch.stage === "submitted" || current.sections.includes(patch.stage))
+      ? patch.stage
+      : current.stage;
+
   const updated = await prisma.attempt.update({
     where: { id: attemptId },
     data: {
-      stage: patch.stage ?? current.stage,
-      coreAnswersJson: patch.coreAnswers
-        ? toJsonValue({ ...current.coreAnswers, ...patch.coreAnswers })
-        : toJsonValue(current.coreAnswers),
-      practicalAnswerJson: patch.practicalAnswer
-        ? toJsonValue({ ...current.practicalAnswer, ...patch.practicalAnswer })
-        : toJsonValue(current.practicalAnswer),
-      remainingCoreSeconds: typeof patch.remainingCoreSeconds === "number" ? patch.remainingCoreSeconds : current.remainingCoreSeconds,
-      remainingPracticalSeconds:
-        typeof patch.remainingPracticalSeconds === "number"
-          ? patch.remainingPracticalSeconds
-          : current.remainingPracticalSeconds,
+      stage: nextStage,
+      sectionStateJson: toJsonValue(mergedSectionState),
+      coreAnswersJson: toJsonValue(split.coreAnswers),
+      practicalAnswerJson: toJsonValue(split.practicalAnswer),
+      logicReasoningAnswerJson: current.sections.includes("applied_logic_reasoning")
+        ? toJsonValue(split.logicReasoningAnswer)
+        : Prisma.JsonNull,
+      remainingCoreSeconds: split.remainingCoreSeconds,
+      remainingPracticalSeconds: split.remainingPracticalSeconds,
+      remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
       integrityJson: patch.integrity
         ? toJsonValue({
             tabHiddenCount: Number(patch.integrity.tabHiddenCount ?? current.integrity.tabHiddenCount),
@@ -424,30 +667,38 @@ export async function patchAttempt(
   return mapAttempt(updated);
 }
 
-export async function submitAttempt(input: {
-  attemptId: string;
-}) {
+export async function submitAttempt(input: { attemptId: string }) {
   const currentRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
   if (!currentRow) return null;
 
   const current = mapAttempt(currentRow);
-  if (current.status === "submitted") {
-    return null;
-  }
-  const practicalPack = pickPracticalPack(current.roleId, current.stacks);
-  const practicalQuestion = buildPracticalQuestion(practicalPack);
-  const practicalScore = scorePracticalQuestion(practicalQuestion, current.practicalAnswer);
-  const practicalEarned = practicalScore.pointsEarned;
-  const practicalPossible = practicalQuestion.points;
+  if (current.status === "submitted") return null;
+
   const result = buildResultSummary({
     attemptId: current.id,
     roleId: current.roleId,
     stacks: current.stacks,
+    sections: current.sections,
     coreQuestionIds: current.coreQuestionIds,
-    coreAnswers: current.coreAnswers,
-    practicalEarned,
-    practicalPossible
+    sectionState: current.sectionState
   });
+
+  const submittedSectionState: Partial<Record<SectionId, SectionState>> = {
+    ...current.sectionState
+  };
+
+  for (const sectionId of result.sections) {
+    const sectionResult = result.sectionBreakdown[sectionId];
+    if (!sectionResult) continue;
+    const existing = submittedSectionState[sectionId] ?? { answers: {}, remainingSeconds: 0 };
+    submittedSectionState[sectionId] = {
+      ...existing,
+      earned: sectionResult.pointsEarned,
+      possible: sectionResult.pointsPossible
+    };
+  }
+
+  const split = splitSectionState(submittedSectionState);
 
   await prisma.$transaction(async (tx) => {
     await tx.attempt.update({
@@ -455,8 +706,11 @@ export async function submitAttempt(input: {
       data: {
         status: "submitted",
         stage: "submitted",
-        practicalEarned,
-        practicalPossible,
+        sectionStateJson: toJsonValue(submittedSectionState),
+        practicalEarned: split.practicalEarned,
+        practicalPossible: split.practicalPossible,
+        logicReasoningEarned: split.logicReasoningEarned,
+        logicReasoningPossible: split.logicReasoningPossible,
         submittedAt: new Date()
       }
     });
@@ -470,6 +724,7 @@ export async function submitAttempt(input: {
         pass: result.pass,
         borderline: result.borderline,
         breakdownJson: toJsonValue({
+          sections: result.sections,
           passPercent: result.passPercent,
           practicalMinPercent: result.practicalMinPercent,
           sectionBreakdown: result.sectionBreakdown,
@@ -485,6 +740,7 @@ export async function submitAttempt(input: {
         pass: result.pass,
         borderline: result.borderline,
         breakdownJson: toJsonValue({
+          sections: result.sections,
           passPercent: result.passPercent,
           practicalMinPercent: result.practicalMinPercent,
           sectionBreakdown: result.sectionBreakdown,

@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { submitAttempt } from "@/lib/db/repositories";
-
-const submitSchema = z.object({
-  practicalEarned: z.number().min(0).optional(),
-  practicalPossible: z.number().min(0).optional()
-});
 
 export async function POST(
   request: Request,
@@ -13,8 +7,7 @@ export async function POST(
 ) {
   try {
     const { attemptId } = await context.params;
-    const body = await request.json().catch(() => ({}));
-    submitSchema.parse(body);
+    await request.json().catch(() => ({}));
     const result = await submitAttempt({
       attemptId
     });

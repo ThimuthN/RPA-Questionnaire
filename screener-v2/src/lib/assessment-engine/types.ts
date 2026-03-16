@@ -1,12 +1,10 @@
+import type { SectionId } from "@/lib/sections/types";
+
 export type RoleId = "Intern" | "Associate" | "SE" | "SeniorSE" | "TechLead";
 
-export type StackId =
-  | "UiPath"
-  | "AutomationAnywhere"
-  | "Python"
-  | "PowerAutomate";
+export type StackId = "UiPath" | "AutomationAnywhere" | "Python" | "PowerAutomate";
 
-export type SectionId = "core" | "practical";
+export type AddonId = "applied_logic_reasoning";
 
 export type QuestionFormatId =
   | "single_select"
@@ -18,7 +16,8 @@ export type QuestionFormatId =
   | "trace_execution"
   | "best_next_step"
   | "case_triage"
-  | "practical_task";
+  | "practical_task"
+  | "logic_reasoning";
 
 export type ScoringMethod =
   | "all_or_nothing"
@@ -97,7 +96,8 @@ export interface AttemptState {
   participantId: string;
   roleId: RoleId;
   stacks: StackId[];
-  stage: "core" | "practical" | "submitted";
+  sections: SectionId[];
+  stage: SectionId | "submitted";
   seed: number;
   selectedQuestionIds: string[];
   answers: Record<string, unknown>;
@@ -121,6 +121,13 @@ export interface RoleConfig {
   difficulty_targets: Record<string, number>;
 }
 
+export interface AddonConfig {
+  label: string;
+  description: string;
+  time_limit_minutes: number;
+  enabled: boolean;
+}
+
 export interface ConfigV2 {
   schemaVersion: string;
   questionBankVersion: string;
@@ -129,6 +136,7 @@ export interface ConfigV2 {
   stacks: StackId[];
   stackLabels: Record<StackId, string>;
   roles: Record<RoleId, RoleConfig>;
+  addons: Record<AddonId, AddonConfig>;
 }
 
 export interface SelectionMeta {
@@ -158,10 +166,20 @@ export interface ScoreOutput {
   isCorrect: boolean;
 }
 
+export interface SectionBreakdownItem {
+  label: string;
+  pointsEarned: number;
+  pointsPossible: number;
+  percent: number;
+}
+
+export type SectionBreakdown = Partial<Record<SectionId, SectionBreakdownItem>>;
+
 export interface ResultSummary {
   attemptId: string;
   roleId: RoleId;
   stacks: StackId[];
+  sections: SectionId[];
   corePercent: number;
   practicalPercent: number;
   finalPercent: number;
@@ -169,12 +187,6 @@ export interface ResultSummary {
   practicalMinPercent: number;
   pass: boolean;
   borderline: boolean;
-  sectionBreakdown: {
-    core: { pointsEarned: number; pointsPossible: number; percent: number };
-    practical: { pointsEarned: number; pointsPossible: number; percent: number };
-  };
-  breakdownByCategory: Record<
-    string,
-    { correctCount: number; totalCount: number; percent: number }
-  >;
+  sectionBreakdown: SectionBreakdown;
+  breakdownByCategory: Record<string, { correctCount: number; totalCount: number; percent: number }>;
 }

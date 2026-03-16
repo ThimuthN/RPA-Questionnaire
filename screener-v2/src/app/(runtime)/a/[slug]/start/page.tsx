@@ -7,12 +7,15 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { SectionId } from "@/lib/sections/types";
+import { sectionRegistry } from "@/lib/sections/registry";
 
 interface InviteMeta {
   roleLocked: boolean;
   stackLocked: boolean;
   roleId: RoleId | null;
   stacks: StackId[];
+  sections: SectionId[];
 }
 
 function InviteStartContent() {
@@ -29,6 +32,7 @@ function InviteStartContent() {
   const [stacks, setStacks] = useState<StackId[]>([]);
   const [passcode, setPasscode] = useState(passcodeFromQuery);
   const [inviteMeta, setInviteMeta] = useState<InviteMeta | null>(null);
+  const [totalDurationMinutes, setTotalDurationMinutes] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(true);
@@ -61,6 +65,7 @@ function InviteStartContent() {
       }
       const invite = data.invite as InviteMeta;
       setInviteMeta(invite);
+      setTotalDurationMinutes(typeof data.totalDurationMinutes === "number" ? data.totalDurationMinutes : null);
       if (invite.roleId) setRoleId(invite.roleId);
       if (invite.stacks?.length) setStacks(invite.stacks);
       setDetailsLoading(false);
@@ -96,6 +101,7 @@ function InviteStartContent() {
     const effectiveRoleId = invite.roleId ?? roleId;
     const effectiveStacks = invite.stacks?.length ? invite.stacks : stacks;
     setInviteMeta(invite);
+    setTotalDurationMinutes(typeof validated.totalDurationMinutes === "number" ? validated.totalDurationMinutes : null);
     setRoleId(effectiveRoleId);
     setStacks(effectiveStacks);
 
@@ -206,7 +212,15 @@ function InviteStartContent() {
               Stack: {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
             </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
-              Time: Core 20m + Practical 10m
+              Time: {totalDurationMinutes != null ? `${totalDurationMinutes}m total` : "Loading..."}
+            </p>
+            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+              Sections:{" "}
+              {detailsLoading
+                ? "Loading..."
+                : inviteMeta?.sections?.length
+                  ? inviteMeta.sections.map((sectionId) => sectionRegistry[sectionId]?.label ?? sectionId).join(", ")
+                  : "Not available"}
             </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
               Autosave: Enabled

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
+import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getAppUrl } from "@/lib/server/app-url";
 
 const createInviteSchema = z.object({
@@ -11,6 +13,7 @@ const createInviteSchema = z.object({
   stackLocked: z.boolean().optional(),
   roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
   stacks: z.array(z.enum(["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"])).optional(),
+  sections: z.array(z.enum(["core", "practical", "applied_logic_reasoning"])).optional(),
   maxAttempts: z.number().int().min(1).max(5).optional(),
   expiresAt: z.string().optional(),
   withPasscode: z.boolean().optional()
@@ -19,6 +22,20 @@ const createInviteSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = createInviteSchema.parse(await request.json());
+    if (Array.isArray(body.sections) && body.sections.length === 0) {
+      return NextResponse.json(
+        { ok: false, message: "At least one section must be selected." },
+        { status: 400 }
+      );
+    }
+    const normalizedSections = normalizeSelectedSections(body.sections as SectionId[] | undefined);
+    if (normalizedSections.length === 0) {
+      return NextResponse.json(
+        { ok: false, message: "At least one section must be selected." },
+        { status: 400 }
+      );
+    }
+
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,
       mode: body.mode,
@@ -26,6 +43,7 @@ export async function POST(request: Request) {
       stackLocked: body.stackLocked,
       roleId: body.roleId as RoleId | undefined,
       stacks: body.stacks as StackId[] | undefined,
+      sections: normalizedSections,
       maxAttempts: body.maxAttempts,
       expiresAt: body.expiresAt,
       withPasscode: body.withPasscode

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type Tone = "neutral" | "blue" | "teal" | "emerald" | "amber" | "red";
+type Tone = "neutral" | "blue" | "teal" | "emerald" | "amber" | "red" | "purple";
 
 const toneClass: Record<Tone, string> = {
   neutral: "border-white/16 bg-white/[0.06] text-slate-200",
@@ -8,7 +8,8 @@ const toneClass: Record<Tone, string> = {
   teal: "border-teal-400/45 bg-teal-500/15 text-teal-100",
   emerald: "border-emerald-400/45 bg-emerald-500/15 text-emerald-100",
   amber: "border-amber-400/45 bg-amber-500/15 text-amber-100",
-  red: "border-red-400/45 bg-red-500/15 text-red-100"
+  red: "border-red-400/45 bg-red-500/15 text-red-100",
+  purple: "border-purple-400/45 bg-purple-500/15 text-purple-100"
 };
 
 export function StatusPill({

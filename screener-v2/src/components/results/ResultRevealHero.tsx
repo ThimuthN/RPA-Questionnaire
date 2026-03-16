@@ -13,6 +13,9 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   const tone = row.pass ? "emerald" : row.borderline ? "amber" : "red";
   const score = useMotionValue(reduceMotion ? row.finalPercent : 0);
   const rounded = useTransform(score, (value) => value.toFixed(1));
+  const sectionRows = row.sections
+    .map((sectionId) => row.sectionBreakdown[sectionId])
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
   useEffect(() => {
     if (reduceMotion) {
@@ -37,14 +40,12 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
             <h1 className="text-3xl text-white md:text-4xl">{copy.results.finalScore}</h1>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.runtime.core}</p>
-              <p className="mt-2 text-xl text-white">{row.corePercent.toFixed(1)}%</p>
-            </div>
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.runtime.practical}</p>
-              <p className="mt-2 text-xl text-white">{row.practicalPercent.toFixed(1)}%</p>
-            </div>
+            {sectionRows.map((section) => (
+              <div key={section.label} className="rounded-[18px] border border-white/10 bg-black/20 p-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{section.label}</p>
+                <p className="mt-2 text-xl text-white">{section.percent.toFixed(1)}%</p>
+              </div>
+            ))}
             <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">
               <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.results.outcome}</p>
               <p className="mt-2 text-xl text-white">{status}</p>

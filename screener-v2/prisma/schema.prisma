@@ -47,6 +47,8 @@ model Invite {
   stackLocked         Boolean  @default(true)
   roleId              String?
   stacksJson          Json?
+  addonsJson          Json?
+  sectionsJson        Json?
   maxAttempts         Int      @default(1)
   usedAttempts        Int      @default(0)
   expiresAt           DateTime?
@@ -74,6 +76,9 @@ model Attempt {
   participantId          String
   roleId                 String
   stacksJson             Json
+  addonsJson             Json?
+  sectionsJson           Json
+  sectionStateJson       Json?
   seed                   Int
   stage                  String
   status                 String
@@ -82,8 +87,12 @@ model Attempt {
   practicalAnswerJson    Json
   practicalEarned        Float    @default(0)
   practicalPossible      Float    @default(0)
+  logicReasoningAnswerJson Json?
+  logicReasoningEarned   Float    @default(0)
+  logicReasoningPossible Float    @default(0)
   remainingCoreSeconds   Int
   remainingPracticalSeconds Int
+  remainingLogicReasoningSeconds Int?
   integrityJson          Json
   startedAt              DateTime @default(now())
   submittedAt            DateTime?

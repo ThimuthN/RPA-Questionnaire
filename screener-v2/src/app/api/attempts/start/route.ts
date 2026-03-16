@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { SectionId } from "@/lib/sections/types";
 import { pickPracticalPack } from "@/features/practical/packs";
 import {
   createOrGetParticipant,
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
     let assessmentVersionId: string | undefined;
     let effectiveRoleId = body.roleId as RoleId | undefined;
     let effectiveStacks = body.stacks as StackId[] | undefined;
+    let effectiveSections: SectionId[] | undefined;
 
     if (body.inviteToken) {
       const inviteCheck = await validateInvite({
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
+      effectiveSections = inviteCheck.invite.sections;
     } else if (body.inviteSlug) {
       const inviteCheck = await validateInvite({
         slug: body.inviteSlug,
@@ -60,6 +63,7 @@ export async function POST(request: Request) {
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
+      effectiveSections = inviteCheck.invite.sections;
     }
 
     if (!effectiveRoleId || !effectiveStacks?.length) {
@@ -80,9 +84,19 @@ export async function POST(request: Request) {
       assessmentVersionId,
       participantId: participant.id,
       roleId: effectiveRoleId,
-      stacks: effectiveStacks
+      stacks: effectiveStacks,
+      sections: effectiveSections
     });
-    const practicalPack = pickPracticalPack(effectiveRoleId, effectiveStacks);
+    const practicalPack = started.attempt.sections.includes("practical")
+      ? pickPracticalPack(effectiveRoleId, effectiveStacks)
+      : null;
+
+    const timers: Record<string, number> = {};
+    Object.entries(started.attempt.sectionState ?? {}).forEach(([sectionId, state]) => {
+      if (state && typeof state === "object" && "remainingSeconds" in state) {
+        timers[sectionId] = (state as any).remainingSeconds;
+      }
+    });
 
     return NextResponse.json({
       ok: true,
@@ -90,12 +104,10 @@ export async function POST(request: Request) {
       roleId: started.attempt.roleId,
       stacks: started.attempt.stacks,
       seed: started.attempt.seed,
+      sections: started.attempt.sections,
       questionIds: started.attempt.coreQuestionIds,
       practicalPack,
-      timers: {
-        core: started.attempt.remainingCoreSeconds,
-        practical: started.attempt.remainingPracticalSeconds
-      }
+      timers
     });
   } catch (error) {
     return NextResponse.json(

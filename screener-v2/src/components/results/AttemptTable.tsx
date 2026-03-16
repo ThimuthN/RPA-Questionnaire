@@ -11,6 +11,14 @@ function statusLabel(row: ResultSummary) {
   return "Fail";
 }
 
+function sectionSummary(row: ResultSummary) {
+  const entries = row.sections
+    .map((sectionId) => row.sectionBreakdown[sectionId])
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  if (entries.length === 0) return "No section data";
+  return entries.map((entry) => `${entry.label} ${entry.percent.toFixed(1)}%`).join(" | ");
+}
+
 export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
   if (rows.length === 0) {
     return (
@@ -54,10 +62,8 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
                 <p className="mt-1 text-lg text-white">{row.finalPercent.toFixed(1)}%</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Core / Practical</p>
-                <p className="mt-1 text-sm text-slate-200">
-                  {row.corePercent.toFixed(1)}% / {row.practicalPercent.toFixed(1)}%
-                </p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Section scores</p>
+                <p className="mt-1 text-sm text-slate-200">{sectionSummary(row)}</p>
               </div>
               <div className="flex items-center lg:justify-end">
                 <Link

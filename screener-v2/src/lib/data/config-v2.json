@@ -206,5 +206,13 @@
         "4": 12
       }
     }
+  },
+  "addons": {
+    "applied_logic_reasoning": {
+      "label": "Applied Logic & Reasoning",
+      "description": "Additional section testing logical reasoning and problem-solving skills",
+      "time_limit_minutes": 10,
+      "enabled": true
+    }
   }
 }

@@ -10,11 +10,13 @@ export function resultsToCsv(rows: ResultSummary[]): string {
     "attemptId",
     "roleId",
     "stacks",
+    "sections",
     "corePercent",
     "practicalPercent",
     "finalPercent",
     "pass",
-    "borderline"
+    "borderline",
+    "sectionBreakdown"
   ];
   const lines = [header.join(",")];
   for (const row of rows) {
@@ -23,11 +25,13 @@ export function resultsToCsv(rows: ResultSummary[]): string {
         row.attemptId,
         row.roleId,
         row.stacks.join("|"),
+        row.sections.join("|"),
         row.corePercent,
         row.practicalPercent,
         row.finalPercent,
         row.pass,
-        row.borderline
+        row.borderline,
+        JSON.stringify(row.sectionBreakdown)
       ]
         .map(csvEscape)
         .join(",")
