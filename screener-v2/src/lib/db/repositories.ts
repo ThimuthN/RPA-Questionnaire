@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import type { ResultSummary, RoleId, StackId } from "@/lib/assessment-engine/types";
 import { buildResultSummary } from "@/lib/assessment-engine/scoring";
 import { buildSelection } from "@/lib/assessment-engine/selection";
-import { questionBank } from "@/lib/data/question-bank";
+import { getRoleConfig, questionBank } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
 import {
   createSectionState,
@@ -25,6 +25,7 @@ interface InviteRecord {
   roleLocked: boolean;
   stackLocked: boolean;
   roleId?: RoleId;
+  passTargetPercent: number;
   stacks?: StackId[];
   sections: SectionId[];
   maxAttempts: number;
@@ -48,6 +49,7 @@ interface AttemptRecord {
   inviteId?: string;
   participantId: string;
   roleId: RoleId;
+  passTargetPercent: number;
   stacks: StackId[];
   sections: SectionId[];
   sectionState: Partial<Record<SectionId, SectionState>>;
@@ -215,6 +217,16 @@ function splitSectionState(sectionState: Partial<Record<SectionId, SectionState>
   };
 }
 
+function normalizePassTargetPercent(value: number | null | undefined, roleId?: RoleId): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.min(100, Math.max(0, Math.round(value)));
+  }
+  if (roleId) {
+    return Number(getRoleConfig(roleId).pass_percentage ?? 60);
+  }
+  return 60;
+}
+
 function mapInvite(row: {
   id: string;
   assessmentVersionId: string;
@@ -225,6 +237,7 @@ function mapInvite(row: {
   roleLocked: boolean;
   stackLocked: boolean;
   roleId: string | null;
+  passTargetPercent: number | null;
   stacksJson: Prisma.JsonValue | null;
   sectionsJson: Prisma.JsonValue | null;
   maxAttempts: number;
@@ -242,6 +255,7 @@ function mapInvite(row: {
     roleLocked: row.roleLocked,
     stackLocked: row.stackLocked,
     roleId: (row.roleId as RoleId | null) ?? undefined,
+    passTargetPercent: normalizePassTargetPercent(row.passTargetPercent, (row.roleId as RoleId | null) ?? undefined),
     stacks: toStacks(row.stacksJson),
     sections: toSections(row.sectionsJson),
     maxAttempts: row.maxAttempts,
@@ -275,6 +289,7 @@ function mapAttempt(row: {
   inviteId: string | null;
   participantId: string;
   roleId: string;
+  passTargetPercent: number | null;
   stacksJson: Prisma.JsonValue;
   sectionsJson: Prisma.JsonValue | null;
   sectionStateJson: Prisma.JsonValue | null;
@@ -327,6 +342,7 @@ function mapAttempt(row: {
     inviteId: row.inviteId ?? undefined,
     participantId: row.participantId,
     roleId,
+    passTargetPercent: normalizePassTargetPercent(row.passTargetPercent, roleId),
     stacks,
     sections,
     sectionState,
@@ -355,17 +371,22 @@ function mapAttempt(row: {
 }
 
 function normalizeBreakdown(
-  raw: ResultSummary["sectionBreakdown"] | Record<string, any>
+  raw: ResultSummary["sectionBreakdown"] | Record<string, any>,
+  passPercent: number
 ): ResultSummary["sectionBreakdown"] {
   const normalized: ResultSummary["sectionBreakdown"] = {};
   for (const section of orderedSections) {
     const row = (raw as Record<string, any>)[section.id];
     if (!row) continue;
+    const percent = Number(row.percent ?? 0);
+    const requiredPercent = Number(row.requiredPercent ?? Math.max(passPercent, section.minPercentRequired ?? 0));
     normalized[section.id] = {
       label: typeof row.label === "string" ? row.label : section.label,
       pointsEarned: Number(row.pointsEarned ?? 0),
       pointsPossible: Number(row.pointsPossible ?? 0),
-      percent: Number(row.percent ?? 0)
+      percent,
+      requiredPercent,
+      pass: typeof row.pass === "boolean" ? row.pass : percent >= requiredPercent
     };
   }
   return normalized;
@@ -377,15 +398,16 @@ function parseBreakdown(
 ): PersistedBreakdown {
   const fallbackSections = attempt?.sections ?? getDefaultSelectedSections();
   const parsed = toObject<Record<string, unknown>>(value, {});
+  const passPercent = Number(parsed.passPercent ?? 0);
   const rawSections = Array.isArray(parsed.sections) ? (parsed.sections as SectionId[]) : fallbackSections;
   const sections = normalizeSelectedSections(rawSections);
   const rawSectionBreakdown = toObject<Record<string, unknown>>(parsed.sectionBreakdown as Prisma.JsonValue, {});
 
   return {
     sections,
-    passPercent: Number(parsed.passPercent ?? 0),
+    passPercent,
     practicalMinPercent: Number(parsed.practicalMinPercent ?? 0),
-    sectionBreakdown: normalizeBreakdown(rawSectionBreakdown),
+    sectionBreakdown: normalizeBreakdown(rawSectionBreakdown, passPercent),
     breakdownByCategory: toObject<ResultSummary["breakdownByCategory"]>(
       parsed.breakdownByCategory as Prisma.JsonValue,
       {}
@@ -433,6 +455,7 @@ export async function createInvite(input: {
   roleLocked?: boolean;
   stackLocked?: boolean;
   roleId?: RoleId;
+  passTargetPercent?: number;
   stacks?: StackId[];
   sections?: SectionId[];
   maxAttempts?: number;
@@ -442,6 +465,7 @@ export async function createInvite(input: {
   const token = randomToken(24);
   const passcode = input.withPasscode ? randomPasscode() : undefined;
   const selectedSections = normalizeSelectedSections(input.sections);
+  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
 
   const row = await prisma.invite.create({
     data: {
@@ -454,6 +478,7 @@ export async function createInvite(input: {
       roleLocked: input.roleLocked ?? true,
       stackLocked: input.stackLocked ?? true,
       roleId: input.roleId ?? null,
+      passTargetPercent,
       stacksJson: input.stacks?.length ? toJsonValue(input.stacks) : Prisma.JsonNull,
       sectionsJson: toJsonValue(selectedSections),
       maxAttempts: input.maxAttempts ?? 1,
@@ -537,10 +562,12 @@ export async function startAttempt(input: {
   assessmentVersionId?: string;
   participantId: string;
   roleId: RoleId;
+  passTargetPercent?: number;
   stacks: StackId[];
   sections?: SectionId[];
 }) {
   const selectedSections = normalizeSelectedSections(input.sections);
+  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
   const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
   const selection = buildSelection(input.roleId, input.stacks, selectionSeed, questionBank);
   const sectionState = createSectionState({
@@ -560,6 +587,7 @@ export async function startAttempt(input: {
         inviteId: input.inviteId ?? null,
         participantId: input.participantId,
         roleId: input.roleId,
+        passTargetPercent,
         stacksJson: toJsonValue(input.stacks),
         sectionsJson: toJsonValue(selectedSections),
         sectionStateJson: toJsonValue(sectionState),
@@ -676,6 +704,7 @@ export async function submitAttempt(input: { attemptId: string }) {
     attemptId: current.id,
     roleId: current.roleId,
     stacks: current.stacks,
+    passTargetPercent: current.passTargetPercent,
     sections: current.sections,
     coreQuestionIds: current.coreQuestionIds,
     sectionState: current.sectionState

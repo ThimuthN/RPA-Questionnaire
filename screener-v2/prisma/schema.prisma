@@ -46,6 +46,7 @@ model Invite {
   roleLocked          Boolean  @default(true)
   stackLocked         Boolean  @default(true)
   roleId              String?
+  passTargetPercent   Int?
   stacksJson          Json?
   sectionsJson        Json?
   maxAttempts         Int      @default(1)
@@ -74,6 +75,7 @@ model Attempt {
   inviteId               String?
   participantId          String
   roleId                 String
+  passTargetPercent      Int
   stacksJson             Json
   sectionsJson           Json
   sectionStateJson       Json?

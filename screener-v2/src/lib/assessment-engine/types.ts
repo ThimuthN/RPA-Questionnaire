@@ -171,6 +171,8 @@ export interface SectionBreakdownItem {
   pointsEarned: number;
   pointsPossible: number;
   percent: number;
+  requiredPercent: number;
+  pass: boolean;
 }
 
 export type SectionBreakdown = Partial<Record<SectionId, SectionBreakdownItem>>;

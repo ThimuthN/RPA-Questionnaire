@@ -62,7 +62,7 @@ export default function CreateTestPage() {
       return;
     }
     if (selectedSections.length === 0) {
-      setError("Select at least one section.");
+      setError("Select at least one addon.");
       return;
     }
     setLoading(true);
@@ -77,6 +77,7 @@ export default function CreateTestPage() {
         roleLocked: true,
         stackLocked: true,
         roleId,
+        passTarget,
         stacks: selectedStacks,
         sections: selectedSections,
         withPasscode: true,
@@ -191,7 +192,7 @@ export default function CreateTestPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <p className="text-sm text-slate-200">Sections</p>
+                    <p className="text-sm text-slate-200">Addons</p>
                     <div className="flex flex-wrap gap-2">
                       {Object.values(sectionRegistry)
                         .filter((section) => section.enabled)

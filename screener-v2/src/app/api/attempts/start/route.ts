@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     let effectiveRoleId = body.roleId as RoleId | undefined;
     let effectiveStacks = body.stacks as StackId[] | undefined;
     let effectiveSections: SectionId[] | undefined;
+    let effectivePassTarget: number | undefined;
 
     if (body.inviteToken) {
       const inviteCheck = await validateInvite({
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
+      effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;
     } else if (body.inviteSlug) {
@@ -62,6 +64,7 @@ export async function POST(request: Request) {
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
+      effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;
     }
@@ -84,6 +87,7 @@ export async function POST(request: Request) {
       assessmentVersionId,
       participantId: participant.id,
       roleId: effectiveRoleId,
+      passTargetPercent: effectivePassTarget,
       stacks: effectiveStacks,
       sections: effectiveSections
     });
@@ -102,6 +106,7 @@ export async function POST(request: Request) {
       ok: true,
       attemptId: started.attempt.id,
       roleId: started.attempt.roleId,
+      passTarget: started.attempt.passTargetPercent,
       stacks: started.attempt.stacks,
       seed: started.attempt.seed,
       sections: started.attempt.sections,

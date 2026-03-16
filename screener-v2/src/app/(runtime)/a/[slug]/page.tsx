@@ -32,6 +32,7 @@ export default async function InviteLandingPage({
   const sections: SectionId[] =
     inviteCheck.ok && inviteCheck.invite?.sections ? inviteCheck.invite.sections : ["core", "practical"];
   const totalMinutes = getTotalDurationMinutes(sections, roleId);
+  const passTarget = inviteCheck.ok && inviteCheck.invite ? inviteCheck.invite.passTargetPercent : 60;
   const sectionLabels = sections.map((sectionId) => sectionRegistry[sectionId]?.label ?? sectionId);
 
   if (startNow === "1") {
@@ -47,7 +48,7 @@ export default async function InviteLandingPage({
       >
         <div className="mx-auto max-w-3xl">
           <StagePanel className="space-y-5">
-            <p className="text-slate-200">{sectionLabels.join(" + ")}. Autosave is enabled.</p>
+            <p className="text-slate-200">{sectionLabels.join(" + ")}. Pass target: {passTarget}%. Autosave is enabled.</p>
             <div className="flex flex-wrap gap-2">
               {sections.map((sectionId) => (
                 <StatusPill

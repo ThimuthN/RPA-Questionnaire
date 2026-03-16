@@ -44,6 +44,9 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
               <div key={section.label} className="rounded-[18px] border border-white/10 bg-black/20 p-3">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{section.label}</p>
                 <p className="mt-2 text-xl text-white">{section.percent.toFixed(1)}%</p>
+                <p className={`mt-1 text-xs ${section.pass ? "text-emerald-200" : "text-red-200"}`}>
+                  {section.pass ? "Pass" : "Fail"} at {section.requiredPercent.toFixed(0)}%
+                </p>
               </div>
             ))}
             <div className="rounded-[18px] border border-white/10 bg-black/20 p-3">

@@ -4,6 +4,7 @@ import type { RoleId, StackId } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
+import { getRoleConfig } from "@/lib/data/question-bank";
 import { getAppUrl } from "@/lib/server/app-url";
 
 const createInviteSchema = z.object({
@@ -12,6 +13,7 @@ const createInviteSchema = z.object({
   roleLocked: z.boolean().optional(),
   stackLocked: z.boolean().optional(),
   roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
+  passTarget: z.number().int().min(40).max(90).optional(),
   stacks: z.array(z.enum(["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"])).optional(),
   sections: z.array(z.enum(["core", "practical", "applied_logic_reasoning"])).optional(),
   maxAttempts: z.number().int().min(1).max(5).optional(),
@@ -24,24 +26,33 @@ export async function POST(request: Request) {
     const body = createInviteSchema.parse(await request.json());
     if (Array.isArray(body.sections) && body.sections.length === 0) {
       return NextResponse.json(
-        { ok: false, message: "At least one section must be selected." },
+        { ok: false, message: "At least one addon must be selected." },
         { status: 400 }
       );
     }
     const normalizedSections = normalizeSelectedSections(body.sections as SectionId[] | undefined);
     if (normalizedSections.length === 0) {
       return NextResponse.json(
-        { ok: false, message: "At least one section must be selected." },
+        { ok: false, message: "At least one addon must be selected." },
         { status: 400 }
       );
     }
+
+    const effectiveRoleId = body.roleId as RoleId | undefined;
+    const passTargetPercent =
+      typeof body.passTarget === "number"
+        ? body.passTarget
+        : effectiveRoleId
+          ? Number(getRoleConfig(effectiveRoleId).pass_percentage)
+          : 60;
 
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,
       mode: body.mode,
       roleLocked: body.roleLocked,
       stackLocked: body.stackLocked,
-      roleId: body.roleId as RoleId | undefined,
+      roleId: effectiveRoleId,
+      passTargetPercent,
       stacks: body.stacks as StackId[] | undefined,
       sections: normalizedSections,
       maxAttempts: body.maxAttempts,
@@ -56,6 +67,7 @@ export async function POST(request: Request) {
       slug: created.row.slug,
       token: created.token,
       passcode: created.passcode || null,
+      passTarget: created.row.passTargetPercent,
       entryUrl: `${appUrl}/a/${created.row.slug}?t=${encodeURIComponent(created.token)}`
     });
   } catch (error) {

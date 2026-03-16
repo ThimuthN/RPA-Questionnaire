@@ -14,6 +14,7 @@ interface InviteMeta {
   roleLocked: boolean;
   stackLocked: boolean;
   roleId: RoleId | null;
+  passTarget: number | null;
   stacks: StackId[];
   sections: SectionId[];
 }
@@ -215,7 +216,10 @@ function InviteStartContent() {
               Time: {totalDurationMinutes != null ? `${totalDurationMinutes}m total` : "Loading..."}
             </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
-              Sections:{" "}
+              Pass target: {detailsLoading ? "Loading..." : inviteMeta?.passTarget != null ? `${inviteMeta.passTarget}%` : "Not available"}
+            </p>
+            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+              Addons:{" "}
               {detailsLoading
                 ? "Loading..."
                 : inviteMeta?.sections?.length

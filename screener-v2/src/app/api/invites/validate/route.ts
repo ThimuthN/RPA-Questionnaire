@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         roleLocked: checked.invite.roleLocked,
         stackLocked: checked.invite.stackLocked,
         roleId: checked.invite.roleId ?? null,
+        passTarget: checked.invite.passTargetPercent,
         stacks: checked.invite.stacks ?? [],
         sections: checked.invite.sections ?? []
       },

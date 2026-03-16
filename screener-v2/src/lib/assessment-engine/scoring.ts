@@ -124,6 +124,7 @@ export interface BuildResultInput {
   attemptId: string;
   roleId: RoleId;
   stacks: StackId[];
+  passTargetPercent?: number;
   sections: SectionId[];
   coreQuestionIds: string[];
   sectionState: Partial<Record<SectionId, SectionState>>;
@@ -135,7 +136,7 @@ function roundOne(value: number): number {
 
 export function buildResultSummary(input: BuildResultInput): ResultSummary {
   const role = getRoleConfig(input.roleId);
-  const passPercent = toInt(role.pass_percentage, 60);
+  const passPercent = toInt(input.passTargetPercent, toInt(role.pass_percentage, 60));
   const selectedSections = input.sections.filter((sectionId) => Boolean(sectionRegistry[sectionId]));
   const byCategory: Record<string, { correctCount: number; totalCount: number; percent: number }> = {};
   const sectionBreakdown: ResultSummary["sectionBreakdown"] = {};
@@ -180,11 +181,14 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     }
 
     const percent = pointsPossible > 0 ? roundOne((pointsEarned / pointsPossible) * 100) : 0;
+    const requiredPercent = Math.max(passPercent, section.minPercentRequired ?? 0);
     sectionBreakdown[sectionId] = {
       label: section.label,
       pointsEarned: roundOne(pointsEarned),
       pointsPossible: roundOne(pointsPossible),
-      percent
+      percent,
+      requiredPercent,
+      pass: percent >= requiredPercent
     };
 
     weightedPercentSum += percent * section.weight;
@@ -199,19 +203,10 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
   const finalPercent = weightSum > 0 ? roundOne(weightedPercentSum / weightSum) : 0;
   const practicalPercent = sectionBreakdown.practical?.percent ?? 0;
   const practicalMinPercent = selectedSections.includes("practical")
-    ? (sectionRegistry.practical.minPercentRequired ?? 0)
+    ? Math.max(passPercent, sectionRegistry.practical.minPercentRequired ?? 0)
     : 0;
 
-  let sectionGatesOk = true;
-  for (const sectionId of selectedSections) {
-    const minPercentRequired = sectionRegistry[sectionId].minPercentRequired;
-    if (typeof minPercentRequired === "number" && minPercentRequired > 0) {
-      const currentPercent = sectionBreakdown[sectionId]?.percent ?? 0;
-      if (currentPercent < minPercentRequired) {
-        sectionGatesOk = false;
-      }
-    }
-  }
+  const sectionGatesOk = selectedSections.every((sectionId) => sectionBreakdown[sectionId]?.pass ?? false);
 
   const pass = finalPercent >= passPercent && sectionGatesOk;
   const borderline = finalPercent >= passPercent - toInt(configV2.borderlineReviewBandPercent, 10);
