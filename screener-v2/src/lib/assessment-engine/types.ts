@@ -217,3 +217,31 @@ export interface ResultSummary {
   sectionBreakdown: SectionBreakdown;
   breakdownByCategory: Record<string, { correctCount: number; totalCount: number; percent: number }>;
 }
+
+export interface ResultReviewItem {
+  id: string;
+  title: string;
+  prompt?: string;
+  promptBlocks?: PromptBlock[];
+  logSnippet?: string;
+  category?: string;
+  formatLabel: string;
+  pointsEarned: number;
+  pointsPossible: number;
+  status: "correct" | "partial" | "incorrect" | "unanswered";
+  candidateAnswerLines: string[];
+  expectedAnswerLines: string[];
+  explanation?: string;
+}
+
+export interface ResultReviewSection {
+  id: SectionId;
+  label: string;
+  description?: string;
+  items: ResultReviewItem[];
+}
+
+export interface DetailedResultSummary {
+  summary: ResultSummary;
+  reviewSections: ResultReviewSection[];
+}

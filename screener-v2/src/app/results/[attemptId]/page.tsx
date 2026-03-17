@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
-import { getResult } from "@/lib/db/repositories";
+import { getDetailedResult } from "@/lib/db/repositories";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
+import { ResultReviewSections } from "@/components/results/ResultReviewSections";
 import { SignalCard } from "@/components/primitives/SignalCard";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { DecisionStage } from "@/components/results/DecisionStage";
@@ -30,8 +31,8 @@ export default async function ResultDetailPage({
   params: Promise<{ attemptId: string }>;
 }) {
   const { attemptId } = await params;
-  const row = await getResult(attemptId);
-  if (!row) {
+  const result = await getDetailedResult(attemptId);
+  if (!result) {
     return (
       <section className="space-y-4">
         <h1 className="text-3xl text-white">Result not found</h1>
@@ -41,6 +42,7 @@ export default async function ResultDetailPage({
       </section>
     );
   }
+  const row = result.summary;
   const signals = getSignals(row);
 
   return (
@@ -98,6 +100,7 @@ export default async function ResultDetailPage({
             ))}
           </div>
         </div>
+        <ResultReviewSections sections={result.reviewSections} />
       </DecisionStage>
     </SceneShell>
   );
