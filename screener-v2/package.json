@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/clean-next.mjs",
+    "predev": "node scripts/clean-next.mjs && node scripts/ensure-prisma-client.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

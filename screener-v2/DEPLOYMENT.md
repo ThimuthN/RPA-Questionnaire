@@ -34,3 +34,4 @@ npm run deploy:prod
 - Invite links and employee verify URLs use `APP_URL` when present.
 - Employee magic-link delivery is still dev-style: the API returns the token directly.
 - The app now requires Postgres-backed persistence for invites, attempts, results, and magic tokens.
+- On Windows, if Prisma generation fails with `EPERM ... query_engine-windows.dll.node`, stop the running local `node`/`next dev` process and rerun `npm run prisma:generate`.

@@ -40,5 +40,6 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
 - If `npm install` ever hits a Prisma `EPERM ... query_engine-windows.dll.node` lock:
   - close running `next dev` / `node` processes
   - run `npm run prisma:generate`
+- `npm run dev` now checks Prisma Client generation before starting. If it stops with a Prisma engine lock error, close the other Node/Next process first.
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for the exact Neon + Vercel steps.
