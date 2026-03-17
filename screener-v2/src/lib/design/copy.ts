@@ -2,7 +2,8 @@ export const copy = {
   nav: {
     create: "Create assessment",
     run: "Start assessment",
-    results: "Results"
+    results: "Results",
+    users: "Users"
   },
   landing: {
     headline: "A better way to assess candidates",

@@ -1,60 +1,75 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SESSION_COOKIE_NAME, sanitizeNextPath, verifySessionToken } from "@/lib/auth/session";
 
-function unauthorized() {
-  return new NextResponse("Authentication required.", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Protected Results", charset="UTF-8"',
-      "Cache-Control": "no-store"
+const authRequiredPrefixes = [
+  "/create-test",
+  "/results",
+  "/studio",
+  "/users",
+  "/api/results",
+  "/api/invites/create",
+  "/api/auth/magic/request",
+  "/api/users"
+];
+
+const adminOnlyPrefixes = ["/users", "/api/users"];
+
+function matchesPrefix(pathname: string, prefixes: string[]) {
+  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function unauthorizedApi(message: string, status = 401) {
+  return NextResponse.json({ ok: false, message }, { status });
+}
+
+function redirectToLogin(request: NextRequest) {
+  const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set(
+    "next",
+    sanitizeNextPath(`${request.nextUrl.pathname}${request.nextUrl.search}`)
+  );
+  return NextResponse.redirect(loginUrl);
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isApi = pathname.startsWith("/api/");
+  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const session = await verifySessionToken(token);
+
+  if (pathname === "/login") {
+    if (session) {
+      return NextResponse.redirect(new URL("/create-test", request.url));
     }
-  });
-}
-
-function decodeBasicAuth(header: string) {
-  const [scheme, encoded] = header.split(" ");
-  if (scheme !== "Basic" || !encoded) {
-    return null;
-  }
-
-  try {
-    const decoded = atob(encoded);
-    const separator = decoded.indexOf(":");
-    if (separator < 0) return null;
-    return {
-      username: decoded.slice(0, separator),
-      password: decoded.slice(separator + 1)
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function middleware(request: NextRequest) {
-  const expectedUsername = process.env.RESULTS_ACCESS_USERNAME;
-  const expectedPassword = process.env.RESULTS_ACCESS_PASSWORD;
-
-  if (!expectedUsername || !expectedPassword) {
     return NextResponse.next();
   }
 
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) {
-    return unauthorized();
-  }
+  if (matchesPrefix(pathname, authRequiredPrefixes)) {
+    if (!session) {
+      return isApi ? unauthorizedApi("Login required.") : redirectToLogin(request);
+    }
 
-  const credentials = decodeBasicAuth(authHeader);
-  if (!credentials) {
-    return unauthorized();
-  }
-
-  if (credentials.username !== expectedUsername || credentials.password !== expectedPassword) {
-    return unauthorized();
+    if (matchesPrefix(pathname, adminOnlyPrefixes) && session.role !== "admin") {
+      return isApi
+        ? unauthorizedApi("Admin access required.", 403)
+        : NextResponse.redirect(new URL("/create-test", request.url));
+    }
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/results/:path*", "/studio/results/:path*", "/api/results/:path*"]
+  matcher: [
+    "/login",
+    "/create-test/:path*",
+    "/results/:path*",
+    "/studio/:path*",
+    "/users/:path*",
+    "/api/results/:path*",
+    "/api/invites/create",
+    "/api/auth/magic/request",
+    "/api/users/:path*"
+  ]
 };

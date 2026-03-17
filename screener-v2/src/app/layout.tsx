@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { MainNav } from "@/components/navigation/MainNav";
+import { getSession } from "@/lib/auth/session";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -27,11 +28,13 @@ export const metadata: Metadata = {
   description: "A platform for creating, taking, and reviewing technical assessments."
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getSession();
+
   return (
     <html lang="en">
       <body className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} bg-ink-950`}>
@@ -41,7 +44,7 @@ export default function RootLayout({
               <Link href="/" className="font-display text-lg tracking-wide text-white">
                 Assessment Hub
               </Link>
-              <MainNav />
+              <MainNav viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
             </nav>
           </header>
           <main className="mx-auto w-full max-w-7xl px-4 py-8 md:py-10">{children}</main>
