@@ -11,6 +11,8 @@
   - `DATABASE_URL`
   - `DIRECT_URL`
   - `APP_URL`
+  - `RESULTS_ACCESS_USERNAME`
+  - `RESULTS_ACCESS_PASSWORD`
 
 ## 3. Apply the schema
 ```bash
@@ -32,6 +34,7 @@ npm run deploy:prod
 
 ## Notes
 - Invite links and employee verify URLs use `APP_URL` when present.
+- Results pages and results export endpoints are protected with HTTP Basic Auth when `RESULTS_ACCESS_USERNAME` and `RESULTS_ACCESS_PASSWORD` are set.
 - Employee magic-link delivery is still dev-style: the API returns the token directly.
 - The app now requires Postgres-backed persistence for invites, attempts, results, and magic tokens.
 - On Windows, if Prisma generation fails with `EPERM ... query_engine-windows.dll.node`, stop the running local `node`/`next dev` process and rerun `npm run prisma:generate`.
