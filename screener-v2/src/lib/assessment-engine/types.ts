@@ -19,6 +19,28 @@ export type QuestionFormatId =
   | "practical_task"
   | "logic_reasoning";
 
+export type PromptBlock =
+  | {
+      type: "paragraph";
+      text: string;
+    }
+  | {
+      type: "list";
+      heading?: string;
+      items: string[];
+      style?: "cards" | "plain";
+    }
+  | {
+      type: "table";
+      heading?: string;
+      headers: string[];
+      rows: string[][];
+    }
+  | {
+      type: "prompt";
+      text: string;
+    };
+
 export type ScoringMethod =
   | "all_or_nothing"
   | "partial_with_penalty"
@@ -39,6 +61,7 @@ export interface QuestionBase {
   points: number;
   scoringMethod: ScoringMethod;
   prompt: string;
+  promptBlocks?: PromptBlock[];
   explanation: string;
   rationale: string;
 }

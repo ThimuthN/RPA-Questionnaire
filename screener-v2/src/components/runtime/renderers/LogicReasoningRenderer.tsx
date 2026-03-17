@@ -1,6 +1,10 @@
 "use client";
 
 import type { BaseQuestionRendererProps } from "@/components/runtime/renderers/types";
+import {
+  StructuredPromptBlocks,
+  StructuredPromptContent
+} from "@/components/runtime/renderers/StructuredPromptContent";
 
 export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuestionRendererProps) {
   const value = answer && typeof answer === "object" ? (answer as Record<string, unknown>) : {};
@@ -12,14 +16,27 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
         const key = String(task.id || task.label || Math.random());
         const taskType = String(task.type || "text");
         const current = value[key];
+        const label = String(task.label || "").replace(/\r\n/g, "\n").trim();
+        const labelLines = label.split("\n").map((line) => line.trim()).filter(Boolean);
+        const title = labelLines[0] ?? label;
+        const body = labelLines.length > 1 ? label.slice(title.length).trim() : "";
+        const promptBlocks = Array.isArray(task.promptBlocks) ? task.promptBlocks : [];
+
         if (taskType === "single_select") {
           const options = Array.isArray(task.options) ? task.options : [];
           return (
             <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
-              <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
+              <div className="space-y-3">
+                <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+                {promptBlocks.length > 0 ? (
+                  <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
+                ) : body ? (
+                  <StructuredPromptContent text={body} className="space-y-4" />
+                ) : null}
+              </div>
               <div className="space-y-2">
                 {options.map((option: any) => (
-                  <label key={`${key}-${option.id}`} className="flex items-center gap-2 text-sm text-slate-200">
+                  <label key={`${key}-${option.id}`} className="flex items-start gap-2 text-sm text-slate-200">
                     <input
                       type="radio"
                       name={key}
@@ -32,7 +49,7 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
                         })
                       }
                     />
-                    <span>{option.label}</span>
+                    <span className="leading-6">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -49,7 +66,14 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
               : {};
           return (
             <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
-              <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
+              <div className="space-y-3">
+                <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+                {promptBlocks.length > 0 ? (
+                  <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
+                ) : body ? (
+                  <StructuredPromptContent text={body} className="space-y-4" />
+                ) : null}
+              </div>
               <div className="space-y-2">
                 {leftItems.map((left: string) => (
                   <div key={`${key}-${left}`} className="grid gap-2 md:grid-cols-[1fr_1fr] md:items-center">
@@ -83,7 +107,14 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
 
         return (
           <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
-            <p className="mb-2 text-sm font-semibold text-slate-100">{task.label}</p>
+            <div className="space-y-3">
+              <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+              {promptBlocks.length > 0 ? (
+                <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
+              ) : body ? (
+                <StructuredPromptContent text={body} className="space-y-4" />
+              ) : null}
+            </div>
             <p className="text-sm text-amber-200">Unsupported logic reasoning task type.</p>
           </div>
         );

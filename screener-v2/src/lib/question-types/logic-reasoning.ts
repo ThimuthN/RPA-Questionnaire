@@ -16,6 +16,7 @@ const logicReasoningSingleSelectSubtaskSchema = z.object({
   id: z.string(),
   type: z.literal("single_select"),
   label: z.string(),
+  promptBlocks: z.array(z.any()).optional(),
   points: z.number(),
   expected: z.string(),
   options: z.array(logicReasoningOptionSchema).min(2)
@@ -25,6 +26,7 @@ const logicReasoningMatchingSubtaskSchema = z.object({
   id: z.string(),
   type: z.literal("matching"),
   label: z.string(),
+  promptBlocks: z.array(z.any()).optional(),
   points: z.number(),
   leftItems: z.array(z.string()).min(1),
   rightOptions: z.array(logicReasoningOptionSchema).min(2),
@@ -39,6 +41,7 @@ const logicReasoningSubtaskSchema = z.union([
 const logicReasoningSchema = z.object({
   id: z.string(),
   prompt: z.string(),
+  promptBlocks: z.array(z.any()).optional(),
   points: z.number(),
   subtasks: z.array(logicReasoningSubtaskSchema)
 });

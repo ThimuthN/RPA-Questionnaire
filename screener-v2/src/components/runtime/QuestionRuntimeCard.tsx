@@ -3,6 +3,10 @@
 import { questionRegistry } from "@/lib/question-types";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import {
+  StructuredPromptBlocks,
+  StructuredPromptContent
+} from "@/components/runtime/renderers/StructuredPromptContent";
 
 interface QuestionRuntimeCardProps {
   question: any;
@@ -45,6 +49,15 @@ export function QuestionRuntimeCard({ question, answer, onChange }: QuestionRunt
     );
   }
   const Renderer = def.Renderer as any;
+  const prompt = String(question?.prompt ?? "").replace(/\r\n/g, "\n").trim();
+  const promptLines = prompt.split("\n").map((line: string) => line.trim()).filter(Boolean);
+  const isStructuredPromptFormat = question.format === "matching" || question.format === "ordering";
+  const promptTitle = promptLines[0] ?? prompt;
+  const promptBody =
+    !isStructuredPromptFormat && promptLines.length > 1
+      ? prompt.slice(promptTitle.length).trim()
+      : "";
+
   return (
     <StagePanel className="space-y-5 border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))]">
       <div className="space-y-2">
@@ -52,7 +65,12 @@ export function QuestionRuntimeCard({ question, answer, onChange }: QuestionRunt
           <StatusPill label={question.category} tone="blue" />
           <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
         </div>
-        <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{question.prompt}</h3>
+        <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{promptTitle}</h3>
+        {Array.isArray(question.promptBlocks) && question.promptBlocks.length > 0 ? (
+          <StructuredPromptBlocks blocks={question.promptBlocks} className="space-y-4" />
+        ) : promptBody ? (
+          <StructuredPromptContent text={promptBody} className="space-y-4" />
+        ) : null}
         <p className="text-sm text-slate-300">
           {formatHint[question.format] || "Answer carefully and move to the next question."}
         </p>

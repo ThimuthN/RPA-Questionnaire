@@ -4,6 +4,7 @@ import { scoreQuestion } from "@/lib/assessment-engine/scoring";
 export const commonQuestionSchema = z.object({
   id: z.string(),
   prompt: z.string(),
+  promptBlocks: z.array(z.any()).optional(),
   points: z.number(),
   options: z.array(z.string()).optional(),
   items: z.array(z.string()).optional(),
