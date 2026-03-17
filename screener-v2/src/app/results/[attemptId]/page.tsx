@@ -47,7 +47,8 @@ export default async function ResultDetailPage({
     <SceneShell
       variant="results"
       eyebrow="Result"
-      title={`Attempt ${attemptId.slice(0, 12)}`}
+      title={row.candidateName || `Attempt ${attemptId.slice(0, 12)}`}
+      subtitle={row.candidateEmail || undefined}
       utility={
         <div className="flex flex-wrap gap-2">
           <Link href="/results">

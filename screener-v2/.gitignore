@@ -8,3 +8,4 @@ tmp-next-dev.err.log
 
 .vercel
 .env*.local
+*.tsbuildinfo

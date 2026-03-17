@@ -425,7 +425,8 @@ function toResultSummary(
     borderline: boolean;
     breakdownJson: Prisma.JsonValue;
   },
-  attempt: AttemptRecord | null
+  attempt: AttemptRecord | null,
+  participant?: ParticipantRecord | null
 ): ResultSummary | null {
   if (!attempt) return null;
   const breakdown = parseBreakdown(resultRow.breakdownJson, attempt);
@@ -434,6 +435,8 @@ function toResultSummary(
 
   return {
     attemptId: resultRow.attemptId,
+    candidateName: participant?.fullName,
+    candidateEmail: participant?.email,
     roleId: attempt.roleId,
     stacks: attempt.stacks,
     sections: breakdown.sections,
@@ -791,9 +794,21 @@ export async function listResults() {
     where: { id: { in: attemptIds } }
   });
   const attemptsById = new Map(attemptRows.map((row) => [row.id, mapAttempt(row)]));
+  const participantIds = [...new Set(attemptRows.map((row) => row.participantId))];
+  const participantRows =
+    participantIds.length > 0
+      ? await prisma.participant.findMany({
+          where: { id: { in: participantIds } }
+        })
+      : [];
+  const participantsById = new Map(participantRows.map((row) => [row.id, mapParticipant(row)]));
 
   return resultRows
-    .map((row) => toResultSummary(row, attemptsById.get(row.attemptId) ?? null))
+    .map((row) => {
+      const attempt = attemptsById.get(row.attemptId) ?? null;
+      const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
+      return toResultSummary(row, attempt, participant);
+    })
     .filter((row): row is ResultSummary => Boolean(row));
 }
 
@@ -806,8 +821,17 @@ export async function getResult(attemptId: string) {
   const attemptRow = await prisma.attempt.findUnique({
     where: { id: attemptId }
   });
+  const participantRow = attemptRow
+    ? await prisma.participant.findUnique({
+        where: { id: attemptRow.participantId }
+      })
+    : null;
 
-  return toResultSummary(resultRow, attemptRow ? mapAttempt(attemptRow) : null);
+  return toResultSummary(
+    resultRow,
+    attemptRow ? mapAttempt(attemptRow) : null,
+    participantRow ? mapParticipant(participantRow) : null
+  );
 }
 
 export async function getAttempt(attemptId: string) {

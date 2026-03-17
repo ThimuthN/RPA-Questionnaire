@@ -202,6 +202,8 @@ export type SectionBreakdown = Partial<Record<SectionId, SectionBreakdownItem>>;
 
 export interface ResultSummary {
   attemptId: string;
+  candidateName?: string;
+  candidateEmail?: string;
   roleId: RoleId;
   stacks: StackId[];
   sections: SectionId[];

@@ -8,6 +8,8 @@ function csvEscape(value: unknown) {
 export function resultsToCsv(rows: ResultSummary[]): string {
   const header = [
     "attemptId",
+    "candidateName",
+    "candidateEmail",
     "roleId",
     "stacks",
     "sections",
@@ -25,6 +27,8 @@ export function resultsToCsv(rows: ResultSummary[]): string {
     lines.push(
       [
         row.attemptId,
+        row.candidateName ?? "",
+        row.candidateEmail ?? "",
         row.roleId,
         row.stacks.join("|"),
         row.sections.join("|"),

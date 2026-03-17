@@ -49,12 +49,16 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
                 <StatusPill label={statusLabel(row)} tone={row.pass ? "emerald" : row.borderline ? "amber" : "red"} />
                 <StatusPill label={row.roleId} tone="neutral" />
               </div>
-              <Link
-                className="font-mono text-xs text-slate-200 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
-                href={`/results/${row.attemptId}`}
-              >
-                {row.attemptId.slice(0, 12)}
-              </Link>
+              <div className="space-y-1">
+                <p className="text-base text-white">{row.candidateName || "Unnamed candidate"}</p>
+                <p className="text-sm text-slate-300">{row.candidateEmail || "No email captured"}</p>
+                <Link
+                  className="font-mono text-xs text-slate-200 underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+                  href={`/results/${row.attemptId}`}
+                >
+                  {row.attemptId.slice(0, 12)}
+                </Link>
+              </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[360px]">
               <div>

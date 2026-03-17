@@ -38,6 +38,8 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           </div>
           <div className="space-y-2">
             <h1 className="text-3xl text-white md:text-4xl">{copy.results.finalScore}</h1>
+            {row.candidateName ? <p className="text-lg text-slate-100">{row.candidateName}</p> : null}
+            {row.candidateEmail ? <p className="text-sm text-slate-300">{row.candidateEmail}</p> : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {sectionRows.map((section) => (
