@@ -1081,7 +1081,7 @@ export async function submitAttempt(input: { attemptId: string }) {
 
 export async function listResults() {
   const resultRows = await prisma.result.findMany({
-    orderBy: { finalPercent: "desc" }
+    orderBy: { createdAt: "desc" }
   });
   const attemptIds = resultRows.map((row) => row.attemptId);
   if (attemptIds.length === 0) return [];
@@ -1103,9 +1103,14 @@ export async function listResults() {
     .map((row) => {
       const attempt = attemptsById.get(row.attemptId) ?? null;
       const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
-      return toResultSummary(row, attempt, participant);
+      return {
+        summary: toResultSummary(row, attempt, participant),
+        submittedAt: attempt?.submittedAt ?? attempt?.startedAt ?? ""
+      };
     })
-    .filter((row): row is ResultSummary => Boolean(row));
+    .filter((row): row is { summary: ResultSummary; submittedAt: string } => Boolean(row.summary))
+    .sort((a, b) => Date.parse(b.submittedAt || "1970-01-01T00:00:00.000Z") - Date.parse(a.submittedAt || "1970-01-01T00:00:00.000Z"))
+    .map((row) => row.summary);
 }
 
 export async function getResult(attemptId: string) {
