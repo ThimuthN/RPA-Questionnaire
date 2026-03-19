@@ -21,7 +21,12 @@ const createInviteSchema = z.object({
       exams: z
         .array(
           z.object({
-            definitionId: z.enum(["core_exam", "practical_exam", "applied_logic_exam"]),
+            definitionId: z.enum([
+              "core_exam",
+              "practical_exam",
+              "applied_logic_exam",
+              "general_capability_exam"
+            ]),
             config: z.record(z.string(), z.unknown()).default({}),
             weight: z.number().int().positive().optional(),
             requiredPercent: z.number().min(0).max(100).optional()

@@ -18,7 +18,7 @@ export interface ExamDefinitionCatalogEntry {
   legacySectionId?: SectionId;
   label: string;
   description: string;
-  accentTone: "blue" | "teal" | "purple";
+  accentTone: "blue" | "teal" | "purple" | "amber";
   configFields: ExamConfigFieldDefinition[];
   defaultWeight: number;
   defaultConfig: Record<string, unknown>;
@@ -116,6 +116,18 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     defaultConfig: {},
     buildDurationMinutes: () => 10,
     buildConfigSummary: () => "Standard set",
+    buildRequiredPercent: (_config, fallbackPassPercent) => fallbackPassPercent
+  },
+  general_capability_exam: {
+    id: "general_capability_exam",
+    label: "General Capability Assessment (GCA)",
+    description: "Universal hiring screener focused on logic, judgment, prioritization, and communication.",
+    accentTone: "amber",
+    configFields: [],
+    defaultWeight: 30,
+    defaultConfig: {},
+    buildDurationMinutes: () => 30,
+    buildConfigSummary: () => "Universal hiring screener",
     buildRequiredPercent: (_config, fallbackPassPercent) => fallbackPassPercent
   }
 };

@@ -140,7 +140,9 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
                   ? "bg-[linear-gradient(90deg,rgba(47,134,255,0.95),rgba(93,167,255,0.92))]"
                   : exam.definitionId === "practical_exam"
                     ? "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]"
-                    : "bg-[linear-gradient(90deg,rgba(148,93,255,0.95),rgba(188,148,255,0.88))]"
+                    : exam.definitionId === "applied_logic_exam"
+                      ? "bg-[linear-gradient(90deg,rgba(148,93,255,0.95),rgba(188,148,255,0.88))]"
+                      : "bg-[linear-gradient(90deg,rgba(245,158,11,0.95),rgba(251,191,36,0.88))]"
               }
               style={{ width: `${Math.max(0, exam.weight ?? 0)}%` }}
             />

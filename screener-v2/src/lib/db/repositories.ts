@@ -924,10 +924,13 @@ function buildReviewSections(attempt: AttemptRecord): ResultReviewSection[] {
   for (const exam of [...attempt.blueprint.exams].sort((a, b) => a.order - b.order)) {
     const state = attempt.examState[exam.instanceId] ?? { answers: {}, remainingSeconds: exam.durationMinutes * 60 };
 
-    if (exam.definitionId === "core_exam") {
-      const items = exam.contentSnapshot.items
-        .filter((question): question is Question => question.format !== "practical_task" && question.format !== "logic_reasoning")
-        .map((question) => {
+    const standardItems = exam.contentSnapshot.items.filter(
+      (question): question is Question =>
+        question.format !== "practical_task" && question.format !== "logic_reasoning"
+    );
+
+    if (standardItems.length === exam.contentSnapshot.items.length) {
+      const items = standardItems.map((question) => {
           const answer = state.answers?.[question.id];
           const score = scoreQuestion(question, answer);
           const prompt = splitPrompt(question.prompt);

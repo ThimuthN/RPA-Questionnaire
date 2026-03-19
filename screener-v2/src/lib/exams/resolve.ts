@@ -2,7 +2,6 @@ import crypto from "node:crypto";
 import type {
   ExamBlueprint,
   ExamBlueprintDraftItem,
-  ExamDefinitionId,
   ExamQuestion,
   FrozenExamInstance,
   LogicReasoningQuestion,
@@ -13,15 +12,14 @@ import type {
 } from "@/lib/assessment-engine/types";
 import { buildSelection } from "@/lib/assessment-engine/selection";
 import { getQuestionsByIds, questionBank } from "@/lib/data/question-bank";
+import { generalCapabilityQuestions } from "@/features/general-capability/questions";
 import {
   defaultDraftForDefinition,
   definitionIdFromLegacySection,
   deriveExamSelectionMetadata
 } from "@/lib/exams/catalog";
 import type { SectionId } from "@/lib/sections/types";
-import { buildLogicReasoningQuestion } from "@/features/logic-reasoning/grading";
 import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
-import { buildPracticalQuestion } from "@/features/practical/grading";
 import { pickPracticalPack } from "@/features/practical/packs";
 
 function cuidLike() {
@@ -84,6 +82,13 @@ function resolveLogicItems(config: Record<string, unknown>): { items: ExamQuesti
   };
 }
 
+function resolveGeneralCapabilityItems(): { items: ExamQuestion[]; stacks: StackId[] } {
+  return {
+    items: generalCapabilityQuestions,
+    stacks: ["UiPath"]
+  };
+}
+
 export function normalizeExamDrafts(args: {
   exams?: ExamBlueprintDraftItem[];
   roleId?: RoleId;
@@ -135,8 +140,10 @@ export function resolveExamBlueprint(args: {
       items = resolveCoreItems(draft.config ?? {}).items;
     } else if (draft.definitionId === "practical_exam") {
       items = resolvePracticalItems(draft.config ?? {}).items;
-    } else {
+    } else if (draft.definitionId === "applied_logic_exam") {
       items = resolveLogicItems(draft.config ?? {}).items;
+    } else {
+      items = resolveGeneralCapabilityItems().items;
     }
 
     return {

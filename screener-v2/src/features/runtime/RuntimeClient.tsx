@@ -399,7 +399,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
       <section className="space-y-4">
         <StagePanel className="space-y-3">
           <h1 className="text-3xl text-white">
-            {copy.runtime.finalScore} {result.finalPercent.toFixed(1)}%
+            {copy.runtime.finalScore} {result.finalPercent.toFixed(1)} / 100
           </h1>
           <p className="text-slate-200">
             {copy.runtime.outcome}: {result.pass ? "Pass" : result.borderline ? "Review" : "Fail"}

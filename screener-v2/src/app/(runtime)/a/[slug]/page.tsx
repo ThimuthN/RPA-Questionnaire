@@ -52,7 +52,15 @@ export default async function InviteLandingPage({
                 <StatusPill
                   key={exam.instanceId}
                   label={`${exam.label} ${exam.durationMinutes}m`}
-                  tone={exam.definitionId === "core_exam" ? "blue" : exam.definitionId === "practical_exam" ? "teal" : "purple"}
+                  tone={
+                    exam.definitionId === "core_exam"
+                      ? "blue"
+                      : exam.definitionId === "practical_exam"
+                        ? "teal"
+                        : exam.definitionId === "general_capability_exam"
+                          ? "amber"
+                          : "purple"
+                  }
                 />
               ))}
               <StatusPill label="Autosave on" tone="emerald" />
