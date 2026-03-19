@@ -3,35 +3,32 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { QuestionRuntimeCard } from "@/components/runtime/QuestionRuntimeCard";
-import { PracticalRuntimeCard } from "@/components/runtime/PracticalRuntimeCard";
-import { LogicReasoningRuntimeCard } from "@/components/runtime/LogicReasoningRuntimeCard";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
 import { ActionRail } from "@/components/primitives/ActionRail";
-import { isPracticalSubtaskAnswered } from "@/features/practical/grading";
-import { isLogicReasoningSubtaskAnswered } from "@/features/logic-reasoning/grading";
-import type { PracticalPack } from "@/features/practical/packs";
-import type { LogicReasoningPack } from "@/features/logic-reasoning/packs";
-import type { Question, ResultSummary, RoleId, StackId } from "@/lib/assessment-engine/types";
-import { sectionRegistry } from "@/lib/sections/registry";
-import type { SectionId, SectionState } from "@/lib/sections/types";
+import type {
+  ExamBlueprint,
+  ExamQuestion,
+  ExamState,
+  ResultSummary,
+  RoleId,
+  StackId
+} from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
 import { HudBar } from "@/components/runtime/HudBar";
 import { NavigatorRail, type NavigatorItem } from "@/components/runtime/NavigatorRail";
 import { SectionHandoff } from "@/components/runtime/SectionHandoff";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { copy } from "@/lib/design/copy";
+import { answeredItemCount, examProgressValue, isExamItemAnswered } from "@/lib/exams/runtime";
 
 interface RuntimeClientProps {
   slug: string;
   attemptId: string;
   roleId: RoleId;
   stacks: StackId[];
-  sections: SectionId[];
-  initialSectionState: Partial<Record<SectionId, SectionState>>;
-  questions: Question[];
-  practicalPack?: PracticalPack;
-  logicReasoningPack?: LogicReasoningPack;
+  blueprint: ExamBlueprint;
+  initialExamState: Partial<Record<string, ExamState>>;
 }
 
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
@@ -53,14 +50,15 @@ function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "t
   }
 }
 
-function mergeSectionState(
-  base: Partial<Record<SectionId, SectionState>>,
-  patch: Partial<Record<SectionId, Partial<SectionState>>>
-): Partial<Record<SectionId, SectionState>> {
-  const next: Partial<Record<SectionId, SectionState>> = { ...base };
-  for (const [sectionId, incoming] of Object.entries(patch) as Array<[SectionId, Partial<SectionState>]>) {
-    const current = next[sectionId] ?? { answers: {}, remainingSeconds: 0 };
-    next[sectionId] = {
+function mergeExamState(
+  base: Partial<Record<string, ExamState>>,
+  patch: Partial<Record<string, Partial<ExamState>>>
+): Partial<Record<string, ExamState>> {
+  const next: Partial<Record<string, ExamState>> = { ...base };
+  for (const [instanceId, incoming] of Object.entries(patch)) {
+    if (!incoming) continue;
+    const current = next[instanceId] ?? { answers: {}, remainingSeconds: 0 };
+    next[instanceId] = {
       answers: { ...(current.answers ?? {}), ...(incoming.answers ?? {}) },
       remainingSeconds:
         typeof incoming.remainingSeconds === "number" ? incoming.remainingSeconds : current.remainingSeconds,
@@ -73,19 +71,21 @@ function mergeSectionState(
 
 export function RuntimeClient(props: RuntimeClientProps) {
   const router = useRouter();
-  const orderedSections = props.sections;
-  const [stage, setStage] = useState<SectionId | "submitted">(() => orderedSections[0] ?? "core");
-  const [index, setIndex] = useState(0);
-  const [sectionState, setSectionState] = useState<Partial<Record<SectionId, SectionState>>>(() => {
-    const initial = props.initialSectionState ?? {};
-    const merged: Partial<Record<SectionId, SectionState>> = { ...initial };
-    for (const sectionId of orderedSections) {
-      const existing = merged[sectionId];
-      if (!existing) {
-        merged[sectionId] = { answers: {}, remainingSeconds: 0 };
-      }
+  const orderedExams = useMemo(
+    () => [...props.blueprint.exams].sort((a, b) => a.order - b.order),
+    [props.blueprint.exams]
+  );
+  const [stage, setStage] = useState<string | "submitted">(() => orderedExams[0]?.instanceId ?? "submitted");
+  const [itemIndices, setItemIndices] = useState<Record<string, number>>({});
+  const [examState, setExamState] = useState<Partial<Record<string, ExamState>>>(() => {
+    const next = { ...(props.initialExamState ?? {}) };
+    for (const exam of orderedExams) {
+      next[exam.instanceId] ??= {
+        answers: {},
+        remainingSeconds: exam.durationMinutes * 60
+      };
     }
-    return merged;
+    return next;
   });
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<ResultSummary | null>(null);
@@ -94,48 +94,28 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const [visited, setVisited] = useState<Record<string, boolean>>({});
   const [navOpen, setNavOpen] = useState(false);
   const [showSubmitReview, setShowSubmitReview] = useState(false);
-  const [pendingTransition, setPendingTransition] = useState<{ from: SectionId; to: SectionId } | null>(null);
+  const [pendingTransition, setPendingTransition] = useState<{ from: string; to: string } | null>(null);
   const [autoSubmitNote, setAutoSubmitNote] = useState("");
 
-  const currentQuestion = props.questions[index];
-  const totalQuestions = props.questions.length;
-  const coreAnswers = sectionState.core?.answers ?? {};
-  const practicalAnswers = sectionState.practical?.answers ?? {};
-  const logicAnswers = sectionState.applied_logic_reasoning?.answers ?? {};
-  const answeredCount = props.questions.filter((question) => coreAnswers[question.id] != null).length;
-  const unansweredCount = totalQuestions - answeredCount;
-
-  const practicalTotal = props.practicalPack?.subtasks.length ?? 0;
-  const practicalCompleted = (props.practicalPack?.subtasks ?? []).filter((subtask) => {
-    return isPracticalSubtaskAnswered(subtask, practicalAnswers[subtask.id]);
-  }).length;
-
-  const logicReasoningTotal = props.logicReasoningPack?.subtasks.length ?? 0;
-  const logicReasoningCompleted = (props.logicReasoningPack?.subtasks ?? []).filter((subtask) => {
-    return isLogicReasoningSubtaskAnswered(subtask, logicAnswers[subtask.id]);
-  }).length;
-
-  const coreRatio = totalQuestions > 0 ? answeredCount / totalQuestions : 0;
-  const practicalRatio = practicalTotal > 0 ? practicalCompleted / practicalTotal : 0;
-  const logicRatio = logicReasoningTotal > 0 ? logicReasoningCompleted / logicReasoningTotal : 0;
+  const currentExam = stage === "submitted" ? null : orderedExams.find((exam) => exam.instanceId === stage) ?? null;
+  const currentIndex = currentExam ? itemIndices[currentExam.instanceId] ?? 0 : 0;
+  const currentItems = currentExam?.contentSnapshot.items ?? [];
+  const currentItem = currentItems[currentIndex] ?? null;
+  const currentExamState = currentExam ? examState[currentExam.instanceId] : undefined;
 
   const overallProgress = useMemo(() => {
-    const ratios: number[] = [];
-    for (const sectionId of orderedSections) {
-      if (sectionId === "core") ratios.push(coreRatio);
-      if (sectionId === "practical") ratios.push(practicalRatio);
-      if (sectionId === "applied_logic_reasoning") ratios.push(logicRatio);
-    }
-    if (ratios.length === 0) return 0;
+    if (orderedExams.length === 0) return 0;
+    const ratios = orderedExams.map((exam) => examProgressValue(exam, examState[exam.instanceId]).ratio);
     return Math.round((ratios.reduce((sum, value) => sum + value, 0) / ratios.length) * 100);
-  }, [orderedSections, coreRatio, practicalRatio, logicRatio]);
+  }, [examState, orderedExams]);
 
   const currentRemaining =
-    stage === "submitted" ? 0 : Math.max(0, sectionState[stage]?.remainingSeconds ?? 0);
+    stage === "submitted"
+      ? 0
+      : Math.max(0, currentExamState?.remainingSeconds ?? (currentExam ? currentExam.durationMinutes * 60 : 0));
   const status = useMemo(() => statusMeta(uiStatus), [uiStatus]);
-  const currentSectionLabel = stage === "submitted" ? "Submitted" : sectionRegistry[stage]?.label ?? stage;
 
-  const stageRef = useRef<SectionId | "submitted">(stage);
+  const stageRef = useRef<string | "submitted">(stage);
   const remainingRef = useRef<number>(currentRemaining);
 
   useEffect(() => {
@@ -146,52 +126,32 @@ export function RuntimeClient(props: RuntimeClientProps) {
     remainingRef.current = currentRemaining;
   }, [currentRemaining]);
 
-  function getNextSection(current: SectionId): SectionId | null {
-    const idx = orderedSections.indexOf(current);
-    if (idx < 0) return null;
-    return orderedSections[idx + 1] ?? null;
+  function getNextExam(current: string) {
+    const index = orderedExams.findIndex((exam) => exam.instanceId === current);
+    if (index < 0) return null;
+    return orderedExams[index + 1] ?? null;
   }
 
-  function getPreviousSection(current: SectionId): SectionId | null {
-    const idx = orderedSections.indexOf(current);
-    if (idx <= 0) return null;
-    return orderedSections[idx - 1] ?? null;
+  function getPreviousExam(current: string) {
+    const index = orderedExams.findIndex((exam) => exam.instanceId === current);
+    if (index <= 0) return null;
+    return orderedExams[index - 1] ?? null;
   }
 
-  function getSectionPendingCount(sectionId: SectionId): number {
-    if (sectionId === "core") return unansweredCount;
-    if (sectionId === "practical") return Math.max(0, practicalTotal - practicalCompleted);
-    if (sectionId === "applied_logic_reasoning") return Math.max(0, logicReasoningTotal - logicReasoningCompleted);
-    return 0;
-  }
-
-  function getSectionTotalItems(sectionId: SectionId): number {
-    if (sectionId === "core") return totalQuestions;
-    if (sectionId === "practical") return practicalTotal;
-    if (sectionId === "applied_logic_reasoning") return logicReasoningTotal;
-    return 0;
-  }
-
-  function buildSectionProgress(): { label: string; value: string } {
-    if (stage === "core") {
-      return { label: "Core progress", value: `${answeredCount}/${totalQuestions}` };
-    }
-    if (stage === "practical") {
-      return { label: "Practical progress", value: `${practicalCompleted}/${practicalTotal}` };
-    }
-    if (stage === "applied_logic_reasoning") {
-      return { label: "Logic progress", value: `${logicReasoningCompleted}/${logicReasoningTotal}` };
-    }
-    return { label: "Progress", value: `${overallProgress}%` };
+  function getPendingCount(examId: string) {
+    const exam = orderedExams.find((item) => item.instanceId === examId);
+    if (!exam) return 0;
+    const answered = answeredItemCount(exam, examState[exam.instanceId]);
+    return Math.max(0, exam.contentSnapshot.items.length - answered);
   }
 
   async function persistAutosave(payload?: {
-    stage?: SectionId | "submitted";
-    sectionState?: Partial<Record<SectionId, Partial<SectionState>>>;
+    stage?: string | "submitted";
+    examState?: Partial<Record<string, Partial<ExamState>>>;
   }) {
     const body = {
       stage: payload?.stage ?? stage,
-      sectionState: payload?.sectionState ?? {}
+      examState: payload?.examState ?? {}
     };
 
     setUiStatus(RuntimeUiStatus.Syncing);
@@ -204,44 +164,39 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }
 
   useEffect(() => {
-    if (stage === "core" && currentQuestion) {
-      setVisited((prev) => ({ ...prev, [currentQuestion.id]: true }));
-    }
-  }, [stage, currentQuestion]);
+    if (!currentItem) return;
+    setVisited((prev) => ({ ...prev, [currentItem.id]: true }));
+  }, [currentItem]);
 
   useEffect(() => {
-    if (stage === "submitted") return;
+    if (stage === "submitted" || !currentExam) return;
     const timer = setInterval(() => {
-      setSectionState((prev) => {
-        const current = prev[stage] ?? { answers: {}, remainingSeconds: 0 };
-        return {
-          ...prev,
-          [stage]: {
-            ...current,
-            remainingSeconds: Math.max(0, current.remainingSeconds - 1)
+      setExamState((prev) =>
+        mergeExamState(prev, {
+          [currentExam.instanceId]: {
+            remainingSeconds: Math.max(0, (prev[currentExam.instanceId]?.remainingSeconds ?? 0) - 1)
           }
-        };
-      });
+        })
+      );
     }, 1000);
     return () => clearInterval(timer);
-  }, [stage]);
+  }, [currentExam, stage]);
 
   useEffect(() => {
     if (stage === "submitted") return;
     const autosaveTimer = setInterval(() => {
       const activeStage = stageRef.current;
       if (activeStage === "submitted") return;
-      const sectionPatch: Partial<Record<SectionId, Partial<SectionState>>> = {
-        [activeStage]: {
-          remainingSeconds: Math.max(0, remainingRef.current)
-        }
-      };
       void fetch(`/api/attempts/${props.attemptId}/autosave`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           stage: activeStage,
-          sectionState: sectionPatch
+          examState: {
+            [activeStage]: {
+              remainingSeconds: Math.max(0, remainingRef.current)
+            }
+          }
         })
       });
     }, 15000);
@@ -264,22 +219,22 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }, [currentRemaining, stage, uiStatus]);
 
   useEffect(() => {
-    if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition) return;
-    const next = getNextSection(stage);
+    if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition || !currentExam) return;
+    const next = getNextExam(currentExam.instanceId);
     if (!next) {
       setAutoSubmitNote("Time ended, submitting.");
       void onSubmitFinal(true);
       return;
     }
 
-    setPendingTransition({ from: stage, to: next });
+    setPendingTransition({ from: currentExam.instanceId, to: next.instanceId });
     void persistAutosave({
-      stage: next,
-      sectionState: {
-        [stage]: { remainingSeconds: 0 }
+      stage: next.instanceId,
+      examState: {
+        [currentExam.instanceId]: { remainingSeconds: 0 }
       }
     });
-  }, [stage, currentRemaining, submitting, pendingTransition]);
+  }, [currentExam, currentRemaining, pendingTransition, stage, submitting]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -290,83 +245,60 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
       if ((event.ctrlKey || event.metaKey) && key === "enter") {
         event.preventDefault();
-        if (stage === "submitted") return;
-        const next = getNextSection(stage);
+        if (stage === "submitted" || !currentExam) return;
+        const next = getNextExam(currentExam.instanceId);
         if (next) {
-          setPendingTransition({ from: stage, to: next });
+          setPendingTransition({ from: currentExam.instanceId, to: next.instanceId });
         } else {
           setShowSubmitReview(true);
         }
         return;
       }
 
-      if (stage === "core" && key === "n") {
+      if (!currentExam || currentItems.length <= 1) return;
+
+      if (key === "n") {
         event.preventDefault();
-        setIndex((prev) => Math.min(props.questions.length - 1, prev + 1));
+        setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: Math.min(currentItems.length - 1, currentIndex + 1) }));
       }
-      if (stage === "core" && key === "p") {
+      if (key === "p") {
         event.preventDefault();
-        setIndex((prev) => Math.max(0, prev - 1));
+        setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: Math.max(0, currentIndex - 1) }));
       }
-      if (stage === "core" && key === "f" && currentQuestion) {
+      if (key === "f" && currentItem) {
         event.preventDefault();
-        setFlagged((prev) => ({ ...prev, [currentQuestion.id]: !prev[currentQuestion.id] }));
+        setFlagged((prev) => ({ ...prev, [currentItem.id]: !prev[currentItem.id] }));
       }
       if (key === "j") {
         event.preventDefault();
         setNavOpen((prev) => !prev);
       }
-      if (stage === "core" && /^[1-9]$/.test(key)) {
+      if (/^[1-9]$/.test(key)) {
         const targetIndex = Number(key) - 1;
-        if (targetIndex < props.questions.length) {
+        if (targetIndex < currentItems.length) {
           event.preventDefault();
-          setIndex(targetIndex);
+          setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: targetIndex }));
         }
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [stage, props.questions.length, currentQuestion]);
+  }, [currentExam, currentIndex, currentItem, currentItems, stage]);
 
-  async function onAnswer(questionId: string, value: unknown) {
-    setSectionState((prev) =>
-      mergeSectionState(prev, {
-        core: { answers: { [questionId]: value } }
+  async function onAnswer(itemId: string, value: unknown) {
+    if (!currentExam) return;
+    setExamState((prev) =>
+      mergeExamState(prev, {
+        [currentExam.instanceId]: { answers: { [itemId]: value } }
       })
     );
-    setVisited((prev) => ({ ...prev, [questionId]: true }));
+    setVisited((prev) => ({ ...prev, [itemId]: true }));
     setUiStatus(RuntimeUiStatus.Saving);
     await persistAutosave({
-      stage: "core",
-      sectionState: {
-        core: { answers: { [questionId]: value } }
-      }
-    });
-  }
-
-  function onPracticalChange(value: Record<string, unknown>) {
-    setSectionState((prev) =>
-      mergeSectionState(prev, {
-        practical: { answers: value }
-      })
-    );
-    void persistAutosave({
-      sectionState: {
-        practical: { answers: value }
-      }
-    });
-  }
-
-  function onLogicChange(value: Record<string, unknown>) {
-    setSectionState((prev) =>
-      mergeSectionState(prev, {
-        applied_logic_reasoning: { answers: value }
-      })
-    );
-    void persistAutosave({
-      sectionState: {
-        applied_logic_reasoning: { answers: value }
+      stage: currentExam.instanceId,
+      examState: {
+        [currentExam.instanceId]: { answers: { [itemId]: value } }
       }
     });
   }
@@ -395,63 +327,64 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   async function confirmSectionStart() {
     if (!pendingTransition) return;
-    const next = pendingTransition.to;
-    setStage(next);
+    setStage(pendingTransition.to);
     setPendingTransition(null);
-    await persistAutosave({ stage: next });
+    await persistAutosave({ stage: pendingTransition.to });
   }
 
   function goToNextOrSubmit() {
-    if (stage === "submitted") return;
-    const next = getNextSection(stage);
+    if (stage === "submitted" || !currentExam) return;
+    const next = getNextExam(currentExam.instanceId);
     if (next) {
-      setPendingTransition({ from: stage, to: next });
+      setPendingTransition({ from: currentExam.instanceId, to: next.instanceId });
       return;
     }
     setShowSubmitReview(true);
   }
 
-  function questionState(questionId: string, questionIndex: number) {
-    const isCurrent = stage === "core" && questionIndex === index;
-    const isAnswered = coreAnswers[questionId] != null;
-    const isFlagged = Boolean(flagged[questionId]);
-    const isVisited = Boolean(visited[questionId]);
+  function itemState(item: ExamQuestion, index: number): NavigatorItem["state"] {
+    const isCurrent = currentItem?.id === item.id;
+    const answer = currentExamState?.answers?.[item.id];
+    const isAnswered = isExamItemAnswered(item, answer);
+    const isFlagged = Boolean(flagged[item.id]);
+    const isVisited = Boolean(visited[item.id]);
     const isSkipped = isVisited && !isAnswered;
-    if (isCurrent) return "current" as const;
-    if (isFlagged) return "flagged" as const;
-    if (isAnswered) return "answered" as const;
-    if (isSkipped) return "skipped" as const;
-    return "unseen" as const;
+    if (isCurrent) return "current";
+    if (isFlagged) return "flagged";
+    if (isAnswered) return "answered";
+    if (isSkipped) return "skipped";
+    return "unseen";
   }
 
   function buildNavigatorItems(): NavigatorItem[] {
-    return props.questions.map((question, questionIndex) => ({
-      id: question.id,
-      label: String(questionIndex + 1),
-      state: questionState(question.id, questionIndex),
-      onSelect:
-        stage === "core"
-          ? () => {
-              setIndex(questionIndex);
-              setNavOpen(false);
-            }
-          : undefined
+    if (!currentExam) return [];
+    return currentExam.contentSnapshot.items.map((item, index) => ({
+      id: item.id,
+      label: String(index + 1),
+      state: itemState(item, index),
+      onSelect: () => {
+        setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: index }));
+        setNavOpen(false);
+      }
     }));
   }
 
   function jumpToNextUnanswered() {
-    const nextIndex = props.questions.findIndex((question) => coreAnswers[question.id] == null);
+    if (!currentExam) return;
+    const nextIndex = currentExam.contentSnapshot.items.findIndex(
+      (item) => !isExamItemAnswered(item, currentExamState?.answers?.[item.id])
+    );
     if (nextIndex >= 0) {
-      setIndex(nextIndex);
+      setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: nextIndex }));
       setNavOpen(false);
     }
   }
 
-  if (!currentQuestion && stage === "core") {
+  if (!currentItem && stage !== "submitted") {
     return (
       <section className="space-y-4">
         <Card>
-          <h1 className="text-2xl text-white">Questions unavailable</h1>
+          <h1 className="text-2xl text-white">Exam unavailable</h1>
           <p className="mt-2 text-slate-300">Restart this attempt from check-in.</p>
           <Button className="mt-4" onClick={() => router.push(`/a/${props.slug}/start`)}>
             Back to Check-in
@@ -483,10 +416,12 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }
 
   const navigatorItems = buildNavigatorItems();
-  const sectionProgress = buildSectionProgress();
-  const previousSection = stage === "submitted" ? null : getPreviousSection(stage);
-  const nextSection = stage === "submitted" ? null : getNextSection(stage);
-  const nextSectionLabel = nextSection ? sectionRegistry[nextSection].label : "Submit";
+  const previousExam = currentExam ? getPreviousExam(currentExam.instanceId) : null;
+  const nextExam = currentExam ? getNextExam(currentExam.instanceId) : null;
+  const progress = currentExam ? examProgressValue(currentExam, currentExamState) : { answered: 0, total: 0, ratio: 0 };
+  const sectionProgress = currentExam
+    ? { label: `${currentExam.label} progress`, value: `${progress.answered}/${progress.total}` }
+    : { label: "Progress", value: `${overallProgress}%` };
 
   return (
     <section className="relative space-y-4 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.12),transparent_22%),linear-gradient(180deg,rgba(7,14,28,0.96),rgba(5,11,22,0.99))] p-4 pb-28 shadow-strong md:p-5">
@@ -494,7 +429,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
       <div className="relative z-10 space-y-4">
         <HudBar
-          stageLabel={currentSectionLabel}
+          stageLabel={currentExam?.label ?? "Submitted"}
           roleId={props.roleId}
           stacks={props.stacks}
           sectionProgressLabel={sectionProgress.label}
@@ -509,39 +444,20 @@ export function RuntimeClient(props: RuntimeClientProps) {
           <div className="hidden lg:block lg:sticky lg:top-20 lg:h-fit">
             <NavigatorRail
               items={navigatorItems}
-              practicalUnlocked={stage !== "core"}
+              statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
+              statusTone={nextExam ? "teal" : "emerald"}
               onNextUnanswered={jumpToNextUnanswered}
             />
           </div>
 
           <div className="space-y-4">
-            {stage === "core" ? (
+            {currentExam ? (
               <QuestionRuntimeCard
-                question={currentQuestion}
-                answer={coreAnswers[currentQuestion.id]}
-                onChange={(value) => onAnswer(currentQuestion.id, value)}
-              />
-            ) : null}
-
-            {stage === "practical" ? (
-              props.practicalPack ? (
-                <PracticalRuntimeCard
-                  pack={props.practicalPack}
-                  answer={practicalAnswers}
-                  onChange={onPracticalChange}
-                />
-              ) : (
-                <StagePanel>
-                  <p className="text-slate-200">Practical section data is unavailable.</p>
-                </StagePanel>
-              )
-            ) : null}
-
-            {stage === "applied_logic_reasoning" && props.logicReasoningPack ? (
-              <LogicReasoningRuntimeCard
-                pack={props.logicReasoningPack}
-                answer={logicAnswers}
-                onChange={onLogicChange}
+                question={currentItem}
+                answer={currentExamState?.answers?.[currentItem!.id]}
+                onChange={(value) => onAnswer(currentItem!.id, value)}
+                sectionLabel={currentExam.label}
+                sectionSummary={currentExam.configSummary}
               />
             ) : null}
 
@@ -558,7 +474,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
         <div className="fixed inset-x-4 bottom-24 z-30 lg:hidden">
           <NavigatorRail
             items={navigatorItems}
-            practicalUnlocked={stage !== "core"}
+            statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
+            statusTone={nextExam ? "teal" : "emerald"}
             onNextUnanswered={jumpToNextUnanswered}
           />
         </div>
@@ -566,11 +483,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
       {pendingTransition ? (
         <SectionHandoff
-          pendingCount={getSectionPendingCount(pendingTransition.from)}
-          nextSectionLength={getSectionTotalItems(pendingTransition.to)}
-          currentSectionLabel={sectionRegistry[pendingTransition.from].label}
-          nextSectionLabel={sectionRegistry[pendingTransition.to].label}
-          startLabel={`Start ${sectionRegistry[pendingTransition.to].label}`}
+          pendingCount={getPendingCount(pendingTransition.from)}
+          nextSectionLength={orderedExams.find((exam) => exam.instanceId === pendingTransition.to)?.contentSnapshot.items.length ?? 0}
+          currentSectionLabel={orderedExams.find((exam) => exam.instanceId === pendingTransition.from)?.label ?? "Current exam"}
+          nextSectionLabel={orderedExams.find((exam) => exam.instanceId === pendingTransition.to)?.label ?? "Next exam"}
+          startLabel={`Start ${orderedExams.find((exam) => exam.instanceId === pendingTransition.to)?.label ?? "Exam"}`}
           onStart={confirmSectionStart}
           onBack={() => setPendingTransition(null)}
           showBack={true}
@@ -583,11 +500,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
             <p className="text-xs uppercase tracking-[0.2em] text-brand-300">{copy.runtime.reviewSubmit}</p>
             <h3 className="text-2xl text-white">{copy.runtime.submitTitle}</h3>
             <p className="text-sm text-slate-200">
-              {orderedSections
-                .map((sectionId) => {
-                  if (sectionId === "core") return `Core ${answeredCount}/${totalQuestions}`;
-                  if (sectionId === "practical") return `Practical ${practicalCompleted}/${practicalTotal}`;
-                  return `Logic ${logicReasoningCompleted}/${logicReasoningTotal}`;
+              {orderedExams
+                .map((exam) => {
+                  const examProgress = examProgressValue(exam, examState[exam.instanceId]);
+                  return `${exam.label} ${examProgress.answered}/${examProgress.total}`;
                 })
                 .join(" | ")}
             </p>
@@ -607,41 +523,45 @@ export function RuntimeClient(props: RuntimeClientProps) {
         <Button variant="secondary" className="lg:hidden" onClick={() => setNavOpen((prev) => !prev)}>
           Navigator
         </Button>
-        {stage === "core" ? (
+        {currentExam && currentExam.contentSnapshot.items.length > 1 ? (
           <>
-            <Button variant="secondary" disabled={index === 0} onClick={() => setIndex((prev) => Math.max(0, prev - 1))}>
+            <Button
+              variant="secondary"
+              disabled={currentIndex === 0}
+              onClick={() =>
+                setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: Math.max(0, currentIndex - 1) }))
+              }
+            >
               {copy.runtime.back}
             </Button>
             <Button
               variant="secondary"
-              disabled={index === props.questions.length - 1}
-              onClick={() => setIndex((prev) => Math.min(props.questions.length - 1, prev + 1))}
+              disabled={currentIndex === currentExam.contentSnapshot.items.length - 1}
+              onClick={() =>
+                setItemIndices((prev) => ({
+                  ...prev,
+                  [currentExam.instanceId]: Math.min(currentExam.contentSnapshot.items.length - 1, currentIndex + 1)
+                }))
+              }
             >
               Next
             </Button>
             <Button
               variant="secondary"
-              onClick={() =>
-                currentQuestion &&
-                setFlagged((prev) => ({ ...prev, [currentQuestion.id]: !prev[currentQuestion.id] }))
-              }
+              onClick={() => currentItem && setFlagged((prev) => ({ ...prev, [currentItem.id]: !prev[currentItem.id] }))}
             >
-              {currentQuestion && flagged[currentQuestion.id] ? "Unflag" : "Flag"}
-            </Button>
-            <Button onClick={goToNextOrSubmit}>{nextSection ? `Go to ${nextSectionLabel}` : copy.runtime.reviewSubmit}</Button>
-          </>
-        ) : (
-          <>
-            {previousSection ? (
-              <Button variant="secondary" onClick={() => setStage(previousSection)}>
-                {copy.runtime.back}
-              </Button>
-            ) : null}
-            <Button onClick={goToNextOrSubmit} disabled={submitting}>
-              {nextSection ? `Go to ${nextSectionLabel}` : copy.runtime.reviewSubmit}
+              {currentItem && flagged[currentItem.id] ? "Unflag" : "Flag"}
             </Button>
           </>
-        )}
+        ) : previousExam ? (
+          <Button variant="secondary" onClick={() => setStage(previousExam.instanceId)}>
+            {copy.runtime.back}
+          </Button>
+        ) : null}
+
+        <Button onClick={goToNextOrSubmit} disabled={submitting}>
+          {nextExam ? `Go to ${nextExam.label}` : copy.runtime.reviewSubmit}
+        </Button>
       </ActionRail>
     </section>
   );

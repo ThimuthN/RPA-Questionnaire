@@ -6,9 +6,8 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { ExamBlueprint, RoleId, StackId } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
-import { sectionRegistry } from "@/lib/sections/registry";
 
 interface InviteMeta {
   roleLocked: boolean;
@@ -17,6 +16,7 @@ interface InviteMeta {
   passTarget: number | null;
   stacks: StackId[];
   sections: SectionId[];
+  blueprint: ExamBlueprint;
 }
 
 function InviteStartContent() {
@@ -38,7 +38,8 @@ function InviteStartContent() {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(true);
 
-  const canStart = Boolean(fullName.trim() && email.trim() && roleId && stacks.length > 0 && !detailsLoading);
+  const hasBlueprint = Boolean(inviteMeta?.blueprint?.exams?.length);
+  const canStart = Boolean(fullName.trim() && email.trim() && !detailsLoading && hasBlueprint);
   const readiness = useMemo(() => (canStart ? "Ready" : "Missing details"), [canStart]);
   const showPasscodeField =
     Boolean(token) || Boolean(passcode) || error.toLowerCase().includes("passcode");
@@ -81,7 +82,7 @@ function InviteStartContent() {
   async function onStart() {
     setLoading(true);
     setError("");
-    if (!roleId || stacks.length === 0) {
+    if (!hasBlueprint) {
       setError("Test details are not ready.");
       setLoading(false);
       return;
@@ -219,11 +220,11 @@ function InviteStartContent() {
               Pass target: {detailsLoading ? "Loading..." : inviteMeta?.passTarget != null ? `${inviteMeta.passTarget}%` : "Not available"}
             </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
-              Addons:{" "}
+              Exams:{" "}
               {detailsLoading
                 ? "Loading..."
-                : inviteMeta?.sections?.length
-                  ? inviteMeta.sections.map((sectionId) => sectionRegistry[sectionId]?.label ?? sectionId).join(", ")
+                : inviteMeta?.blueprint?.exams?.length
+                  ? inviteMeta.blueprint.exams.map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`).join(", ")
                   : "Not available"}
             </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">

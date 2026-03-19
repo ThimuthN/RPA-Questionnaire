@@ -50,6 +50,7 @@ model Invite {
   passTargetPercent   Int?
   stacksJson          Json?
   sectionsJson        Json?
+  blueprintJson       Json?
   maxAttempts         Int      @default(1)
   usedAttempts        Int      @default(0)
   expiresAt           DateTime?
@@ -79,6 +80,7 @@ model Attempt {
   passTargetPercent      Int
   stacksJson             Json
   sectionsJson           Json
+  blueprintJson          Json?
   sectionStateJson       Json?
   seed                   Int
   stage                  String

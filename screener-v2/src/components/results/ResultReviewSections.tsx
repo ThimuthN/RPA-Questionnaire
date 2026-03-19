@@ -60,11 +60,12 @@ export function ResultReviewSections({ sections }: { sections: ResultReviewSecti
     <div className="space-y-5">
       {sections.map((section) => (
         <StagePanel key={section.id} className="space-y-5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusPill label={section.label} tone="blue" />
-              <StatusPill label={`${section.items.length} items`} tone="neutral" />
-            </div>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill label={section.label} tone="blue" />
+                <StatusPill label={`${section.items.length} items`} tone="neutral" />
+                {section.configSummary ? <StatusPill label={section.configSummary} tone="neutral" className="normal-case tracking-normal" /> : null}
+              </div>
             <h2 className="text-2xl text-white">{section.label} Review</h2>
             {section.description ? (
               <StructuredPromptContent text={section.description} className="space-y-4" />

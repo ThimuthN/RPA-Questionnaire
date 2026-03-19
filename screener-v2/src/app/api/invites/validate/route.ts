@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { validateInvite } from "@/lib/db/repositories";
-import { getTotalDurationMinutes } from "@/lib/sections/registry";
 
 const validateSchema = z
   .object({
@@ -37,12 +36,10 @@ export async function POST(request: Request) {
         roleId: checked.invite.roleId ?? null,
         passTarget: checked.invite.passTargetPercent,
         stacks: checked.invite.stacks ?? [],
-        sections: checked.invite.sections ?? []
+        sections: checked.invite.sections ?? [],
+        blueprint: checked.invite.blueprint
       },
-      totalDurationMinutes:
-        checked.invite.roleId && checked.invite.sections?.length
-          ? getTotalDurationMinutes(checked.invite.sections, checked.invite.roleId)
-          : null,
+      totalDurationMinutes: checked.invite.blueprint.exams.reduce((sum, exam) => sum + exam.durationMinutes, 0),
       remainingAttempts: checked.remainingAttempts ?? 0
     });
   } catch (error) {

@@ -7,8 +7,6 @@ import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { validateInvite } from "@/lib/db/repositories";
-import { getTotalDurationMinutes, sectionRegistry } from "@/lib/sections/registry";
-import type { SectionId } from "@/lib/sections/types";
 
 export default async function InviteLandingPage({
   params,
@@ -28,12 +26,9 @@ export default async function InviteLandingPage({
   if (passcode) nextQuery.set("passcode", passcode);
   const startHref = nextQuery.toString() ? `/a/${slug}/start?${nextQuery.toString()}` : `/a/${slug}/start`;
   const inviteCheck = await validateInvite(token ? { token, passcode: passcode || undefined } : { slug, passcode: passcode || undefined });
-  const roleId = inviteCheck.ok && inviteCheck.invite?.roleId ? inviteCheck.invite.roleId : "Associate";
-  const sections: SectionId[] =
-    inviteCheck.ok && inviteCheck.invite?.sections ? inviteCheck.invite.sections : ["core", "practical"];
-  const totalMinutes = getTotalDurationMinutes(sections, roleId);
+  const exams = inviteCheck.ok ? inviteCheck.invite?.blueprint.exams ?? [] : [];
+  const totalMinutes = exams.reduce((sum, exam) => sum + exam.durationMinutes, 0);
   const passTarget = inviteCheck.ok && inviteCheck.invite ? inviteCheck.invite.passTargetPercent : 60;
-  const sectionLabels = sections.map((sectionId) => sectionRegistry[sectionId]?.label ?? sectionId);
 
   if (startNow === "1") {
     redirect(startHref as Route);
@@ -48,13 +43,16 @@ export default async function InviteLandingPage({
       >
         <div className="mx-auto max-w-3xl">
           <StagePanel className="space-y-5">
-            <p className="text-slate-200">{sectionLabels.join(" + ")}. Pass target: {passTarget}%. Autosave is enabled.</p>
+            <p className="text-slate-200">
+              {exams.map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`).join(" + ")}.
+              Pass target: {passTarget}%. Autosave is enabled.
+            </p>
             <div className="flex flex-wrap gap-2">
-              {sections.map((sectionId) => (
+              {exams.map((exam) => (
                 <StatusPill
-                  key={sectionId}
-                  label={sectionRegistry[sectionId]?.label ?? sectionId}
-                  tone={sectionId === "core" ? "blue" : "teal"}
+                  key={exam.instanceId}
+                  label={`${exam.label} ${exam.durationMinutes}m`}
+                  tone={exam.definitionId === "core_exam" ? "blue" : exam.definitionId === "practical_exam" ? "teal" : "purple"}
                 />
               ))}
               <StatusPill label="Autosave on" tone="emerald" />

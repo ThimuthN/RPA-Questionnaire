@@ -2,6 +2,11 @@ import { Prisma } from "@prisma/client";
 import crypto from "node:crypto";
 import type {
   DetailedResultSummary,
+  ExamBlueprint,
+  ExamBlueprintDraftItem,
+  ExamQuestion,
+  ExamState,
+  FrozenExamInstance,
   Question,
   ResultReviewItem,
   ResultReviewSection,
@@ -10,13 +15,9 @@ import type {
   StackId
 } from "@/lib/assessment-engine/types";
 import { buildResultSummary, scoreQuestion } from "@/lib/assessment-engine/scoring";
-import { buildSelection } from "@/lib/assessment-engine/selection";
-import { getRoleConfig, questionBank } from "@/lib/data/question-bank";
+import { getQuestionsByIds, getRoleConfig, questionBank } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
-import { buildLogicReasoningQuestion } from "@/features/logic-reasoning/grading";
 import type { LogicReasoningSubtask } from "@/features/logic-reasoning/packs";
-import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
-import { buildPracticalQuestion } from "@/features/practical/grading";
 import type { PracticalSubtask } from "@/features/practical/packs";
 import { pickPracticalPack } from "@/features/practical/packs";
 import {
@@ -28,6 +29,18 @@ import {
 } from "@/lib/sections/registry";
 import type { SectionId, SectionState } from "@/lib/sections/types";
 import { hashValue, randomPasscode, randomToken } from "@/lib/tokens/token-service";
+import {
+  definitionIdFromLegacySection,
+  deriveExamSelectionMetadata,
+  summarizeExamInstance
+} from "@/lib/exams/catalog";
+import {
+  blueprintLegacySections,
+  blueprintRoleId,
+  blueprintStacks,
+  normalizeExamDrafts,
+  resolveExamBlueprint
+} from "@/lib/exams/resolve";
 
 interface InviteRecord {
   id: string;
@@ -42,6 +55,7 @@ interface InviteRecord {
   passTargetPercent: number;
   stacks?: StackId[];
   sections: SectionId[];
+  blueprint: ExamBlueprint;
   maxAttempts: number;
   usedAttempts: number;
   expiresAt?: string;
@@ -66,9 +80,11 @@ interface AttemptRecord {
   passTargetPercent: number;
   stacks: StackId[];
   sections: SectionId[];
+  blueprint: ExamBlueprint;
+  examState: Partial<Record<string, ExamState>>;
   sectionState: Partial<Record<SectionId, SectionState>>;
   seed: number;
-  stage: SectionId | "submitted";
+  stage: string | "submitted";
   status: "in_progress" | "submitted";
   coreQuestionIds: string[];
   coreAnswers: Record<string, unknown>;
@@ -88,9 +104,11 @@ interface AttemptRecord {
 
 interface PersistedBreakdown {
   sections: SectionId[];
+  exams: ResultSummary["exams"];
   passPercent: number;
   practicalMinPercent: number;
   sectionBreakdown: ResultSummary["sectionBreakdown"];
+  examBreakdown: ResultSummary["examBreakdown"];
   breakdownByCategory: ResultSummary["breakdownByCategory"];
 }
 
@@ -124,12 +142,123 @@ function toObject<T>(value: Prisma.JsonValue | null | undefined, fallback: T): T
   return fallback;
 }
 
-function normalizeStage(stage: string, sections: SectionId[], status: string): SectionId | "submitted" {
-  if (status === "submitted") return "submitted";
-  if (stage && sections.includes(stage as SectionId)) {
-    return stage as SectionId;
+function buildLegacyBlueprintFromSections(args: {
+  roleId: RoleId;
+  stacks: StackId[];
+  sections: SectionId[];
+  passPercent: number;
+}): ExamBlueprint {
+  const drafts = normalizeExamDrafts({
+    roleId: args.roleId,
+    stacks: args.stacks,
+    sections: args.sections,
+    passPercent: args.passPercent
+  });
+  return resolveExamBlueprint({
+    drafts,
+    passPercent: args.passPercent
+  });
+}
+
+function buildAttemptBlueprintFromLegacy(args: {
+  roleId: RoleId;
+  stacks: StackId[];
+  sections: SectionId[];
+  passPercent: number;
+  coreQuestionIds: string[];
+}): ExamBlueprint {
+  const base = buildLegacyBlueprintFromSections(args);
+
+  return {
+    exams: base.exams.map((exam) => {
+      if (exam.definitionId !== "core_exam") return exam;
+      return {
+        ...exam,
+        contentSnapshot: {
+          ...exam.contentSnapshot,
+          items: getQuestionsByIds(args.coreQuestionIds)
+        }
+      };
+    })
+  };
+}
+
+function parseBlueprint(
+  value: Prisma.JsonValue | null | undefined,
+  fallback: ExamBlueprint
+): ExamBlueprint {
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Array.isArray((value as Record<string, unknown>).exams)
+  ) {
+    return value as unknown as ExamBlueprint;
   }
-  return sections[0] ?? "core";
+  return fallback;
+}
+
+function normalizeStage(stage: string, blueprint: ExamBlueprint, status: string): string | "submitted" {
+  if (status === "submitted") return "submitted";
+  const direct = blueprint.exams.find((exam) => exam.instanceId === stage);
+  if (direct) return direct.instanceId;
+  const legacy = blueprint.exams.find((exam) => exam.legacySectionId === stage);
+  if (legacy) return legacy.instanceId;
+  return blueprint.exams[0]?.instanceId ?? "submitted";
+}
+
+function createExamState(blueprint: ExamBlueprint) {
+  return Object.fromEntries(
+    blueprint.exams.map((exam) => [
+      exam.instanceId,
+      {
+        answers: {},
+        remainingSeconds: exam.durationMinutes * 60
+      } satisfies ExamState
+    ])
+  ) as Partial<Record<string, ExamState>>;
+}
+
+function legacySectionStateFromBlueprint(
+  blueprint: ExamBlueprint,
+  examState: Partial<Record<string, ExamState>>
+): Partial<Record<SectionId, SectionState>> {
+  const next: Partial<Record<SectionId, SectionState>> = {};
+  for (const exam of blueprint.exams) {
+    if (!exam.legacySectionId) continue;
+    next[exam.legacySectionId] = examState[exam.instanceId] ?? {
+      answers: {},
+      remainingSeconds: exam.durationMinutes * 60
+    };
+  }
+  return next;
+}
+
+function ensureExamState(args: {
+  blueprint: ExamBlueprint;
+  stored: Partial<Record<string, ExamState>>;
+  legacy: Partial<Record<SectionId, SectionState>>;
+}): Partial<Record<string, ExamState>> {
+  const baseline = createExamState(args.blueprint);
+
+  for (const exam of args.blueprint.exams) {
+    const direct = args.stored[exam.instanceId];
+    const legacy = exam.legacySectionId ? args.legacy[exam.legacySectionId] : undefined;
+    const fallback = baseline[exam.instanceId] ?? { answers: {}, remainingSeconds: exam.durationMinutes * 60 };
+    baseline[exam.instanceId] = {
+      answers: { ...(legacy?.answers ?? {}), ...(direct?.answers ?? {}) },
+      remainingSeconds:
+        typeof direct?.remainingSeconds === "number"
+          ? direct.remainingSeconds
+          : typeof legacy?.remainingSeconds === "number"
+            ? legacy.remainingSeconds
+            : fallback.remainingSeconds,
+      earned: typeof direct?.earned === "number" ? direct.earned : legacy?.earned,
+      possible: typeof direct?.possible === "number" ? direct.possible : legacy?.possible
+    };
+  }
+
+  return baseline;
 }
 
 function ensureSectionState(args: {
@@ -254,11 +383,26 @@ function mapInvite(row: {
   passTargetPercent: number | null;
   stacksJson: Prisma.JsonValue | null;
   sectionsJson: Prisma.JsonValue | null;
+  blueprintJson: Prisma.JsonValue | null;
   maxAttempts: number;
   usedAttempts: number;
   expiresAt: Date | null;
   createdAt: Date;
 }): InviteRecord {
+  const roleId = (row.roleId as RoleId | null) ?? undefined;
+  const stacks = toStacks(row.stacksJson);
+  const sections = toSections(row.sectionsJson);
+  const passTargetPercent = normalizePassTargetPercent(row.passTargetPercent, roleId);
+  const blueprint = parseBlueprint(
+    row.blueprintJson,
+    buildLegacyBlueprintFromSections({
+      roleId: roleId ?? "Associate",
+      stacks: stacks.length > 0 ? stacks : ["UiPath"],
+      sections,
+      passPercent: passTargetPercent
+    })
+  );
+
   return {
     id: row.id,
     assessmentVersionId: row.assessmentVersionId,
@@ -268,10 +412,11 @@ function mapInvite(row: {
     passcodeHash: row.passcodeHash ?? undefined,
     roleLocked: row.roleLocked,
     stackLocked: row.stackLocked,
-    roleId: (row.roleId as RoleId | null) ?? undefined,
-    passTargetPercent: normalizePassTargetPercent(row.passTargetPercent, (row.roleId as RoleId | null) ?? undefined),
-    stacks: toStacks(row.stacksJson),
-    sections: toSections(row.sectionsJson),
+    roleId: roleId ?? blueprintRoleId(blueprint, "Associate"),
+    passTargetPercent,
+    stacks: stacks.length > 0 ? stacks : blueprintStacks(blueprint, ["UiPath"]),
+    sections,
+    blueprint,
     maxAttempts: row.maxAttempts,
     usedAttempts: row.usedAttempts,
     expiresAt: row.expiresAt?.toISOString(),
@@ -306,6 +451,7 @@ function mapAttempt(row: {
   passTargetPercent: number | null;
   stacksJson: Prisma.JsonValue;
   sectionsJson: Prisma.JsonValue | null;
+  blueprintJson: Prisma.JsonValue | null;
   sectionStateJson: Prisma.JsonValue | null;
   seed: number;
   stage: string;
@@ -328,6 +474,17 @@ function mapAttempt(row: {
   const roleId = row.roleId as RoleId;
   const stacks = toStacks(row.stacksJson);
   const sections = toSections(row.sectionsJson);
+  const passTargetPercent = normalizePassTargetPercent(row.passTargetPercent, roleId);
+  const blueprint = parseBlueprint(
+    row.blueprintJson,
+    buildAttemptBlueprintFromLegacy({
+      roleId,
+      stacks,
+      sections,
+      passPercent: passTargetPercent,
+      coreQuestionIds: toStringArray(row.coreQuestionIdsJson)
+    })
+  );
   const storedSectionState = toObject<Partial<Record<SectionId, SectionState>>>(row.sectionStateJson, {});
   const sectionState = ensureSectionState({
     roleId,
@@ -347,8 +504,15 @@ function mapAttempt(row: {
       logicReasoningPossible: row.logicReasoningPossible
     }
   });
+  const storedExamState = toObject<Partial<Record<string, ExamState>>>(row.sectionStateJson, {});
+  const examState = ensureExamState({
+    blueprint,
+    stored: storedExamState,
+    legacy: sectionState
+  });
 
   const split = splitSectionState(sectionState);
+  const effectiveSections = sections.length > 0 ? sections : blueprintLegacySections(blueprint);
 
   return {
     id: row.id,
@@ -356,14 +520,18 @@ function mapAttempt(row: {
     inviteId: row.inviteId ?? undefined,
     participantId: row.participantId,
     roleId,
-    passTargetPercent: normalizePassTargetPercent(row.passTargetPercent, roleId),
+    passTargetPercent,
     stacks,
-    sections,
+    sections: effectiveSections,
+    blueprint,
+    examState,
     sectionState,
     seed: row.seed,
-    stage: normalizeStage(row.stage, sections, row.status),
+    stage: normalizeStage(row.stage, blueprint, row.status),
     status: row.status as AttemptRecord["status"],
-    coreQuestionIds: toStringArray(row.coreQuestionIdsJson),
+    coreQuestionIds:
+      blueprint.exams.find((exam) => exam.definitionId === "core_exam")?.contentSnapshot.items.map((item) => item.id) ??
+      toStringArray(row.coreQuestionIdsJson),
     coreAnswers: split.coreAnswers,
     practicalAnswer: split.practicalAnswer,
     logicReasoningAnswer: split.logicReasoningAnswer,
@@ -411,17 +579,24 @@ function parseBreakdown(
   attempt: AttemptRecord | null
 ): PersistedBreakdown {
   const fallbackSections = attempt?.sections ?? getDefaultSelectedSections();
+  const fallbackExams = attempt?.blueprint.exams.map(summarizeExamInstance) ?? [];
   const parsed = toObject<Record<string, unknown>>(value, {});
   const passPercent = Number(parsed.passPercent ?? 0);
   const rawSections = Array.isArray(parsed.sections) ? (parsed.sections as SectionId[]) : fallbackSections;
   const sections = normalizeSelectedSections(rawSections);
   const rawSectionBreakdown = toObject<Record<string, unknown>>(parsed.sectionBreakdown as Prisma.JsonValue, {});
+  const exams = Array.isArray(parsed.exams)
+    ? (parsed.exams as ResultSummary["exams"])
+    : fallbackExams;
+  const examBreakdown = toObject<ResultSummary["examBreakdown"]>(parsed.examBreakdown as Prisma.JsonValue, {});
 
   return {
     sections,
+    exams,
     passPercent,
     practicalMinPercent: Number(parsed.practicalMinPercent ?? 0),
     sectionBreakdown: normalizeBreakdown(rawSectionBreakdown, passPercent),
+    examBreakdown,
     breakdownByCategory: toObject<ResultSummary["breakdownByCategory"]>(
       parsed.breakdownByCategory as Prisma.JsonValue,
       {}
@@ -446,6 +621,29 @@ function toResultSummary(
   const breakdown = parseBreakdown(resultRow.breakdownJson, attempt);
   const corePercent = breakdown.sectionBreakdown.core?.percent ?? resultRow.corePercent;
   const practicalPercent = breakdown.sectionBreakdown.practical?.percent ?? resultRow.practicalPercent;
+  const exams = breakdown.exams.length > 0 ? breakdown.exams : attempt.blueprint.exams.map(summarizeExamInstance);
+  const examBreakdown =
+    Object.keys(breakdown.examBreakdown).length > 0
+      ? breakdown.examBreakdown
+      : Object.fromEntries(
+          exams.map((exam) => [
+            exam.instanceId,
+            {
+              instanceId: exam.instanceId,
+              definitionId: exam.definitionId,
+              legacySectionId: exam.legacySectionId,
+              label: exam.label,
+              configSummary: exam.configSummary,
+              pointsEarned: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ?? 0,
+              pointsPossible: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsPossible ?? 0,
+              percent: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.percent ?? 0,
+              requiredPercent:
+                breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.requiredPercent ?? exam.requiredPercent,
+              pass: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pass ?? false,
+              order: exam.order
+            }
+          ])
+        );
 
   return {
     attemptId: resultRow.attemptId,
@@ -454,6 +652,7 @@ function toResultSummary(
     roleId: attempt.roleId,
     stacks: attempt.stacks,
     sections: breakdown.sections,
+    exams,
     corePercent,
     practicalPercent,
     finalPercent: resultRow.finalPercent,
@@ -462,6 +661,7 @@ function toResultSummary(
     pass: resultRow.pass,
     borderline: resultRow.borderline,
     sectionBreakdown: breakdown.sectionBreakdown,
+    examBreakdown,
     breakdownByCategory: breakdown.breakdownByCategory
   };
 }
@@ -679,16 +879,16 @@ function logicItem(task: LogicReasoningSubtask, answer: unknown): ResultReviewIt
 }
 
 function buildReviewSections(attempt: AttemptRecord): ResultReviewSection[] {
-  const questionsById = new Map(questionBank.map((question) => [question.id, question]));
   const sections: ResultReviewSection[] = [];
 
-  for (const sectionId of attempt.sections) {
-    if (sectionId === "core") {
-      const items = attempt.coreQuestionIds
-        .map((questionId) => questionsById.get(questionId))
-        .filter((question): question is Question => Boolean(question))
+  for (const exam of [...attempt.blueprint.exams].sort((a, b) => a.order - b.order)) {
+    const state = attempt.examState[exam.instanceId] ?? { answers: {}, remainingSeconds: exam.durationMinutes * 60 };
+
+    if (exam.definitionId === "core_exam") {
+      const items = exam.contentSnapshot.items
+        .filter((question): question is Question => question.format !== "practical_task" && question.format !== "logic_reasoning")
         .map((question) => {
-          const answer = attempt.sectionState.core?.answers?.[question.id];
+          const answer = state.answers?.[question.id];
           const score = scoreQuestion(question, answer);
           const prompt = splitPrompt(question.prompt);
 
@@ -710,37 +910,43 @@ function buildReviewSections(attempt: AttemptRecord): ResultReviewSection[] {
         });
 
       sections.push({
-        id: sectionId,
-        label: sectionRegistry[sectionId].label,
+        id: exam.instanceId,
+        label: exam.label,
+        configSummary: exam.configSummary,
         items
       });
       continue;
     }
 
-    if (sectionId === "practical") {
-      const practicalPack = pickPracticalPack(attempt.roleId, attempt.stacks);
-      const practicalQuestion = buildPracticalQuestion(practicalPack);
-      const answers = attempt.sectionState.practical?.answers ?? {};
+    const composite = exam.contentSnapshot.items[0];
+    if (!composite) continue;
 
+    if (composite.format === "practical_task") {
+      const compositeAnswer =
+        state.answers?.[composite.id] && typeof state.answers?.[composite.id] === "object"
+          ? (state.answers[composite.id] as Record<string, unknown>)
+          : {};
       sections.push({
-        id: sectionId,
-        label: sectionRegistry[sectionId].label,
-        description: practicalQuestion.prompt,
-        items: practicalQuestion.subtasks.map((task) => practicalItem(task, answers[task.id]))
+        id: exam.instanceId,
+        label: exam.label,
+        description: composite.prompt,
+        configSummary: exam.configSummary,
+        items: composite.subtasks.map((task) => practicalItem(task as PracticalSubtask, compositeAnswer[task.id]))
       });
       continue;
     }
 
-    if (sectionId === "applied_logic_reasoning") {
-      const logicPack = pickLogicReasoningPack(attempt.roleId, attempt.stacks);
-      const logicQuestion = buildLogicReasoningQuestion(logicPack);
-      const answers = attempt.sectionState.applied_logic_reasoning?.answers ?? {};
-
+    if (composite.format === "logic_reasoning") {
+      const compositeAnswer =
+        state.answers?.[composite.id] && typeof state.answers?.[composite.id] === "object"
+          ? (state.answers[composite.id] as Record<string, unknown>)
+          : {};
       sections.push({
-        id: sectionId,
-        label: sectionRegistry[sectionId].label,
-        description: logicQuestion.prompt,
-        items: logicQuestion.subtasks.map((task) => logicItem(task, answers[task.id]))
+        id: exam.instanceId,
+        label: exam.label,
+        description: composite.prompt,
+        configSummary: exam.configSummary,
+        items: composite.subtasks.map((task) => logicItem(task as LogicReasoningSubtask, compositeAnswer[task.id]))
       });
     }
   }
@@ -757,6 +963,7 @@ export async function createInvite(input: {
   passTargetPercent?: number;
   stacks?: StackId[];
   sections?: SectionId[];
+  blueprint?: { exams: ExamBlueprintDraftItem[] };
   maxAttempts?: number;
   expiresAt?: string;
   withPasscode?: boolean;
@@ -765,6 +972,20 @@ export async function createInvite(input: {
   const passcode = input.withPasscode ? randomPasscode() : undefined;
   const selectedSections = normalizeSelectedSections(input.sections);
   const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
+  const drafts = normalizeExamDrafts({
+    exams: input.blueprint?.exams,
+    roleId: input.roleId,
+    stacks: input.stacks,
+    sections: selectedSections,
+    passPercent: passTargetPercent
+  });
+  const blueprint = resolveExamBlueprint({
+    drafts,
+    passPercent: passTargetPercent
+  });
+  const roleId = input.roleId ?? blueprintRoleId(blueprint, "Associate");
+  const stacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
+  const sections = blueprintLegacySections(blueprint);
 
   const row = await prisma.invite.create({
     data: {
@@ -776,10 +997,11 @@ export async function createInvite(input: {
       passcodeHash: passcode ? hashValue(passcode) : null,
       roleLocked: input.roleLocked ?? true,
       stackLocked: input.stackLocked ?? true,
-      roleId: input.roleId ?? null,
+      roleId: roleId ?? null,
       passTargetPercent,
-      stacksJson: input.stacks?.length ? toJsonValue(input.stacks) : Prisma.JsonNull,
-      sectionsJson: toJsonValue(selectedSections),
+      stacksJson: stacks.length ? toJsonValue(stacks) : Prisma.JsonNull,
+      sectionsJson: toJsonValue(sections),
+      blueprintJson: toJsonValue(blueprint),
       maxAttempts: input.maxAttempts ?? 1,
       usedAttempts: 0,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
@@ -860,23 +1082,37 @@ export async function startAttempt(input: {
   inviteId?: string;
   assessmentVersionId?: string;
   participantId: string;
-  roleId: RoleId;
+  roleId?: RoleId;
   passTargetPercent?: number;
-  stacks: StackId[];
+  stacks?: StackId[];
   sections?: SectionId[];
+  blueprint?: ExamBlueprint;
+  exams?: ExamBlueprintDraftItem[];
 }) {
-  const selectedSections = normalizeSelectedSections(input.sections);
   const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
-  const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
-  const selection = buildSelection(input.roleId, input.stacks, selectionSeed, questionBank);
-  const sectionState = createSectionState({
-    roleId: input.roleId,
-    stacks: input.stacks,
-    sections: selectedSections
-  });
+  const selectedSections = normalizeSelectedSections(input.sections);
+  const blueprint =
+    input.blueprint ??
+    resolveExamBlueprint({
+      drafts: normalizeExamDrafts({
+        exams: input.exams,
+        roleId: input.roleId,
+        stacks: input.stacks,
+        sections: selectedSections,
+        passPercent: passTargetPercent
+      }),
+      passPercent: passTargetPercent
+    });
+  const effectiveRoleId = input.roleId ?? blueprintRoleId(blueprint, "Associate");
+  const effectiveStacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
+  const effectiveSections = blueprintLegacySections(blueprint);
+  const examState = createExamState(blueprint);
+  const sectionState = legacySectionStateFromBlueprint(blueprint, examState);
   const split = splitSectionState(sectionState);
   const attemptId = cuidLike();
   const startedAt = new Date();
+  const coreQuestionIds =
+    blueprint.exams.find((exam) => exam.definitionId === "core_exam")?.contentSnapshot.items.map((item) => item.id) ?? [];
 
   const attempt = await prisma.$transaction(async (tx) => {
     const created = await tx.attempt.create({
@@ -885,20 +1121,21 @@ export async function startAttempt(input: {
         assessmentVersionId: input.assessmentVersionId ?? "v1-default",
         inviteId: input.inviteId ?? null,
         participantId: input.participantId,
-        roleId: input.roleId,
+        roleId: effectiveRoleId,
         passTargetPercent,
-        stacksJson: toJsonValue(input.stacks),
-        sectionsJson: toJsonValue(selectedSections),
-        sectionStateJson: toJsonValue(sectionState),
-        seed: selection.seed,
-        stage: selectedSections[0] ?? "core",
+        stacksJson: toJsonValue(effectiveStacks),
+        sectionsJson: toJsonValue(effectiveSections),
+        blueprintJson: toJsonValue(blueprint),
+        sectionStateJson: toJsonValue(examState),
+        seed: 0,
+        stage: blueprint.exams[0]?.instanceId ?? "submitted",
         status: "in_progress",
-        coreQuestionIdsJson: toJsonValue(selectedSections.includes("core") ? selection.selectedIds : []),
+        coreQuestionIdsJson: toJsonValue(coreQuestionIds),
         coreAnswersJson: toJsonValue(split.coreAnswers),
         practicalAnswerJson: toJsonValue(split.practicalAnswer),
         practicalEarned: 0,
         practicalPossible: 0,
-        logicReasoningAnswerJson: selectedSections.includes("applied_logic_reasoning")
+        logicReasoningAnswerJson: effectiveSections.includes("applied_logic_reasoning")
           ? toJsonValue(split.logicReasoningAnswer)
           : Prisma.JsonNull,
         logicReasoningEarned: 0,
@@ -921,7 +1158,7 @@ export async function startAttempt(input: {
     return created;
   });
 
-  return { attempt: mapAttempt(attempt), selection };
+  return { attempt: mapAttempt(attempt), blueprint };
 }
 
 export async function patchAttempt(
@@ -929,6 +1166,7 @@ export async function patchAttempt(
   patch: Partial<
     Pick<AttemptRecord, "stage"> & {
       integrity: Partial<AttemptRecord["integrity"]>;
+      examState: Partial<Record<string, ExamState>>;
       sectionState: Partial<Record<SectionId, SectionState>>;
     }
   >
@@ -939,16 +1177,16 @@ export async function patchAttempt(
   const current = mapAttempt(currentRow);
   if (current.status === "submitted") return null;
 
-  const mergedSectionState: Partial<Record<SectionId, SectionState>> = {
-    ...current.sectionState
+  const mergedExamState: Partial<Record<string, ExamState>> = {
+    ...current.examState
   };
 
-  if (patch.sectionState) {
-    for (const sectionId of current.sections) {
-      const incoming = patch.sectionState[sectionId];
+  if (patch.examState) {
+    for (const exam of current.blueprint.exams) {
+      const incoming = patch.examState[exam.instanceId];
       if (!incoming) continue;
-      const existing = mergedSectionState[sectionId] ?? { answers: {}, remainingSeconds: 0 };
-      mergedSectionState[sectionId] = {
+      const existing = mergedExamState[exam.instanceId] ?? { answers: {}, remainingSeconds: exam.durationMinutes * 60 };
+      mergedExamState[exam.instanceId] = {
         answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
         remainingSeconds:
           typeof incoming.remainingSeconds === "number"
@@ -960,9 +1198,30 @@ export async function patchAttempt(
     }
   }
 
+  if (patch.sectionState) {
+    for (const sectionId of current.sections) {
+      const incoming = patch.sectionState[sectionId];
+      if (!incoming) continue;
+      const exam = current.blueprint.exams.find((item) => item.legacySectionId === sectionId);
+      if (!exam) continue;
+      const existing = mergedExamState[exam.instanceId] ?? { answers: {}, remainingSeconds: exam.durationMinutes * 60 };
+      mergedExamState[exam.instanceId] = {
+        answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
+        remainingSeconds:
+          typeof incoming.remainingSeconds === "number"
+            ? incoming.remainingSeconds
+            : existing.remainingSeconds,
+        earned: typeof incoming.earned === "number" ? incoming.earned : existing.earned,
+        possible: typeof incoming.possible === "number" ? incoming.possible : existing.possible
+      };
+    }
+  }
+
+  const mergedSectionState = legacySectionStateFromBlueprint(current.blueprint, mergedExamState);
   const split = splitSectionState(mergedSectionState);
   const nextStage =
-    patch.stage && (patch.stage === "submitted" || current.sections.includes(patch.stage))
+    patch.stage &&
+    (patch.stage === "submitted" || current.blueprint.exams.some((exam) => exam.instanceId === patch.stage))
       ? patch.stage
       : current.stage;
 
@@ -970,7 +1229,7 @@ export async function patchAttempt(
     where: { id: attemptId },
     data: {
       stage: nextStage,
-      sectionStateJson: toJsonValue(mergedSectionState),
+      sectionStateJson: toJsonValue(mergedExamState),
       coreAnswersJson: toJsonValue(split.coreAnswers),
       practicalAnswerJson: toJsonValue(split.practicalAnswer),
       logicReasoningAnswerJson: current.sections.includes("applied_logic_reasoning")
@@ -1004,26 +1263,29 @@ export async function submitAttempt(input: { attemptId: string }) {
     roleId: current.roleId,
     stacks: current.stacks,
     passTargetPercent: current.passTargetPercent,
-    sections: current.sections,
-    coreQuestionIds: current.coreQuestionIds,
-    sectionState: current.sectionState
+    blueprint: current.blueprint,
+    examState: current.examState
   });
 
-  const submittedSectionState: Partial<Record<SectionId, SectionState>> = {
-    ...current.sectionState
+  const submittedExamState: Partial<Record<string, ExamState>> = {
+    ...current.examState
   };
 
-  for (const sectionId of result.sections) {
-    const sectionResult = result.sectionBreakdown[sectionId];
-    if (!sectionResult) continue;
-    const existing = submittedSectionState[sectionId] ?? { answers: {}, remainingSeconds: 0 };
-    submittedSectionState[sectionId] = {
+  for (const exam of current.blueprint.exams) {
+    const examResult = result.examBreakdown[exam.instanceId];
+    if (!examResult) continue;
+    const existing = submittedExamState[exam.instanceId] ?? {
+      answers: {},
+      remainingSeconds: exam.durationMinutes * 60
+    };
+    submittedExamState[exam.instanceId] = {
       ...existing,
-      earned: sectionResult.pointsEarned,
-      possible: sectionResult.pointsPossible
+      earned: examResult.pointsEarned,
+      possible: examResult.pointsPossible
     };
   }
 
+  const submittedSectionState = legacySectionStateFromBlueprint(current.blueprint, submittedExamState);
   const split = splitSectionState(submittedSectionState);
 
   await prisma.$transaction(async (tx) => {
@@ -1032,7 +1294,7 @@ export async function submitAttempt(input: { attemptId: string }) {
       data: {
         status: "submitted",
         stage: "submitted",
-        sectionStateJson: toJsonValue(submittedSectionState),
+        sectionStateJson: toJsonValue(submittedExamState),
         practicalEarned: split.practicalEarned,
         practicalPossible: split.practicalPossible,
         logicReasoningEarned: split.logicReasoningEarned,
@@ -1051,9 +1313,11 @@ export async function submitAttempt(input: { attemptId: string }) {
         borderline: result.borderline,
         breakdownJson: toJsonValue({
           sections: result.sections,
+          exams: result.exams,
           passPercent: result.passPercent,
           practicalMinPercent: result.practicalMinPercent,
           sectionBreakdown: result.sectionBreakdown,
+          examBreakdown: result.examBreakdown,
           breakdownByCategory: result.breakdownByCategory
         })
       },
@@ -1067,9 +1331,11 @@ export async function submitAttempt(input: { attemptId: string }) {
         borderline: result.borderline,
         breakdownJson: toJsonValue({
           sections: result.sections,
+          exams: result.exams,
           passPercent: result.passPercent,
           practicalMinPercent: result.practicalMinPercent,
           sectionBreakdown: result.sectionBreakdown,
+          examBreakdown: result.examBreakdown,
           breakdownByCategory: result.breakdownByCategory
         })
       }

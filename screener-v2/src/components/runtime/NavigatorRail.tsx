@@ -34,12 +34,14 @@ function ItemIcon({ state }: { state: NavigatorItemState }) {
 
 export function NavigatorRail({
   items,
-  practicalUnlocked,
+  statusLabel,
+  statusTone,
   onNextUnanswered,
   className
 }: {
   items: NavigatorItem[];
-  practicalUnlocked: boolean;
+  statusLabel: string;
+  statusTone: "blue" | "teal" | "emerald" | "amber" | "red" | "neutral";
   onNextUnanswered: () => void;
   className?: string;
 }) {
@@ -50,7 +52,7 @@ export function NavigatorRail({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Navigator</p>
-          <StatusPill label={practicalUnlocked ? "Practical ready" : "Practical locked"} tone={practicalUnlocked ? "teal" : "neutral"} />
+          <StatusPill label={statusLabel} tone={statusTone} />
         </div>
         <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
           {items.map((item, index) => {

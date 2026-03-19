@@ -6,6 +6,8 @@ export type StackId = "UiPath" | "AutomationAnywhere" | "Python" | "PowerAutomat
 
 export type AddonId = "applied_logic_reasoning";
 
+export type ExamDefinitionId = "core_exam" | "practical_exam" | "applied_logic_exam";
+
 export type QuestionFormatId =
   | "single_select"
   | "multi_select"
@@ -100,6 +102,119 @@ export type Question =
   | (MatchingQuestion & { format: "matching" })
   | (FillBlankQuestion & { format: "fill_blank_constrained" });
 
+export interface CompositeOption {
+  id: string;
+  label: string;
+}
+
+export interface CompositeSingleSelectSubtask {
+  id: string;
+  type: "single_select";
+  label: string;
+  promptBlocks?: PromptBlock[];
+  points: number;
+  expected: string;
+  options: CompositeOption[];
+}
+
+export interface CompositeMatchingSubtask {
+  id: string;
+  type: "matching";
+  label: string;
+  promptBlocks?: PromptBlock[];
+  points: number;
+  leftItems: string[];
+  rightOptions: CompositeOption[];
+  expected: Record<string, string>;
+}
+
+export type CompositeSubtask = CompositeSingleSelectSubtask | CompositeMatchingSubtask;
+
+export interface PracticalTaskQuestion {
+  id: string;
+  format: "practical_task";
+  prompt: string;
+  promptBlocks?: PromptBlock[];
+  points: number;
+  title?: string;
+  subtasks: CompositeSubtask[];
+}
+
+export interface LogicReasoningQuestion {
+  id: string;
+  format: "logic_reasoning";
+  prompt: string;
+  promptBlocks?: PromptBlock[];
+  points: number;
+  title?: string;
+  subtasks: CompositeSubtask[];
+}
+
+export type ExamQuestion = Question | PracticalTaskQuestion | LogicReasoningQuestion;
+
+export interface ExamConfigFieldOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+export interface ExamConfigFieldDefinition {
+  key: string;
+  label: string;
+  description?: string;
+  type: "single_select" | "multi_select";
+  required: boolean;
+  options: ExamConfigFieldOption[];
+}
+
+export interface ExamBlueprintDraftItem {
+  definitionId: ExamDefinitionId;
+  config: Record<string, unknown>;
+  weight?: number;
+  requiredPercent?: number;
+}
+
+export interface FrozenExamInstance {
+  instanceId: string;
+  definitionId: ExamDefinitionId;
+  legacySectionId?: SectionId;
+  label: string;
+  order: number;
+  config: Record<string, unknown>;
+  configSummary: string;
+  durationMinutes: number;
+  weight: number;
+  requiredPercent: number;
+  contentSnapshot: {
+    title?: string;
+    description?: string;
+    items: ExamQuestion[];
+  };
+}
+
+export interface ExamBlueprint {
+  exams: FrozenExamInstance[];
+}
+
+export interface ExamSummaryItem {
+  instanceId: string;
+  definitionId: ExamDefinitionId;
+  legacySectionId?: SectionId;
+  label: string;
+  configSummary: string;
+  order: number;
+  durationMinutes: number;
+  weight: number;
+  requiredPercent: number;
+}
+
+export interface ExamState {
+  answers: Record<string, unknown>;
+  remainingSeconds: number;
+  earned?: number;
+  possible?: number;
+}
+
 export interface AssessmentBlueprint {
   roleId: RoleId;
   questionCount: number;
@@ -120,7 +235,7 @@ export interface AttemptState {
   roleId: RoleId;
   stacks: StackId[];
   sections: SectionId[];
-  stage: SectionId | "submitted";
+  stage: string | "submitted";
   seed: number;
   selectedQuestionIds: string[];
   answers: Record<string, unknown>;
@@ -155,6 +270,7 @@ export interface ConfigV2 {
   schemaVersion: string;
   questionBankVersion: string;
   borderlineReviewBandPercent?: number;
+  defaultRoleId?: RoleId;
   canonicalRoleOrder: RoleId[];
   stacks: StackId[];
   stackLabels: Record<StackId, string>;
@@ -200,6 +316,22 @@ export interface SectionBreakdownItem {
 
 export type SectionBreakdown = Partial<Record<SectionId, SectionBreakdownItem>>;
 
+export interface ExamBreakdownItem {
+  instanceId: string;
+  definitionId: ExamDefinitionId;
+  legacySectionId?: SectionId;
+  label: string;
+  configSummary: string;
+  pointsEarned: number;
+  pointsPossible: number;
+  percent: number;
+  requiredPercent: number;
+  pass: boolean;
+  order: number;
+}
+
+export type ExamBreakdown = Record<string, ExamBreakdownItem>;
+
 export interface ResultSummary {
   attemptId: string;
   candidateName?: string;
@@ -207,6 +339,7 @@ export interface ResultSummary {
   roleId: RoleId;
   stacks: StackId[];
   sections: SectionId[];
+  exams: ExamSummaryItem[];
   corePercent: number;
   practicalPercent: number;
   finalPercent: number;
@@ -215,6 +348,7 @@ export interface ResultSummary {
   pass: boolean;
   borderline: boolean;
   sectionBreakdown: SectionBreakdown;
+  examBreakdown: ExamBreakdown;
   breakdownByCategory: Record<string, { correctCount: number; totalCount: number; percent: number }>;
 }
 
@@ -235,9 +369,10 @@ export interface ResultReviewItem {
 }
 
 export interface ResultReviewSection {
-  id: SectionId;
+  id: string;
   label: string;
   description?: string;
+  configSummary?: string;
   items: ResultReviewItem[];
 }
 

@@ -3,14 +3,9 @@ import { z } from "zod";
 import { patchAttempt } from "@/lib/db/repositories";
 
 const autosaveSchema = z.object({
-  stage: z.enum(["core", "practical", "applied_logic_reasoning", "submitted"]).optional(),
-  sectionState: z
-    .object({
-      core: z.any().optional(),
-      practical: z.any().optional(),
-      applied_logic_reasoning: z.any().optional()
-    })
-    .optional(),
+  stage: z.string().optional(),
+  examState: z.record(z.string(), z.any()).optional(),
+  sectionState: z.record(z.string(), z.any()).optional(),
   integrity: z
     .object({
       tabHiddenCount: z.number().int().min(0).optional(),

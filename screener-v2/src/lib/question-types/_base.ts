@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { scoreQuestion } from "@/lib/assessment-engine/scoring";
+import { scoreQuestion } from "@/lib/question-types/scoring";
 
 export const commonQuestionSchema = z.object({
   id: z.string(),

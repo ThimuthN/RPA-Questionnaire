@@ -13,8 +13,8 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   const tone = row.pass ? "emerald" : row.borderline ? "amber" : "red";
   const score = useMotionValue(reduceMotion ? row.finalPercent : 0);
   const rounded = useTransform(score, (value) => value.toFixed(1));
-  const sectionRows = row.sections
-    .map((sectionId) => row.sectionBreakdown[sectionId])
+  const sectionRows = row.exams
+    .map((exam) => row.examBreakdown[exam.instanceId])
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
   useEffect(() => {
@@ -43,9 +43,10 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {sectionRows.map((section) => (
-              <div key={section.label} className="rounded-[18px] border border-white/10 bg-black/20 p-3">
+              <div key={section.instanceId} className="rounded-[18px] border border-white/10 bg-black/20 p-3">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{section.label}</p>
                 <p className="mt-2 text-xl text-white">{section.percent.toFixed(1)}%</p>
+                {section.configSummary ? <p className="mt-1 text-xs text-slate-300">{section.configSummary}</p> : null}
                 <p className={`mt-1 text-xs ${section.pass ? "text-emerald-200" : "text-red-200"}`}>
                   {section.pass ? "Pass" : "Fail"} at {section.requiredPercent.toFixed(0)}%
                 </p>

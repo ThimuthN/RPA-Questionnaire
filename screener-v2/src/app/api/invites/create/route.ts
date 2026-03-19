@@ -16,6 +16,20 @@ const createInviteSchema = z.object({
   passTarget: z.number().int().min(40).max(90).optional(),
   stacks: z.array(z.enum(["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"])).optional(),
   sections: z.array(z.enum(["core", "practical", "applied_logic_reasoning"])).optional(),
+  blueprint: z
+    .object({
+      exams: z
+        .array(
+          z.object({
+            definitionId: z.enum(["core_exam", "practical_exam", "applied_logic_exam"]),
+            config: z.record(z.string(), z.unknown()).default({}),
+            weight: z.number().positive().optional(),
+            requiredPercent: z.number().min(0).max(100).optional()
+          })
+        )
+        .optional()
+    })
+    .optional(),
   maxAttempts: z.number().int().min(1).max(5).optional(),
   expiresAt: z.string().optional(),
   withPasscode: z.boolean().optional()
@@ -24,16 +38,17 @@ const createInviteSchema = z.object({
 export async function POST(request: Request) {
   try {
     const body = createInviteSchema.parse(await request.json());
-    if (Array.isArray(body.sections) && body.sections.length === 0) {
+    const requestedExamCount = body.blueprint?.exams?.length ?? body.sections?.length ?? 0;
+    if (requestedExamCount === 0) {
       return NextResponse.json(
-        { ok: false, message: "At least one addon must be selected." },
+        { ok: false, message: "At least one exam must be selected." },
         { status: 400 }
       );
     }
     const normalizedSections = normalizeSelectedSections(body.sections as SectionId[] | undefined);
-    if (normalizedSections.length === 0) {
+    if (!body.blueprint?.exams?.length && normalizedSections.length === 0) {
       return NextResponse.json(
-        { ok: false, message: "At least one addon must be selected." },
+        { ok: false, message: "At least one exam must be selected." },
         { status: 400 }
       );
     }
@@ -55,6 +70,7 @@ export async function POST(request: Request) {
       passTargetPercent,
       stacks: body.stacks as StackId[] | undefined,
       sections: normalizedSections,
+      blueprint: body.blueprint?.exams ? { exams: body.blueprint.exams } : undefined,
       maxAttempts: body.maxAttempts,
       expiresAt: body.expiresAt,
       withPasscode: body.withPasscode

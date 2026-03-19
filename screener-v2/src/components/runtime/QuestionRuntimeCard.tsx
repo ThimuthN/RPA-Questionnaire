@@ -12,6 +12,8 @@ interface QuestionRuntimeCardProps {
   question: any;
   answer: any;
   onChange: (value: any) => void;
+  sectionLabel?: string;
+  sectionSummary?: string;
 }
 
 const formatLabel: Record<string, string> = {
@@ -24,6 +26,9 @@ const formatLabel: Record<string, string> = {
   trace_execution: "Trace execution",
   best_next_step: "Best next step",
   case_triage: "Case triage"
+  ,
+  practical_task: "Practical task",
+  logic_reasoning: "Logic reasoning"
 };
 
 const formatHint: Record<string, string> = {
@@ -36,9 +41,12 @@ const formatHint: Record<string, string> = {
   trace_execution: "Follow the sequence and pick the final outcome.",
   best_next_step: "Choose the highest-impact next action.",
   case_triage: "Prioritize the first action that reduces risk."
+  ,
+  practical_task: "Complete each subtask carefully. This exam is auto-graded.",
+  logic_reasoning: "Work through each subtask and answer the full set before moving on."
 };
 
-export function QuestionRuntimeCard({ question, answer, onChange }: QuestionRuntimeCardProps) {
+export function QuestionRuntimeCard({ question, answer, onChange, sectionLabel, sectionSummary }: QuestionRuntimeCardProps) {
   const formatKey = String(question?.format || "") as keyof typeof questionRegistry;
   const def = questionRegistry[formatKey];
   if (!def) {
@@ -62,8 +70,9 @@ export function QuestionRuntimeCard({ question, answer, onChange }: QuestionRunt
     <StagePanel className="space-y-5 border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))]">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusPill label={question.category} tone="blue" />
+          <StatusPill label={sectionLabel || question.category || "Exam"} tone="blue" />
           <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
+          {sectionSummary ? <StatusPill label={sectionSummary} tone="neutral" className="normal-case tracking-normal" /> : null}
         </div>
         <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{promptTitle}</h3>
         {Array.isArray(question.promptBlocks) && question.promptBlocks.length > 0 ? (

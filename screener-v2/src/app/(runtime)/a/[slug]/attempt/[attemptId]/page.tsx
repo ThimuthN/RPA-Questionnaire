@@ -1,9 +1,6 @@
 import { redirect } from "next/navigation";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
-import { pickPracticalPack } from "@/features/practical/packs";
-import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
 import { getAttempt } from "@/lib/db/repositories";
-import { getQuestionsByIds } from "@/lib/data/question-bank";
 import { StagePanel } from "@/components/scene/StagePanel";
 
 export const dynamic = "force-dynamic";
@@ -42,24 +39,14 @@ export default async function AttemptRuntimePage({
       </section>
     );
   }
-  const questions = getQuestionsByIds(attempt.coreQuestionIds);
-  const practicalPack = attempt.sections?.includes("practical")
-    ? pickPracticalPack(attempt.roleId, attempt.stacks)
-    : undefined;
-  const logicReasoningPack = attempt.sections?.includes("applied_logic_reasoning")
-    ? pickLogicReasoningPack(attempt.roleId, attempt.stacks)
-    : undefined;
   return (
     <RuntimeClient
       slug={slug}
       attemptId={attempt.id}
       roleId={attempt.roleId}
       stacks={attempt.stacks}
-      sections={attempt.sections}
-      initialSectionState={attempt.sectionState ?? {}}
-      questions={questions}
-      practicalPack={practicalPack}
-      logicReasoningPack={logicReasoningPack}
+      blueprint={attempt.blueprint}
+      initialExamState={attempt.examState ?? {}}
     />
   );
 }
