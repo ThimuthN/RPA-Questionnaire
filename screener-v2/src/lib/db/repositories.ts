@@ -112,6 +112,13 @@ interface PersistedBreakdown {
   breakdownByCategory: ResultSummary["breakdownByCategory"];
 }
 
+interface ExamStateEnvelope {
+  examState: Partial<Record<string, ExamState>>;
+  activeExamInstanceId?: string;
+  activeExamStartedAt?: string;
+  legacySectionState: Partial<Record<SectionId, SectionState>>;
+}
+
 function cuidLike() {
   return crypto.randomUUID().replace(/-/g, "");
 }
@@ -217,6 +224,120 @@ function createExamState(blueprint: ExamBlueprint) {
       } satisfies ExamState
     ])
   ) as Partial<Record<string, ExamState>>;
+}
+
+function parseExamStateEnvelope(value: Prisma.JsonValue | null | undefined): ExamStateEnvelope {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const record = value as Record<string, Prisma.JsonValue>;
+    if ("examState" in record) {
+      return {
+        examState: toObject<Partial<Record<string, ExamState>>>(record.examState, {}),
+        activeExamInstanceId:
+          typeof record.activeExamInstanceId === "string" ? record.activeExamInstanceId : undefined,
+        activeExamStartedAt:
+          typeof record.activeExamStartedAt === "string" ? record.activeExamStartedAt : undefined,
+        legacySectionState: {}
+      };
+    }
+
+    const legacy = value as Partial<Record<string, ExamState>>;
+    return {
+      examState: legacy,
+      legacySectionState: legacy as Partial<Record<SectionId, SectionState>>
+    };
+  }
+
+  return {
+    examState: {},
+    legacySectionState: {}
+  };
+}
+
+function checkpointActiveExamState(args: {
+  envelope: ExamStateEnvelope;
+  blueprint: ExamBlueprint;
+  stage: string;
+  status: string;
+  now?: Date;
+}) {
+  if (args.status === "submitted") {
+    return {
+      examState: args.envelope.examState,
+      activeExamInstanceId: undefined,
+      activeExamStartedAt: undefined
+    };
+  }
+
+  const activeStage = normalizeStage(args.stage, args.blueprint, args.status);
+  if (activeStage === "submitted") {
+    return {
+      examState: args.envelope.examState,
+      activeExamInstanceId: undefined,
+      activeExamStartedAt: undefined
+    };
+  }
+
+  const activeExam =
+    args.blueprint.exams.find((exam) => exam.instanceId === args.envelope.activeExamInstanceId) ??
+    args.blueprint.exams.find((exam) => exam.instanceId === activeStage) ??
+    null;
+
+  if (!activeExam) {
+    return {
+      examState: args.envelope.examState,
+      activeExamInstanceId: undefined,
+      activeExamStartedAt: undefined
+    };
+  }
+
+  const startedAtMs = args.envelope.activeExamStartedAt ? Date.parse(args.envelope.activeExamStartedAt) : NaN;
+  if (!Number.isFinite(startedAtMs)) {
+    return {
+      examState: args.envelope.examState,
+      activeExamInstanceId: activeExam.instanceId,
+      activeExamStartedAt: args.envelope.activeExamStartedAt
+    };
+  }
+
+  const nowMs = (args.now ?? new Date()).getTime();
+  const elapsedSeconds = Math.max(0, Math.floor((nowMs - startedAtMs) / 1000));
+  if (elapsedSeconds <= 0) {
+    return {
+      examState: args.envelope.examState,
+      activeExamInstanceId: activeExam.instanceId,
+      activeExamStartedAt: args.envelope.activeExamStartedAt
+    };
+  }
+
+  const existing =
+    args.envelope.examState[activeExam.instanceId] ?? {
+      answers: {},
+      remainingSeconds: activeExam.durationMinutes * 60
+    };
+
+  return {
+    examState: {
+      ...args.envelope.examState,
+      [activeExam.instanceId]: {
+        ...existing,
+        remainingSeconds: Math.max(0, Number(existing.remainingSeconds ?? 0) - elapsedSeconds)
+      }
+    },
+    activeExamInstanceId: activeExam.instanceId,
+    activeExamStartedAt: args.envelope.activeExamStartedAt
+  };
+}
+
+function buildExamStateEnvelopeJson(args: {
+  examState: Partial<Record<string, ExamState>>;
+  activeExamInstanceId?: string;
+  activeExamStartedAt?: string;
+}) {
+  return {
+    examState: args.examState,
+    activeExamInstanceId: args.activeExamInstanceId ?? null,
+    activeExamStartedAt: args.activeExamStartedAt ?? null
+  };
 }
 
 function legacySectionStateFromBlueprint(
@@ -485,7 +606,15 @@ function mapAttempt(row: {
       coreQuestionIds: toStringArray(row.coreQuestionIdsJson)
     })
   );
-  const storedSectionState = toObject<Partial<Record<SectionId, SectionState>>>(row.sectionStateJson, {});
+  const parsedExamState = parseExamStateEnvelope(row.sectionStateJson);
+  const checkpointedExamState = checkpointActiveExamState({
+    envelope: parsedExamState,
+    blueprint,
+    stage: row.stage,
+    status: row.status,
+    now: new Date()
+  });
+  const storedSectionState = parsedExamState.legacySectionState;
   const sectionState = ensureSectionState({
     roleId,
     stacks,
@@ -504,10 +633,9 @@ function mapAttempt(row: {
       logicReasoningPossible: row.logicReasoningPossible
     }
   });
-  const storedExamState = toObject<Partial<Record<string, ExamState>>>(row.sectionStateJson, {});
   const examState = ensureExamState({
     blueprint,
-    stored: storedExamState,
+    stored: checkpointedExamState.examState,
     legacy: sectionState
   });
 
@@ -1169,7 +1297,13 @@ export async function startAttempt(input: {
         stacksJson: toJsonValue(effectiveStacks),
         sectionsJson: toJsonValue(effectiveSections),
         blueprintJson: toJsonValue(blueprint),
-        sectionStateJson: toJsonValue(examState),
+        sectionStateJson: toJsonValue(
+          buildExamStateEnvelopeJson({
+            examState,
+            activeExamInstanceId: blueprint.exams[0]?.instanceId,
+            activeExamStartedAt: startedAt.toISOString()
+          })
+        ),
         seed: 0,
         stage: blueprint.exams[0]?.instanceId ?? "submitted",
         status: "in_progress",
@@ -1219,9 +1353,17 @@ export async function patchAttempt(
 
   const current = mapAttempt(currentRow);
   if (current.status === "submitted") return null;
+  const now = new Date();
+  const currentEnvelope = checkpointActiveExamState({
+    envelope: parseExamStateEnvelope(currentRow.sectionStateJson),
+    blueprint: current.blueprint,
+    stage: currentRow.stage,
+    status: currentRow.status,
+    now
+  });
 
   const mergedExamState: Partial<Record<string, ExamState>> = {
-    ...current.examState
+    ...currentEnvelope.examState
   };
 
   if (patch.examState) {
@@ -1233,7 +1375,7 @@ export async function patchAttempt(
         answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
         remainingSeconds:
           typeof incoming.remainingSeconds === "number"
-            ? incoming.remainingSeconds
+            ? Math.max(0, Math.min(existing.remainingSeconds, incoming.remainingSeconds))
             : existing.remainingSeconds,
         earned: typeof incoming.earned === "number" ? incoming.earned : existing.earned,
         possible: typeof incoming.possible === "number" ? incoming.possible : existing.possible
@@ -1252,7 +1394,7 @@ export async function patchAttempt(
         answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
         remainingSeconds:
           typeof incoming.remainingSeconds === "number"
-            ? incoming.remainingSeconds
+            ? Math.max(0, Math.min(existing.remainingSeconds, incoming.remainingSeconds))
             : existing.remainingSeconds,
         earned: typeof incoming.earned === "number" ? incoming.earned : existing.earned,
         possible: typeof incoming.possible === "number" ? incoming.possible : existing.possible
@@ -1272,7 +1414,13 @@ export async function patchAttempt(
     where: { id: attemptId },
     data: {
       stage: nextStage,
-      sectionStateJson: toJsonValue(mergedExamState),
+      sectionStateJson: toJsonValue(
+        buildExamStateEnvelopeJson({
+          examState: mergedExamState,
+          activeExamInstanceId: nextStage === "submitted" ? undefined : nextStage,
+          activeExamStartedAt: nextStage === "submitted" ? undefined : now.toISOString()
+        })
+      ),
       coreAnswersJson: toJsonValue(split.coreAnswers),
       practicalAnswerJson: toJsonValue(split.practicalAnswer),
       logicReasoningAnswerJson: current.sections.includes("applied_logic_reasoning")
@@ -1337,7 +1485,11 @@ export async function submitAttempt(input: { attemptId: string }) {
       data: {
         status: "submitted",
         stage: "submitted",
-        sectionStateJson: toJsonValue(submittedExamState),
+        sectionStateJson: toJsonValue(
+          buildExamStateEnvelopeJson({
+            examState: submittedExamState
+          })
+        ),
         practicalEarned: split.practicalEarned,
         practicalPossible: split.practicalPossible,
         logicReasoningEarned: split.logicReasoningEarned,

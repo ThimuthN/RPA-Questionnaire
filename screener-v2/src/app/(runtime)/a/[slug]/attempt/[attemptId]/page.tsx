@@ -47,6 +47,7 @@ export default async function AttemptRuntimePage({
       stacks={attempt.stacks}
       blueprint={attempt.blueprint}
       initialExamState={attempt.examState ?? {}}
+      initialIntegrity={attempt.integrity}
     />
   );
 }

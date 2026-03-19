@@ -26,10 +26,19 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json({ ok: false, message: "Attempt not found or already submitted." }, { status: 404 });
     }
+    const timers = Object.fromEntries(
+      Object.entries(updated.examState ?? {}).map(([instanceId, state]) => [
+        instanceId,
+        state?.remainingSeconds ?? 0
+      ])
+    );
     return NextResponse.json({
       ok: true,
       attemptId: updated.id,
-      savedAt: new Date().toISOString()
+      savedAt: new Date().toISOString(),
+      stage: updated.stage,
+      timers,
+      integrity: updated.integrity
     });
   } catch (error) {
     return NextResponse.json(

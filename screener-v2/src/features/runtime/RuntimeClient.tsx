@@ -29,6 +29,7 @@ interface RuntimeClientProps {
   stacks: StackId[];
   blueprint: ExamBlueprint;
   initialExamState: Partial<Record<string, ExamState>>;
+  initialIntegrity: { tabHiddenCount: number; copyCount: number; pasteCount: number };
 }
 
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
@@ -96,6 +97,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const [showSubmitReview, setShowSubmitReview] = useState(false);
   const [pendingTransition, setPendingTransition] = useState<{ from: string; to: string } | null>(null);
   const [autoSubmitNote, setAutoSubmitNote] = useState("");
+  const [integrity, setIntegrity] = useState(props.initialIntegrity);
+  const [integrityNotice, setIntegrityNotice] = useState("");
 
   const currentExam = stage === "submitted" ? null : orderedExams.find((exam) => exam.instanceId === stage) ?? null;
   const currentIndex = currentExam ? itemIndices[currentExam.instanceId] ?? 0 : 0;
@@ -117,6 +120,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   const stageRef = useRef<string | "submitted">(stage);
   const remainingRef = useRef<number>(currentRemaining);
+  const integrityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     stageRef.current = stage;
@@ -148,19 +152,73 @@ export function RuntimeClient(props: RuntimeClientProps) {
   async function persistAutosave(payload?: {
     stage?: string | "submitted";
     examState?: Partial<Record<string, Partial<ExamState>>>;
+    integrity?: typeof integrity;
   }) {
     const body = {
       stage: payload?.stage ?? stage,
-      examState: payload?.examState ?? {}
+      examState: payload?.examState ?? {},
+      integrity: payload?.integrity
     };
 
     setUiStatus(RuntimeUiStatus.Syncing);
-    await fetch(`/api/attempts/${props.attemptId}/autosave`, {
+    const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
+    const data = (await response.json()) as {
+      ok: boolean;
+      stage?: string | "submitted";
+      timers?: Record<string, number>;
+      integrity?: typeof integrity;
+    };
+    if (data.ok && data.timers) {
+      setExamState((prev) =>
+        mergeExamState(
+          prev,
+          Object.fromEntries(
+            Object.entries(data.timers ?? {}).map(([instanceId, remainingSeconds]) => [
+              instanceId,
+              { remainingSeconds }
+            ])
+          )
+        )
+      );
+    }
+    if (data.ok && data.stage && data.stage !== stageRef.current) {
+      setStage(data.stage);
+    }
+    if (data.ok && data.integrity) {
+      setIntegrity(data.integrity);
+    }
     setUiStatus(RuntimeUiStatus.Saved);
+  }
+
+  function showIntegrityNotice(message: string) {
+    setIntegrityNotice(message);
+    if (integrityNoticeTimeoutRef.current) {
+      clearTimeout(integrityNoticeTimeoutRef.current);
+    }
+    integrityNoticeTimeoutRef.current = setTimeout(() => {
+      setIntegrityNotice("");
+    }, 2400);
+  }
+
+  function recordIntegrity(type: keyof typeof integrity, message: string) {
+    if (stageRef.current === "submitted") return;
+    setIntegrity((prev) => {
+      const next = { ...prev, [type]: prev[type] + 1 };
+      void fetch(`/api/attempts/${props.attemptId}/autosave`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: stageRef.current,
+          integrity: next
+        })
+      });
+      return next;
+    });
+    showIntegrityNotice(message);
   }
 
   useEffect(() => {
@@ -219,6 +277,59 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }, [currentRemaining, stage, uiStatus]);
 
   useEffect(() => {
+    function onVisibilityChange() {
+      if (document.hidden) {
+        recordIntegrity("tabHiddenCount", "Tab switch detected. The timer keeps running.");
+        return;
+      }
+      void persistAutosave();
+    }
+
+    function onCopy(event: ClipboardEvent) {
+      event.preventDefault();
+      recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+    }
+
+    function onCut(event: ClipboardEvent) {
+      event.preventDefault();
+      recordIntegrity("copyCount", "Cut is disabled during the assessment.");
+    }
+
+    function onPaste(event: ClipboardEvent) {
+      event.preventDefault();
+      recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+    }
+
+    function onContextMenu(event: MouseEvent) {
+      event.preventDefault();
+      showIntegrityNotice("Right-click is disabled during the assessment.");
+    }
+
+    function onFocus() {
+      void persistAutosave();
+    }
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    document.addEventListener("copy", onCopy);
+    document.addEventListener("cut", onCut);
+    document.addEventListener("paste", onPaste);
+    document.addEventListener("contextmenu", onContextMenu);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      document.removeEventListener("copy", onCopy);
+      document.removeEventListener("cut", onCut);
+      document.removeEventListener("paste", onPaste);
+      document.removeEventListener("contextmenu", onContextMenu);
+      window.removeEventListener("focus", onFocus);
+      if (integrityNoticeTimeoutRef.current) {
+        clearTimeout(integrityNoticeTimeoutRef.current);
+      }
+    };
+  }, [props.attemptId]);
+
+  useEffect(() => {
     if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition || !currentExam) return;
     const next = getNextExam(currentExam.instanceId);
     if (!next) {
@@ -252,6 +363,24 @@ export function RuntimeClient(props: RuntimeClientProps) {
         } else {
           setShowSubmitReview(true);
         }
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && (key === "c" || key === "x")) {
+        event.preventDefault();
+        recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && key === "v") {
+        event.preventDefault();
+        recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+        return;
+      }
+
+      if ((event.ctrlKey || event.metaKey) && key === "a") {
+        event.preventDefault();
+        showIntegrityNotice("Select all is disabled during the assessment.");
         return;
       }
 
@@ -466,6 +595,18 @@ export function RuntimeClient(props: RuntimeClientProps) {
                 <p className="text-sm text-amber-100">{autoSubmitNote}</p>
               </StagePanel>
             ) : null}
+
+            <StagePanel className="border-white/10 bg-black/20 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-slate-200">
+                  Security controls active: copy, paste, cut, right-click, and tab switching are monitored.
+                </p>
+                <p className="text-xs text-slate-400">
+                  Tabs hidden: {integrity.tabHiddenCount} | Copy/Cut: {integrity.copyCount} | Paste: {integrity.pasteCount}
+                </p>
+              </div>
+              {integrityNotice ? <p className="mt-2 text-sm text-amber-200">{integrityNotice}</p> : null}
+            </StagePanel>
           </div>
         </div>
       </div>
