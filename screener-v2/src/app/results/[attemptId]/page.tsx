@@ -100,7 +100,7 @@ export default async function ResultDetailPage({
             ))}
           </div>
         </div>
-        <ResultReviewSections sections={result.reviewSections} />
+        <ResultReviewSections sections={result.reviewSections} examBreakdown={row.examBreakdown} />
       </DecisionStage>
     </SceneShell>
   );

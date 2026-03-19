@@ -14,6 +14,7 @@ export function resultsToCsv(rows: ResultSummary[]): string {
     "stacks",
     "sections",
     "exams",
+    "examMarks",
     "passPercent",
     "corePercent",
     "practicalPercent",
@@ -34,6 +35,13 @@ export function resultsToCsv(rows: ResultSummary[]): string {
         row.stacks.join("|"),
         row.sections.join("|"),
         row.exams.map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`).join("|"),
+        row.exams
+          .map((exam) => {
+            const breakdown = row.examBreakdown[exam.instanceId];
+            if (!breakdown) return `${exam.label}: no data`;
+            return `${exam.label} ${breakdown.weightedMarksEarned.toFixed(1)}/${breakdown.weightedMarksPossible} (${breakdown.percent.toFixed(1)}%)`;
+          })
+          .join("|"),
         row.passPercent,
         row.corePercent,
         row.practicalPercent,

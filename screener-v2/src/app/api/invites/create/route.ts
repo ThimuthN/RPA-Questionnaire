@@ -23,7 +23,7 @@ const createInviteSchema = z.object({
           z.object({
             definitionId: z.enum(["core_exam", "practical_exam", "applied_logic_exam"]),
             config: z.record(z.string(), z.unknown()).default({}),
-            weight: z.number().positive().optional(),
+            weight: z.number().int().positive().optional(),
             requiredPercent: z.number().min(0).max(100).optional()
           })
         )
@@ -60,6 +60,15 @@ export async function POST(request: Request) {
         : effectiveRoleId
           ? Number(getRoleConfig(effectiveRoleId).pass_percentage)
           : 60;
+    if (body.blueprint?.exams?.length) {
+      const totalContribution = body.blueprint.exams.reduce((sum, exam) => sum + Number(exam.weight ?? 0), 0);
+      if (totalContribution !== 100) {
+        return NextResponse.json(
+          { ok: false, message: `Score contribution must add up to 100. Current total: ${totalContribution}.` },
+          { status: 400 }
+        );
+      }
+    }
 
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,

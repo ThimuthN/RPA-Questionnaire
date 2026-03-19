@@ -91,15 +91,20 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     }
 
     const percent = pointsPossible > 0 ? roundOne((pointsEarned / pointsPossible) * 100) : 0;
+    const weightedMarksPossible = exam.weight;
+    const weightedMarksEarned = roundOne((percent * weightedMarksPossible) / 100);
     const breakdownItem = {
       instanceId: exam.instanceId,
       definitionId: exam.definitionId,
       legacySectionId: exam.legacySectionId,
       label: exam.label,
       configSummary: exam.configSummary,
+      durationMinutes: exam.durationMinutes,
       pointsEarned: roundOne(pointsEarned),
       pointsPossible: roundOne(pointsPossible),
       percent,
+      weightedMarksEarned,
+      weightedMarksPossible,
       requiredPercent: exam.requiredPercent,
       pass: percent >= exam.requiredPercent,
       order: exam.order
@@ -110,8 +115,8 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     if (exam.legacySectionId) {
       sectionBreakdown[exam.legacySectionId] = {
         label: exam.label,
-        pointsEarned: breakdownItem.pointsEarned,
-        pointsPossible: breakdownItem.pointsPossible,
+        pointsEarned: breakdownItem.weightedMarksEarned,
+        pointsPossible: breakdownItem.weightedMarksPossible,
         percent: breakdownItem.percent,
         requiredPercent: breakdownItem.requiredPercent,
         pass: breakdownItem.pass
@@ -127,7 +132,13 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     row.percent = row.totalCount ? roundOne((row.correctCount / row.totalCount) * 100) : 0;
   }
 
-  const finalPercent = weightSum > 0 ? roundOne(weightedPercentSum / weightSum) : 0;
+  const weightedMarksTotal = Object.values(examBreakdown).reduce((sum, item) => sum + item.weightedMarksEarned, 0);
+  const finalPercent =
+    weightSum === 100
+      ? roundOne(weightedMarksTotal)
+      : weightSum > 0
+        ? roundOne(weightedPercentSum / weightSum)
+        : 0;
   const examSummaries = orderedExams.map(summarizeExamInstance);
   const sections = examSummaries
     .map((exam) => exam.legacySectionId)

@@ -48,6 +48,7 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
       {
         key: "roleId",
         label: "Role",
+        description: "Choose the role level this core exam should target.",
         type: "single_select",
         required: true,
         options: roleOptions
@@ -55,12 +56,13 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
       {
         key: "stacks",
         label: "Tech stack",
+        description: "Select one or more stacks that should be covered in the core exam.",
         type: "multi_select",
         required: true,
         options: stackOptions
       }
     ],
-    defaultWeight: 70,
+    defaultWeight: 50,
     defaultConfig: {
       roleId: configV2.defaultRoleId,
       stacks: [configV2.stacks[0]]
@@ -86,6 +88,7 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
       {
         key: "stack",
         label: "Tech stack",
+        description: "Choose the stack used for the practical scenario.",
         type: "single_select",
         required: true,
         options: stackOptions

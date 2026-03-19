@@ -17,7 +17,10 @@ function sectionSummary(row: ResultSummary) {
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
   if (entries.length === 0) return "No exam data";
   return entries
-    .map((entry) => `${entry.label}${entry.configSummary ? ` (${entry.configSummary})` : ""} ${entry.percent.toFixed(1)}% ${entry.pass ? "Pass" : "Fail"}`)
+    .map(
+      (entry) =>
+        `#${entry.order + 1} ${entry.label} ${entry.weightedMarksEarned.toFixed(1)}/${entry.weightedMarksPossible} (${entry.percent.toFixed(1)}%)`
+    )
     .join(" | ");
 }
 
@@ -65,7 +68,7 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
             <div className="grid gap-3 sm:grid-cols-3 lg:min-w-[360px]">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.results.finalScore}</p>
-                <p className="mt-1 text-lg text-white">{row.finalPercent.toFixed(1)}%</p>
+                <p className="mt-1 text-lg text-white">{row.finalPercent.toFixed(1)} / 100</p>
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Exam scores</p>

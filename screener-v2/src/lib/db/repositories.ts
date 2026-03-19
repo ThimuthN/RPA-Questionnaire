@@ -624,7 +624,44 @@ function toResultSummary(
   const exams = breakdown.exams.length > 0 ? breakdown.exams : attempt.blueprint.exams.map(summarizeExamInstance);
   const examBreakdown =
     Object.keys(breakdown.examBreakdown).length > 0
-      ? breakdown.examBreakdown
+      ? Object.fromEntries(
+          exams.map((exam) => {
+            const persisted = breakdown.examBreakdown[exam.instanceId];
+            return [
+              exam.instanceId,
+              {
+                instanceId: exam.instanceId,
+                definitionId: exam.definitionId,
+                legacySectionId: exam.legacySectionId,
+                label: persisted?.label ?? exam.label,
+                configSummary: persisted?.configSummary ?? exam.configSummary,
+                durationMinutes: Number(persisted?.durationMinutes ?? exam.durationMinutes),
+                pointsEarned: Number(persisted?.pointsEarned ?? 0),
+                pointsPossible: Number(persisted?.pointsPossible ?? 0),
+                percent: Number(persisted?.percent ?? 0),
+                weightedMarksEarned: Number(
+                  persisted?.weightedMarksEarned ??
+                    persisted?.pointsEarned ??
+                    breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ??
+                    0
+                ),
+                weightedMarksPossible: Number(
+                  persisted?.weightedMarksPossible ?? exam.weight
+                ),
+                requiredPercent: Number(
+                  persisted?.requiredPercent ??
+                    breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.requiredPercent ??
+                    exam.requiredPercent
+                ),
+                pass:
+                  typeof persisted?.pass === "boolean"
+                    ? persisted.pass
+                    : (persisted?.percent ?? 0) >= exam.requiredPercent,
+                order: Number(persisted?.order ?? exam.order)
+              }
+            ];
+          })
+        )
       : Object.fromEntries(
           exams.map((exam) => [
             exam.instanceId,
@@ -634,9 +671,12 @@ function toResultSummary(
               legacySectionId: exam.legacySectionId,
               label: exam.label,
               configSummary: exam.configSummary,
+              durationMinutes: exam.durationMinutes,
               pointsEarned: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ?? 0,
               pointsPossible: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsPossible ?? 0,
               percent: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.percent ?? 0,
+              weightedMarksEarned: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ?? 0,
+              weightedMarksPossible: exam.weight,
               requiredPercent:
                 breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.requiredPercent ?? exam.requiredPercent,
               pass: breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pass ?? false,

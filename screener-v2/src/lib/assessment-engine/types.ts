@@ -322,9 +322,12 @@ export interface ExamBreakdownItem {
   legacySectionId?: SectionId;
   label: string;
   configSummary: string;
+  durationMinutes: number;
   pointsEarned: number;
   pointsPossible: number;
   percent: number;
+  weightedMarksEarned: number;
+  weightedMarksPossible: number;
   requiredPercent: number;
   pass: boolean;
   order: number;
