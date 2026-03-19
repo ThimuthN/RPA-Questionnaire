@@ -11,6 +11,7 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   const reduceMotion = useReducedMotion();
   const status = row.pass ? "Pass" : row.borderline ? "Review" : "Fail";
   const tone = row.pass ? "emerald" : row.borderline ? "amber" : "red";
+  const integrityRisk = row.integrity.tabHiddenCount * 2 + row.integrity.copyCount + row.integrity.pasteCount;
   const score = useMotionValue(reduceMotion ? row.finalPercent : 0);
   const rounded = useTransform(score, (value) => value.toFixed(1));
   const examRows = row.exams
@@ -38,6 +39,10 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill label={status} tone={tone} />
             <StatusPill label={`Pass target ${row.passPercent}%`} tone="neutral" />
+            <StatusPill
+              label={`Integrity ${integrityRisk >= 6 ? "Review" : integrityRisk >= 2 ? "Watch" : "Clean"}`}
+              tone={integrityRisk >= 6 ? "red" : integrityRisk >= 2 ? "amber" : "emerald"}
+            />
           </div>
 
           <div className="space-y-2">
@@ -47,6 +52,15 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Integrity signals</p>
+              <p className="mt-3 text-xl text-white">
+                {row.integrity.tabHiddenCount + row.integrity.copyCount + row.integrity.pasteCount}
+              </p>
+              <p className="mt-1 text-xs text-slate-300">
+                Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
+              </p>
+            </div>
             {examRows.map((exam) => (
               <div key={exam.instanceId} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
                 <div className="flex flex-wrap items-center gap-2">

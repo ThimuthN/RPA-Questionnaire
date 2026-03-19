@@ -48,6 +48,7 @@ export default async function AttemptRuntimePage({
       blueprint={attempt.blueprint}
       initialExamState={attempt.examState ?? {}}
       initialIntegrity={attempt.integrity}
+      watermarkLabel={attempt.candidateEmail || attempt.candidateName || `Attempt ${attempt.id.slice(0, 12)}`}
     />
   );
 }

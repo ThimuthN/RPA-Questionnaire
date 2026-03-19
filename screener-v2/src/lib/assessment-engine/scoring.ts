@@ -58,6 +58,7 @@ export interface BuildResultInput {
   passTargetPercent?: number;
   blueprint: ExamBlueprint;
   examState: Partial<Record<string, ExamState>>;
+  integrity?: { tabHiddenCount: number; copyCount: number; pasteCount: number };
 }
 
 export function buildResultSummary(input: BuildResultInput): ResultSummary {
@@ -166,6 +167,7 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     practicalMinPercent,
     pass: finalPercent >= passPercent && sectionGatesOk,
     borderline: !(finalPercent >= passPercent && sectionGatesOk) && borderline,
+    integrity: input.integrity ?? { tabHiddenCount: 0, copyCount: 0, pasteCount: 0 },
     sectionBreakdown,
     examBreakdown,
     breakdownByCategory: byCategory

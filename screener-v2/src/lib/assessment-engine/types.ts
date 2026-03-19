@@ -354,6 +354,7 @@ export interface ResultSummary {
   practicalMinPercent: number;
   pass: boolean;
   borderline: boolean;
+  integrity: { tabHiddenCount: number; copyCount: number; pasteCount: number };
   sectionBreakdown: SectionBreakdown;
   examBreakdown: ExamBreakdown;
   breakdownByCategory: Record<string, { correctCount: number; totalCount: number; percent: number }>;

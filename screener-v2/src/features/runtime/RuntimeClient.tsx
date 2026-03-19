@@ -30,6 +30,7 @@ interface RuntimeClientProps {
   blueprint: ExamBlueprint;
   initialExamState: Partial<Record<string, ExamState>>;
   initialIntegrity: { tabHiddenCount: number; copyCount: number; pasteCount: number };
+  watermarkLabel: string;
 }
 
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
@@ -99,6 +100,9 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const [autoSubmitNote, setAutoSubmitNote] = useState("");
   const [integrity, setIntegrity] = useState(props.initialIntegrity);
   const [integrityNotice, setIntegrityNotice] = useState("");
+  const [privacyShieldActive, setPrivacyShieldActive] = useState(false);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(false);
+  const [fullscreenSupported, setFullscreenSupported] = useState(false);
 
   const currentExam = stage === "submitted" ? null : orderedExams.find((exam) => exam.instanceId === stage) ?? null;
   const currentIndex = currentExam ? itemIndices[currentExam.instanceId] ?? 0 : 0;
@@ -194,6 +198,36 @@ export function RuntimeClient(props: RuntimeClientProps) {
     setUiStatus(RuntimeUiStatus.Saved);
   }
 
+  async function requestFullscreenMode() {
+    if (typeof document === "undefined" || !document.fullscreenEnabled) return false;
+    if (document.fullscreenElement) {
+      setIsFullscreenActive(true);
+      return true;
+    }
+
+    const target = document.documentElement;
+    if (!target.requestFullscreen) return false;
+
+    try {
+      await target.requestFullscreen();
+      setIsFullscreenActive(Boolean(document.fullscreenElement));
+      return Boolean(document.fullscreenElement);
+    } catch {
+      setIsFullscreenActive(Boolean(document.fullscreenElement));
+      showIntegrityNotice("Full-screen permission was not granted.");
+      return false;
+    }
+  }
+
+  async function resumeAssessmentView() {
+    if (fullscreenSupported && !isFullscreenActive) {
+      const ok = await requestFullscreenMode();
+      if (!ok) return;
+    }
+    await persistAutosave();
+    setPrivacyShieldActive(false);
+  }
+
   function showIntegrityNotice(message: string) {
     setIntegrityNotice(message);
     if (integrityNoticeTimeoutRef.current) {
@@ -277,8 +311,28 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }, [currentRemaining, stage, uiStatus]);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    setFullscreenSupported(Boolean(document.fullscreenEnabled));
+    setIsFullscreenActive(Boolean(document.fullscreenElement));
+
+    function onFullscreenChange() {
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreenActive(active);
+      if (!active && document.fullscreenEnabled && stageRef.current !== "submitted") {
+        setPrivacyShieldActive(true);
+        showIntegrityNotice("Full-screen was exited. Resume to continue.");
+      }
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
     function onVisibilityChange() {
       if (document.hidden) {
+        setPrivacyShieldActive(true);
         recordIntegrity("tabHiddenCount", "Tab switch detected. The timer keeps running.");
         return;
       }
@@ -306,6 +360,9 @@ export function RuntimeClient(props: RuntimeClientProps) {
     }
 
     function onFocus() {
+      if (stageRef.current !== "submitted") {
+        setPrivacyShieldActive(true);
+      }
       void persistAutosave();
     }
 
@@ -328,6 +385,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
       }
     };
   }, [props.attemptId]);
+
+  useEffect(() => {
+    if (!fullscreenSupported || stage === "submitted") return;
+    setPrivacyShieldActive(true);
+  }, [fullscreenSupported, stage]);
 
   useEffect(() => {
     if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition || !currentExam) return;
@@ -553,10 +615,25 @@ export function RuntimeClient(props: RuntimeClientProps) {
     : { label: "Progress", value: `${overallProgress}%` };
 
   return (
-    <section className="relative space-y-4 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.12),transparent_22%),linear-gradient(180deg,rgba(7,14,28,0.96),rgba(5,11,22,0.99))] p-4 pb-28 shadow-strong md:p-5">
+    <section className="relative select-none space-y-4 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.12),transparent_22%),linear-gradient(180deg,rgba(7,14,28,0.96),rgba(5,11,22,0.99))] p-4 pb-28 shadow-strong md:p-5">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_78%,rgba(18,179,168,0.04))]" />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.08]">
+        <div className="absolute -left-10 top-20 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
+          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+        </div>
+        <div className="absolute right-[-40px] top-1/3 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
+          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+        </div>
+        <div className="absolute left-6 bottom-24 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
+          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+        </div>
+      </div>
 
-      <div className="relative z-10 space-y-4">
+      <div
+        className={`relative z-10 space-y-4 transition duration-200 ${
+          privacyShieldActive ? "pointer-events-none blur-md" : ""
+        }`}
+      >
         <HudBar
           stageLabel={currentExam?.label ?? "Submitted"}
           roleId={props.roleId}
@@ -633,6 +710,38 @@ export function RuntimeClient(props: RuntimeClientProps) {
           onBack={() => setPendingTransition(null)}
           showBack={true}
         />
+      ) : null}
+
+      {privacyShieldActive ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/72 p-4 backdrop-blur-sm">
+          <StagePanel className="w-full max-w-xl space-y-4 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Assessment locked</p>
+            <h3 className="text-2xl text-white">
+              {fullscreenSupported && !isFullscreenActive
+                ? "Return to full-screen to continue"
+                : "Resume your assessment"}
+            </h3>
+            <p className="text-sm leading-6 text-slate-200">
+              {fullscreenSupported && !isFullscreenActive
+                ? "Full-screen mode is required during the assessment. The timer has continued running while you were away."
+                : "The timer continued while the tab was out of focus. Resume when you're ready to continue."}
+            </p>
+            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-left">
+              <p className="text-sm text-slate-200">
+                Candidate watermark: {props.watermarkLabel}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">Attempt ID: {props.attemptId.slice(0, 12)}</p>
+              <p className="mt-3 text-xs text-slate-400">
+                Tab switches: {integrity.tabHiddenCount} | Copy/Cut: {integrity.copyCount} | Paste: {integrity.pasteCount}
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button onClick={() => void resumeAssessmentView()}>
+                {fullscreenSupported && !isFullscreenActive ? "Enter full-screen" : "Resume assessment"}
+              </Button>
+            </div>
+          </StagePanel>
+        </div>
       ) : null}
 
       {showSubmitReview ? (

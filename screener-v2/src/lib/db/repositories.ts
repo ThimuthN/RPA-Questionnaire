@@ -76,6 +76,8 @@ interface AttemptRecord {
   assessmentVersionId: string;
   inviteId?: string;
   participantId: string;
+  candidateName?: string;
+  candidateEmail?: string;
   roleId: RoleId;
   passTargetPercent: number;
   stacks: StackId[];
@@ -828,6 +830,7 @@ function toResultSummary(
     practicalMinPercent: breakdown.practicalMinPercent,
     pass: resultRow.pass,
     borderline: resultRow.borderline,
+    integrity: attempt.integrity,
     sectionBreakdown: breakdown.sectionBreakdown,
     examBreakdown,
     breakdownByCategory: breakdown.breakdownByCategory
@@ -1455,7 +1458,8 @@ export async function submitAttempt(input: { attemptId: string }) {
     stacks: current.stacks,
     passTargetPercent: current.passTargetPercent,
     blueprint: current.blueprint,
-    examState: current.examState
+    examState: current.examState,
+    integrity: current.integrity
   });
 
   const submittedExamState: Partial<Record<string, ExamState>> = {
@@ -1623,5 +1627,14 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
 
 export async function getAttempt(attemptId: string) {
   const row = await prisma.attempt.findUnique({ where: { id: attemptId } });
-  return row ? mapAttempt(row) : null;
+  if (!row) return null;
+  const participant = await prisma.participant.findUnique({
+    where: { id: row.participantId }
+  });
+  const attempt = mapAttempt(row);
+  return {
+    ...attempt,
+    candidateName: participant?.fullName ?? undefined,
+    candidateEmail: participant?.email ?? undefined
+  };
 }

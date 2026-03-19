@@ -8,6 +8,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { DecisionStage } from "@/components/results/DecisionStage";
 import { copy } from "@/lib/design/copy";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
+import { confidenceBand } from "@/lib/assessment-engine/thresholds";
 
 export const dynamic = "force-dynamic";
 
@@ -15,13 +16,23 @@ function getSignals(row: ResultSummary) {
   const entries = Object.entries(row.breakdownByCategory).sort((a, b) => b[1].percent - a[1].percent);
   const best = entries[0];
   const weakest = entries[entries.length - 1];
+  const band = confidenceBand(row.finalPercent, row.passPercent, row.integrity, row.borderline);
   const confidence =
-    row.pass ? "Strong pass confidence" : row.borderline ? "Borderline confidence" : "Low confidence";
+    band === "high"
+      ? "Strong pass confidence"
+      : band === "medium"
+        ? "Moderate confidence"
+        : "Integrity or borderline signals need review";
+  const integrity =
+    row.integrity.tabHiddenCount + row.integrity.copyCount + row.integrity.pasteCount === 0
+      ? "No integrity events recorded"
+      : `Tabs hidden ${row.integrity.tabHiddenCount}, copy/cut ${row.integrity.copyCount}, paste ${row.integrity.pasteCount}`;
 
   return {
     strength: best ? `${best[0]} (${best[1].percent.toFixed(1)}%)` : "No category data yet",
     risk: weakest ? `${weakest[0]} (${weakest[1].percent.toFixed(1)}%)` : "No category risk",
-    confidence
+    confidence,
+    integrity
   };
 }
 
@@ -72,6 +83,7 @@ export default async function ResultDetailPage({
             <SignalCard label={copy.results.topStrength} value={signals.strength} tone="emerald" />
             <SignalCard label={copy.results.mainRisk} value={signals.risk} tone="amber" />
             <SignalCard label={copy.results.confidence} value={signals.confidence} tone="blue" />
+            <SignalCard label="Integrity" value={signals.integrity} tone="amber" className="md:col-span-3" />
           </>
         }
       >

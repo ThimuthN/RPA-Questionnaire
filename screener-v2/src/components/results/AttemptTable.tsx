@@ -11,6 +11,10 @@ function statusLabel(row: ResultSummary) {
   return "Fail";
 }
 
+function integrityRisk(row: ResultSummary) {
+  return row.integrity.tabHiddenCount * 2 + row.integrity.copyCount + row.integrity.pasteCount;
+}
+
 function sectionSummary(row: ResultSummary) {
   const entries = row.exams
     .map((exam) => row.examBreakdown[exam.instanceId])
@@ -53,6 +57,10 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill label={statusLabel(row)} tone={row.pass ? "emerald" : row.borderline ? "amber" : "red"} />
                 <StatusPill label={row.roleId} tone="neutral" />
+                <StatusPill
+                  label={`Integrity ${integrityRisk(row) >= 6 ? "Review" : integrityRisk(row) >= 2 ? "Watch" : "Clean"}`}
+                  tone={integrityRisk(row) >= 6 ? "red" : integrityRisk(row) >= 2 ? "amber" : "emerald"}
+                />
               </div>
               <div className="space-y-1">
                 <p className="text-base text-white">{row.candidateName || "Unnamed candidate"}</p>
@@ -73,6 +81,9 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
               <div>
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Exam scores</p>
                 <p className="mt-1 text-sm text-slate-200">{sectionSummary(row)}</p>
+                <p className="mt-2 text-xs text-slate-400">
+                  Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
+                </p>
               </div>
               <div className="flex items-center lg:justify-end">
                 <Link
