@@ -388,8 +388,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   useEffect(() => {
     if (!fullscreenSupported || stage === "submitted") return;
-    setPrivacyShieldActive(true);
-  }, [fullscreenSupported, stage]);
+    if (!isFullscreenActive) {
+      setPrivacyShieldActive(true);
+    }
+  }, [fullscreenSupported, isFullscreenActive, stage]);
 
   useEffect(() => {
     if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition || !currentExam) return;
@@ -619,13 +621,13 @@ export function RuntimeClient(props: RuntimeClientProps) {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent_18%,transparent_78%,rgba(18,179,168,0.04))]" />
       <div className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.08]">
         <div className="absolute -left-10 top-20 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
-          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+          {props.watermarkLabel} / {props.attemptId.slice(0, 12)}
         </div>
         <div className="absolute right-[-40px] top-1/3 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
-          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+          {props.watermarkLabel} / {props.attemptId.slice(0, 12)}
         </div>
         <div className="absolute left-6 bottom-24 rotate-[-18deg] text-2xl font-medium uppercase tracking-[0.28em] text-white/70">
-          {props.watermarkLabel} · {props.attemptId.slice(0, 12)}
+          {props.watermarkLabel} / {props.attemptId.slice(0, 12)}
         </div>
       </div>
 

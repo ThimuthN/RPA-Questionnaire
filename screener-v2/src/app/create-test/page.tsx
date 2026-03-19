@@ -300,13 +300,6 @@ export default function CreateTestPage() {
     setLoading(false);
   }
 
-  function onStartNow() {
-    if (!invite) return;
-    const separator = invite.entryUrl.includes("?") ? "&" : "?";
-    const pass = invite.passcode ? `&passcode=${encodeURIComponent(invite.passcode)}` : "";
-    window.location.assign(`${invite.entryUrl}${separator}startNow=1${pass}`);
-  }
-
   const summaryContent = (
     <StagePanel className="space-y-5">
       <div className="flex items-center justify-between gap-3">
@@ -383,7 +376,9 @@ export default function CreateTestPage() {
           ))}
         </div>
       ) : null}
-      {invite ? <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Open test now" /> : null}
+      {invite ? (
+        <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Launch test" startNow />
+      ) : null}
     </StagePanel>
   );
 
@@ -845,9 +840,8 @@ export default function CreateTestPage() {
 
               {invite ? (
                 <div className="space-y-4">
-                  <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Open test now" />
+                  <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Launch test" startNow />
                   <div className="flex flex-wrap gap-3">
-                    <Button onClick={onStartNow}>Launch test</Button>
                     <Button variant="secondary" onClick={() => setStep("select")}>
                       Build another
                     </Button>

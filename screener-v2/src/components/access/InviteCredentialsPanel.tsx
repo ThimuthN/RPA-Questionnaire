@@ -19,21 +19,27 @@ export function InviteCredentialsPanel({
   testId,
   className,
   openLabel = copy.create.startTest,
-  showCopyAll = true
+  showCopyAll = true,
+  startNow = false
 }: {
   invite: InviteCredentials;
   testId?: string | null;
   className?: string;
   openLabel?: string;
   showCopyAll?: boolean;
+  startNow?: boolean;
 }) {
   const [notice, setNotice] = useState<string>("");
   const reduceMotion = useReducedMotion();
   const openHref = useMemo(() => {
-    if (!invite.passcode) return invite.entryUrl;
     const separator = invite.entryUrl.includes("?") ? "&" : "?";
-    return `${invite.entryUrl}${separator}passcode=${encodeURIComponent(invite.passcode)}`;
-  }, [invite.entryUrl, invite.passcode]);
+    const params = new URLSearchParams();
+    if (invite.passcode) params.set("passcode", invite.passcode);
+    if (startNow) params.set("startNow", "1");
+    const query = params.toString();
+    if (!query) return invite.entryUrl;
+    return `${invite.entryUrl}${separator}${query}`;
+  }, [invite.entryUrl, invite.passcode, startNow]);
 
   async function onCopy(label: string, value: string | null) {
     if (!value) {
@@ -60,37 +66,51 @@ export function InviteCredentialsPanel({
       animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: [0.2, 1, 0.2, 1] }}
       className={cn(
-        "space-y-4 rounded-[22px] border border-brand-300/28 bg-[linear-gradient(180deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))] p-4 shadow-[var(--shadow-elevated)]",
+        "space-y-5 rounded-[24px] border border-brand-300/28 bg-[linear-gradient(180deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))] p-5 shadow-[var(--shadow-elevated)]",
         className
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.2em] text-brand-200">{copy.create.ready}</p>
+          <h3 className="text-xl text-white">Assessment access is ready</h3>
         </div>
-        <StatusPill label={copy.create.share} tone="blue" />
+        <StatusPill label={copy.create.share} tone="blue" className="whitespace-nowrap" />
       </div>
-      <div className="space-y-2 text-sm text-slate-100">
-        <div className="grid gap-2 border-b border-white/10 pb-2 md:grid-cols-[120px_1fr_auto] md:items-center">
-          <p className="text-xs uppercase tracking-wide text-slate-300">{copy.create.testLink}</p>
-          <p className="break-all font-mono text-xs text-white">{invite.entryUrl}</p>
-          <Button variant="secondary" className="w-full md:w-auto" onClick={() => onCopy("Link", invite.entryUrl)}>
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.8fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)]">
+        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.testLink}</p>
+          <p className="mt-3 break-all font-mono text-xs leading-6 text-white">{invite.entryUrl}</p>
+          <Button
+            variant="secondary"
+            className="mt-4 w-full justify-center"
+            onClick={() => onCopy("Link", invite.entryUrl)}
+          >
             {copy.create.copyLink}
           </Button>
         </div>
-        <div className="grid gap-2 border-b border-white/10 pb-2 md:grid-cols-[120px_1fr] md:items-center">
-          <p className="text-xs uppercase tracking-wide text-slate-300">{copy.create.testId}</p>
-          <p className="break-all font-mono text-xs text-white">{testId ?? "--"}</p>
+        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.testId}</p>
+          <p className="mt-3 font-mono text-sm text-white">{testId ?? "--"}</p>
         </div>
-        <div className="grid gap-2 md:grid-cols-[120px_1fr] md:items-center">
-          <p className="text-xs uppercase tracking-wide text-slate-300">{copy.create.passcode}</p>
-          <p className="break-all font-mono text-xs text-white">{invite.passcode ?? "None"}</p>
+        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.passcode}</p>
+          <p className="mt-3 font-mono text-sm text-white">{invite.passcode ?? "None"}</p>
+          {invite.passcode ? (
+            <Button
+              variant="secondary"
+              className="mt-4 w-full justify-center"
+              onClick={() => onCopy("Passcode", invite.passcode)}
+            >
+              Copy code
+            </Button>
+          ) : null}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-1">
         <a
           href={openHref}
-          className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(31,111,255,1),rgba(47,134,255,0.88))] px-4 py-2 text-sm font-medium text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+          className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(31,111,255,1),rgba(47,134,255,0.88))] px-5 py-2.5 text-sm font-medium text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
         >
           {openLabel}
         </a>
