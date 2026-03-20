@@ -6,6 +6,7 @@ import {
   candidateExists,
   getLatestCandidateResume
 } from "@/lib/db/candidates";
+import { getAppUrl } from "@/lib/server/app-url";
 import {
   candidateResumeMaxSizeBytes,
   candidateResumeMimeTypes
@@ -38,6 +39,7 @@ export async function POST(
         }
 
         return {
+          callbackUrl: `${getAppUrl(request)}/api/candidates/${id}/resume`,
           allowedContentTypes: [...candidateResumeMimeTypes],
           maximumSizeInBytes: candidateResumeMaxSizeBytes
         };

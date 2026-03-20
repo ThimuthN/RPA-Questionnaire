@@ -97,7 +97,6 @@ export function ResumeUploader({
         access: "public",
         handleUploadUrl: `/api/candidates/${candidateId}/resume`,
         clientPayload: JSON.stringify({ fileName: file.name, sizeBytes: file.size }),
-        multipart: file.size > 5 * 1024 * 1024,
         contentType: file.type,
         onUploadProgress: ({ percentage }) => {
           setProgress(Math.round(percentage));
