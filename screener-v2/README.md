@@ -11,6 +11,7 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
 - PostgreSQL (Neon-ready)
 
 ## Current runtime scope
+- Register candidates, upload resumes, and track hiring notes
 - Create tests with role + multi-stack setup
 - Generate share links, tokens, passcodes, and Test IDs
 - Run timed assessments with autosave
@@ -24,6 +25,7 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
    - `DATABASE_URL`
    - `DIRECT_URL`
    - `APP_URL`
+   - `BLOB_READ_WRITE_TOKEN` (for resume uploads)
 3. Install dependencies:
    - `npm install`
 4. Apply schema:

@@ -55,6 +55,7 @@ model Invite {
   usedAttempts        Int      @default(0)
   expiresAt           DateTime?
   createdAt           DateTime @default(now())
+  candidateAssessments CandidateAssessment[]
 
   @@index([assessmentVersionId])
 }
@@ -99,6 +100,7 @@ model Attempt {
   integrityJson          Json
   startedAt              DateTime @default(now())
   submittedAt            DateTime?
+  candidateAssessment    CandidateAssessment?
 
   @@index([inviteId])
   @@index([participantId])
@@ -128,4 +130,69 @@ model MagicToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+model Candidate {
+  id                 String   @id @default(cuid())
+  fullName           String
+  email              String
+  phone              String?
+  positionAppliedFor String?
+  batchId            String?
+  resumeSource       String?
+  hrOwner            String?
+  stage              String   @default("new")
+  finalDecision      String   @default("in_process")
+  nextAction         String   @default("none")
+  screeningStatus    String?
+  candidateFolderUrl String?
+  notesSummary       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  resumes            CandidateResume[]
+  assessments        CandidateAssessment[]
+  notes              CandidateNote[]
+
+  @@index([email])
+  @@index([stage, updatedAt])
+}
+
+model CandidateResume {
+  id         String   @id @default(cuid())
+  candidateId String
+  fileName   String
+  mimeType   String
+  sizeBytes  Int
+  storageKey String
+  storageUrl String
+  uploadedAt DateTime @default(now())
+  candidate  Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, uploadedAt])
+}
+
+model CandidateAssessment {
+  id          String   @id @default(cuid())
+  candidateId String
+  inviteId    String   @unique
+  attemptId   String?  @unique
+  createdAt   DateTime @default(now())
+  createdById String?
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  invite      Invite    @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  attempt     Attempt?  @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, createdAt])
+}
+
+model CandidateNote {
+  id          String   @id @default(cuid())
+  candidateId String
+  type        String
+  body        String
+  createdAt   DateTime @default(now())
+  createdById String?
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
 }

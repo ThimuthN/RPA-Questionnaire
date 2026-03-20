@@ -1,6 +1,7 @@
 export const copy = {
   nav: {
     create: "Create assessment",
+    candidates: "Candidates",
     run: "Start assessment",
     results: "Results",
     users: "Users"

@@ -11,6 +11,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
   const pathname = usePathname();
   const items: Array<{ href: Route; label: string }> = viewer
     ? [
+        { href: "/candidates" as Route, label: copy.nav.candidates },
         { href: "/create-test", label: copy.nav.create },
         { href: "/run-test", label: copy.nav.run },
         { href: "/results", label: copy.nav.results },
@@ -22,12 +23,14 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md">
         {items.map((item) => {
+          const href = item.href as string;
           const active =
-            pathname === item.href ||
-            (item.href === "/results" && pathname.startsWith("/results/")) ||
-            (item.href === "/create-test" && pathname.startsWith("/create-test")) ||
-            (item.href === "/run-test" && pathname.startsWith("/run-test")) ||
-            (item.href === "/users" && pathname.startsWith("/users"));
+            pathname === href ||
+            (href === "/results" && pathname.startsWith("/results/")) ||
+            (href === "/candidates" && pathname.startsWith("/candidates")) ||
+            (href === "/create-test" && pathname.startsWith("/create-test")) ||
+            (href === "/run-test" && pathname.startsWith("/run-test")) ||
+            (href === "/users" && pathname.startsWith("/users"));
           return (
             <Link
               key={item.href}

@@ -1131,6 +1131,8 @@ function buildReviewSections(attempt: AttemptRecord): ResultReviewSection[] {
 export async function createInvite(input: {
   assessmentVersionId: string;
   mode: "candidate" | "employee" | "live";
+  candidateId?: string;
+  createdById?: string;
   roleLocked?: boolean;
   stackLocked?: boolean;
   roleId?: RoleId;
@@ -1161,26 +1163,51 @@ export async function createInvite(input: {
   const stacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
   const sections = blueprintLegacySections(blueprint);
 
-  const row = await prisma.invite.create({
-    data: {
-      id: cuidLike(),
-      assessmentVersionId: input.assessmentVersionId,
-      mode: input.mode,
-      slug: randomToken(6).toLowerCase(),
-      tokenHash: hashValue(token),
-      passcodeHash: passcode ? hashValue(passcode) : null,
-      roleLocked: input.roleLocked ?? true,
-      stackLocked: input.stackLocked ?? true,
-      roleId: roleId ?? null,
-      passTargetPercent,
-      stacksJson: stacks.length ? toJsonValue(stacks) : Prisma.JsonNull,
-      sectionsJson: toJsonValue(sections),
-      blueprintJson: toJsonValue(blueprint),
-      maxAttempts: input.maxAttempts ?? 1,
-      usedAttempts: 0,
-      expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-      createdAt: new Date()
+  const row = await prisma.$transaction(async (tx) => {
+    if (input.candidateId) {
+      const candidate = await tx.candidate.findUnique({
+        where: { id: input.candidateId },
+        select: { id: true }
+      });
+      if (!candidate) {
+        throw new Error("Candidate not found.");
+      }
     }
+
+    const created = await tx.invite.create({
+      data: {
+        id: cuidLike(),
+        assessmentVersionId: input.assessmentVersionId,
+        mode: input.mode,
+        slug: randomToken(6).toLowerCase(),
+        tokenHash: hashValue(token),
+        passcodeHash: passcode ? hashValue(passcode) : null,
+        roleLocked: input.roleLocked ?? true,
+        stackLocked: input.stackLocked ?? true,
+        roleId: roleId ?? null,
+        passTargetPercent,
+        stacksJson: stacks.length ? toJsonValue(stacks) : Prisma.JsonNull,
+        sectionsJson: toJsonValue(sections),
+        blueprintJson: toJsonValue(blueprint),
+        maxAttempts: input.maxAttempts ?? 1,
+        usedAttempts: 0,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        createdAt: new Date()
+      }
+    });
+
+    if (input.candidateId) {
+      await tx.candidateAssessment.create({
+        data: {
+          id: cuidLike(),
+          candidateId: input.candidateId,
+          inviteId: created.id,
+          createdById: input.createdById ?? null
+        }
+      });
+    }
+
+    return created;
   });
   return { row: mapInvite(row), token, passcode };
 }
@@ -1332,6 +1359,11 @@ export async function startAttempt(input: {
       await tx.invite.update({
         where: { id: input.inviteId },
         data: { usedAttempts: { increment: 1 } }
+      });
+
+      await tx.candidateAssessment.updateMany({
+        where: { inviteId: input.inviteId },
+        data: { attemptId: created.id }
       });
     }
 

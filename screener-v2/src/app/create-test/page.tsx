@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import type {
   ExamBlueprintDraftItem,
   ExamConfigFieldDefinition,
@@ -168,6 +169,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
 
 export default function CreateTestPage() {
   const reduceMotion = useReducedMotion();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<WizardStep>("select");
   const [selectedExams, setSelectedExams] = useState<ExamBlueprintDraftItem[]>([]);
   const [expandedExamIds, setExpandedExamIds] = useState<ExamDefinitionId[]>([]);
@@ -178,6 +180,8 @@ export default function CreateTestPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const candidateId = searchParams.get("candidateId")?.trim() || "";
+  const linkedCandidateId = candidateId.length > 0 ? candidateId : undefined;
 
   const previewExams = useMemo<PreviewExam[]>(
     () =>
@@ -267,6 +271,7 @@ export default function CreateTestPage() {
       body: JSON.stringify({
         assessmentVersionId: "v1-default",
         mode: "candidate",
+        candidateId: linkedCandidateId,
         roleLocked: true,
         stackLocked: true,
         passTarget,
@@ -390,6 +395,7 @@ export default function CreateTestPage() {
       subtitle="Choose the exams, configure each one, then split 100 total marks across them in a way that feels clear and fair."
       utility={
         <div className="flex flex-wrap gap-2">
+          {linkedCandidateId ? <StatusPill label="Candidate-linked" tone="teal" /> : null}
           <StatusPill label={`${previewExams.length} exams`} tone="blue" />
           <StatusPill label={`${totalTimeMinutes}m total`} tone="neutral" />
           <StatusPill label={`${totalContribution}/100 marks`} tone={contributionTone} />

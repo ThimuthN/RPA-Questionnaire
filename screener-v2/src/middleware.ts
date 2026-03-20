@@ -3,10 +3,12 @@ import type { NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME, sanitizeNextPath, verifySessionToken } from "@/lib/auth/session";
 
 const authRequiredPrefixes = [
+  "/candidates",
   "/create-test",
   "/results",
   "/studio",
   "/users",
+  "/api/candidates",
   "/api/results",
   "/api/invites/create",
   "/api/auth/magic/request",
@@ -63,10 +65,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/login",
+    "/candidates/:path*",
     "/create-test/:path*",
     "/results/:path*",
     "/studio/:path*",
     "/users/:path*",
+    "/api/candidates/:path*",
     "/api/results/:path*",
     "/api/invites/create",
     "/api/auth/magic/request",

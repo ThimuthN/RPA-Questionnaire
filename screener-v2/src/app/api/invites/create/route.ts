@@ -6,10 +6,12 @@ import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getRoleConfig } from "@/lib/data/question-bank";
 import { getAppUrl } from "@/lib/server/app-url";
+import { getSession } from "@/lib/auth/session";
 
 const createInviteSchema = z.object({
   assessmentVersionId: z.string().default("v1-default"),
   mode: z.enum(["candidate", "employee", "live"]).default("candidate"),
+  candidateId: z.string().optional(),
   roleLocked: z.boolean().optional(),
   stackLocked: z.boolean().optional(),
   roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
@@ -42,6 +44,7 @@ const createInviteSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession();
     const body = createInviteSchema.parse(await request.json());
     const requestedExamCount = body.blueprint?.exams?.length ?? body.sections?.length ?? 0;
     if (requestedExamCount === 0) {
@@ -78,6 +81,8 @@ export async function POST(request: Request) {
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,
       mode: body.mode,
+      candidateId: body.candidateId,
+      createdById: session?.userId ?? undefined,
       roleLocked: body.roleLocked,
       stackLocked: body.stackLocked,
       roleId: effectiveRoleId,
