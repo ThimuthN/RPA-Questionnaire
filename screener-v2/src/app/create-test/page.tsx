@@ -181,7 +181,9 @@ export default function CreateTestPage() {
   const [loading, setLoading] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const candidateId = searchParams.get("candidateId")?.trim() || "";
+  const candidateMilestoneId = searchParams.get("milestoneId")?.trim() || "";
   const linkedCandidateId = candidateId.length > 0 ? candidateId : undefined;
+  const linkedCandidateMilestoneId = candidateMilestoneId.length > 0 ? candidateMilestoneId : undefined;
 
   const previewExams = useMemo<PreviewExam[]>(
     () =>
@@ -272,6 +274,7 @@ export default function CreateTestPage() {
         assessmentVersionId: "v1-default",
         mode: "candidate",
         candidateId: linkedCandidateId,
+        candidateMilestoneId: linkedCandidateMilestoneId,
         roleLocked: true,
         stackLocked: true,
         passTarget,

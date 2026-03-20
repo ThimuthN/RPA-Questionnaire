@@ -1,5 +1,10 @@
 import { StatusPill } from "@/components/primitives/StatusPill";
 import type {
+  CandidateMilestoneMode,
+  CandidateMilestoneStatus,
+  CandidateMilestoneType
+} from "@/lib/candidates/milestones";
+import type {
   CandidateAssessmentStatus,
   CandidateFinalDecision,
   CandidateNoteType,
@@ -7,6 +12,11 @@ import type {
   CandidateStage,
   CandidateUiStatus
 } from "@/lib/candidates/types";
+import {
+  candidateMilestoneModeLabels,
+  candidateMilestoneStatusLabels,
+  candidateMilestoneTypeLabels
+} from "@/lib/candidates/milestones";
 import {
   candidateAssessmentStatusLabels,
   candidateFinalDecisionLabels,
@@ -89,6 +99,23 @@ function uiStatusTone(status: CandidateUiStatus) {
   }
 }
 
+function milestoneStatusTone(status: CandidateMilestoneStatus) {
+  switch (status) {
+    case "done":
+      return "emerald" as const;
+    case "in_progress":
+      return "blue" as const;
+    case "skipped":
+      return "neutral" as const;
+    default:
+      return "amber" as const;
+  }
+}
+
+function milestoneModeTone(mode: CandidateMilestoneMode) {
+  return mode === "platform" ? ("blue" as const) : ("neutral" as const);
+}
+
 export function CandidateStagePill({ stage }: { stage: CandidateStage }) {
   return <StatusPill label={candidateStageLabels[stage]} tone={stageTone(stage)} />;
 }
@@ -119,4 +146,16 @@ export function CandidateScreeningPill({
 
 export function CandidateNoteTypePill({ type }: { type: CandidateNoteType }) {
   return <StatusPill label={candidateNoteTypeLabels[type]} tone="purple" />;
+}
+
+export function CandidateMilestoneStatusPill({ status }: { status: CandidateMilestoneStatus }) {
+  return <StatusPill label={candidateMilestoneStatusLabels[status]} tone={milestoneStatusTone(status)} />;
+}
+
+export function CandidateMilestoneModePill({ mode }: { mode: CandidateMilestoneMode }) {
+  return <StatusPill label={candidateMilestoneModeLabels[mode]} tone={milestoneModeTone(mode)} />;
+}
+
+export function CandidateMilestoneTypePill({ type }: { type: CandidateMilestoneType }) {
+  return <StatusPill label={candidateMilestoneTypeLabels[type]} tone="neutral" />;
 }

@@ -1,24 +1,22 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
-import { Button } from "@/components/primitives/Button";
-import { ChoicePills } from "@/components/primitives/ChoicePills";
-import { SceneShell } from "@/components/scene/SceneShell";
-import { StagePanel } from "@/components/scene/StagePanel";
 import {
   CandidateAssessmentPill,
   CandidateNoteTypePill,
   CandidateUiStatusPill
 } from "@/components/candidates/CandidatePills";
+import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
+import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
-import {
-  candidateNoteTypeLabels,
-  candidateNoteTypeValues,
-  resumeSourceOptions
-} from "@/lib/candidates/types";
+import { Button } from "@/components/primitives/Button";
+import { ChoicePills } from "@/components/primitives/ChoicePills";
+import { StatusPill } from "@/components/primitives/StatusPill";
+import { SceneShell } from "@/components/scene/SceneShell";
+import { StagePanel } from "@/components/scene/StagePanel";
+import { candidateNoteTypeLabels, candidateNoteTypeValues, candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { getCandidateDetail } from "@/lib/db/candidates";
-import { StatusPill } from "@/components/primitives/StatusPill";
 
 export const dynamic = "force-dynamic";
 
@@ -42,21 +40,10 @@ function currentUiStatus(candidate: CandidateData) {
   });
 }
 
-function canSendTest(candidate: CandidateData) {
-  return candidate.resumes.length > 0 && currentAssessmentStatus(candidate) === "none";
-}
-
-function nextStepText(candidate: CandidateData) {
-  const uiStatus = currentUiStatus(candidate);
-  const screener = currentAssessmentStatus(candidate);
-
-  if (!candidate.resumes.length) return "Add the resume first.";
-  if (uiStatus === "moved_forward") return "Candidate has moved forward.";
-  if (uiStatus === "rejected") return "Candidate has been rejected.";
-  if (screener === "none") return "Send the screener when you're ready.";
-  if (screener === "invited") return "Waiting for the candidate to start the screener.";
-  if (screener === "in_progress") return "Waiting for the screener submission.";
-  return "Review the screener result and decide what to do next.";
+function nextPrompt(candidate: CandidateData) {
+  if (!candidate.resumes.length) return "Add the resume to start the journey.";
+  if (candidate.currentFocus) return `Current focus: ${candidate.currentFocus}`;
+  return "Update the next milestone when the candidate moves forward.";
 }
 
 function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
@@ -70,29 +57,8 @@ function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
       <input type="hidden" name="resumeSource" value={candidate.resumeSource || ""} />
       <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
       <input type="hidden" name="candidateFolderUrl" value={candidate.candidateFolderUrl || ""} />
+      <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
     </>
-  );
-}
-
-function QuickActionForm({
-  candidate,
-  label,
-  status,
-  variant = "secondary"
-}: {
-  candidate: CandidateData;
-  label: string;
-  status: "moved_forward" | "rejected";
-  variant?: "primary" | "secondary" | "danger" | "ghost";
-}) {
-  return (
-    <form action={`/api/candidates/${candidate.id}`} method="post">
-      <HiddenCandidateFields candidate={candidate} />
-      <input type="hidden" name="uiStatus" value={status} />
-      <Button type="submit" variant={variant}>
-        {label}
-      </Button>
-    </form>
   );
 }
 
@@ -120,6 +86,10 @@ export default async function CandidateDetailPage({
   const screener = currentAssessmentStatus(candidate);
   const latest = latestAssessment(candidate);
   const currentResume = candidate.resumes[0] ?? null;
+  const screenerMilestone = candidate.milestones.find((milestone) => milestone.type === "screener");
+  const canSendScreener = Boolean(
+    currentResume && screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
+  );
 
   return (
     <SceneShell
@@ -147,298 +117,172 @@ export default async function CandidateDetailPage({
           </StagePanel>
         ) : null}
 
-        <StagePanel className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-white">What&apos;s next</h2>
-            <p className="text-sm text-slate-300">{nextStepText(candidate)}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {!currentResume ? (
-              <a href="#resume">
-                <Button>Add resume</Button>
-              </a>
-            ) : null}
-
-            {canSendTest(candidate) ? (
-              <Link href={`/create-test?candidateId=${candidate.id}` as Route}>
-                <Button>Send screener</Button>
-              </Link>
-            ) : null}
-
-            {latest?.attemptId && typeof latest.finalPercent === "number" ? (
-              <Link href={`/results/${latest.attemptId}` as Route}>
-                <Button variant="secondary">View result</Button>
-              </Link>
-            ) : null}
-
-            {uiStatus === "need_review" ? (
-              <>
-                <QuickActionForm
-                  candidate={candidate}
-                  label="Move forward"
-                  status="moved_forward"
-                  variant="primary"
-                />
-                <QuickActionForm
-                  candidate={candidate}
-                  label="Reject"
-                  status="rejected"
-                  variant="danger"
-                />
-              </>
-            ) : null}
-          </div>
-        </StagePanel>
-
-        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <StagePanel className="space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <h2 className="text-2xl text-white">Candidate</h2>
-                <p className="text-sm text-slate-300">{candidate.email}</p>
-              </div>
-
-              <details className="group">
-                <summary className="list-none">
-                  <span className="inline-flex cursor-pointer rounded-full border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-slate-100 transition hover:border-white/30 hover:bg-white/[0.08]">
-                    Edit info
-                  </span>
-                </summary>
-
-                <form action={`/api/candidates/${candidate.id}`} method="post" className="mt-4 space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
-                  <input type="hidden" name="stage" value={candidate.stage} />
-                  <input type="hidden" name="finalDecision" value={candidate.finalDecision} />
-                  <input type="hidden" name="nextAction" value={candidate.nextAction} />
-                  <input type="hidden" name="screeningStatus" value={candidate.screeningStatus || ""} />
-
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <label className="grid gap-1">
-                      <span className="text-sm text-slate-200">Full name</span>
-                      <input
-                        name="fullName"
-                        defaultValue={candidate.fullName}
-                        required
-                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                    </label>
-
-                    <label className="grid gap-1">
-                      <span className="text-sm text-slate-200">Email</span>
-                      <input
-                        name="email"
-                        type="email"
-                        defaultValue={candidate.email}
-                        required
-                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                    </label>
-
-                    <label className="grid gap-1">
-                      <span className="text-sm text-slate-200">Role</span>
-                      <input
-                        name="positionAppliedFor"
-                        defaultValue={candidate.positionAppliedFor || ""}
-                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                    </label>
-
-                    <label className="grid gap-1">
-                      <span className="text-sm text-slate-200">Owner</span>
-                      <input
-                        name="hrOwner"
-                        defaultValue={candidate.hrOwner || ""}
-                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                    </label>
-                  </div>
-
-                  <input type="hidden" name="phone" value={candidate.phone || ""} />
-                  <input type="hidden" name="batchId" value={candidate.batchId || ""} />
-
-                  <div className="grid gap-2">
-                    <span className="text-sm text-slate-200">Source</span>
-                    <ChoicePills
-                      name="resumeSource"
-                      idPrefix="candidate-source"
-                      defaultValue={candidate.resumeSource || ""}
-                      options={[
-                        { value: "", label: "Skip" },
-                        ...resumeSourceOptions.map((option) => ({ value: option, label: option }))
-                      ]}
-                    />
-                  </div>
-
-                  <label className="grid gap-1">
-                    <span className="text-sm text-slate-200">Folder link</span>
-                    <input
-                      name="candidateFolderUrl"
-                      defaultValue={candidate.candidateFolderUrl || ""}
-                      placeholder="https://..."
-                      className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                    />
-                  </label>
-
-                  <Button type="submit">Save info</Button>
-                </form>
-              </details>
-            </div>
-
-            <div className="space-y-3 rounded-[20px] border border-white/10 bg-black/20 p-4">
+        <StagePanel className="space-y-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
               <div className="flex flex-wrap gap-2">
                 <CandidateUiStatusPill status={uiStatus} />
                 <CandidateAssessmentPill status={screener} />
+                {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
               </div>
-              <p className="text-sm text-slate-200">{candidate.positionAppliedFor || "Role not set"}</p>
-              <p className="text-sm text-slate-400">{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner"}</p>
-              {candidate.resumeSource ? <p className="text-sm text-slate-400">Source: {candidate.resumeSource}</p> : null}
-              {candidate.candidateFolderUrl ? (
-                <a
-                  href={candidate.candidateFolderUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm text-brand-100 underline-offset-4 hover:underline"
-                >
-                  Open folder
+
+              <div className="space-y-1">
+                <p className="text-sm text-slate-300">{candidate.email}</p>
+                <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
+                <p className="text-sm text-slate-400">{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner"}</p>
+                <p className="text-sm text-brand-100">{nextPrompt(candidate)}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {!currentResume ? (
+                <a href="#resume">
+                  <Button>Add resume</Button>
                 </a>
               ) : null}
-            </div>
-          </StagePanel>
 
-          <StagePanel id="resume" className="space-y-4">
-            <h2 className="text-2xl text-white">Resume</h2>
-
-            <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
-
-            {currentResume ? (
-              <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap gap-2">
-                      <StatusPill label="Current" tone="blue" />
-                      <StatusPill
-                        label={currentResume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
-                        tone="neutral"
-                      />
-                    </div>
-                    <p className="text-sm text-white">{currentResume.fileName}</p>
-                    <p className="text-xs text-slate-400">
-                      {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
-                      {new Date(currentResume.uploadedAt).toLocaleString()}
-                    </p>
-                  </div>
-                  <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
-                    <Button type="button" variant="secondary">
-                      {currentResume.mimeType === "application/pdf" ? "View" : "Download"}
-                    </Button>
-                  </a>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-300">No resume yet.</p>
-            )}
-          </StagePanel>
-        </div>
-
-        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <StagePanel className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-2xl text-white">Screener</h2>
-              {canSendTest(candidate) ? (
-                <Link href={`/create-test?candidateId=${candidate.id}` as Route}>
+              {canSendScreener && screenerMilestone ? (
+                <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
                   <Button>Send screener</Button>
                 </Link>
               ) : null}
+
+              {latest?.attemptId && typeof latest.finalPercent === "number" ? (
+                <Link href={`/results/${latest.attemptId}` as Route}>
+                  <Button variant="secondary">View result</Button>
+                </Link>
+              ) : null}
+
+              <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
             </div>
+          </div>
 
-            {candidate.assessments.length === 0 ? (
-              <p className="text-sm text-slate-300">No screener sent yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {candidate.assessments.map((assessment) => (
-                  <div key={assessment.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="space-y-2">
+          <form action={`/api/candidates/${candidate.id}`} method="post" className="space-y-3 rounded-[22px] border border-white/10 bg-black/20 p-4">
+            <HiddenCandidateFields candidate={candidate} />
+            <div className="space-y-1">
+              <h2 className="text-lg text-white">Outcome</h2>
+              <p className="text-sm text-slate-300">This is the overall candidate decision on this screen.</p>
+            </div>
+            <ChoicePills
+              name="uiStatus"
+              idPrefix={`candidate-status-${candidate.id}`}
+              defaultValue={uiStatus}
+              options={candidateUiStatusValues.map((status) => ({
+                value: status,
+                label: candidateUiStatusLabels[status]
+              }))}
+            />
+            <div className="flex justify-end">
+              <Button type="submit">Save outcome</Button>
+            </div>
+          </form>
+        </StagePanel>
+
+        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+          <StagePanel className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-2xl text-white">Journey</h2>
+              <p className="text-sm text-slate-300">Use this as a suggested path, not a strict checklist.</p>
+            </div>
+            <CandidateMilestoneTimeline
+              candidateId={candidate.id}
+              milestones={candidate.milestones}
+              hasResume={Boolean(currentResume)}
+            />
+          </StagePanel>
+
+          <div className="space-y-5">
+            <StagePanel id="resume" className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Resume</h2>
+                <p className="text-sm text-slate-300">{currentResume ? "Current resume is attached below." : "No resume yet."}</p>
+              </div>
+
+              <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
+
+              {currentResume ? (
+                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap gap-2">
+                        <StatusPill label="Current" tone="blue" />
+                        <StatusPill
+                          label={currentResume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
+                          tone="neutral"
+                        />
+                      </div>
+                      <p className="text-sm text-white">{currentResume.fileName}</p>
+                      <p className="text-xs text-slate-400">
+                        {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
+                        {new Date(currentResume.uploadedAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                      <Button type="button" variant="secondary">
+                        {currentResume.mimeType === "application/pdf" ? "View" : "Download"}
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+            </StagePanel>
+
+            <StagePanel className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Notes</h2>
+                <p className="text-sm text-slate-300">Keep interview notes, strengths, and concerns here.</p>
+              </div>
+
+              <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
+                <div className="grid gap-2">
+                  <span className="text-sm text-slate-200">Type</span>
+                  <ChoicePills
+                    name="type"
+                    idPrefix="candidate-note-type"
+                    defaultValue="general"
+                    required
+                    options={candidateNoteTypeValues.map((value) => ({
+                      value,
+                      label: candidateNoteTypeLabels[value]
+                    }))}
+                  />
+                </div>
+
+                <label className="grid gap-1">
+                  <span className="text-sm text-slate-200">Note</span>
+                  <textarea
+                    name="body"
+                    rows={4}
+                    required
+                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  />
+                </label>
+
+                <Button type="submit">Add note</Button>
+              </form>
+
+              {candidate.notes.length === 0 ? (
+                <p className="text-sm text-slate-300">No notes yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {candidate.notes.map((note) => {
+                    const author = note.createdByName || note.createdByEmail;
+
+                    return (
+                      <div key={note.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
                         <div className="flex flex-wrap gap-2">
-                          <CandidateAssessmentPill status={assessment.status} />
-                          <StatusPill label={`Test ${assessment.inviteSlug.toUpperCase()}`} tone="neutral" />
+                          <CandidateNoteTypePill type={note.type} />
+                          <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
+                          {author ? <StatusPill label={`by ${author}`} tone="neutral" className="normal-case tracking-normal" /> : null}
                         </div>
-                        <p className="text-sm text-slate-300">
-                          Sent {new Date(assessment.createdAt).toLocaleString()}
-                        </p>
-                        {assessment.startedAt ? (
-                          <p className="text-xs text-slate-400">
-                            Started {new Date(assessment.startedAt).toLocaleString()}
-                            {assessment.submittedAt
-                              ? ` | Submitted ${new Date(assessment.submittedAt).toLocaleString()}`
-                              : ""}
-                          </p>
-                        ) : null}
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{note.body}</p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {typeof assessment.finalPercent === "number" ? (
-                          <StatusPill label={`${assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
-                        ) : null}
-                        {assessment.attemptId && typeof assessment.finalPercent === "number" ? (
-                          <Link href={`/results/${assessment.attemptId}` as Route}>
-                            <Button variant="secondary">View result</Button>
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </StagePanel>
-
-          <StagePanel className="space-y-5">
-            <h2 className="text-2xl text-white">Notes</h2>
-
-            <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
-              <div className="grid gap-2">
-                <span className="text-sm text-slate-200">Type</span>
-                <ChoicePills
-                  name="type"
-                  idPrefix="candidate-note-type"
-                  defaultValue="general"
-                  required
-                  options={candidateNoteTypeValues.map((value) => ({
-                    value,
-                    label: candidateNoteTypeLabels[value]
-                  }))}
-                />
-              </div>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Note</span>
-                <textarea
-                  name="body"
-                  rows={4}
-                  required
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <Button type="submit">Add note</Button>
-            </form>
-
-            {candidate.notes.length === 0 ? (
-              <p className="text-sm text-slate-300">No notes yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {candidate.notes.map((note) => (
-                  <div key={note.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                    <div className="flex flex-wrap gap-2">
-                      <CandidateNoteTypePill type={note.type} />
-                      <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
-                    </div>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{note.body}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </StagePanel>
+                    );
+                  })}
+                </div>
+              )}
+            </StagePanel>
+          </div>
         </div>
       </div>
     </SceneShell>

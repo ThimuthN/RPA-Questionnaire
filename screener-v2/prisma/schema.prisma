@@ -152,6 +152,7 @@ model Candidate {
   resumes            CandidateResume[]
   assessments        CandidateAssessment[]
   notes              CandidateNote[]
+  milestones         CandidateMilestone[]
 
   @@index([email])
   @@index([stage, updatedAt])
@@ -181,6 +182,7 @@ model CandidateAssessment {
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   invite      Invite    @relation(fields: [inviteId], references: [id], onDelete: Cascade)
   attempt     Attempt?  @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  milestones  CandidateMilestone[]
 
   @@index([candidateId, createdAt])
 }
@@ -195,4 +197,25 @@ model CandidateNote {
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([candidateId, createdAt])
+}
+
+model CandidateMilestone {
+  id                   String   @id @default(cuid())
+  candidateId          String
+  type                 String
+  title                String
+  status               String
+  sortOrder            Int
+  mode                 String
+  date                 DateTime?
+  notes                String?
+  score                Float?
+  recommendation       String?
+  candidateAssessmentId String?  @unique
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  candidate            Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateAssessment  CandidateAssessment? @relation(fields: [candidateAssessmentId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, sortOrder])
 }

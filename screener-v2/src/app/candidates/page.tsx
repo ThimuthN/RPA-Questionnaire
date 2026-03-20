@@ -43,6 +43,7 @@ function candidateContext(candidate: CandidateRow) {
   const status = candidateStatus(candidate);
 
   if (!candidate.hasResume) return "Resume needed";
+  if (candidate.currentFocus) return candidate.currentFocus;
   if (status === "moved_forward") return "Moved forward";
   if (status === "rejected") return "Rejected";
   if (status === "need_review") return "Result ready";
@@ -108,7 +109,7 @@ export default async function CandidatesPage({
       variant="results"
       eyebrow="Candidates"
       title="Candidates"
-      subtitle="Track resumes, screeners, and notes."
+      subtitle="Track each candidate in one place."
       utility={
         <Link href={"/candidates/new" as Route}>
           <Button>Register candidate</Button>

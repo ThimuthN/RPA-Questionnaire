@@ -1,5 +1,11 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
+import {
+  defaultCandidateMilestones,
+  type CandidateMilestoneMode,
+  type CandidateMilestoneStatus,
+  type CandidateMilestoneType
+} from "@/lib/candidates/milestones";
 import type {
   CandidateAssessmentStatus,
   CandidateFinalDecision,
@@ -50,6 +56,8 @@ export interface CandidateNoteRecord {
   body: string;
   createdAt: string;
   createdById?: string;
+  createdByName?: string;
+  createdByEmail?: string;
 }
 
 export interface CandidateAssessmentRecord {
@@ -67,8 +75,27 @@ export interface CandidateAssessmentRecord {
   borderline?: boolean;
 }
 
+export interface CandidateMilestoneRecord {
+  id: string;
+  candidateId: string;
+  type: CandidateMilestoneType;
+  title: string;
+  status: CandidateMilestoneStatus;
+  sortOrder: number;
+  mode: CandidateMilestoneMode;
+  date?: string;
+  notes?: string;
+  score?: number;
+  recommendation?: string;
+  candidateAssessmentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  assessment?: CandidateAssessmentRecord | null;
+}
+
 export interface CandidateListItem extends CandidateRecord {
   hasResume: boolean;
+  currentFocus?: string;
   latestAssessment: CandidateAssessmentRecord | null;
 }
 
@@ -76,6 +103,8 @@ export interface CandidateDetail extends CandidateRecord {
   resumes: CandidateResumeRecord[];
   notes: CandidateNoteRecord[];
   assessments: CandidateAssessmentRecord[];
+  milestones: CandidateMilestoneRecord[];
+  currentFocus?: string;
 }
 
 function mapCandidate(row: {
@@ -145,14 +174,16 @@ function mapNote(row: {
   body: string;
   createdAt: Date;
   createdById: string | null;
-}): CandidateNoteRecord {
+}, author?: { name: string | null; email: string } | null): CandidateNoteRecord {
   return {
     id: row.id,
     candidateId: row.candidateId,
     type: row.type as CandidateNoteType,
     body: row.body,
     createdAt: row.createdAt.toISOString(),
-    createdById: row.createdById ?? undefined
+    createdById: row.createdById ?? undefined,
+    createdByName: author?.name ?? undefined,
+    createdByEmail: author?.email ?? undefined
   };
 }
 
@@ -217,6 +248,54 @@ function mapAssessment(
   };
 }
 
+function mapMilestone(
+  row: {
+    id: string;
+    candidateId: string;
+    type: string;
+    title: string;
+    status: string;
+    sortOrder: number;
+    mode: string;
+    date: Date | null;
+    notes: string | null;
+    score: number | null;
+    recommendation: string | null;
+    candidateAssessmentId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  assessment?: CandidateAssessmentRecord | null
+): CandidateMilestoneRecord {
+  return {
+    id: row.id,
+    candidateId: row.candidateId,
+    type: row.type as CandidateMilestoneType,
+    title: row.title,
+    status: row.status as CandidateMilestoneStatus,
+    sortOrder: row.sortOrder,
+    mode: row.mode as CandidateMilestoneMode,
+    date: row.date?.toISOString(),
+    notes: row.notes ?? undefined,
+    score: typeof row.score === "number" ? row.score : undefined,
+    recommendation: row.recommendation ?? undefined,
+    candidateAssessmentId: row.candidateAssessmentId ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    assessment: assessment ?? null
+  };
+}
+
+function currentFocusFromMilestones(milestones: CandidateMilestoneRecord[]) {
+  const active = milestones.find((milestone) => milestone.status === "in_progress");
+  if (active) {
+    return active.title;
+  }
+
+  const pending = milestones.find((milestone) => milestone.status === "not_started");
+  return pending?.title;
+}
+
 async function loadResultsByAttemptId(attemptIds: string[]) {
   if (attemptIds.length === 0) {
     return new Map<
@@ -251,6 +330,27 @@ async function loadResultsByAttemptId(attemptIds: string[]) {
   );
 }
 
+async function loadUsersById(userIds: string[]) {
+  if (userIds.length === 0) {
+    return new Map<string, { name: string | null; email: string }>();
+  }
+
+  const rows = await prisma.user.findMany({
+    where: {
+      id: {
+        in: userIds
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  });
+
+  return new Map(rows.map((row) => [row.id, { name: row.name, email: row.email }]));
+}
+
 export async function createCandidate(input: {
   fullName: string;
   email: string;
@@ -266,23 +366,39 @@ export async function createCandidate(input: {
   candidateFolderUrl?: string;
   notesSummary?: string;
 }) {
-  const created = await prisma.candidate.create({
-    data: {
-      id: cuidLike(),
-      fullName: input.fullName.trim(),
-      email: input.email.trim().toLowerCase(),
-      phone: input.phone?.trim() || null,
-      positionAppliedFor: input.positionAppliedFor?.trim() || null,
-      batchId: input.batchId?.trim() || null,
-      resumeSource: input.resumeSource?.trim() || null,
-      hrOwner: input.hrOwner?.trim() || null,
-      stage: input.stage ?? "new",
-      finalDecision: input.finalDecision ?? "in_process",
-      nextAction: input.nextAction ?? "none",
-      screeningStatus: input.screeningStatus ?? null,
-      candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
-      notesSummary: input.notesSummary?.trim() || null
-    }
+  const created = await prisma.$transaction(async (tx) => {
+    const candidate = await tx.candidate.create({
+      data: {
+        id: cuidLike(),
+        fullName: input.fullName.trim(),
+        email: input.email.trim().toLowerCase(),
+        phone: input.phone?.trim() || null,
+        positionAppliedFor: input.positionAppliedFor?.trim() || null,
+        batchId: input.batchId?.trim() || null,
+        resumeSource: input.resumeSource?.trim() || null,
+        hrOwner: input.hrOwner?.trim() || null,
+        stage: input.stage ?? "new",
+        finalDecision: input.finalDecision ?? "in_process",
+        nextAction: input.nextAction ?? "none",
+        screeningStatus: input.screeningStatus ?? null,
+        candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
+        notesSummary: input.notesSummary?.trim() || null
+      }
+    });
+
+    await tx.candidateMilestone.createMany({
+      data: defaultCandidateMilestones().map((milestone) => ({
+        id: cuidLike(),
+        candidateId: candidate.id,
+        type: milestone.type,
+        title: milestone.title,
+        status: milestone.status,
+        sortOrder: milestone.sortOrder,
+        mode: milestone.mode
+      }))
+    });
+
+    return candidate;
   });
 
   return mapCandidate(created);
@@ -393,6 +509,89 @@ export async function addCandidateNote(input: {
   return mapNote(created);
 }
 
+export async function updateCandidateMilestone(
+  candidateId: string,
+  milestoneId: string,
+  input: {
+    title?: string;
+    status?: CandidateMilestoneStatus;
+    mode?: CandidateMilestoneMode;
+    date?: string;
+    notes?: string;
+    score?: number;
+    recommendation?: string;
+  }
+) {
+  const milestone = await prisma.candidateMilestone.findFirst({
+    where: {
+      id: milestoneId,
+      candidateId
+    },
+    select: { id: true }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  const updated = await prisma.candidateMilestone.update({
+    where: { id: milestoneId },
+    data: {
+      title: input.title?.trim(),
+      status: input.status,
+      mode: input.mode,
+      date: input.date ? new Date(input.date) : input.date === "" ? null : undefined,
+      notes: typeof input.notes === "string" ? input.notes.trim() || null : undefined,
+      score: typeof input.score === "number" && Number.isFinite(input.score) ? input.score : input.score === null ? null : undefined,
+      recommendation:
+        typeof input.recommendation === "string" ? input.recommendation.trim() || null : undefined
+    }
+  });
+
+  await prisma.candidate.update({
+    where: { id: candidateId },
+    data: {
+      updatedAt: new Date()
+    }
+  });
+
+  return mapMilestone(updated);
+}
+
+export async function quickUpdateCandidateMilestoneStatus(
+  candidateId: string,
+  milestoneId: string,
+  status: CandidateMilestoneStatus
+) {
+  const milestone = await prisma.candidateMilestone.findFirst({
+    where: {
+      id: milestoneId,
+      candidateId
+    },
+    select: { id: true }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  const updated = await prisma.candidateMilestone.update({
+    where: { id: milestoneId },
+    data: {
+      status
+    }
+  });
+
+  await prisma.candidate.update({
+    where: { id: candidateId },
+    data: {
+      updatedAt: new Date()
+    }
+  });
+
+  return mapMilestone(updated);
+}
+
 export async function createCandidateAssessmentLink(input: {
   candidateId: string;
   inviteId: string;
@@ -426,6 +625,155 @@ export async function attachAttemptToCandidateAssessment(input: {
       attemptId: input.attemptId
     }
   });
+}
+
+export async function linkCandidateAssessmentToMilestone(input: {
+  candidateId: string;
+  milestoneId: string;
+  candidateAssessmentId: string;
+}) {
+  const milestone = await prisma.candidateMilestone.findFirst({
+    where: {
+      id: input.milestoneId,
+      candidateId: input.candidateId
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.candidateMilestone.updateMany({
+      where: {
+        candidateId: input.candidateId,
+        candidateAssessmentId: input.candidateAssessmentId,
+        NOT: {
+          id: input.milestoneId
+        }
+      },
+      data: {
+        candidateAssessmentId: null
+      }
+    });
+
+    await tx.candidateMilestone.update({
+      where: { id: input.milestoneId },
+      data: {
+        candidateAssessmentId: input.candidateAssessmentId,
+        status: "in_progress",
+        mode: "platform"
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+  });
+}
+
+export async function attachExistingAssessmentToMilestone(input: {
+  candidateId: string;
+  milestoneId: string;
+  attemptId?: string;
+  inviteSlug?: string;
+  createdById?: string;
+}) {
+  const milestone = await prisma.candidateMilestone.findFirst({
+    where: {
+      id: input.milestoneId,
+      candidateId: input.candidateId
+    }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  const inviteSlug = input.inviteSlug?.trim().toLowerCase();
+  const attemptId = input.attemptId?.trim();
+  if (!inviteSlug && !attemptId) {
+    throw new Error("Enter an attempt ID or invite slug.");
+  }
+
+  const resolved = attemptId
+    ? await prisma.attempt.findUnique({
+        where: { id: attemptId },
+        select: {
+          id: true,
+          inviteId: true
+        }
+      })
+    : null;
+  const inviteIdFromAttempt = resolved?.inviteId ?? null;
+  const invite = inviteSlug
+    ? await prisma.invite.findUnique({
+        where: { slug: inviteSlug },
+        select: { id: true }
+      })
+    : inviteIdFromAttempt
+      ? await prisma.invite.findUnique({
+          where: { id: inviteIdFromAttempt },
+          select: { id: true }
+        })
+      : null;
+
+  if (!invite?.id) {
+    throw new Error("Screener not found.");
+  }
+
+  const existing = await prisma.candidateAssessment.findFirst({
+    where: {
+      OR: [
+        { inviteId: invite.id },
+        ...(resolved?.id ? [{ attemptId: resolved.id }] : [])
+      ]
+    }
+  });
+
+  let candidateAssessmentId: string;
+
+  if (existing) {
+    if (existing.candidateId !== input.candidateId) {
+      throw new Error("That screener is already linked to another candidate.");
+    }
+
+    const updated = resolved?.id && !existing.attemptId
+      ? await prisma.candidateAssessment.update({
+          where: { id: existing.id },
+          data: {
+            attemptId: resolved.id
+          }
+        })
+      : existing;
+
+    candidateAssessmentId = updated.id;
+  } else {
+    const created = await prisma.candidateAssessment.create({
+      data: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        inviteId: invite.id,
+        attemptId: resolved?.id ?? null,
+        createdById: input.createdById ?? null
+      }
+    });
+    candidateAssessmentId = created.id;
+  }
+
+  await linkCandidateAssessmentToMilestone({
+    candidateId: input.candidateId,
+    milestoneId: input.milestoneId,
+    candidateAssessmentId
+  });
+
+  return candidateAssessmentId;
 }
 
 export async function candidateExists(candidateId: string) {
@@ -467,6 +815,25 @@ export async function listCandidates(filters?: {
             }
           }
         }
+      },
+      milestones: {
+        orderBy: { sortOrder: "asc" },
+        select: {
+          id: true,
+          candidateId: true,
+          type: true,
+          title: true,
+          status: true,
+          sortOrder: true,
+          mode: true,
+          date: true,
+          notes: true,
+          score: true,
+          recommendation: true,
+          candidateAssessmentId: true,
+          createdAt: true,
+          updatedAt: true
+        }
       }
     }
   });
@@ -483,6 +850,7 @@ export async function listCandidates(filters?: {
     return {
       ...base,
       hasResume: row._count.resumes > 0,
+      currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
       latestAssessment: latest
         ? mapAssessment(
             latest,
@@ -529,6 +897,27 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
             }
           }
         }
+      },
+      milestones: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          candidateAssessment: {
+            include: {
+              invite: {
+                select: {
+                  slug: true
+                }
+              },
+              attempt: {
+                select: {
+                  status: true,
+                  startedAt: true,
+                  submittedAt: true
+                }
+              }
+            }
+          }
+        }
       }
     }
   });
@@ -540,17 +929,41 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
   const attemptIds = row.assessments
     .map((assessment) => assessment.attemptId)
     .filter((value): value is string => Boolean(value));
+  for (const milestone of row.milestones) {
+    if (milestone.candidateAssessment?.attemptId) {
+      attemptIds.push(milestone.candidateAssessment.attemptId);
+    }
+  }
   const resultsByAttemptId = await loadResultsByAttemptId(attemptIds);
+  const authorIds = row.notes
+    .map((note) => note.createdById)
+    .filter((value): value is string => Boolean(value));
+  const authorsById = await loadUsersById(authorIds);
+  const milestones = row.milestones.map((milestone) =>
+    mapMilestone(
+      milestone,
+      milestone.candidateAssessment
+        ? mapAssessment(
+            milestone.candidateAssessment,
+            milestone.candidateAssessment.attemptId
+              ? resultsByAttemptId.get(milestone.candidateAssessment.attemptId) ?? null
+              : null
+          )
+        : null
+    )
+  );
 
   return {
     ...mapCandidate(row),
     resumes: row.resumes.map(mapResume),
-    notes: row.notes.map(mapNote),
+    notes: row.notes.map((note) => mapNote(note, note.createdById ? authorsById.get(note.createdById) ?? null : null)),
     assessments: row.assessments.map((assessment) =>
       mapAssessment(
         assessment,
         assessment.attemptId ? resultsByAttemptId.get(assessment.attemptId) ?? null : null
       )
-    )
+    ),
+    milestones,
+    currentFocus: currentFocusFromMilestones(milestones)
   };
 }

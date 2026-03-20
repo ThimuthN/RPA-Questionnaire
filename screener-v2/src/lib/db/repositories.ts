@@ -1132,6 +1132,7 @@ export async function createInvite(input: {
   assessmentVersionId: string;
   mode: "candidate" | "employee" | "live";
   candidateId?: string;
+  candidateMilestoneId?: string;
   createdById?: string;
   roleLocked?: boolean;
   stackLocked?: boolean;
@@ -1172,6 +1173,20 @@ export async function createInvite(input: {
       if (!candidate) {
         throw new Error("Candidate not found.");
       }
+
+      if (input.candidateMilestoneId) {
+        const milestone = await tx.candidateMilestone.findFirst({
+          where: {
+            id: input.candidateMilestoneId,
+            candidateId: input.candidateId
+          },
+          select: { id: true }
+        });
+
+        if (!milestone) {
+          throw new Error("Milestone not found.");
+        }
+      }
     }
 
     const created = await tx.invite.create({
@@ -1197,7 +1212,7 @@ export async function createInvite(input: {
     });
 
     if (input.candidateId) {
-      await tx.candidateAssessment.create({
+      const createdAssessment = await tx.candidateAssessment.create({
         data: {
           id: cuidLike(),
           candidateId: input.candidateId,
@@ -1205,6 +1220,17 @@ export async function createInvite(input: {
           createdById: input.createdById ?? null
         }
       });
+
+      if (input.candidateMilestoneId) {
+        await tx.candidateMilestone.update({
+          where: { id: input.candidateMilestoneId },
+          data: {
+            candidateAssessmentId: createdAssessment.id,
+            status: "in_progress",
+            mode: "platform"
+          }
+        });
+      }
     }
 
     return created;
