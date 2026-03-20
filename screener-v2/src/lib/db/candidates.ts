@@ -358,6 +358,15 @@ export async function addCandidateResume(input: {
   return mapResume(created);
 }
 
+export async function getLatestCandidateResume(candidateId: string) {
+  const row = await prisma.candidateResume.findFirst({
+    where: { candidateId },
+    orderBy: { uploadedAt: "desc" }
+  });
+
+  return row ? mapResume(row) : null;
+}
+
 export async function addCandidateNote(input: {
   candidateId: string;
   type: CandidateNoteType;

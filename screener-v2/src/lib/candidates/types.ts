@@ -63,12 +63,9 @@ export const candidateAssessmentStatusValues = [
 export type CandidateAssessmentStatus = (typeof candidateAssessmentStatusValues)[number];
 
 export const candidateUiStatusValues = [
-  "new",
-  "reviewing",
-  "test_sent",
-  "result_ready",
+  "in_progress",
+  "need_review",
   "moved_forward",
-  "on_hold",
   "rejected"
 ] as const;
 
@@ -127,12 +124,9 @@ export const candidateAssessmentStatusLabels: Record<CandidateAssessmentStatus, 
 };
 
 export const candidateUiStatusLabels: Record<CandidateUiStatus, string> = {
-  new: "New",
-  reviewing: "Reviewing",
-  test_sent: "Test sent",
-  result_ready: "Result ready",
+  in_progress: "In progress",
+  need_review: "Need review",
   moved_forward: "Moved forward",
-  on_hold: "On hold",
   rejected: "Rejected"
 };
 

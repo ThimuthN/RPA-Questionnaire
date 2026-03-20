@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getSession } from "@/lib/auth/session";
-import { addCandidateResume, candidateExists } from "@/lib/db/candidates";
+import {
+  addCandidateResume,
+  candidateExists,
+  getLatestCandidateResume
+} from "@/lib/db/candidates";
 import {
   candidateResumeMaxSizeBytes,
   candidateResumeMimeTypes
@@ -71,4 +75,23 @@ export async function POST(
       { status: 400 }
     );
   }
+}
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const exists = await candidateExists(id);
+  if (!exists) {
+    return NextResponse.json({ ok: false, message: "Candidate not found." }, { status: 404 });
+  }
+
+  const resume = await getLatestCandidateResume(id);
+  return NextResponse.json({ ok: true, resume });
 }

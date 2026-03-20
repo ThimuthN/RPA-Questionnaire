@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
+import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { resumeSourceOptions } from "@/lib/candidates/types";
@@ -55,21 +56,18 @@ export default async function NewCandidatePage({
               />
             </label>
 
-            <label className="grid gap-1">
+            <div className="grid gap-2">
               <span className="text-sm text-slate-200">Source</span>
-              <select
+              <ChoicePills
                 name="resumeSource"
+                idPrefix="new-candidate-source"
                 defaultValue=""
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="">Optional</option>
-                {resumeSourceOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
+                options={[
+                  { value: "", label: "Skip" },
+                  ...resumeSourceOptions.map((option) => ({ value: option, label: option }))
+                ]}
+              />
+            </div>
 
             <label className="grid gap-1">
               <span className="text-sm text-slate-200">Owner</span>

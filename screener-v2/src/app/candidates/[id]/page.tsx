@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
+import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import {
@@ -13,8 +14,6 @@ import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import {
   candidateNoteTypeLabels,
   candidateNoteTypeValues,
-  candidateUiStatusLabels,
-  candidateUiStatusValues,
   resumeSourceOptions
 } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
@@ -43,20 +42,6 @@ function currentUiStatus(candidate: CandidateData) {
   });
 }
 
-function candidateSubtitle(candidate: CandidateData) {
-  const parts = [candidate.email];
-
-  if (candidate.positionAppliedFor) {
-    parts.push(candidate.positionAppliedFor);
-  }
-
-  if (candidate.hrOwner) {
-    parts.push(`Owner: ${candidate.hrOwner}`);
-  }
-
-  return parts.join(" | ");
-}
-
 function canSendTest(candidate: CandidateData) {
   return candidate.resumes.length > 0 && currentAssessmentStatus(candidate) === "none";
 }
@@ -65,17 +50,16 @@ function nextStepText(candidate: CandidateData) {
   const uiStatus = currentUiStatus(candidate);
   const screener = currentAssessmentStatus(candidate);
 
-  if (!candidate.resumes.length) return "Upload the resume to get started.";
-  if (uiStatus === "moved_forward") return "Candidate has been moved forward.";
+  if (!candidate.resumes.length) return "Add the resume first.";
+  if (uiStatus === "moved_forward") return "Candidate has moved forward.";
   if (uiStatus === "rejected") return "Candidate has been rejected.";
-  if (uiStatus === "on_hold") return "Candidate is on hold.";
   if (screener === "none") return "Send the screener when you're ready.";
-  if (screener === "invited") return "The screener has been sent.";
+  if (screener === "invited") return "Waiting for the candidate to start the screener.";
   if (screener === "in_progress") return "Waiting for the screener submission.";
-  return "Review the screener and update the candidate status.";
+  return "Review the screener result and decide what to do next.";
 }
 
-function HiddenProfileFields({ candidate }: { candidate: CandidateData }) {
+function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
   return (
     <>
       <input type="hidden" name="fullName" value={candidate.fullName} />
@@ -84,6 +68,7 @@ function HiddenProfileFields({ candidate }: { candidate: CandidateData }) {
       <input type="hidden" name="positionAppliedFor" value={candidate.positionAppliedFor || ""} />
       <input type="hidden" name="batchId" value={candidate.batchId || ""} />
       <input type="hidden" name="resumeSource" value={candidate.resumeSource || ""} />
+      <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
       <input type="hidden" name="candidateFolderUrl" value={candidate.candidateFolderUrl || ""} />
     </>
   );
@@ -97,15 +82,13 @@ function QuickActionForm({
 }: {
   candidate: CandidateData;
   label: string;
-  status: (typeof candidateUiStatusValues)[number];
+  status: "moved_forward" | "rejected";
   variant?: "primary" | "secondary" | "danger" | "ghost";
 }) {
   return (
     <form action={`/api/candidates/${candidate.id}`} method="post">
-      <HiddenProfileFields candidate={candidate} />
+      <HiddenCandidateFields candidate={candidate} />
       <input type="hidden" name="uiStatus" value={status} />
-      <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
-      <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
       <Button type="submit" variant={variant}>
         {label}
       </Button>
@@ -136,13 +119,14 @@ export default async function CandidateDetailPage({
   const uiStatus = currentUiStatus(candidate);
   const screener = currentAssessmentStatus(candidate);
   const latest = latestAssessment(candidate);
+  const currentResume = candidate.resumes[0] ?? null;
 
   return (
     <SceneShell
       variant="results"
       eyebrow="Candidate"
       title={candidate.fullName}
-      subtitle={candidateSubtitle(candidate)}
+      subtitle={candidate.positionAppliedFor || candidate.email}
       utility={
         <div className="flex flex-wrap gap-2">
           <CandidateUiStatusPill status={uiStatus} />
@@ -150,20 +134,13 @@ export default async function CandidateDetailPage({
           <Link href={"/candidates" as Route}>
             <Button variant="secondary">Back</Button>
           </Link>
-          {canSendTest(candidate) ? (
-            <Link href={`/create-test?candidateId=${candidate.id}` as Route}>
-              <Button>Send test</Button>
-            </Link>
-          ) : null}
         </div>
       }
     >
       <div className="space-y-5">
         {(pageState.created || pageState.updated || pageState.noteAdded || pageState.resumeUploaded || pageState.error) ? (
           <StagePanel className="space-y-2">
-            {pageState.created || pageState.updated ? (
-              <p className="text-sm text-emerald-200">Candidate saved.</p>
-            ) : null}
+            {pageState.created || pageState.updated ? <p className="text-sm text-emerald-200">Candidate saved.</p> : null}
             {pageState.noteAdded ? <p className="text-sm text-emerald-200">Note added.</p> : null}
             {pageState.resumeUploaded ? <p className="text-sm text-emerald-200">Resume uploaded.</p> : null}
             {pageState.error ? <p className="text-sm text-red-200">{pageState.error}</p> : null}
@@ -177,27 +154,25 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {candidate.resumes.length === 0 ? (
+            {!currentResume ? (
               <a href="#resume">
-                <Button>Upload resume</Button>
+                <Button>Add resume</Button>
               </a>
             ) : null}
 
             {canSendTest(candidate) ? (
               <Link href={`/create-test?candidateId=${candidate.id}` as Route}>
-                <Button>Send test</Button>
+                <Button>Send screener</Button>
               </Link>
             ) : null}
 
-            {(screener === "passed" || screener === "review" || screener === "failed") &&
-            latest?.attemptId &&
-            uiStatus === "result_ready" ? (
+            {latest?.attemptId && typeof latest.finalPercent === "number" ? (
               <Link href={`/results/${latest.attemptId}` as Route}>
                 <Button variant="secondary">View result</Button>
               </Link>
             ) : null}
 
-            {uiStatus === "result_ready" ? (
+            {uiStatus === "need_review" ? (
               <>
                 <QuickActionForm
                   candidate={candidate}
@@ -205,7 +180,6 @@ export default async function CandidateDetailPage({
                   status="moved_forward"
                   variant="primary"
                 />
-                <QuickActionForm candidate={candidate} label="Put on hold" status="on_hold" />
                 <QuickActionForm
                   candidate={candidate}
                   label="Reject"
@@ -214,107 +188,165 @@ export default async function CandidateDetailPage({
                 />
               </>
             ) : null}
-
-            {latest?.attemptId &&
-            typeof latest.finalPercent === "number" &&
-            uiStatus !== "result_ready" &&
-            screener !== "none" ? (
-              <Link href={`/results/${latest.attemptId}` as Route}>
-                <Button variant="secondary">View result</Button>
-              </Link>
-            ) : null}
           </div>
         </StagePanel>
 
-        <div className="grid gap-5 xl:grid-cols-2">
+        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
           <StagePanel className="space-y-4">
-            <h2 className="text-2xl text-white">Status</h2>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Candidate</h2>
+                <p className="text-sm text-slate-300">{candidate.email}</p>
+              </div>
 
-            <form action={`/api/candidates/${candidate.id}`} method="post" className="space-y-4">
-              <HiddenProfileFields candidate={candidate} />
+              <details className="group">
+                <summary className="list-none">
+                  <span className="inline-flex cursor-pointer rounded-full border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-slate-100 transition hover:border-white/30 hover:bg-white/[0.08]">
+                    Edit info
+                  </span>
+                </summary>
 
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Status</span>
-                <select
-                  name="uiStatus"
-                  defaultValue={uiStatus}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                <form action={`/api/candidates/${candidate.id}`} method="post" className="mt-4 space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
+                  <input type="hidden" name="stage" value={candidate.stage} />
+                  <input type="hidden" name="finalDecision" value={candidate.finalDecision} />
+                  <input type="hidden" name="nextAction" value={candidate.nextAction} />
+                  <input type="hidden" name="screeningStatus" value={candidate.screeningStatus || ""} />
+
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <label className="grid gap-1">
+                      <span className="text-sm text-slate-200">Full name</span>
+                      <input
+                        name="fullName"
+                        defaultValue={candidate.fullName}
+                        required
+                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-slate-200">Email</span>
+                      <input
+                        name="email"
+                        type="email"
+                        defaultValue={candidate.email}
+                        required
+                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-slate-200">Role</span>
+                      <input
+                        name="positionAppliedFor"
+                        defaultValue={candidate.positionAppliedFor || ""}
+                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-slate-200">Owner</span>
+                      <input
+                        name="hrOwner"
+                        defaultValue={candidate.hrOwner || ""}
+                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
+                    </label>
+                  </div>
+
+                  <input type="hidden" name="phone" value={candidate.phone || ""} />
+                  <input type="hidden" name="batchId" value={candidate.batchId || ""} />
+
+                  <div className="grid gap-2">
+                    <span className="text-sm text-slate-200">Source</span>
+                    <ChoicePills
+                      name="resumeSource"
+                      idPrefix="candidate-source"
+                      defaultValue={candidate.resumeSource || ""}
+                      options={[
+                        { value: "", label: "Skip" },
+                        ...resumeSourceOptions.map((option) => ({ value: option, label: option }))
+                      ]}
+                    />
+                  </div>
+
+                  <label className="grid gap-1">
+                    <span className="text-sm text-slate-200">Folder link</span>
+                    <input
+                      name="candidateFolderUrl"
+                      defaultValue={candidate.candidateFolderUrl || ""}
+                      placeholder="https://..."
+                      className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                    />
+                  </label>
+
+                  <Button type="submit">Save info</Button>
+                </form>
+              </details>
+            </div>
+
+            <div className="space-y-3 rounded-[20px] border border-white/10 bg-black/20 p-4">
+              <div className="flex flex-wrap gap-2">
+                <CandidateUiStatusPill status={uiStatus} />
+                <CandidateAssessmentPill status={screener} />
+              </div>
+              <p className="text-sm text-slate-200">{candidate.positionAppliedFor || "Role not set"}</p>
+              <p className="text-sm text-slate-400">{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner"}</p>
+              {candidate.resumeSource ? <p className="text-sm text-slate-400">Source: {candidate.resumeSource}</p> : null}
+              {candidate.candidateFolderUrl ? (
+                <a
+                  href={candidate.candidateFolderUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-brand-100 underline-offset-4 hover:underline"
                 >
-                  {candidateUiStatusValues.map((value) => (
-                    <option key={value} value={value}>
-                      {candidateUiStatusLabels[value]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Owner</span>
-                <input
-                  name="hrOwner"
-                  defaultValue={candidate.hrOwner || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Summary</span>
-                <textarea
-                  name="notesSummary"
-                  rows={3}
-                  defaultValue={candidate.notesSummary || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <Button type="submit">Save</Button>
-            </form>
+                  Open folder
+                </a>
+              ) : null}
+            </div>
           </StagePanel>
 
           <StagePanel id="resume" className="space-y-4">
             <h2 className="text-2xl text-white">Resume</h2>
 
-            <ResumeUploader candidateId={candidate.id} />
+            <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
 
-            {candidate.resumes.length === 0 ? (
-              <p className="text-sm text-slate-300">No resume yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {candidate.resumes.map((resume, index) => (
-                  <div key={resume.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-2">
-                          {index === 0 ? <StatusPill label="Current" tone="blue" /> : null}
-                          <StatusPill
-                            label={resume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
-                            tone="neutral"
-                          />
-                        </div>
-                        <p className="text-sm text-white">{resume.fileName}</p>
-                        <p className="text-xs text-slate-400">
-                          {Math.max(1, Math.round(resume.sizeBytes / 1024))} KB | Uploaded{" "}
-                          {new Date(resume.uploadedAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <a href={resume.storageUrl} target="_blank" rel="noreferrer">
-                        <Button type="button" variant="secondary">
-                          {resume.mimeType === "application/pdf" ? "View" : "Download"}
-                        </Button>
-                      </a>
+            {currentResume ? (
+              <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill label="Current" tone="blue" />
+                      <StatusPill
+                        label={currentResume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
+                        tone="neutral"
+                      />
                     </div>
+                    <p className="text-sm text-white">{currentResume.fileName}</p>
+                    <p className="text-xs text-slate-400">
+                      {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
+                      {new Date(currentResume.uploadedAt).toLocaleString()}
+                    </p>
                   </div>
-                ))}
+                  <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                    <Button type="button" variant="secondary">
+                      {currentResume.mimeType === "application/pdf" ? "View" : "Download"}
+                    </Button>
+                  </a>
+                </div>
               </div>
+            ) : (
+              <p className="text-sm text-slate-300">No resume yet.</p>
             )}
           </StagePanel>
+        </div>
 
+        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
           <StagePanel className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-2xl text-white">Screener</h2>
               {canSendTest(candidate) ? (
                 <Link href={`/create-test?candidateId=${candidate.id}` as Route}>
-                  <Button>Send test</Button>
+                  <Button>Send screener</Button>
                 </Link>
               ) : null}
             </div>
@@ -324,7 +356,7 @@ export default async function CandidateDetailPage({
             ) : (
               <div className="space-y-3">
                 {candidate.assessments.map((assessment) => (
-                  <div key={assessment.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                  <div key={assessment.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
@@ -363,41 +395,32 @@ export default async function CandidateDetailPage({
           <StagePanel className="space-y-5">
             <h2 className="text-2xl text-white">Notes</h2>
 
-            <form
-              action={`/api/candidates/${candidate.id}/notes`}
-              method="post"
-              className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_auto]"
-            >
-              <label className="grid gap-1">
+            <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
+              <div className="grid gap-2">
                 <span className="text-sm text-slate-200">Type</span>
-                <select
+                <ChoicePills
                   name="type"
+                  idPrefix="candidate-note-type"
                   defaultValue="general"
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                >
-                  {candidateNoteTypeValues.map((value) => (
-                    <option key={value} value={value}>
-                      {candidateNoteTypeLabels[value]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  required
+                  options={candidateNoteTypeValues.map((value) => ({
+                    value,
+                    label: candidateNoteTypeLabels[value]
+                  }))}
+                />
+              </div>
 
               <label className="grid gap-1">
                 <span className="text-sm text-slate-200">Note</span>
                 <textarea
                   name="body"
-                  rows={3}
+                  rows={4}
                   required
                   className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                 />
               </label>
 
-              <div className="flex items-end">
-                <Button type="submit" className="w-full">
-                  Add note
-                </Button>
-              </div>
+              <Button type="submit">Add note</Button>
             </form>
 
             {candidate.notes.length === 0 ? (
@@ -405,13 +428,10 @@ export default async function CandidateDetailPage({
             ) : (
               <div className="space-y-3">
                 {candidate.notes.map((note) => (
-                  <div key={note.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        <CandidateNoteTypePill type={note.type} />
-                        <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
-                      </div>
-                      {note.createdById ? <p className="text-xs text-slate-400">By {note.createdById}</p> : null}
+                  <div key={note.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                    <div className="flex flex-wrap gap-2">
+                      <CandidateNoteTypePill type={note.type} />
+                      <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
                     </div>
                     <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{note.body}</p>
                   </div>
@@ -420,101 +440,6 @@ export default async function CandidateDetailPage({
             )}
           </StagePanel>
         </div>
-
-        <details className="rounded-[24px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.05))] p-5 shadow-soft backdrop-blur-md">
-          <summary className="cursor-pointer text-lg text-white">More details</summary>
-
-          <form action={`/api/candidates/${candidate.id}`} method="post" className="mt-5 space-y-4">
-            <input type="hidden" name="uiStatus" value={uiStatus} />
-            <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
-            <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
-
-            <div className="grid gap-4 lg:grid-cols-2">
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Full name</span>
-                <input
-                  name="fullName"
-                  defaultValue={candidate.fullName}
-                  required
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Email</span>
-                <input
-                  name="email"
-                  type="email"
-                  defaultValue={candidate.email}
-                  required
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Role</span>
-                <input
-                  name="positionAppliedFor"
-                  defaultValue={candidate.positionAppliedFor || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Phone</span>
-                <input
-                  name="phone"
-                  defaultValue={candidate.phone || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Batch ID</span>
-                <input
-                  name="batchId"
-                  defaultValue={candidate.batchId || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Source</span>
-                <select
-                  name="resumeSource"
-                  defaultValue={candidate.resumeSource || ""}
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                >
-                  <option value="">Select source</option>
-                  {resumeSourceOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-1 lg:col-span-2">
-                <span className="text-sm text-slate-200">Folder link</span>
-                <input
-                  name="candidateFolderUrl"
-                  defaultValue={candidate.candidateFolderUrl || ""}
-                  placeholder="https://..."
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Button type="submit">Save details</Button>
-              {candidate.candidateFolderUrl ? (
-                <a href={candidate.candidateFolderUrl} target="_blank" rel="noreferrer">
-                  <Button type="button" variant="secondary">Open folder</Button>
-                </a>
-              ) : null}
-            </div>
-          </form>
-        </details>
       </div>
     </SceneShell>
   );

@@ -76,16 +76,13 @@ function screeningTone(status: CandidateScreeningStatus) {
 
 function uiStatusTone(status: CandidateUiStatus) {
   switch (status) {
+    case "need_review":
+      return "amber" as const;
     case "moved_forward":
       return "emerald" as const;
-    case "result_ready":
-    case "on_hold":
-      return "amber" as const;
     case "rejected":
       return "red" as const;
-    case "test_sent":
-      return "blue" as const;
-    case "reviewing":
+    case "in_progress":
       return "teal" as const;
     default:
       return "neutral" as const;

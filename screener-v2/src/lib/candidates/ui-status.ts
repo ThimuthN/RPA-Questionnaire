@@ -24,21 +24,7 @@ type CandidateStoredStatus = {
 
 export function candidateUiStatusToStoredFields(status: CandidateUiStatus): CandidateStoredStatus {
   switch (status) {
-    case "reviewing":
-      return {
-        stage: "screening",
-        finalDecision: "in_process",
-        nextAction: "follow_up",
-        screeningStatus: "pending"
-      };
-    case "test_sent":
-      return {
-        stage: "testing",
-        finalDecision: "in_process",
-        nextAction: "send_test",
-        screeningStatus: "passed"
-      };
-    case "result_ready":
+    case "need_review":
       return {
         stage: "decision",
         finalDecision: "on_hold",
@@ -52,19 +38,20 @@ export function candidateUiStatusToStoredFields(status: CandidateUiStatus): Cand
         nextAction: "schedule_interview",
         screeningStatus: "passed"
       };
-    case "on_hold":
-      return {
-        stage: "decision",
-        finalDecision: "on_hold",
-        nextAction: "follow_up"
-      };
+    case "in_progress":
     case "rejected":
-      return {
+      return status === "rejected"
+        ? {
         stage: "closed",
         finalDecision: "rejected",
         nextAction: "close_profile"
-      };
-    case "new":
+      }
+        : {
+            stage: "screening",
+            finalDecision: "in_process",
+            nextAction: "follow_up",
+            screeningStatus: "pending"
+          };
     default:
       return {
         stage: "new",
@@ -83,31 +70,14 @@ export function getCandidateUiStatus(candidate: CandidateStatusShape): Candidate
     return "moved_forward";
   }
 
-  if (candidate.finalDecision === "on_hold" && candidate.nextAction === "follow_up") {
-    return "on_hold";
-  }
-
   if (
     candidate.latestAssessmentStatus === "passed" ||
     candidate.latestAssessmentStatus === "review" ||
     candidate.latestAssessmentStatus === "failed" ||
     (candidate.stage === "decision" && candidate.nextAction === "review_result")
   ) {
-    return "result_ready";
+    return "need_review";
   }
 
-  if (
-    candidate.latestAssessmentStatus === "invited" ||
-    candidate.latestAssessmentStatus === "in_progress" ||
-    candidate.stage === "testing" ||
-    candidate.nextAction === "send_test"
-  ) {
-    return "test_sent";
-  }
-
-  if (candidate.stage === "screening" || candidate.screeningStatus === "pending") {
-    return "reviewing";
-  }
-
-  return "new";
+  return "in_progress";
 }

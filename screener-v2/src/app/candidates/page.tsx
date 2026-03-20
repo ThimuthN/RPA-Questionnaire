@@ -7,21 +7,22 @@ import {
   CandidateAssessmentPill,
   CandidateUiStatusPill
 } from "@/components/candidates/CandidatePills";
-import {
-  candidateAssessmentStatusLabels,
-  candidateAssessmentStatusValues,
-  candidateUiStatusLabels,
-  candidateUiStatusValues,
-  isCandidateAssessmentStatus,
-  isCandidateUiStatus
-} from "@/lib/candidates/types";
+import type { CandidateUiStatus } from "@/lib/candidates/types";
+import { isCandidateUiStatus } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { listCandidates } from "@/lib/db/candidates";
-import { StatusPill } from "@/components/primitives/StatusPill";
 
 export const dynamic = "force-dynamic";
 
 type CandidateRow = Awaited<ReturnType<typeof listCandidates>>[number];
+
+const trackerFilterOptions: Array<{ value?: CandidateUiStatus; label: string }> = [
+  { label: "All" },
+  { value: "in_progress", label: "In progress" },
+  { value: "need_review", label: "Need review" },
+  { value: "moved_forward", label: "Moved forward" },
+  { value: "rejected", label: "Rejected" }
+];
 
 function screenerStatus(candidate: CandidateRow) {
   return candidate.latestAssessment?.status ?? "none";
@@ -43,9 +44,8 @@ function candidateContext(candidate: CandidateRow) {
 
   if (!candidate.hasResume) return "Resume needed";
   if (status === "moved_forward") return "Moved forward";
-  if (status === "on_hold") return "On hold";
   if (status === "rejected") return "Rejected";
-  if (screener === "passed" || screener === "review" || screener === "failed") return "Result ready";
+  if (status === "need_review") return "Result ready";
   if (screener === "invited" || screener === "in_progress") return "Waiting for submission";
   return "Ready for screener";
 }
@@ -56,7 +56,7 @@ function primaryAction(candidate: CandidateRow) {
   if (!candidate.hasResume) {
     return {
       href: `/candidates/${candidate.id}` as Route,
-      label: "Upload resume"
+      label: "Add resume"
     };
   }
 
@@ -73,7 +73,7 @@ function primaryAction(candidate: CandidateRow) {
   if (screener === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Send test"
+      label: "Send screener"
     };
   }
 
@@ -83,31 +83,25 @@ function primaryAction(candidate: CandidateRow) {
   };
 }
 
+function chipClass(active: boolean) {
+  return active
+    ? "inline-flex rounded-full border border-brand-300/60 bg-brand-500/15 px-3 py-2 text-sm text-white"
+    : "inline-flex rounded-full border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08]";
+}
+
 export default async function CandidatesPage({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string; screener?: string }>;
+  searchParams: Promise<{ status?: string }>;
 }) {
   const params = await searchParams;
   const status = params.status && isCandidateUiStatus(params.status) ? params.status : undefined;
-  const screener = params.screener && isCandidateAssessmentStatus(params.screener) ? params.screener : undefined;
 
   const allRows = await listCandidates();
   const rows = allRows.filter((candidate) => {
     if (status && candidateStatus(candidate) !== status) return false;
-    if (screener && screenerStatus(candidate) !== screener) return false;
     return true;
   });
-
-  const needResume = rows.filter((candidate) => !candidate.hasResume).length;
-  const readyToSend = rows.filter(
-    (candidate) => candidate.hasResume && screenerStatus(candidate) === "none"
-  ).length;
-  const waitingOnTest = rows.filter((candidate) => {
-    const status = screenerStatus(candidate);
-    return status === "invited" || status === "in_progress";
-  }).length;
-  const needReview = rows.filter((candidate) => candidateStatus(candidate) === "result_ready").length;
 
   return (
     <SceneShell
@@ -116,82 +110,24 @@ export default async function CandidatesPage({
       title="Candidates"
       subtitle="Track resumes, screeners, and notes."
       utility={
-        <div className="flex flex-wrap gap-2">
-          <StatusPill label={`Total ${rows.length}`} tone="neutral" />
-          <Link href={"/candidates/new" as Route}>
-            <Button>Register candidate</Button>
-          </Link>
-        </div>
+        <Link href={"/candidates/new" as Route}>
+          <Button>Register candidate</Button>
+        </Link>
       }
     >
       <div className="space-y-5">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need resume</p>
-            <p className="text-2xl text-white">{needResume}</p>
-          </StagePanel>
-          <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ready to send</p>
-            <p className="text-2xl text-white">{readyToSend}</p>
-          </StagePanel>
-          <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Waiting on test</p>
-            <p className="text-2xl text-white">{waitingOnTest}</p>
-          </StagePanel>
-          <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need review</p>
-            <p className="text-2xl text-white">{needReview}</p>
-          </StagePanel>
+        <div className="flex flex-wrap gap-2">
+          {trackerFilterOptions.map((option) => {
+            const active = (option.value ?? "") === (status ?? "");
+            const href = option.value ? (`/candidates?status=${option.value}` as Route) : ("/candidates" as Route);
+
+            return (
+              <Link key={option.label} href={href} className={chipClass(active)}>
+                {option.label}
+              </Link>
+            );
+          })}
         </div>
-
-        <StagePanel className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-2xl text-white">Filter</h2>
-            <Link href={"/candidates" as Route}>
-              <Button variant="secondary">Reset</Button>
-            </Link>
-          </div>
-
-          <form method="get" className="grid gap-3 md:grid-cols-3">
-            <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Status</span>
-              <select
-                name="status"
-                defaultValue={status ?? ""}
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="">All statuses</option>
-                {candidateUiStatusValues.map((value) => (
-                  <option key={value} value={value}>
-                    {candidateUiStatusLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Screener</span>
-              <select
-                name="screener"
-                defaultValue={screener ?? ""}
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="">All screener states</option>
-                {candidateAssessmentStatusValues.map((value) => (
-                  <option key={value} value={value}>
-                    {candidateAssessmentStatusLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <div className="flex items-end">
-              <Button type="submit" className="w-full">
-                Apply
-              </Button>
-            </div>
-          </form>
-        </StagePanel>
 
         {rows.length === 0 ? (
           <StagePanel className="space-y-3">
@@ -206,7 +142,7 @@ export default async function CandidatesPage({
             {rows.map((candidate) => {
               const uiStatus = candidateStatus(candidate);
               const action = primaryAction(candidate);
-              const actionIsPrimary = action.label === "Send test" || action.label === "Upload resume";
+              const actionIsPrimary = action.label === "Send screener" || action.label === "Add resume";
 
               return (
                 <StagePanel key={candidate.id} className="p-4">
