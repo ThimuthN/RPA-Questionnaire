@@ -201,28 +201,42 @@ export default async function CandidateDetailPage({
               <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
 
               {currentResume ? (
-                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill label="Current" tone="blue" />
-                        <StatusPill
-                          label={currentResume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
-                          tone="neutral"
-                        />
+                <div className="space-y-4">
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap gap-2">
+                          <StatusPill label="Current" tone="blue" />
+                          <StatusPill
+                            label={currentResume.mimeType === "application/pdf" ? "PDF" : "DOCX"}
+                            tone="neutral"
+                          />
+                        </div>
+                        <p className="text-sm text-white">{currentResume.fileName}</p>
+                        <p className="text-xs text-slate-400">
+                          {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
+                          {new Date(currentResume.uploadedAt).toLocaleString()}
+                        </p>
                       </div>
-                      <p className="text-sm text-white">{currentResume.fileName}</p>
-                      <p className="text-xs text-slate-400">
-                        {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
-                        {new Date(currentResume.uploadedAt).toLocaleString()}
-                      </p>
+                      <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                        <Button type="button" variant="secondary">
+                          {currentResume.mimeType === "application/pdf" ? "Open full size" : "Download"}
+                        </Button>
+                      </a>
                     </div>
-                    <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
-                      <Button type="button" variant="secondary">
-                        {currentResume.mimeType === "application/pdf" ? "View" : "Download"}
-                      </Button>
-                    </a>
                   </div>
+
+                  {currentResume.mimeType === "application/pdf" ? (
+                    <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white">
+                      <iframe
+                        src={`${currentResume.storageUrl}#view=FitH`}
+                        title="Resume preview"
+                        className="h-[640px] w-full"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-300">Preview is available for PDF resumes. DOCX files can be downloaded.</p>
+                  )}
                 </div>
               ) : null}
             </StagePanel>
