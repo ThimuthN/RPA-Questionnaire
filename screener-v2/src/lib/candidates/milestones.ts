@@ -21,6 +21,10 @@ export const candidateMilestoneModeValues = ["manual", "platform"] as const;
 
 export type CandidateMilestoneMode = (typeof candidateMilestoneModeValues)[number];
 
+export const candidateMilestoneResultValues = ["pass", "fail", "review"] as const;
+
+export type CandidateMilestoneResult = (typeof candidateMilestoneResultValues)[number];
+
 export const candidateMilestoneTypeLabels: Record<CandidateMilestoneType, string> = {
   registration: "Registered",
   screener: "Screener",
@@ -41,6 +45,12 @@ export const candidateMilestoneModeLabels: Record<CandidateMilestoneMode, string
   platform: "Platform"
 };
 
+export const candidateMilestoneResultLabels: Record<CandidateMilestoneResult, string> = {
+  pass: "Pass",
+  fail: "Fail",
+  review: "Review"
+};
+
 export function isCandidateMilestoneType(value: string): value is CandidateMilestoneType {
   return (candidateMilestoneTypeValues as readonly string[]).includes(value);
 }
@@ -51,6 +61,10 @@ export function isCandidateMilestoneStatus(value: string): value is CandidateMil
 
 export function isCandidateMilestoneMode(value: string): value is CandidateMilestoneMode {
   return (candidateMilestoneModeValues as readonly string[]).includes(value);
+}
+
+export function isCandidateMilestoneResult(value: string): value is CandidateMilestoneResult {
+  return (candidateMilestoneResultValues as readonly string[]).includes(value);
 }
 
 export function defaultCandidateMilestones() {

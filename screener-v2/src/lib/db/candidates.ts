@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import {
   defaultCandidateMilestones,
   type CandidateMilestoneMode,
+  type CandidateMilestoneResult,
   type CandidateMilestoneStatus,
   type CandidateMilestoneType
 } from "@/lib/candidates/milestones";
@@ -86,6 +87,7 @@ export interface CandidateMilestoneRecord {
   date?: string;
   notes?: string;
   score?: number;
+  result?: CandidateMilestoneResult;
   recommendation?: string;
   candidateAssessmentId?: string;
   createdAt: string;
@@ -260,6 +262,7 @@ function mapMilestone(
     date: Date | null;
     notes: string | null;
     score: number | null;
+    result: string | null;
     recommendation: string | null;
     candidateAssessmentId: string | null;
     createdAt: Date;
@@ -278,6 +281,7 @@ function mapMilestone(
     date: row.date?.toISOString(),
     notes: row.notes ?? undefined,
     score: typeof row.score === "number" ? row.score : undefined,
+    result: (row.result as CandidateMilestoneResult | null) ?? undefined,
     recommendation: row.recommendation ?? undefined,
     candidateAssessmentId: row.candidateAssessmentId ?? undefined,
     createdAt: row.createdAt.toISOString(),
@@ -519,6 +523,7 @@ export async function updateCandidateMilestone(
     date?: string;
     notes?: string;
     score?: number;
+    result?: CandidateMilestoneResult;
     recommendation?: string;
   }
 ) {
@@ -543,6 +548,7 @@ export async function updateCandidateMilestone(
       date: input.date ? new Date(input.date) : input.date === "" ? null : undefined,
       notes: typeof input.notes === "string" ? input.notes.trim() || null : undefined,
       score: typeof input.score === "number" && Number.isFinite(input.score) ? input.score : input.score === null ? null : undefined,
+      result: input.result ?? undefined,
       recommendation:
         typeof input.recommendation === "string" ? input.recommendation.trim() || null : undefined
     }
@@ -829,6 +835,7 @@ export async function listCandidates(filters?: {
           date: true,
           notes: true,
           score: true,
+          result: true,
           recommendation: true,
           candidateAssessmentId: true,
           createdAt: true,

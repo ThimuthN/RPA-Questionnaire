@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import {
+  candidateMilestoneResultValues,
   candidateMilestoneModeValues,
   candidateMilestoneStatusValues
 } from "@/lib/candidates/milestones";
@@ -19,6 +20,7 @@ const saveMilestoneSchema = z.object({
   date: z.string().optional(),
   notes: z.string().optional(),
   score: z.string().optional(),
+  result: z.enum(candidateMilestoneResultValues).optional().or(z.literal("")),
   recommendation: z.string().optional()
 });
 
@@ -87,6 +89,7 @@ export async function POST(
       date: body.date,
       notes: body.notes,
       score: parsedScore,
+      result: body.result || undefined,
       recommendation: body.recommendation
     });
 
