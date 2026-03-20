@@ -4,14 +4,16 @@ import type {
   CandidateFinalDecision,
   CandidateNoteType,
   CandidateScreeningStatus,
-  CandidateStage
+  CandidateStage,
+  CandidateUiStatus
 } from "@/lib/candidates/types";
 import {
   candidateAssessmentStatusLabels,
   candidateFinalDecisionLabels,
   candidateNoteTypeLabels,
   candidateScreeningStatusLabels,
-  candidateStageLabels
+  candidateStageLabels,
+  candidateUiStatusLabels
 } from "@/lib/candidates/types";
 
 function assessmentTone(status: CandidateAssessmentStatus) {
@@ -72,12 +74,34 @@ function screeningTone(status: CandidateScreeningStatus) {
   }
 }
 
+function uiStatusTone(status: CandidateUiStatus) {
+  switch (status) {
+    case "moved_forward":
+      return "emerald" as const;
+    case "result_ready":
+    case "on_hold":
+      return "amber" as const;
+    case "rejected":
+      return "red" as const;
+    case "test_sent":
+      return "blue" as const;
+    case "reviewing":
+      return "teal" as const;
+    default:
+      return "neutral" as const;
+  }
+}
+
 export function CandidateStagePill({ stage }: { stage: CandidateStage }) {
   return <StatusPill label={candidateStageLabels[stage]} tone={stageTone(stage)} />;
 }
 
 export function CandidateAssessmentPill({ status }: { status: CandidateAssessmentStatus }) {
   return <StatusPill label={candidateAssessmentStatusLabels[status]} tone={assessmentTone(status)} />;
+}
+
+export function CandidateUiStatusPill({ status }: { status: CandidateUiStatus }) {
+  return <StatusPill label={candidateUiStatusLabels[status]} tone={uiStatusTone(status)} />;
 }
 
 export function CandidateDecisionPill({ decision }: { decision: CandidateFinalDecision }) {

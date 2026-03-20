@@ -62,6 +62,18 @@ export const candidateAssessmentStatusValues = [
 
 export type CandidateAssessmentStatus = (typeof candidateAssessmentStatusValues)[number];
 
+export const candidateUiStatusValues = [
+  "new",
+  "reviewing",
+  "test_sent",
+  "result_ready",
+  "moved_forward",
+  "on_hold",
+  "rejected"
+] as const;
+
+export type CandidateUiStatus = (typeof candidateUiStatusValues)[number];
+
 export const candidateStageLabels: Record<CandidateStage, string> = {
   new: "New",
   screening: "Screening",
@@ -106,12 +118,22 @@ export const candidateNoteTypeLabels: Record<CandidateNoteType, string> = {
 };
 
 export const candidateAssessmentStatusLabels: Record<CandidateAssessmentStatus, string> = {
-  none: "Not created",
-  invited: "Invited",
+  none: "Not sent",
+  invited: "Sent",
   in_progress: "In progress",
   passed: "Passed",
   review: "Review",
   failed: "Failed"
+};
+
+export const candidateUiStatusLabels: Record<CandidateUiStatus, string> = {
+  new: "New",
+  reviewing: "Reviewing",
+  test_sent: "Test sent",
+  result_ready: "Result ready",
+  moved_forward: "Moved forward",
+  on_hold: "On hold",
+  rejected: "Rejected"
 };
 
 export const resumeSourceOptions = [
@@ -141,4 +163,8 @@ export function isCandidateScreeningStatus(value: string): value is CandidateScr
 
 export function isCandidateAssessmentStatus(value: string): value is CandidateAssessmentStatus {
   return (candidateAssessmentStatusValues as readonly string[]).includes(value);
+}
+
+export function isCandidateUiStatus(value: string): value is CandidateUiStatus {
+  return (candidateUiStatusValues as readonly string[]).includes(value);
 }

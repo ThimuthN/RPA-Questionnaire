@@ -5,97 +5,116 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import {
   CandidateAssessmentPill,
-  CandidateDecisionPill,
-  CandidateStagePill
+  CandidateUiStatusPill
 } from "@/components/candidates/CandidatePills";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
-  candidateFinalDecisionLabels,
-  candidateFinalDecisionValues,
-  candidateStageLabels,
-  candidateStageValues,
-  type CandidateAssessmentStatus,
+  candidateUiStatusLabels,
+  candidateUiStatusValues,
   isCandidateAssessmentStatus,
-  isCandidateFinalDecision,
-  isCandidateStage
+  isCandidateUiStatus
 } from "@/lib/candidates/types";
+import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { listCandidates } from "@/lib/db/candidates";
 import { StatusPill } from "@/components/primitives/StatusPill";
 
 export const dynamic = "force-dynamic";
 
-function candidateNextStep(candidate: Awaited<ReturnType<typeof listCandidates>>[number]) {
-  const status = candidate.latestAssessment?.status ?? "none";
-  if (status === "passed" || status === "review" || status === "failed") {
-    return "Review assessment result";
-  }
-  if (status === "in_progress") {
-    return "Wait for submission";
-  }
-  if (status === "invited") {
-    return "Candidate has test access";
-  }
-  if (!candidate.resumeSource) {
-    return "Capture resume source and resume";
-  }
-  return "Open candidate and continue";
+type CandidateRow = Awaited<ReturnType<typeof listCandidates>>[number];
+
+function screenerStatus(candidate: CandidateRow) {
+  return candidate.latestAssessment?.status ?? "none";
 }
 
-function primaryAction(candidate: Awaited<ReturnType<typeof listCandidates>>[number]) {
-  const status = candidate.latestAssessment?.status ?? "none";
-  if ((status === "passed" || status === "review" || status === "failed") && candidate.latestAssessment?.attemptId) {
+function candidateStatus(candidate: CandidateRow) {
+  return getCandidateUiStatus({
+    stage: candidate.stage,
+    finalDecision: candidate.finalDecision,
+    nextAction: candidate.nextAction,
+    screeningStatus: candidate.screeningStatus,
+    latestAssessmentStatus: screenerStatus(candidate)
+  });
+}
+
+function candidateContext(candidate: CandidateRow) {
+  const screener = screenerStatus(candidate);
+  const status = candidateStatus(candidate);
+
+  if (!candidate.hasResume) return "Resume needed";
+  if (status === "moved_forward") return "Moved forward";
+  if (status === "on_hold") return "On hold";
+  if (status === "rejected") return "Rejected";
+  if (screener === "passed" || screener === "review" || screener === "failed") return "Result ready";
+  if (screener === "invited" || screener === "in_progress") return "Waiting for submission";
+  return "Ready for screener";
+}
+
+function primaryAction(candidate: CandidateRow) {
+  const screener = screenerStatus(candidate);
+
+  if (!candidate.hasResume) {
+    return {
+      href: `/candidates/${candidate.id}` as Route,
+      label: "Upload resume"
+    };
+  }
+
+  if (
+    (screener === "passed" || screener === "review" || screener === "failed") &&
+    candidate.latestAssessment?.attemptId
+  ) {
     return {
       href: `/results/${candidate.latestAssessment.attemptId}` as Route,
-      label: "Open result"
+      label: "View result"
     };
   }
-  if (status === "none") {
+
+  if (screener === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Create test"
+      label: "Send test"
     };
   }
+
   return {
     href: `/candidates/${candidate.id}` as Route,
-    label: "Open candidate"
+    label: "Open"
   };
 }
 
 export default async function CandidatesPage({
   searchParams
 }: {
-  searchParams: Promise<{ stage?: string; finalDecision?: string; assessmentStatus?: string }>;
+  searchParams: Promise<{ status?: string; screener?: string }>;
 }) {
   const params = await searchParams;
-  const stage = params.stage && isCandidateStage(params.stage) ? params.stage : undefined;
-  const finalDecision =
-    params.finalDecision && isCandidateFinalDecision(params.finalDecision)
-      ? params.finalDecision
-      : undefined;
-  const assessmentStatus =
-    params.assessmentStatus && isCandidateAssessmentStatus(params.assessmentStatus)
-      ? params.assessmentStatus
-      : undefined;
-  const rows = await listCandidates({
-    stage,
-    finalDecision,
-    assessmentStatus
+  const status = params.status && isCandidateUiStatus(params.status) ? params.status : undefined;
+  const screener = params.screener && isCandidateAssessmentStatus(params.screener) ? params.screener : undefined;
+
+  const allRows = await listCandidates();
+  const rows = allRows.filter((candidate) => {
+    if (status && candidateStatus(candidate) !== status) return false;
+    if (screener && screenerStatus(candidate) !== screener) return false;
+    return true;
   });
-  const awaitingTest = rows.filter((row) => (row.latestAssessment?.status ?? "none") === "none").length;
-  const inProgress = rows.filter((row) => row.latestAssessment?.status === "in_progress").length;
-  const readyForReview = rows.filter((row) => {
-    const status = row.latestAssessment?.status;
-    return status === "passed" || status === "review" || status === "failed";
+
+  const needResume = rows.filter((candidate) => !candidate.hasResume).length;
+  const readyToSend = rows.filter(
+    (candidate) => candidate.hasResume && screenerStatus(candidate) === "none"
+  ).length;
+  const waitingOnTest = rows.filter((candidate) => {
+    const status = screenerStatus(candidate);
+    return status === "invited" || status === "in_progress";
   }).length;
-  const newCandidates = rows.filter((row) => row.stage === "new").length;
+  const needReview = rows.filter((candidate) => candidateStatus(candidate) === "result_ready").length;
 
   return (
     <SceneShell
       variant="results"
       eyebrow="Candidates"
-      title="Candidate tracker"
-      subtitle="Register candidates, upload resumes, create linked assessments, and track hiring signals in one place."
+      title="Candidates"
+      subtitle="Track resumes, screeners, and notes."
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label={`Total ${rows.length}`} tone="neutral" />
@@ -108,79 +127,56 @@ export default async function CandidatesPage({
       <div className="space-y-5">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">New candidates</p>
-            <p className="text-2xl text-white">{newCandidates}</p>
-            <p className="text-sm text-slate-300">Fresh records that likely need initial screening.</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need resume</p>
+            <p className="text-2xl text-white">{needResume}</p>
           </StagePanel>
           <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need test</p>
-            <p className="text-2xl text-white">{awaitingTest}</p>
-            <p className="text-sm text-slate-300">Candidates without a linked assessment yet.</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ready to send</p>
+            <p className="text-2xl text-white">{readyToSend}</p>
           </StagePanel>
           <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">In progress</p>
-            <p className="text-2xl text-white">{inProgress}</p>
-            <p className="text-sm text-slate-300">Candidates currently taking their assessment.</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Waiting on test</p>
+            <p className="text-2xl text-white">{waitingOnTest}</p>
           </StagePanel>
           <StagePanel className="space-y-2 p-4">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Review results</p>
-            <p className="text-2xl text-white">{readyForReview}</p>
-            <p className="text-sm text-slate-300">Candidates ready for a hiring decision review.</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need review</p>
+            <p className="text-2xl text-white">{needReview}</p>
           </StagePanel>
         </div>
 
         <StagePanel className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
-              <h2 className="text-2xl text-white">Filters</h2>
-              <p className="text-sm text-slate-300">Narrow the tracker by stage, decision, or assessment state.</p>
-            </div>
+            <h2 className="text-2xl text-white">Filter</h2>
             <Link href={"/candidates" as Route}>
               <Button variant="secondary">Reset</Button>
             </Link>
           </div>
 
-          <form method="get" className="grid gap-3 md:grid-cols-4">
+          <form method="get" className="grid gap-3 md:grid-cols-3">
             <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Stage</span>
+              <span className="text-sm text-slate-200">Status</span>
               <select
-                name="stage"
-                defaultValue={stage ?? ""}
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="">All stages</option>
-                {candidateStageValues.map((value) => (
-                  <option key={value} value={value}>
-                    {candidateStageLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Decision</span>
-              <select
-                name="finalDecision"
-                defaultValue={finalDecision ?? ""}
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="">All decisions</option>
-                {candidateFinalDecisionValues.map((value) => (
-                  <option key={value} value={value}>
-                    {candidateFinalDecisionLabels[value]}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Assessment</span>
-              <select
-                name="assessmentStatus"
-                defaultValue={assessmentStatus ?? ""}
+                name="status"
+                defaultValue={status ?? ""}
                 className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
               >
                 <option value="">All statuses</option>
+                {candidateUiStatusValues.map((value) => (
+                  <option key={value} value={value}>
+                    {candidateUiStatusLabels[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-1">
+              <span className="text-sm text-slate-200">Screener</span>
+              <select
+                name="screener"
+                defaultValue={screener ?? ""}
+                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+              >
+                <option value="">All screener states</option>
                 {candidateAssessmentStatusValues.map((value) => (
                   <option key={value} value={value}>
                     {candidateAssessmentStatusLabels[value]}
@@ -191,7 +187,7 @@ export default async function CandidatesPage({
 
             <div className="flex items-end">
               <Button type="submit" className="w-full">
-                Apply filters
+                Apply
               </Button>
             </div>
           </form>
@@ -200,7 +196,7 @@ export default async function CandidatesPage({
         {rows.length === 0 ? (
           <StagePanel className="space-y-3">
             <h2 className="text-2xl text-white">No candidates yet</h2>
-            <p className="text-sm text-slate-300">Create the first candidate record to start tracking resumes, tests, and notes here.</p>
+            <p className="text-sm text-slate-300">Add a candidate to start tracking their resume, screener, and notes.</p>
             <Link href={"/candidates/new" as Route}>
               <Button>Register candidate</Button>
             </Link>
@@ -208,49 +204,38 @@ export default async function CandidatesPage({
         ) : (
           <div className="space-y-3">
             {rows.map((candidate) => {
-              const latestStatus = candidate.latestAssessment?.status ?? "none";
+              const uiStatus = candidateStatus(candidate);
               const action = primaryAction(candidate);
+              const actionIsPrimary = action.label === "Send test" || action.label === "Upload resume";
+
               return (
                 <StagePanel key={candidate.id} className="p-4">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="space-y-2">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
-                        <CandidateStagePill stage={candidate.stage} />
-                        <CandidateDecisionPill decision={candidate.finalDecision} />
-                        <CandidateAssessmentPill status={latestStatus} />
+                        <CandidateUiStatusPill status={uiStatus} />
+                        <CandidateAssessmentPill status={screenerStatus(candidate)} />
                       </div>
+
                       <div className="space-y-1">
                         <p className="text-lg text-white">{candidate.fullName}</p>
-                        <p className="text-sm text-slate-300">{candidate.email}</p>
-                        <p className="text-sm text-slate-400">
-                          {candidate.positionAppliedFor || "Position not set"}
-                          {candidate.resumeSource ? ` | ${candidate.resumeSource}` : ""}
-                          {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
+                        <p className="text-sm text-slate-300">
+                          {candidate.positionAppliedFor || "Role not set"}
                         </p>
-                        <p className="text-sm text-brand-100">Next step: {candidateNextStep(candidate)}</p>
+                        <p className="text-sm text-slate-400">
+                          {candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner"}
+                        </p>
+                        <p className="text-sm text-brand-100">{candidateContext(candidate)}</p>
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[420px]">
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Latest score</p>
-                        <p className="mt-1 text-base text-white">
-                          {typeof candidate.latestAssessment?.finalPercent === "number"
-                            ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
-                            : "No result yet"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Updated</p>
-                        <p className="mt-1 text-sm text-slate-200">
-                          {new Date(candidate.updatedAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center xl:justify-end">
-                        <Link href={action.href}>
-                          <Button variant={action.label === "Create test" ? "primary" : "secondary"}>{action.label}</Button>
-                        </Link>
-                      </div>
+                    <div className="flex flex-col items-start gap-3 lg:items-end">
+                      <p className="text-xs text-slate-400">
+                        Updated {new Date(candidate.updatedAt).toLocaleString()}
+                      </p>
+                      <Link href={action.href}>
+                        <Button variant={actionIsPrimary ? "primary" : "secondary"}>{action.label}</Button>
+                      </Link>
                     </div>
                   </div>
                 </StagePanel>

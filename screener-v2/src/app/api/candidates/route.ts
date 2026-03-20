@@ -5,8 +5,10 @@ import {
   candidateFinalDecisionValues,
   candidateNextActionValues,
   candidateScreeningStatusValues,
-  candidateStageValues
+  candidateStageValues,
+  candidateUiStatusValues
 } from "@/lib/candidates/types";
+import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { createCandidate } from "@/lib/db/candidates";
 
 const candidateSchema = z.object({
@@ -17,6 +19,7 @@ const candidateSchema = z.object({
   batchId: z.string().optional(),
   resumeSource: z.string().optional(),
   hrOwner: z.string().optional(),
+  uiStatus: z.enum(candidateUiStatusValues).optional(),
   stage: z.enum(candidateStageValues).default("new"),
   finalDecision: z.enum(candidateFinalDecisionValues).default("in_process"),
   nextAction: z.enum(candidateNextActionValues).default("none"),
@@ -43,9 +46,25 @@ export async function POST(request: Request) {
     const formRequest = isFormRequest(request);
     const rawBody = formRequest ? Object.fromEntries((await request.formData()).entries()) : await request.json();
     const body = candidateSchema.parse(rawBody);
+    const derivedStatus = body.uiStatus
+      ? candidateUiStatusToStoredFields(body.uiStatus)
+      : {
+          stage: body.stage,
+          finalDecision: body.finalDecision,
+          nextAction: body.nextAction,
+          screeningStatus: body.screeningStatus || undefined
+        };
     const candidate = await createCandidate({
-      ...body,
-      screeningStatus: body.screeningStatus || undefined
+      fullName: body.fullName,
+      email: body.email,
+      phone: body.phone,
+      positionAppliedFor: body.positionAppliedFor,
+      batchId: body.batchId,
+      resumeSource: body.resumeSource,
+      hrOwner: body.hrOwner,
+      candidateFolderUrl: body.candidateFolderUrl,
+      notesSummary: body.notesSummary,
+      ...derivedStatus
     });
 
     if (formRequest) {

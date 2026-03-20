@@ -68,6 +68,7 @@ export interface CandidateAssessmentRecord {
 }
 
 export interface CandidateListItem extends CandidateRecord {
+  hasResume: boolean;
   latestAssessment: CandidateAssessmentRecord | null;
 }
 
@@ -435,6 +436,11 @@ export async function listCandidates(filters?: {
   const rows = await prisma.candidate.findMany({
     orderBy: { updatedAt: "desc" },
     include: {
+      _count: {
+        select: {
+          resumes: true
+        }
+      },
       assessments: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -467,6 +473,7 @@ export async function listCandidates(filters?: {
 
     return {
       ...base,
+      hasResume: row._count.resumes > 0,
       latestAssessment: latest
         ? mapAssessment(
             latest,

@@ -5,8 +5,10 @@ import {
   candidateFinalDecisionValues,
   candidateNextActionValues,
   candidateScreeningStatusValues,
-  candidateStageValues
+  candidateStageValues,
+  candidateUiStatusValues
 } from "@/lib/candidates/types";
+import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { updateCandidate } from "@/lib/db/candidates";
 
 const updateCandidateSchema = z.object({
@@ -17,9 +19,10 @@ const updateCandidateSchema = z.object({
   batchId: z.string().optional(),
   resumeSource: z.string().optional(),
   hrOwner: z.string().optional(),
-  stage: z.enum(candidateStageValues),
-  finalDecision: z.enum(candidateFinalDecisionValues),
-  nextAction: z.enum(candidateNextActionValues),
+  uiStatus: z.enum(candidateUiStatusValues).optional(),
+  stage: z.enum(candidateStageValues).optional(),
+  finalDecision: z.enum(candidateFinalDecisionValues).optional(),
+  nextAction: z.enum(candidateNextActionValues).optional(),
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
   notesSummary: z.string().optional()
@@ -37,9 +40,31 @@ export async function POST(
   try {
     const { id } = await params;
     const body = updateCandidateSchema.parse(Object.fromEntries((await request.formData()).entries()));
+    const derivedStatus = body.uiStatus
+      ? candidateUiStatusToStoredFields(body.uiStatus)
+      : (() => {
+          if (!body.stage || !body.finalDecision || !body.nextAction) {
+            throw new Error("Candidate status is required.");
+          }
+
+          return {
+            stage: body.stage,
+            finalDecision: body.finalDecision,
+            nextAction: body.nextAction,
+            screeningStatus: body.screeningStatus || undefined
+          };
+        })();
     await updateCandidate(id, {
-      ...body,
-      screeningStatus: body.screeningStatus || undefined
+      fullName: body.fullName,
+      email: body.email,
+      phone: body.phone,
+      positionAppliedFor: body.positionAppliedFor,
+      batchId: body.batchId,
+      resumeSource: body.resumeSource,
+      hrOwner: body.hrOwner,
+      candidateFolderUrl: body.candidateFolderUrl,
+      notesSummary: body.notesSummary,
+      ...derivedStatus
     });
 
     const url = new URL(`/candidates/${id}`, request.url);

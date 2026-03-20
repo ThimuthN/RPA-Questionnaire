@@ -17,20 +17,15 @@ export default async function NewCandidatePage({
       variant="create"
       eyebrow="Candidates"
       title="Register candidate"
-      subtitle="Start with the essentials. You can add details, notes, status changes, and the resume after the candidate record exists."
+      subtitle="Add the basics first."
       utility={
         <Link href={"/candidates" as Route}>
-          <Button variant="secondary">Back to tracker</Button>
+          <Button variant="secondary">Back</Button>
         </Link>
       }
     >
-      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="max-w-2xl">
         <StagePanel className="space-y-5">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-white">Quick registration</h2>
-            <p className="text-sm text-slate-300">This is intentionally lightweight so adding a candidate feels fast.</p>
-          </div>
-
           <form action="/api/candidates" method="post" className="space-y-4">
             <label className="grid gap-1">
               <span className="text-sm text-slate-200">Full name</span>
@@ -52,7 +47,7 @@ export default async function NewCandidatePage({
             </label>
 
             <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Position applied for</span>
+              <span className="text-sm text-slate-200">Role</span>
               <input
                 name="positionAppliedFor"
                 placeholder="Optional"
@@ -61,7 +56,7 @@ export default async function NewCandidatePage({
             </label>
 
             <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Resume source</span>
+              <span className="text-sm text-slate-200">Source</span>
               <select
                 name="resumeSource"
                 defaultValue=""
@@ -77,7 +72,7 @@ export default async function NewCandidatePage({
             </label>
 
             <label className="grid gap-1">
-              <span className="text-sm text-slate-200">HR owner</span>
+              <span className="text-sm text-slate-200">Owner</span>
               <input
                 name="hrOwner"
                 placeholder="Optional"
@@ -87,35 +82,15 @@ export default async function NewCandidatePage({
 
             {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
 
+            <p className="text-sm text-slate-300">You can upload the resume and send the screener after this.</p>
+
             <div className="flex flex-wrap gap-3">
-              <Button type="submit">Create candidate</Button>
+              <Button type="submit">Save candidate</Button>
               <Link href={"/candidates" as Route}>
                 <Button type="button" variant="secondary">Cancel</Button>
               </Link>
             </div>
           </form>
-        </StagePanel>
-
-        <StagePanel className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-white">What happens next</h2>
-            <p className="text-sm text-slate-300">Defaults are applied automatically so you only add more detail when it becomes useful.</p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <p className="text-sm text-white">Stage starts as <span className="text-brand-200">New</span>.</p>
-            </div>
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <p className="text-sm text-white">Decision starts as <span className="text-brand-200">In Process</span>.</p>
-            </div>
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <p className="text-sm text-white">After creation, you can upload the resume directly from the candidate page.</p>
-            </div>
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <p className="text-sm text-white">When you create a test from that page, the assessment result flows back automatically.</p>
-            </div>
-          </div>
         </StagePanel>
       </div>
     </SceneShell>
