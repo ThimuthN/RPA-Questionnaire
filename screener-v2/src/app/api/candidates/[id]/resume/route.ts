@@ -1,38 +1,74 @@
 import { NextResponse } from "next/server";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getSession } from "@/lib/auth/session";
-import { addCandidateResume } from "@/lib/db/candidates";
-import { uploadResume } from "@/lib/storage/resumes";
+import { addCandidateResume, candidateExists } from "@/lib/db/candidates";
+import {
+  candidateResumeMaxSizeBytes,
+  candidateResumeMimeTypes
+} from "@/lib/candidates/resume-config";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
-  }
+  const { id } = await params;
 
   try {
-    const { id } = await params;
-    const formData = await request.formData();
-    const resume = formData.get("resume");
-    if (!(resume instanceof File) || resume.size === 0) {
-      throw new Error("Choose a resume file to upload.");
-    }
+    const body = (await request.json()) as HandleUploadBody;
+    const json = await handleUpload({
+      body,
+      request,
+      onBeforeGenerateToken: async (pathname) => {
+        const session = await getSession();
+        if (!session) {
+          throw new Error("Login required.");
+        }
 
-    const uploaded = await uploadResume(id, resume);
-    await addCandidateResume({
-      candidateId: id,
-      ...uploaded
+        const exists = await candidateExists(id);
+        if (!exists) {
+          throw new Error("Candidate not found.");
+        }
+
+        if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
+          throw new Error("Invalid resume upload path.");
+        }
+
+        return {
+          allowedContentTypes: [...candidateResumeMimeTypes],
+          maximumSizeInBytes: candidateResumeMaxSizeBytes
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        let fileName = blob.pathname.split("/").pop() || "resume";
+        let sizeBytes = 0;
+        try {
+          const parsed = JSON.parse(tokenPayload ?? "{}") as { fileName?: string; sizeBytes?: number };
+          if (parsed.fileName?.trim()) {
+            fileName = parsed.fileName.trim();
+          }
+          if (typeof parsed.sizeBytes === "number" && Number.isFinite(parsed.sizeBytes)) {
+            sizeBytes = Math.max(0, Math.round(parsed.sizeBytes));
+          }
+        } catch {
+          // Keep the blob pathname fallback when client payload is absent or malformed.
+        }
+
+        await addCandidateResume({
+          candidateId: id,
+          fileName,
+          mimeType: blob.contentType || "application/octet-stream",
+          sizeBytes,
+          storageKey: blob.pathname,
+          storageUrl: blob.url
+        });
+      }
     });
 
-    const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("resumeUploaded", "1");
-    return NextResponse.redirect(url, 303);
+    return NextResponse.json(json);
   } catch (error) {
-    const { id } = await params;
-    const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not upload resume.");
-    return NextResponse.redirect(url, 303);
+    return NextResponse.json(
+      { ok: false, message: error instanceof Error ? error.message : "Could not upload resume." },
+      { status: 400 }
+    );
   }
 }

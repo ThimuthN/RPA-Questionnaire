@@ -7,8 +7,7 @@ import {
   candidateScreeningStatusValues,
   candidateStageValues
 } from "@/lib/candidates/types";
-import { addCandidateResume, createCandidate } from "@/lib/db/candidates";
-import { uploadResume } from "@/lib/storage/resumes";
+import { createCandidate } from "@/lib/db/candidates";
 
 const candidateSchema = z.object({
   fullName: z.string().min(2),
@@ -40,29 +39,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
   }
 
-  let createdCandidateId: string | null = null;
-
   try {
     const formRequest = isFormRequest(request);
-    const formData = formRequest ? await request.formData() : null;
-    const rawBody = formData
-      ? Object.fromEntries([...formData.entries()].filter(([key]) => key !== "resume"))
-      : await request.json();
+    const rawBody = formRequest ? Object.fromEntries((await request.formData()).entries()) : await request.json();
     const body = candidateSchema.parse(rawBody);
     const candidate = await createCandidate({
       ...body,
       screeningStatus: body.screeningStatus || undefined
     });
-    createdCandidateId = candidate.id;
-
-    const resume = formData?.get("resume");
-    if (resume instanceof File && resume.size > 0) {
-      const uploaded = await uploadResume(candidate.id, resume);
-      await addCandidateResume({
-        candidateId: candidate.id,
-        ...uploaded
-      });
-    }
 
     if (formRequest) {
       const url = new URL(`/candidates/${candidate.id}`, request.url);
@@ -73,12 +57,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, candidate });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not create candidate.";
-
-    if (createdCandidateId) {
-      const url = new URL(`/candidates/${createdCandidateId}`, request.url);
-      url.searchParams.set("error", message);
-      return NextResponse.redirect(url, 303);
-    }
 
     if (isFormRequest(request)) {
       const url = new URL("/candidates/new", request.url);

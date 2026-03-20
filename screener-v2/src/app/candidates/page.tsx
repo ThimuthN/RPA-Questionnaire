@@ -15,6 +15,7 @@ import {
   candidateFinalDecisionValues,
   candidateStageLabels,
   candidateStageValues,
+  type CandidateAssessmentStatus,
   isCandidateAssessmentStatus,
   isCandidateFinalDecision,
   isCandidateStage
@@ -23,6 +24,43 @@ import { listCandidates } from "@/lib/db/candidates";
 import { StatusPill } from "@/components/primitives/StatusPill";
 
 export const dynamic = "force-dynamic";
+
+function candidateNextStep(candidate: Awaited<ReturnType<typeof listCandidates>>[number]) {
+  const status = candidate.latestAssessment?.status ?? "none";
+  if (status === "passed" || status === "review" || status === "failed") {
+    return "Review assessment result";
+  }
+  if (status === "in_progress") {
+    return "Wait for submission";
+  }
+  if (status === "invited") {
+    return "Candidate has test access";
+  }
+  if (!candidate.resumeSource) {
+    return "Capture resume source and resume";
+  }
+  return "Open candidate and continue";
+}
+
+function primaryAction(candidate: Awaited<ReturnType<typeof listCandidates>>[number]) {
+  const status = candidate.latestAssessment?.status ?? "none";
+  if ((status === "passed" || status === "review" || status === "failed") && candidate.latestAssessment?.attemptId) {
+    return {
+      href: `/results/${candidate.latestAssessment.attemptId}` as Route,
+      label: "Open result"
+    };
+  }
+  if (status === "none") {
+    return {
+      href: `/create-test?candidateId=${candidate.id}` as Route,
+      label: "Create test"
+    };
+  }
+  return {
+    href: `/candidates/${candidate.id}` as Route,
+    label: "Open candidate"
+  };
+}
 
 export default async function CandidatesPage({
   searchParams
@@ -44,6 +82,13 @@ export default async function CandidatesPage({
     finalDecision,
     assessmentStatus
   });
+  const awaitingTest = rows.filter((row) => (row.latestAssessment?.status ?? "none") === "none").length;
+  const inProgress = rows.filter((row) => row.latestAssessment?.status === "in_progress").length;
+  const readyForReview = rows.filter((row) => {
+    const status = row.latestAssessment?.status;
+    return status === "passed" || status === "review" || status === "failed";
+  }).length;
+  const newCandidates = rows.filter((row) => row.stage === "new").length;
 
   return (
     <SceneShell
@@ -61,6 +106,29 @@ export default async function CandidatesPage({
       }
     >
       <div className="space-y-5">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <StagePanel className="space-y-2 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">New candidates</p>
+            <p className="text-2xl text-white">{newCandidates}</p>
+            <p className="text-sm text-slate-300">Fresh records that likely need initial screening.</p>
+          </StagePanel>
+          <StagePanel className="space-y-2 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Need test</p>
+            <p className="text-2xl text-white">{awaitingTest}</p>
+            <p className="text-sm text-slate-300">Candidates without a linked assessment yet.</p>
+          </StagePanel>
+          <StagePanel className="space-y-2 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">In progress</p>
+            <p className="text-2xl text-white">{inProgress}</p>
+            <p className="text-sm text-slate-300">Candidates currently taking their assessment.</p>
+          </StagePanel>
+          <StagePanel className="space-y-2 p-4">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Review results</p>
+            <p className="text-2xl text-white">{readyForReview}</p>
+            <p className="text-sm text-slate-300">Candidates ready for a hiring decision review.</p>
+          </StagePanel>
+        </div>
+
         <StagePanel className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
@@ -141,6 +209,7 @@ export default async function CandidatesPage({
           <div className="space-y-3">
             {rows.map((candidate) => {
               const latestStatus = candidate.latestAssessment?.status ?? "none";
+              const action = primaryAction(candidate);
               return (
                 <StagePanel key={candidate.id} className="p-4">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -158,6 +227,7 @@ export default async function CandidatesPage({
                           {candidate.resumeSource ? ` | ${candidate.resumeSource}` : ""}
                           {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
                         </p>
+                        <p className="text-sm text-brand-100">Next step: {candidateNextStep(candidate)}</p>
                       </div>
                     </div>
 
@@ -177,8 +247,8 @@ export default async function CandidatesPage({
                         </p>
                       </div>
                       <div className="flex items-center xl:justify-end">
-                        <Link href={`/candidates/${candidate.id}` as Route}>
-                          <Button variant="secondary">Open candidate</Button>
+                        <Link href={action.href}>
+                          <Button variant={action.label === "Create test" ? "primary" : "secondary"}>{action.label}</Button>
                         </Link>
                       </div>
                     </div>
