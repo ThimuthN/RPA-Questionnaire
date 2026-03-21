@@ -4,16 +4,20 @@ export function ChoicePills({
   name,
   options,
   defaultValue,
+  value,
   idPrefix,
   required = false,
-  className
+  className,
+  onChange
 }: {
   name: string;
   options: { value: string; label: string }[];
   defaultValue?: string;
+  value?: string;
   idPrefix: string;
   required?: boolean;
   className?: string;
+  onChange?: (value: string) => void;
 }) {
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
@@ -27,9 +31,11 @@ export function ChoicePills({
               name={name}
               type="radio"
               value={option.value}
-              defaultChecked={defaultValue === option.value}
+              checked={value !== undefined ? value === option.value : undefined}
+              defaultChecked={value === undefined ? defaultValue === option.value : undefined}
               required={required && index === 0}
               className="peer sr-only"
+              onChange={() => onChange?.(option.value)}
             />
             <label
               htmlFor={id}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import {
@@ -12,12 +13,15 @@ import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import {
-  candidateMilestoneModeValues,
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
-  candidateMilestoneStatusValues
+  candidateMilestoneStatusValues,
+  type CandidateMilestoneMode
 } from "@/lib/candidates/milestones";
 import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
+
+const fieldClassName =
+  "w-full rounded-[16px] border border-white/14 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
 function derivedResult(milestone: CandidateMilestoneRecord) {
   if (milestone.mode === "manual") {
@@ -64,9 +68,9 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
   return "Feedback";
 }
 
-function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneRecord["mode"]) {
+function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
   if (type === "screener" || type === "advanced_test") {
-    return mode === "platform" ? "Save step" : "Save feedback";
+    return mode === "platform" ? "Save path" : "Save feedback";
   }
 
   return "Save";
@@ -77,16 +81,20 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
     return hasResume ? "Resume attached." : "Resume missing.";
   }
 
-  if (milestone.mode === "platform" && milestone.assessment) {
-    if (typeof milestone.assessment.finalPercent === "number") {
-      return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} • ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
+  if (milestone.mode === "platform") {
+    if (milestone.assessment) {
+      if (typeof milestone.assessment.finalPercent === "number") {
+        return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} | ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
+      }
+      if (milestone.assessment.status === "invited") {
+        return "Hub test sent.";
+      }
+      if (milestone.assessment.status === "in_progress") {
+        return "Hub test in progress.";
+      }
     }
-    if (milestone.assessment.status === "invited") {
-      return "Test sent.";
-    }
-    if (milestone.assessment.status === "in_progress") {
-      return "Test in progress.";
-    }
+
+    return "No hub test linked yet.";
   }
 
   if (milestone.result && milestone.result !== "review") {
@@ -104,173 +112,210 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
   return milestone.status === "not_started" ? "No updates yet." : candidateMilestoneStatusLabels[milestone.status];
 }
 
-function TestMilestoneCard({
-  candidateId,
-  milestone,
-  hasResume
+function MilestoneStatusSelect({
+  name,
+  defaultValue,
+  label = "Step status"
 }: {
-  candidateId: string;
-  milestone: CandidateMilestoneRecord;
-  hasResume: boolean;
+  name: string;
+  defaultValue: CandidateMilestoneRecord["status"];
+  label?: string;
 }) {
+  return (
+    <label className="grid gap-1">
+      <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
+      <select name={name} defaultValue={defaultValue} className={fieldClassName}>
+        {candidateMilestoneStatusValues.map((status) => (
+          <option key={status} value={status} className="bg-slate-900">
+            {candidateMilestoneStatusLabels[status]}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneRecord }) {
   const result = derivedResult(milestone);
-  const isPlatform = milestone.mode === "platform";
-  const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
   const resultHref =
     milestone.assessment?.attemptId && typeof milestone.assessment.finalPercent === "number"
       ? (`/results/${milestone.assessment.attemptId}` as Route)
       : null;
 
+  if (!milestone.assessment) {
+    return null;
+  }
+
   return (
-    <div className="space-y-4">
-      <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-4">
+    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          <CandidateAssessmentPill status={milestone.assessment.status} />
+          {result ? (
+            <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+          ) : null}
+          {typeof milestone.assessment.finalPercent === "number" ? (
+            <StatusPill label={`${milestone.assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
+          ) : null}
+        </div>
+
+        <p className="text-sm text-slate-300">
+          {milestone.assessment.inviteSlug
+            ? `Linked to ${milestone.assessment.inviteSlug.toUpperCase()}.`
+            : "Linked to a hub test."}
+        </p>
+
+        {resultHref ? (
+          <Link href={resultHref}>
+            <Button type="button" variant="secondary">
+              View result
+            </Button>
+          </Link>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function AttachExistingTest({
+  candidateId,
+  milestoneId
+}: {
+  candidateId: string;
+  milestoneId: string;
+}) {
+  return (
+    <form
+      action={`/api/candidates/${candidateId}/milestones/${milestoneId}`}
+      method="post"
+      className="grid gap-3 rounded-[18px] border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
+    >
+      <input type="hidden" name="action" value="link_existing" />
+      <label className="grid gap-1">
+        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Attempt ID</span>
+        <input name="attemptId" className={fieldClassName} />
+      </label>
+      <label className="grid gap-1">
+        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Invite slug</span>
+        <input name="inviteSlug" className={fieldClassName} />
+      </label>
+      <Button type="submit" variant="secondary">
+        Attach test
+      </Button>
+    </form>
+  );
+}
+
+function TestMilestoneCard({
+  candidateId,
+  milestone
+}: {
+  candidateId: string;
+  milestone: CandidateMilestoneRecord;
+}) {
+  const [selectedMode, setSelectedMode] = useState<CandidateMilestoneMode>(milestone.mode);
+  const isPlatform = selectedMode === "platform";
+  const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
+
+  return (
+    <div className="space-y-3">
+      <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
         <input type="hidden" name="action" value="save" />
         <input type="hidden" name="title" value={milestone.title} />
+        {isPlatform ? <input type="hidden" name="result" value="" /> : null}
 
-        <div className="grid gap-2">
-          <span className="text-sm text-slate-200">Test path</span>
-          <ChoicePills
-            name="mode"
-            idPrefix={`milestone-mode-${milestone.id}`}
-            defaultValue={milestone.mode}
-            options={[
-              { value: "platform", label: "Through hub" },
-              { value: "manual", label: "Outside test" }
-            ]}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <span className="text-sm text-slate-200">Step status</span>
-          <ChoicePills
-            name="status"
-            idPrefix={`milestone-status-${milestone.id}`}
-            defaultValue={milestone.status}
-            options={candidateMilestoneStatusValues.map((status) => ({
-              value: status,
-              label: candidateMilestoneStatusLabels[status]
-            }))}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="grid gap-1">
-            <span className="text-sm text-slate-200">Date</span>
-            <input
-              name="date"
-              type="datetime-local"
-              defaultValue={milestone.date ? new Date(milestone.date).toISOString().slice(0, 16) : ""}
-              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-            />
-          </label>
-
-          <label className="grid gap-1">
-            <span className="text-sm text-slate-200">Score</span>
-            <input
-              name="score"
-              type="number"
-              step="0.1"
-              defaultValue={typeof milestone.score === "number" ? String(milestone.score) : ""}
-              placeholder={isPlatform ? "Optional manual override" : "Optional"}
-              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-            />
-          </label>
-        </div>
-
-        {!isPlatform ? (
-          <div className="grid gap-2">
-            <span className="text-sm text-slate-200">Pass / fail</span>
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
+          <div className="grid gap-1.5">
+            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Test path</span>
             <ChoicePills
-              name="result"
-              idPrefix={`milestone-result-${milestone.id}`}
-              defaultValue={milestone.result || ""}
+              name="mode"
+              idPrefix={`milestone-mode-${milestone.id}`}
+              value={selectedMode}
+              onChange={(value) => setSelectedMode(value as CandidateMilestoneMode)}
               options={[
-                { value: "", label: "Not set" },
-                { value: "pass", label: "Pass" },
-                { value: "fail", label: "Fail" }
+                { value: "platform", label: "Through hub" },
+                { value: "manual", label: "Outside test" }
               ]}
             />
           </div>
-        ) : (
-          <input type="hidden" name="result" value="" />
-        )}
 
-        <label className="grid gap-1">
-          <span className="text-sm text-slate-200">Feedback</span>
-          <textarea
-            name="notes"
-            rows={4}
-            defaultValue={milestone.notes || ""}
-            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-          />
-        </label>
-
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit">{saveButtonLabel(milestone.type, milestone.mode)}</Button>
-
-          {isPlatform && !milestone.assessment ? (
-            <Link href={sendHref}>
-              <Button type="button" variant="secondary">Create test</Button>
-            </Link>
-          ) : null}
-
-          {resultHref ? (
-            <Link href={resultHref}>
-              <Button type="button" variant="secondary">View result</Button>
-            </Link>
-          ) : null}
+          <MilestoneStatusSelect name="status" defaultValue={milestone.status} />
         </div>
+
+        {isPlatform ? (
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" variant="secondary">
+              {saveButtonLabel(milestone.type, selectedMode)}
+            </Button>
+            {!milestone.assessment ? (
+              <Link href={sendHref}>
+                <Button type="button">Create test</Button>
+              </Link>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1">
+                <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Date</span>
+                <input
+                  name="date"
+                  type="datetime-local"
+                  defaultValue={milestone.date ? new Date(milestone.date).toISOString().slice(0, 16) : ""}
+                  className={fieldClassName}
+                />
+              </label>
+
+              <label className="grid gap-1">
+                <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Score</span>
+                <input
+                  name="score"
+                  type="number"
+                  step="0.1"
+                  defaultValue={typeof milestone.score === "number" ? String(milestone.score) : ""}
+                  placeholder="Optional"
+                  className={fieldClassName}
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-1.5">
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass / fail</span>
+              <ChoicePills
+                name="result"
+                idPrefix={`milestone-result-${milestone.id}`}
+                defaultValue={milestone.result || ""}
+                options={[
+                  { value: "", label: "Not set" },
+                  { value: "pass", label: "Pass" },
+                  { value: "fail", label: "Fail" }
+                ]}
+              />
+            </div>
+
+            <label className="grid gap-1">
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Feedback</span>
+              <textarea
+                name="notes"
+                rows={4}
+                defaultValue={milestone.notes || ""}
+                className={`${fieldClassName} min-h-[116px] resize-y`}
+              />
+            </label>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit">{saveButtonLabel(milestone.type, selectedMode)}</Button>
+            </div>
+          </>
+        )}
       </form>
 
       {isPlatform ? (
-        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-          <div className="space-y-3">
-            {milestone.assessment ? (
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  <CandidateAssessmentPill status={milestone.assessment.status} />
-                  {result ? (
-                    <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
-                  ) : null}
-                  {typeof milestone.assessment.finalPercent === "number" ? (
-                    <StatusPill label={`${milestone.assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
-                  ) : null}
-                </div>
-                <p className="text-sm text-slate-300">
-                  {milestone.assessment.inviteSlug
-                    ? `Linked to hub test ${milestone.assessment.inviteSlug.toUpperCase()}.`
-                    : "Linked to a hub test."}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <div>
-                  <h4 className="text-sm text-white">Link existing test</h4>
-                  <p className="text-sm text-slate-300">Use an attempt ID or invite slug.</p>
-                </div>
-
-                <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
-                  <input type="hidden" name="action" value="link_existing" />
-                  <label className="grid gap-1">
-                    <span className="text-sm text-slate-200">Attempt ID</span>
-                    <input
-                      name="attemptId"
-                      className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                    />
-                  </label>
-                  <label className="grid gap-1">
-                    <span className="text-sm text-slate-200">Invite slug</span>
-                    <input
-                      name="inviteSlug"
-                      className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                    />
-                  </label>
-                  <Button type="submit" variant="secondary">Link existing</Button>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
+        milestone.assessment ? (
+          <LinkedAssessmentSummary milestone={milestone} />
+        ) : (
+          <AttachExistingTest candidateId={candidateId} milestoneId={milestone.id} />
+        )
       ) : null}
     </div>
   );
@@ -284,62 +329,61 @@ function DocumentationMilestoneCard({
   milestone: CandidateMilestoneRecord;
 }) {
   return (
-    <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-4">
+    <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
       <input type="hidden" name="action" value="save" />
       <input type="hidden" name="title" value={milestone.title} />
       <input type="hidden" name="mode" value={milestone.mode} />
 
-      <div className="grid gap-2">
-        <span className="text-sm text-slate-200">Step status</span>
-        <ChoicePills
-          name="status"
-          idPrefix={`milestone-status-${milestone.id}`}
-          defaultValue={milestone.status}
-          options={candidateMilestoneStatusValues.map((status) => ({
-            value: status,
-            label: candidateMilestoneStatusLabels[status]
-          }))}
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
         <label className="grid gap-1">
-          <span className="text-sm text-slate-200">Date</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Date</span>
           <input
             name="date"
             type="datetime-local"
             defaultValue={milestone.date ? new Date(milestone.date).toISOString().slice(0, 16) : ""}
-            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            className={fieldClassName}
           />
         </label>
 
-        <div className="grid gap-2">
-          <span className="text-sm text-slate-200">Pass / fail</span>
-          <ChoicePills
-            name="result"
-            idPrefix={`doc-result-${milestone.id}`}
-            defaultValue={milestone.result || ""}
-            options={[
-              { value: "", label: "Not set" },
-              { value: "pass", label: "Pass" },
-              { value: "fail", label: "Fail" }
-            ]}
-          />
-        </div>
+        <MilestoneStatusSelect name="status" defaultValue={milestone.status} />
+      </div>
+
+      <div className="grid gap-1.5">
+        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass / fail</span>
+        <ChoicePills
+          name="result"
+          idPrefix={`doc-result-${milestone.id}`}
+          defaultValue={milestone.result || ""}
+          options={[
+            { value: "", label: "Not set" },
+            { value: "pass", label: "Pass" },
+            { value: "fail", label: "Fail" }
+          ]}
+        />
       </div>
 
       <label className="grid gap-1">
-        <span className="text-sm text-slate-200">{feedbackLabel(milestone.type)}</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{feedbackLabel(milestone.type)}</span>
         <textarea
           name="notes"
           rows={4}
           defaultValue={milestone.notes || ""}
-          className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+          className={`${fieldClassName} min-h-[116px] resize-y`}
         />
       </label>
 
-      <Button type="submit">Save</Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit">Save</Button>
+      </div>
     </form>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+      <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -353,7 +397,7 @@ export function CandidateMilestoneTimeline({
   hasResume: boolean;
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {milestones.map((milestone, index) => {
         const result = derivedResult(milestone);
         const compactByDefault =
@@ -362,42 +406,58 @@ export function CandidateMilestoneTimeline({
           (milestone.type === "registration" && hasResume);
 
         return (
-          <details key={milestone.id} open={!compactByDefault} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-            <summary className="list-none cursor-pointer">
-              <div className="flex gap-4">
-                <div className="hidden pt-1 sm:block">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/14 bg-white/[0.05] text-sm text-slate-200">
+          <details
+            key={milestone.id}
+            open={!compactByDefault}
+            className="group rounded-[22px] border border-white/10 bg-black/20 p-3.5 transition duration-200 hover:border-white/20 hover:bg-white/[0.03]"
+          >
+            <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
+              <div className="flex items-start gap-3">
+                <div className="hidden sm:block">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.05] text-sm text-slate-200">
                     {index + 1}
                   </div>
                 </div>
 
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <CandidateMilestoneTypePill type={milestone.type} />
-                    <CandidateMilestoneStatusPill status={milestone.status} />
-                    <CandidateMilestoneModePill mode={milestone.mode} />
-                    {result ? <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} /> : null}
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex flex-wrap gap-2">
+                        <CandidateMilestoneTypePill type={milestone.type} />
+                        <CandidateMilestoneStatusPill status={milestone.status} />
+                        <CandidateMilestoneModePill mode={milestone.mode} />
+                        {result ? (
+                          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+                        ) : null}
+                      </div>
 
-                  <div className="space-y-1">
-                    <h3 className="text-lg text-white">{milestone.title}</h3>
-                    <p className="text-sm text-slate-300">{stepSummary(milestone, hasResume)}</p>
+                      <div className="space-y-1">
+                        <h3 className="text-lg text-white">{milestone.title}</h3>
+                        <p className="text-sm text-slate-300">{stepSummary(milestone, hasResume)}</p>
+                      </div>
+                    </div>
+
+                    <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition duration-200 group-open:rotate-180">
+                      <ChevronIcon />
+                    </span>
                   </div>
                 </div>
               </div>
             </summary>
 
-            <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="mt-3 border-t border-white/10 pt-3">
               {milestone.type === "registration" ? (
                 hasResume ? (
                   <p className="text-sm text-slate-300">Resume is attached.</p>
                 ) : (
                   <Link href={`/candidates/${candidateId}#resume` as Route}>
-                    <Button type="button" variant="secondary">Add resume</Button>
+                    <Button type="button" variant="secondary">
+                      Add resume
+                    </Button>
                   </Link>
                 )
               ) : milestone.type === "screener" || milestone.type === "advanced_test" ? (
-                <TestMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />
+                <TestMilestoneCard candidateId={candidateId} milestone={milestone} />
               ) : (
                 <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />
               )}
