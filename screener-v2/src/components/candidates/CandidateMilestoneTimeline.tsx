@@ -14,7 +14,6 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import {
   candidateMilestoneModeValues,
   candidateMilestoneResultLabels,
-  candidateMilestoneResultValues,
   candidateMilestoneStatusLabels,
   candidateMilestoneStatusValues
 } from "@/lib/candidates/milestones";
@@ -65,24 +64,44 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
   return "Feedback";
 }
 
-function recommendationLabel(type: CandidateMilestoneRecord["type"]) {
-  if (type === "interview") {
-    return "Recommendation";
-  }
-
-  if (type === "decision") {
-    return "Outcome";
-  }
-
-  return "Recommendation";
-}
-
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneRecord["mode"]) {
   if (type === "screener" || type === "advanced_test") {
     return mode === "platform" ? "Save step" : "Save feedback";
   }
 
   return "Save";
+}
+
+function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
+  if (milestone.type === "registration") {
+    return hasResume ? "Resume attached." : "Resume missing.";
+  }
+
+  if (milestone.mode === "platform" && milestone.assessment) {
+    if (typeof milestone.assessment.finalPercent === "number") {
+      return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} • ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
+    }
+    if (milestone.assessment.status === "invited") {
+      return "Test sent.";
+    }
+    if (milestone.assessment.status === "in_progress") {
+      return "Test in progress.";
+    }
+  }
+
+  if (milestone.result && milestone.result !== "review") {
+    return candidateMilestoneResultLabels[milestone.result];
+  }
+
+  if (typeof milestone.score === "number") {
+    return `Score ${milestone.score}`;
+  }
+
+  if (milestone.notes?.trim()) {
+    return milestone.notes.trim();
+  }
+
+  return milestone.status === "not_started" ? "No updates yet." : candidateMilestoneStatusLabels[milestone.status];
 }
 
 function TestMilestoneCard({
@@ -160,17 +179,15 @@ function TestMilestoneCard({
 
         {!isPlatform ? (
           <div className="grid gap-2">
-            <span className="text-sm text-slate-200">Result</span>
+            <span className="text-sm text-slate-200">Pass / fail</span>
             <ChoicePills
               name="result"
               idPrefix={`milestone-result-${milestone.id}`}
               defaultValue={milestone.result || ""}
               options={[
                 { value: "", label: "Not set" },
-                ...candidateMilestoneResultValues.map((value) => ({
-                  value,
-                  label: candidateMilestoneResultLabels[value]
-                }))
+                { value: "pass", label: "Pass" },
+                { value: "fail", label: "Fail" }
               ]}
             />
           </div>
@@ -188,22 +205,12 @@ function TestMilestoneCard({
           />
         </label>
 
-        <label className="grid gap-1">
-          <span className="text-sm text-slate-200">Recommendation</span>
-          <input
-            name="recommendation"
-            defaultValue={milestone.recommendation || ""}
-            placeholder="Optional"
-            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-          />
-        </label>
-
         <div className="flex flex-wrap gap-2">
           <Button type="submit">{saveButtonLabel(milestone.type, milestone.mode)}</Button>
 
-          {isPlatform && !milestone.assessment && hasResume ? (
+          {isPlatform && !milestone.assessment ? (
             <Link href={sendHref}>
-              <Button type="button" variant="secondary">Take assessment through hub</Button>
+              <Button type="button" variant="secondary">Create test</Button>
             </Link>
           ) : null}
 
@@ -218,10 +225,6 @@ function TestMilestoneCard({
       {isPlatform ? (
         <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
           <div className="space-y-3">
-            {!hasResume && !milestone.assessment ? (
-              <p className="text-sm text-slate-300">Resume is required before sending this through the hub.</p>
-            ) : null}
-
             {milestone.assessment ? (
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
@@ -285,7 +288,6 @@ function DocumentationMilestoneCard({
       <input type="hidden" name="action" value="save" />
       <input type="hidden" name="title" value={milestone.title} />
       <input type="hidden" name="mode" value={milestone.mode} />
-      <input type="hidden" name="result" value={milestone.result || ""} />
 
       <div className="grid gap-2">
         <span className="text-sm text-slate-200">Step status</span>
@@ -311,15 +313,19 @@ function DocumentationMilestoneCard({
           />
         </label>
 
-        <label className="grid gap-1">
-          <span className="text-sm text-slate-200">{recommendationLabel(milestone.type)}</span>
-          <input
-            name="recommendation"
-            defaultValue={milestone.recommendation || ""}
-            placeholder="Optional"
-            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        <div className="grid gap-2">
+          <span className="text-sm text-slate-200">Pass / fail</span>
+          <ChoicePills
+            name="result"
+            idPrefix={`doc-result-${milestone.id}`}
+            defaultValue={milestone.result || ""}
+            options={[
+              { value: "", label: "Not set" },
+              { value: "pass", label: "Pass" },
+              { value: "fail", label: "Fail" }
+            ]}
           />
-        </label>
+        </div>
       </div>
 
       <label className="grid gap-1">
@@ -350,18 +356,22 @@ export function CandidateMilestoneTimeline({
     <div className="space-y-4">
       {milestones.map((milestone, index) => {
         const result = derivedResult(milestone);
+        const compactByDefault =
+          milestone.status === "done" ||
+          milestone.status === "skipped" ||
+          (milestone.type === "registration" && hasResume);
 
         return (
-          <div key={milestone.id} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
-            <div className="flex gap-4">
-              <div className="hidden pt-1 sm:block">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/14 bg-white/[0.05] text-sm text-slate-200">
-                  {index + 1}
+          <details key={milestone.id} open={!compactByDefault} className="rounded-[24px] border border-white/10 bg-black/20 p-4">
+            <summary className="list-none cursor-pointer">
+              <div className="flex gap-4">
+                <div className="hidden pt-1 sm:block">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/14 bg-white/[0.05] text-sm text-slate-200">
+                    {index + 1}
+                  </div>
                 </div>
-              </div>
 
-              <div className="min-w-0 flex-1 space-y-4">
-                <div className="space-y-2">
+                <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex flex-wrap gap-2">
                     <CandidateMilestoneTypePill type={milestone.type} />
                     <CandidateMilestoneStatusPill status={milestone.status} />
@@ -371,38 +381,28 @@ export function CandidateMilestoneTimeline({
 
                   <div className="space-y-1">
                     <h3 className="text-lg text-white">{milestone.title}</h3>
-                    {milestone.type === "registration" ? (
-                      hasResume ? (
-                        <p className="text-sm text-slate-300">Resume is attached.</p>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-3">
-                          <p className="text-sm text-slate-300">Add the resume first.</p>
-                          <Link href={`/candidates/${candidateId}#resume` as Route}>
-                            <Button type="button" variant="secondary">Add resume</Button>
-                          </Link>
-                        </div>
-                      )
-                    ) : null}
-                    {milestone.date && milestone.type !== "registration" ? (
-                      <p className="text-sm text-slate-300">{new Date(milestone.date).toLocaleString()}</p>
-                    ) : null}
-                    {typeof milestone.score === "number" ? (
-                      <p className="text-sm text-slate-300">Score: {milestone.score}</p>
-                    ) : null}
-                    {milestone.notes?.trim() && milestone.type !== "registration" ? (
-                      <p className="text-sm text-slate-300 whitespace-pre-wrap">{milestone.notes.trim()}</p>
-                    ) : null}
+                    <p className="text-sm text-slate-300">{stepSummary(milestone, hasResume)}</p>
                   </div>
                 </div>
-
-                {milestone.type === "registration" ? null : milestone.type === "screener" || milestone.type === "advanced_test" ? (
-                  <TestMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />
-                ) : (
-                  <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />
-                )}
               </div>
+            </summary>
+
+            <div className="mt-4 border-t border-white/10 pt-4">
+              {milestone.type === "registration" ? (
+                hasResume ? (
+                  <p className="text-sm text-slate-300">Resume is attached.</p>
+                ) : (
+                  <Link href={`/candidates/${candidateId}#resume` as Route}>
+                    <Button type="button" variant="secondary">Add resume</Button>
+                  </Link>
+                )
+              ) : milestone.type === "screener" || milestone.type === "advanced_test" ? (
+                <TestMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />
+              ) : (
+                <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />
+              )}
             </div>
-          </div>
+          </details>
         );
       })}
     </div>

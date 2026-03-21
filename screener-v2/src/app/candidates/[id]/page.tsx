@@ -41,7 +41,7 @@ function currentUiStatus(candidate: CandidateData) {
 }
 
 function nextPrompt(candidate: CandidateData) {
-  if (!candidate.resumes.length) return "Add the resume to start the journey.";
+  if (!candidate.resumes.length) return "Resume can be added any time.";
   if (candidate.currentFocus) return `Current focus: ${candidate.currentFocus}`;
   return "Update the next milestone when the candidate moves forward.";
 }
@@ -88,7 +88,7 @@ export default async function CandidateDetailPage({
   const currentResume = candidate.resumes[0] ?? null;
   const screenerMilestone = candidate.milestones.find((milestone) => milestone.type === "screener");
   const canSendScreener = Boolean(
-    currentResume && screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
+    screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
   );
 
   return (
