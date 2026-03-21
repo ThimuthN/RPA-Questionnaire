@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getSession } from "@/lib/auth/session";
+import { getAppUrl } from "@/lib/server/app-url";
 import {
   addCandidateResume,
   candidateExists,
@@ -16,6 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const callbackUrl = `${getAppUrl(request)}/api/candidates/${id}/resume`;
 
   try {
     const body = (await request.json()) as HandleUploadBody;
@@ -41,6 +43,7 @@ export async function POST(
           allowedContentTypes: [...candidateResumeMimeTypes],
           maximumSizeInBytes: candidateResumeMaxSizeBytes,
           addRandomSuffix: false,
+          callbackUrl,
           tokenPayload: clientPayload
         };
       },
@@ -59,14 +62,23 @@ export async function POST(
           // Keep the blob pathname fallback when client payload is absent or malformed.
         }
 
-        await addCandidateResume({
-          candidateId: id,
-          fileName,
-          mimeType: blob.contentType || "application/octet-stream",
-          sizeBytes,
-          storageKey: blob.pathname,
-          storageUrl: blob.url
-        });
+        try {
+          await addCandidateResume({
+            candidateId: id,
+            fileName,
+            mimeType: blob.contentType || "application/octet-stream",
+            sizeBytes,
+            storageKey: blob.pathname,
+            storageUrl: blob.url
+          });
+        } catch (error) {
+          console.error("Resume upload completion failed", {
+            candidateId: id,
+            storageKey: blob.pathname,
+            error
+          });
+          throw error;
+        }
       }
     });
 

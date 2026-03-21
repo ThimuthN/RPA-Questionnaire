@@ -174,7 +174,12 @@ export function ResumeUploader({
           <p className="text-sm text-white">
             {uploadState === "uploading" ? "Uploading..." : "Processing..."}
           </p>
-          {progress !== null ? <p className="mt-1 text-sm text-slate-300">{progress}% complete</p> : null}
+          {progress !== null ? (
+            <p className="mt-1 text-sm text-slate-300">
+              {progress}% complete
+              {uploadState === "uploading" && progress >= 80 ? " • Finalizing with storage..." : ""}
+            </p>
+          ) : null}
         </div>
       ) : null}
 

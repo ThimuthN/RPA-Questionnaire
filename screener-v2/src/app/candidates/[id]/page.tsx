@@ -228,11 +228,22 @@ export default async function CandidateDetailPage({
 
                   {currentResume.mimeType === "application/pdf" ? (
                     <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white">
-                      <iframe
-                        src={`${currentResume.storageUrl}#view=FitH`}
-                        title="Resume preview"
+                      <object
+                        data={currentResume.storageUrl}
+                        type="application/pdf"
                         className="h-[640px] w-full"
-                      />
+                      >
+                        <div className="flex h-[320px] items-center justify-center bg-slate-50 px-6 text-center">
+                          <div className="space-y-3">
+                            <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
+                            <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                              <Button type="button" variant="secondary">
+                                Open PDF
+                              </Button>
+                            </a>
+                          </div>
+                        </div>
+                      </object>
                     </div>
                   ) : (
                     <p className="text-sm text-slate-300">Preview is available for PDF resumes. DOCX files can be downloaded.</p>
