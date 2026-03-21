@@ -22,7 +22,7 @@ export async function POST(
     const json = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (pathname) => {
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
         const session = await getSession();
         if (!session) {
           throw new Error("Login required.");
@@ -38,9 +38,10 @@ export async function POST(
         }
 
         return {
-          callbackUrl: `${new URL(request.url).origin}/api/candidates/${id}/resume`,
           allowedContentTypes: [...candidateResumeMimeTypes],
-          maximumSizeInBytes: candidateResumeMaxSizeBytes
+          maximumSizeInBytes: candidateResumeMaxSizeBytes,
+          addRandomSuffix: false,
+          tokenPayload: clientPayload
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
