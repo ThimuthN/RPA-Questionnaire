@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import {
+  generateClientTokenFromReadWriteToken,
+  handleUpload,
+  type HandleUploadBody
+} from "@vercel/blob/client";
 import { getSession } from "@/lib/auth/session";
 import { getAppUrl } from "@/lib/server/app-url";
 import {
@@ -12,6 +16,10 @@ import {
   candidateResumeMimeTypes
 } from "@/lib/candidates/resume-config";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -20,9 +28,79 @@ export async function POST(
   const callbackUrl = `${getAppUrl(request)}/api/candidates/${id}/resume`;
 
   try {
-    const body = (await request.json()) as HandleUploadBody;
+    const body = (await request.json()) as unknown;
+
+    if (isRecord(body) && body.action === "token") {
+      const session = await getSession();
+      if (!session) {
+        throw new Error("Login required.");
+      }
+
+      const exists = await candidateExists(id);
+      if (!exists) {
+        throw new Error("Candidate not found.");
+      }
+
+      const pathname = typeof body.pathname === "string" ? body.pathname : "";
+      if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
+        throw new Error("Invalid resume upload path.");
+      }
+
+      const clientToken = await generateClientTokenFromReadWriteToken({
+        pathname,
+        allowedContentTypes: [...candidateResumeMimeTypes],
+        maximumSizeInBytes: candidateResumeMaxSizeBytes,
+        addRandomSuffix: false
+      });
+
+      return NextResponse.json({ ok: true, clientToken });
+    }
+
+    if (isRecord(body) && body.action === "complete") {
+      const session = await getSession();
+      if (!session) {
+        throw new Error("Login required.");
+      }
+
+      const exists = await candidateExists(id);
+      if (!exists) {
+        throw new Error("Candidate not found.");
+      }
+
+      const storageKey = typeof body.storageKey === "string" ? body.storageKey : "";
+      const storageUrl = typeof body.storageUrl === "string" ? body.storageUrl : "";
+      const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
+      const mimeType = typeof body.mimeType === "string" ? body.mimeType : "";
+      const sizeBytes = typeof body.sizeBytes === "number" ? body.sizeBytes : Number(body.sizeBytes);
+
+      if (!storageKey.startsWith(`candidate-resumes/${id}/`)) {
+        throw new Error("Invalid resume upload path.");
+      }
+      if (!storageUrl) {
+        throw new Error("Resume upload did not return a file URL.");
+      }
+      if (!candidateResumeMimeTypes.includes(mimeType as (typeof candidateResumeMimeTypes)[number])) {
+        throw new Error("Unsupported resume file type.");
+      }
+      if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > candidateResumeMaxSizeBytes) {
+        throw new Error("Resume size is invalid.");
+      }
+
+      await addCandidateResume({
+        candidateId: id,
+        fileName: fileName || storageKey.split("/").pop() || "resume",
+        mimeType,
+        sizeBytes: Math.round(sizeBytes),
+        storageKey,
+        storageUrl
+      });
+
+      return NextResponse.json({ ok: true });
+    }
+
+    const uploadBody = body as HandleUploadBody;
     const json = await handleUpload({
-      body,
+      body: uploadBody,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const session = await getSession();

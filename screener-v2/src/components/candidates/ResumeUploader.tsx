@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useRef, useState } from "react";
-import { upload } from "@vercel/blob/client";
+import { put } from "@vercel/blob/client";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import {
@@ -92,21 +92,63 @@ export function ResumeUploader({
     try {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-");
       const storageKey = `candidate-resumes/${candidateId}/${stamp}-${normalizeResumeFileName(file.name)}`;
+      const tokenResponse = await fetch(`/api/candidates/${candidateId}/resume`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "token",
+          pathname: storageKey
+        })
+      });
 
-      await upload(storageKey, file, {
+      if (!tokenResponse.ok) {
+        const payload = (await tokenResponse.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(payload?.message || "Could not start the upload.");
+      }
+
+      const tokenPayload = (await tokenResponse.json()) as { ok: boolean; clientToken?: string; message?: string };
+      if (!tokenPayload.clientToken) {
+        throw new Error(tokenPayload.message || "Could not start the upload.");
+      }
+
+      const blob = await put(storageKey, file, {
         access: "public",
-        handleUploadUrl: `/api/candidates/${candidateId}/resume`,
-        clientPayload: JSON.stringify({ fileName: file.name, sizeBytes: file.size }),
+        token: tokenPayload.clientToken,
         contentType: file.type,
+        multipart: false,
         onUploadProgress: ({ percentage }) => {
           setProgress(Math.round(percentage));
         }
       });
 
       setUploadState("processing");
-      setMessage("Finishing upload...");
+      setMessage("Saving resume...");
 
-      await confirmResume(storageKey);
+      const completeResponse = await fetch(`/api/candidates/${candidateId}/resume`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          action: "complete",
+          fileName: file.name,
+          sizeBytes: file.size,
+          mimeType: file.type,
+          storageKey: blob.pathname,
+          storageUrl: blob.url
+        })
+      });
+
+      if (!completeResponse.ok) {
+        const payload = (await completeResponse.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(payload?.message || "Could not save the uploaded resume.");
+      }
+
+      await confirmResume(blob.pathname);
 
       setUploadState("uploaded");
       setMessage("Resume uploaded.");
