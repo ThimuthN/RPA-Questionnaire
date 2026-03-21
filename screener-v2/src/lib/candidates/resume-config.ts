@@ -1,6 +1,5 @@
 export const candidateResumeMimeTypes = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  "application/pdf"
 ] as const;
 
 export const candidateResumeMaxSizeBytes = 10 * 1024 * 1024;

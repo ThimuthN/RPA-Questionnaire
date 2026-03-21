@@ -71,7 +71,7 @@ export function ResumeUploader({
     }
 
     if (!allowedMimeType(file)) {
-      setError("Resume must be a PDF or DOCX file.");
+      setError("Resume must be a PDF file.");
       setMessage("");
       setUploadState("failed");
       return;
@@ -178,7 +178,7 @@ export function ResumeUploader({
         ref={inputRef}
         name="resume"
         type="file"
-        accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        accept=".pdf,application/pdf"
         className="sr-only"
         onChange={(event) => void handleFile(event.target.files?.[0] ?? null)}
       />
@@ -204,9 +204,7 @@ export function ResumeUploader({
       >
         <div className="space-y-2">
           <p className="text-base text-white">{hasResume ? "Replace resume" : "Add resume"}</p>
-          <p className="text-sm text-slate-300">
-            Drag and drop a PDF or DOCX here, or click to choose a file.
-          </p>
+          <p className="text-sm text-slate-300">Drag and drop a PDF here, or click to choose a file.</p>
           <p className="text-xs text-slate-400">Up to 10 MB.</p>
         </div>
       </button>
@@ -219,7 +217,7 @@ export function ResumeUploader({
           {progress !== null ? (
             <p className="mt-1 text-sm text-slate-300">
               {progress}% complete
-              {uploadState === "uploading" && progress >= 80 ? " • Finalizing with storage..." : ""}
+              {uploadState === "uploading" && progress >= 80 ? " | Finalizing with storage..." : ""}
             </p>
           ) : null}
         </div>
