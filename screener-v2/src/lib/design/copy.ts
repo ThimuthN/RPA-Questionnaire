@@ -2,7 +2,7 @@ export const copy = {
   nav: {
     create: "Assessments",
     candidates: "Candidates",
-    run: "Live / Access",
+    run: "Live sessions",
     results: "Results",
     users: "Users"
   },
@@ -40,9 +40,9 @@ export const copy = {
     link: "Use a link",
     testId: "Use an assessment ID",
     live: "Join a live session",
-    employee: "Team access",
-    selectedMethod: "Selected option",
-    nextStep: "What’s next",
+    employee: "Internal access",
+    selectedMethod: "Selected method",
+    nextStep: "What's next",
     testFlow: "What to expect",
     start: "Continue"
   },
@@ -56,20 +56,20 @@ export const copy = {
     reviewSubmit: "Review and submit",
     submitTitle: "Submit assessment?",
     finalScore: "Final score",
-    outcome: "Outcome",
+    outcome: "Result",
     openResult: "View results",
     finish: "Finish"
   },
   results: {
     eyebrow: "Results",
     title: "Results",
-    subtitle: "Review completed assessments and outcomes.",
+    subtitle: "Review completed assessments and results.",
     finalScore: "Final score",
-    outcome: "Outcome",
+    outcome: "Result",
     topStrength: "Strongest area",
     mainRisk: "Main concern",
     confidence: "Confidence",
     categoryBreakdown: "Score breakdown",
-    watchout: "Things to watch"
+    watchout: "Concerns"
   }
 } as const;

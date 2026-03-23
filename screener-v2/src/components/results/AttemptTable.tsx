@@ -105,7 +105,7 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
               {
                 label: copy.results.finalScore,
                 value: `${row.finalPercent.toFixed(1)} / 100`,
-                hint: `Outcome ${statusLabel(row)}`
+                hint: `Result ${statusLabel(row)}`
               },
               {
                 label: "Integrity risk",

@@ -60,7 +60,7 @@ function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWork
   if (candidate.latestAssessmentStatus === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Send screener"
+      label: "Send assessment"
     };
   }
 
@@ -128,7 +128,7 @@ export default async function CandidatesPage({
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div className="space-y-1">
               <h2 className="text-xl text-white">Candidate inbox</h2>
-              <p className="text-sm text-slate-300">Search, filter, and move through the queue without leaving this page.</p>
+              <p className="text-sm text-slate-300">Search, filter, and manage candidates without leaving this page.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <StatusPill label={`${page.total} total`} tone="neutral" />
@@ -174,7 +174,7 @@ export default async function CandidatesPage({
               defaultValue={params.assessmentStatus ?? ""}
               className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
             >
-              <option value="">All screener states</option>
+              <option value="">All assessment statuses</option>
               {candidateAssessmentStatusValues.map((status) => (
                 <option key={status} value={status}>
                   {candidateAssessmentStatusLabels[status]}
@@ -202,10 +202,10 @@ export default async function CandidatesPage({
 
           <div className="flex flex-wrap gap-2">
             <Link href={buildHref(query, { status: "need_review", sort: "inbox", page: "1" })}>
-              <Button variant="ghost">Review queue</Button>
+              <Button variant="ghost">Review needed</Button>
             </Link>
             <Link href={buildHref(query, { assessmentStatus: "none", sort: "inbox", page: "1" })}>
-              <Button variant="ghost">Needs screener</Button>
+              <Button variant="ghost">Needs assessment</Button>
             </Link>
             <Link href={buildHref(query, { sort: "stale_desc", page: "1" })}>
               <Button variant="ghost">Most stale</Button>
@@ -329,12 +329,12 @@ export default async function CandidatesPage({
                           </div>
                           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
                             <span>{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}</span>
-                            <span>{candidate.currentFocus || "No current focus"}</span>
+                            <span>{candidate.currentFocus ? `Current stage: ${candidate.currentFocus}` : "No current stage"}</span>
                             <span>Last activity {candidate.staleDays} day(s) ago</span>
                             <span>Stage: {candidateStageLabels[candidate.stage]}</span>
                           </div>
                           <p className="text-sm text-slate-300">
-                            Latest screener:{" "}
+                            Latest assessment:{" "}
                             {typeof candidate.latestAssessment?.finalPercent === "number"
                               ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
                               : candidateAssessmentStatusLabels[candidate.latestAssessmentStatus]}

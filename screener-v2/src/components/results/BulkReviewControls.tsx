@@ -48,9 +48,9 @@ export function BulkReviewControls({ formId }: { formId: string }) {
   }, [formId]);
 
   const selectionLabel = useMemo(() => {
-    if (selectedCount === 0) return "No results selected yet.";
-    if (selectedCount === 1) return "1 result selected on this page.";
-    return `${selectedCount} results selected on this page.`;
+    if (selectedCount === 0) return "No results selected.";
+    if (selectedCount === 1) return "1 result selected.";
+    return `${selectedCount} results selected.`;
   }, [selectedCount]);
 
   const submitLabel =
@@ -60,9 +60,9 @@ export function BulkReviewControls({ formId }: { formId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-2xl text-white">Bulk reviewer actions</h2>
+          <h2 className="text-2xl text-white">Bulk actions</h2>
           <p className="text-sm text-slate-300">
-            Update review status, assign an owner, or add one note across the selected results.
+            Update status, assign an owner, or add a note to selected results.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -104,9 +104,9 @@ export function BulkReviewControls({ formId }: { formId: string }) {
             }
             className={fieldClass}
           >
-            <option value="set_ui_status">Update review status</option>
+            <option value="set_ui_status">Change status</option>
             <option value="assign_owner">Assign owner</option>
-            <option value="add_note">Add reviewer note</option>
+            <option value="add_note">Add note</option>
           </select>
         </label>
 
@@ -119,7 +119,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
 
         {action === "set_ui_status" ? (
           <label className="grid gap-2">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Review status</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Status</span>
             <select name="status" defaultValue="moved_forward" className={fieldClass}>
               {candidateUiStatusValues.map((status) => (
                 <option key={status} value={status}>
@@ -144,7 +144,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
         ) : null}
 
         <div className="grid gap-2">
-          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Run action</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Apply</span>
           <Button type="submit" disabled={selectedCount === 0}>
             {submitLabel}
           </Button>
@@ -153,7 +153,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
 
       {action === "add_note" ? (
         <label className="grid gap-2">
-          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Reviewer note</span>
+          <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Note</span>
           <textarea
             name="noteBody"
             rows={3}

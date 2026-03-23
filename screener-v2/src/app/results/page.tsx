@@ -143,9 +143,9 @@ export default async function ResultsPage({
   return (
     <SceneShell
       variant="results"
-      eyebrow="Decision queue"
+      eyebrow="Results to review"
       title="Results"
-      subtitle="Review scores with candidate context, compare shortlists, and move people forward without leaving the queue."
+      subtitle="Review scores with candidate context, compare shortlists, and update decisions in one place."
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
@@ -211,7 +211,7 @@ export default async function ResultsPage({
         <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Filters</h2>
-            <p className="text-sm text-slate-300">Filter by review context, not just score. Exports follow the current view.</p>
+            <p className="text-sm text-slate-300">Filter by result, risk, owner, and stage. Exports follow the current view.</p>
           </div>
           <form className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
@@ -235,9 +235,9 @@ export default async function ResultsPage({
             </div>
 
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <FilterField label="Outcome">
+              <FilterField label="Result">
                 <select name="status" defaultValue={pageState.status ?? ""} className={filterControlClass}>
-                  <option value="">All outcomes</option>
+                  <option value="">All results</option>
                   <option value="pass">Pass</option>
                   <option value="review">Review</option>
                   <option value="fail">Fail</option>
@@ -281,13 +281,13 @@ export default async function ResultsPage({
                   ))}
                 </select>
               </FilterField>
-              <FilterField label="Screener state">
+              <FilterField label="Assessment status">
                 <select
                   name="assessmentStatus"
                   defaultValue={pageState.assessmentStatus ?? ""}
                   className={filterControlClass}
                 >
-                  <option value="">All screener states</option>
+                  <option value="">All assessment statuses</option>
                   {candidateAssessmentStatusValues.map((status) => (
                     <option key={status} value={status}>
                       {candidateAssessmentStatusLabels[status]}
@@ -306,24 +306,24 @@ export default async function ResultsPage({
               <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
                 <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Quick view</p>
                 <p className="mt-2">
-                  Use filters to focus the queue. Exports include only the results visible in this view.
+                  Exports include only the results shown in this view.
                 </p>
               </div>
             </div>
             <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
             <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
-              <Button>Apply filters</Button>
+              <Button>Apply</Button>
               <Link href="/results">
-                <Button type="button" variant="secondary">Clear filters</Button>
+                <Button type="button" variant="secondary">Clear</Button>
               </Link>
               <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
-                <Button type="button" variant="ghost">Open review queue</Button>
+                <Button type="button" variant="ghost">Review needed</Button>
               </Link>
             </div>
           </form>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Export current view</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Export filtered results</span>
             <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export CSV</Button>
             </a>

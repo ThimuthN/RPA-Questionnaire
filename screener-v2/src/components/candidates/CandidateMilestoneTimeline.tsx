@@ -69,7 +69,7 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
 
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
   if (type === "screener" || type === "advanced_test") {
-    return mode === "platform" ? "Save path" : "Save feedback";
+    return mode === "platform" ? "Save changes" : "Save notes";
   }
 
   return "Save";
@@ -86,14 +86,14 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
         return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} | ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
       }
       if (milestone.assessment.status === "invited") {
-        return "Hub test sent.";
+        return "Assessment sent.";
       }
       if (milestone.assessment.status === "in_progress") {
-        return "Hub test in progress.";
+        return "Assessment in progress.";
       }
     }
 
-    return "No hub test linked yet.";
+    return "No assessment linked yet.";
   }
 
   if (milestone.result && milestone.result !== "review") {
@@ -108,7 +108,7 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
     return milestone.notes.trim().slice(0, 120);
   }
 
-  return milestone.status === "not_started" ? "No updates yet." : candidateMilestoneStatusLabels[milestone.status];
+  return milestone.status === "not_started" ? "No activity yet." : candidateMilestoneStatusLabels[milestone.status];
 }
 
 function MilestoneStatusSelect({
@@ -161,7 +161,7 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
         <p className="text-sm text-slate-300">
           {milestone.assessment.inviteSlug
             ? `Linked to ${milestone.assessment.inviteSlug.toUpperCase()}.`
-            : "Linked to a hub test."}
+            : "Linked to an assessment."}
         </p>
 
         {resultHref ? (
@@ -199,7 +199,7 @@ function AttachExistingTest({
         <input name="inviteSlug" className={fieldClassName} />
       </label>
       <Button type="submit" variant="secondary">
-        Attach test
+        Link assessment
       </Button>
     </form>
   );
@@ -224,7 +224,7 @@ function TestMilestoneCard({
         {isPlatform ? <input type="hidden" name="result" value="" /> : null}
 
         <div className="flex flex-wrap gap-2">
-          <StatusPill label={selectedMode === "platform" ? "Hub path" : "Manual path"} tone="neutral" />
+          <StatusPill label={selectedMode === "platform" ? "In-platform assessment" : "External assessment"} tone="neutral" />
           {milestone.date ? (
             <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
           ) : null}
@@ -232,15 +232,15 @@ function TestMilestoneCard({
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
           <div className="grid gap-1.5">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Test path</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Assessment type</span>
             <ChoicePills
               name="mode"
               idPrefix={`milestone-mode-${milestone.id}`}
               value={selectedMode}
               onChange={(value) => setSelectedMode(value as CandidateMilestoneMode)}
               options={[
-                { value: "platform", label: "Through hub" },
-                { value: "manual", label: "Outside test" }
+                { value: "platform", label: "In platform" },
+                { value: "manual", label: "External" }
               ]}
             />
           </div>
@@ -255,7 +255,7 @@ function TestMilestoneCard({
             </Button>
             {!milestone.assessment ? (
               <Link href={sendHref}>
-                <Button type="button">Create test</Button>
+                <Button type="button">Create assessment</Button>
               </Link>
             ) : null}
           </div>
@@ -286,7 +286,7 @@ function TestMilestoneCard({
             </div>
 
             <div className="grid gap-1.5">
-              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass / fail</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Result</span>
               <ChoicePills
                 name="result"
                 idPrefix={`milestone-result-${milestone.id}`}
@@ -361,7 +361,7 @@ function DocumentationMilestoneCard({
       </div>
 
       <div className="grid gap-1.5">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Pass / fail</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Result</span>
         <ChoicePills
           name="result"
           idPrefix={`doc-result-${milestone.id}`}
@@ -471,7 +471,7 @@ export function CandidateMilestoneTimeline({
             <div className="mt-3 border-t border-white/10 pt-3">
               {milestone.type === "registration" ? (
                 hasResume ? (
-                  <p className="text-sm text-slate-300">Resume is attached.</p>
+                  <p className="text-sm text-slate-300">Resume attached.</p>
                 ) : (
                   <Link href={`/candidates/${candidateId}#resume` as Route}>
                     <Button type="button" variant="secondary">

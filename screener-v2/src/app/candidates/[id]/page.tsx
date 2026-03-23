@@ -48,9 +48,9 @@ function currentUiStatus(candidate: CandidateData) {
 }
 
 function nextPrompt(candidate: CandidateData) {
-  if (!candidate.resumes.length) return "Resume can be added any time.";
-  if (candidate.currentFocus) return `Current focus: ${candidate.currentFocus}`;
-  return "Update the next milestone when the candidate moves forward.";
+  if (!candidate.resumes.length) return "No resume uploaded yet.";
+  if (candidate.currentFocus) return `Current stage: ${candidate.currentFocus}`;
+  return "Update the next stage when the candidate progresses.";
 }
 
 function resultTone(status: ReturnType<typeof currentAssessmentStatus>) {
@@ -140,17 +140,17 @@ export default async function CandidateDetailPage({
         <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Decision focus</p>
-              <h2 className="text-3xl text-white">Outcome</h2>
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Hiring decision</p>
+              <h2 className="text-3xl text-white">Decision</h2>
               <p className="max-w-2xl text-sm text-slate-300">
-                Keep the current decision, strongest signal, and next move visible here before the team dives into the full journey.
+                Record the current decision, key reason, and next step.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               {canSendScreener && screenerMilestone ? (
                 <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                  <Button>Send screener</Button>
+                  <Button>Send assessment</Button>
                 </Link>
               ) : null}
               {latest?.attemptId && typeof latest.finalPercent === "number" ? (
@@ -176,7 +176,7 @@ export default async function CandidateDetailPage({
 
               <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate snapshot</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate details</p>
                   <p className="text-sm text-slate-200">{candidate.email}</p>
                   <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
                   <p className="text-sm text-slate-400">
@@ -188,14 +188,14 @@ export default async function CandidateDetailPage({
 
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Latest score</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Assessment score</p>
                   <p className="mt-2 text-xl text-white">
                     {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
                     {latest?.submittedAt
                       ? `Submitted ${new Date(latest.submittedAt).toLocaleDateString()}`
-                      : "No screener submitted yet"}
+                      : "No assessment submitted yet"}
                   </p>
                 </div>
                 <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
@@ -206,9 +206,9 @@ export default async function CandidateDetailPage({
                   </p>
                 </div>
                 <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Reviewer note</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Summary</p>
                   <p className="mt-2 text-sm text-slate-200">
-                    {candidate.notesSummary || "No pinned decision summary yet."}
+                    {candidate.notesSummary || "No summary added yet."}
                   </p>
                 </div>
               </div>
@@ -221,8 +221,8 @@ export default async function CandidateDetailPage({
             >
               <HiddenCandidateFields candidate={candidate} />
               <div className="space-y-1">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Current decision</p>
-                <h3 className="text-xl text-white">Set the reviewer-visible outcome</h3>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Decision status</p>
+                <h3 className="text-xl text-white">Set the candidate decision</h3>
               </div>
               <ChoicePills
                 name="uiStatus"
@@ -239,12 +239,12 @@ export default async function CandidateDetailPage({
                   name="notesSummary"
                   rows={5}
                   defaultValue={candidate.notesSummary || ""}
-                  placeholder="Summarize the strongest signal, current decision, and exact next step."
+                  placeholder="Summarize the main reason, current decision, and exact next step."
                   className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                 />
               </label>
               <div className="flex justify-end">
-                <Button type="submit">Save outcome</Button>
+                <Button type="submit">Save decision</Button>
               </div>
             </form>
           </div>
@@ -254,9 +254,9 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <StagePanel className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Journey</h2>
+                <h2 className="text-2xl text-white">Hiring stages</h2>
                 <p className="text-sm text-slate-300">
-                  Keep the active step open. Completed and untouched steps stay collapsed until the team needs them.
+                  Open the stage you are working on. Completed and inactive stages stay collapsed.
                 </p>
               </div>
               <CandidateMilestoneTimeline
@@ -293,8 +293,8 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <StagePanel className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Latest result</h2>
-                <p className="text-sm text-slate-300">Keep the latest screener signal visible without turning the rail into a second dashboard.</p>
+                <h2 className="text-2xl text-white">Assessment result</h2>
+                <p className="text-sm text-slate-300">View the latest assessment result and next action.</p>
               </div>
               {latest?.attemptId ? (
                 <div className="space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
@@ -319,17 +319,17 @@ export default async function CandidateDetailPage({
                     </Link>
                     {canSendScreener && screenerMilestone ? (
                       <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                        <Button>Send another screener</Button>
+                        <Button>Send another assessment</Button>
                       </Link>
                     ) : null}
                   </div>
                 </div>
               ) : (
                 <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-sm text-slate-300">No screener result yet.</p>
+                  <p className="text-sm text-slate-300">No assessment result yet.</p>
                   {canSendScreener && screenerMilestone ? (
                     <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                      <Button className="mt-3">Send screener</Button>
+                      <Button className="mt-3">Send assessment</Button>
                     </Link>
                   ) : null}
                 </div>
@@ -338,10 +338,8 @@ export default async function CandidateDetailPage({
 
             <StagePanel id="resume" className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Resume files</h2>
-                <p className="text-sm text-slate-300">
-                  Keep upload and file actions here. The preview sits below as a larger secondary section.
-                </p>
+                <h2 className="text-2xl text-white">Resume</h2>
+                <p className="text-sm text-slate-300">Upload, replace, or download the candidate&apos;s resume here.</p>
               </div>
 
               <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
@@ -368,7 +366,7 @@ export default async function CandidateDetailPage({
                       </a>
                       <a href="#resume-preview">
                         <Button type="button" variant="secondary">
-                          Open preview below
+                          View preview
                         </Button>
                       </a>
                     </div>
@@ -380,7 +378,7 @@ export default async function CandidateDetailPage({
             <StagePanel className="space-y-5">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Notes</h2>
-                <p className="text-sm text-slate-300">Capture interview notes, strengths, and concerns without crowding the journey.</p>
+                <p className="text-sm text-slate-300">Add interview and review notes here.</p>
               </div>
 
               <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
@@ -440,10 +438,8 @@ export default async function CandidateDetailPage({
         {currentResume ? (
           <StagePanel id="resume-preview" className="space-y-4">
             <div className="space-y-1">
-              <h2 className="text-2xl text-white">Resume preview</h2>
-              <p className="text-sm text-slate-300">
-                The preview is kept secondary here so the main rail can stay focused on workflow and notes.
-              </p>
+              <h2 className="text-2xl text-white">Preview</h2>
+              <p className="text-sm text-slate-300">Preview the resume here when needed.</p>
             </div>
 
             <div className="overflow-hidden rounded-[22px] border border-white/10 bg-white">
