@@ -1,12 +1,18 @@
 "use client";
 
-import { questionRegistry } from "@/lib/question-types";
+import dynamic from "next/dynamic";
+import type { ComponentType } from "react";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { ChoiceRenderer } from "@/components/runtime/renderers/ChoiceRenderer";
+import { FillBlankRenderer } from "@/components/runtime/renderers/FillBlankRenderer";
+import { MatchingRenderer } from "@/components/runtime/renderers/MatchingRenderer";
+import { OrderingRenderer } from "@/components/runtime/renderers/OrderingRenderer";
 import {
   StructuredPromptBlocks,
   StructuredPromptContent
 } from "@/components/runtime/renderers/StructuredPromptContent";
+import type { BaseQuestionRendererProps } from "@/components/runtime/renderers/types";
 
 interface QuestionRuntimeCardProps {
   question: any;
@@ -25,8 +31,7 @@ const formatLabel: Record<string, string> = {
   log_analysis_single_select: "Log analysis",
   trace_execution: "Trace execution",
   best_next_step: "Best next step",
-  case_triage: "Case triage"
-  ,
+  case_triage: "Case triage",
   practical_task: "Practical task",
   logic_reasoning: "Logic reasoning"
 };
@@ -40,23 +45,45 @@ const formatHint: Record<string, string> = {
   log_analysis_single_select: "Base your answer on the log evidence only.",
   trace_execution: "Follow the sequence and pick the final outcome.",
   best_next_step: "Choose the highest-impact next action.",
-  case_triage: "Prioritize the first action that reduces risk."
-  ,
+  case_triage: "Prioritize the first action that reduces risk.",
   practical_task: "Complete each subtask carefully. This exam is auto-graded.",
   logic_reasoning: "Work through each subtask and answer the full set before moving on."
 };
 
+const PracticalTaskRenderer = dynamic(() =>
+  import("@/components/runtime/renderers/PracticalTaskRenderer").then((mod) => mod.PracticalTaskRenderer)
+) as ComponentType<BaseQuestionRendererProps>;
+
+const LogicReasoningRenderer = dynamic(() =>
+  import("@/components/runtime/renderers/LogicReasoningRenderer").then((mod) => mod.LogicReasoningRenderer)
+) as ComponentType<BaseQuestionRendererProps>;
+
+const rendererRegistry: Record<string, ComponentType<BaseQuestionRendererProps>> = {
+  single_select: ChoiceRenderer,
+  multi_select: ChoiceRenderer,
+  ordering: OrderingRenderer,
+  matching: MatchingRenderer,
+  fill_blank_constrained: FillBlankRenderer,
+  log_analysis_single_select: ChoiceRenderer,
+  trace_execution: ChoiceRenderer,
+  best_next_step: ChoiceRenderer,
+  case_triage: ChoiceRenderer,
+  practical_task: PracticalTaskRenderer,
+  logic_reasoning: LogicReasoningRenderer
+};
+
 export function QuestionRuntimeCard({ question, answer, onChange, sectionLabel, sectionSummary }: QuestionRuntimeCardProps) {
-  const formatKey = String(question?.format || "") as keyof typeof questionRegistry;
-  const def = questionRegistry[formatKey];
-  if (!def) {
+  const formatKey = String(question?.format || "");
+  const Renderer = rendererRegistry[formatKey];
+
+  if (!Renderer) {
     return (
       <StagePanel>
         <p className="text-red-200">Unsupported question format: {String(question.format)}</p>
       </StagePanel>
     );
   }
-  const Renderer = def.Renderer as any;
+
   const prompt = String(question?.prompt ?? "").replace(/\r\n/g, "\n").trim();
   const promptLines = prompt.split("\n").map((line: string) => line.trim()).filter(Boolean);
   const isStructuredPromptFormat = question.format === "matching" || question.format === "ordering";
