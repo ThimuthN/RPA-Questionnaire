@@ -15,6 +15,11 @@ import {
   candidateResumeMaxSizeBytes,
   candidateResumeMimeTypes
 } from "@/lib/candidates/resume-config";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -26,6 +31,9 @@ export async function POST(
 ) {
   const { id } = await params;
   const callbackUrl = `${getAppUrl(request)}/api/candidates/${id}/resume`;
+  const logContext = createRequestLogContext(request, "api.candidates.resume", {
+    candidateId: id
+  });
 
   try {
     const body = (await request.json()) as unknown;
@@ -150,10 +158,8 @@ export async function POST(
             storageUrl: blob.url
           });
         } catch (error) {
-          console.error("Resume upload completion failed", {
-            candidateId: id,
-            storageKey: blob.pathname,
-            error
+          logRouteError("resume_upload_completion_failed", logContext, error, {
+            storageKey: blob.pathname
           });
           throw error;
         }
@@ -162,8 +168,14 @@ export async function POST(
 
     return NextResponse.json(json);
   } catch (error) {
+    logRouteError("candidate_resume_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not upload resume." },
+      {
+        ok: false,
+        message: messageFromError(error, "Could not upload resume."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

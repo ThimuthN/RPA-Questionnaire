@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { patchAttempt } from "@/lib/db/repositories";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const autosaveSchema = z.object({
   stage: z.string().optional(),
@@ -19,6 +24,8 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ attemptId: string }> }
 ) {
+  const logContext = createRequestLogContext(request, "api.attempts.autosave");
+
   try {
     const { attemptId } = await context.params;
     const body = autosaveSchema.parse(await request.json());
@@ -41,8 +48,14 @@ export async function PATCH(
       integrity: updated.integrity
     });
   } catch (error) {
+    logRouteError("attempt_autosave_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Invalid request." },
+      {
+        ok: false,
+        message: messageFromError(error, "Invalid request."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

@@ -7,6 +7,11 @@ import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getRoleConfig } from "@/lib/data/question-bank";
 import { getAppUrl } from "@/lib/server/app-url";
 import { getSession } from "@/lib/auth/session";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const createInviteSchema = z.object({
   assessmentVersionId: z.string().default("v1-default"),
@@ -45,6 +50,8 @@ const createInviteSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.invites.create");
+
   try {
     const session = await getSession();
     const body = createInviteSchema.parse(await request.json());
@@ -111,8 +118,14 @@ export async function POST(request: Request) {
       entryUrl: `${appUrl}/a/${created.row.slug}?t=${encodeURIComponent(created.token)}`
     });
   } catch (error) {
+    logRouteError("invite_create_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Invalid request." },
+      {
+        ok: false,
+        message: messageFromError(error, "Invalid request."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

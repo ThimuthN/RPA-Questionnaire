@@ -10,6 +10,11 @@ import {
 } from "@/lib/candidates/types";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { createCandidate } from "@/lib/db/candidates";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const candidateSchema = z.object({
   fullName: z.string().min(2),
@@ -37,6 +42,7 @@ function isFormRequest(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.candidates.create");
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
@@ -75,14 +81,19 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, candidate });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not create candidate.";
+    logRouteError("candidate_create_failed", logContext, error, {
+      userId: session.userId
+    });
+
+    const message = messageFromError(error, "Could not create candidate.");
 
     if (isFormRequest(request)) {
       const url = new URL("/candidates/new", request.url);
       url.searchParams.set("error", message);
+      url.searchParams.set("requestId", logContext.requestId);
       return NextResponse.redirect(url, 303);
     }
 
-    return NextResponse.json({ ok: false, message }, { status: 400 });
+    return NextResponse.json({ ok: false, message, requestId: logContext.requestId }, { status: 400 });
   }
 }

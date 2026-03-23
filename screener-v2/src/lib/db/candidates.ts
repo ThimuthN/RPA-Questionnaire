@@ -578,6 +578,17 @@ export async function addCandidateResume(input: {
   storageKey: string;
   storageUrl: string;
 }) {
+  const existing = await prisma.candidateResume.findFirst({
+    where: {
+      candidateId: input.candidateId,
+      storageKey: input.storageKey
+    }
+  });
+
+  if (existing) {
+    return mapResume(existing);
+  }
+
   const created = await prisma.candidateResume.create({
     data: {
       id: cuidLike(),

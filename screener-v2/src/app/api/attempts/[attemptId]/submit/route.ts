@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { submitAttempt } from "@/lib/db/repositories";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 export async function POST(
   request: Request,
   context: { params: Promise<{ attemptId: string }> }
 ) {
+  const logContext = createRequestLogContext(request, "api.attempts.submit");
+
   try {
     const { attemptId } = await context.params;
     await request.json().catch(() => ({}));
@@ -16,8 +23,14 @@ export async function POST(
     }
     return NextResponse.json({ ok: true, result });
   } catch (error) {
+    logRouteError("attempt_submit_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Invalid request." },
+      {
+        ok: false,
+        message: messageFromError(error, "Invalid request."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

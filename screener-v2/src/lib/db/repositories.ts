@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import crypto from "node:crypto";
 import type {
   DetailedResultSummary,
@@ -38,11 +39,8 @@ import {
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import type {
-  CandidateFinalDecision,
-  CandidateNextAction,
   CandidateAssessmentStatus,
   CandidateNoteType,
-  CandidateScreeningStatus,
   CandidateStage,
   CandidateUiStatus
 } from "@/lib/candidates/types";
@@ -1289,9 +1287,9 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
       const uiStatus: CandidateUiStatus | undefined = candidate
         ? getCandidateUiStatus({
             stage: candidate.stage as CandidateStage,
-            finalDecision: candidate.finalDecision as CandidateFinalDecision,
-            nextAction: candidate.nextAction as CandidateNextAction,
-            screeningStatus: (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+            finalDecision: candidate.finalDecision as typeof candidate.finalDecision,
+            nextAction: candidate.nextAction as typeof candidate.nextAction,
+            screeningStatus: (candidate.screeningStatus as typeof candidate.screeningStatus) ?? undefined,
             latestAssessmentStatus: resultStatus
           })
         : undefined;
@@ -1304,7 +1302,7 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         candidateId: candidate?.id,
         candidateOwner: candidate?.hrOwner ?? undefined,
         candidateStage: candidate?.stage as CandidateStage | undefined,
-        candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
+        candidateNextAction: candidate?.nextAction as typeof candidate.nextAction | undefined,
         candidateUiStatus: uiStatus,
         candidateAssessmentStatus: resultStatus,
         candidateLatestActivityAt: latestActivityAt,
@@ -1444,13 +1442,13 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
     candidateId: candidate?.id,
     candidateOwner: candidate?.hrOwner ?? undefined,
     candidateStage: candidate?.stage as CandidateStage | undefined,
-    candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
+    candidateNextAction: candidate?.nextAction as typeof candidate.nextAction | undefined,
     candidateUiStatus: candidate
       ? getCandidateUiStatus({
           stage: candidate.stage as CandidateStage,
-          finalDecision: candidate.finalDecision as CandidateFinalDecision,
-          nextAction: candidate.nextAction as CandidateNextAction,
-          screeningStatus: (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+          finalDecision: candidate.finalDecision as typeof candidate.finalDecision,
+          nextAction: candidate.nextAction as typeof candidate.nextAction,
+          screeningStatus: (candidate.screeningStatus as typeof candidate.screeningStatus) ?? undefined,
           latestAssessmentStatus: resultStatus
         })
       : undefined,

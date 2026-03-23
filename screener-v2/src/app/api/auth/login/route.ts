@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateAppUser } from "@/lib/auth/app-auth";
 import { createSessionToken, sanitizeNextPath, setSessionCookie } from "@/lib/auth/session";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -18,6 +23,8 @@ function isFormRequest(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.auth.login");
+
   try {
     const rawBody = isFormRequest(request)
       ? Object.fromEntries((await request.formData()).entries())
@@ -51,14 +58,21 @@ export async function POST(request: Request) {
     setSessionCookie(response, token);
     return response;
   } catch (error) {
+    logRouteError("login_failed", logContext, error);
+
     if (isFormRequest(request)) {
       const url = new URL("/login", request.url);
-      url.searchParams.set("error", error instanceof Error ? error.message : "Login failed.");
+      url.searchParams.set("error", messageFromError(error, "Login failed."));
+      url.searchParams.set("requestId", logContext.requestId);
       return NextResponse.redirect(url, 303);
     }
 
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Login failed." },
+      {
+        ok: false,
+        message: messageFromError(error, "Login failed."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

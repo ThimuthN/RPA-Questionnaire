@@ -7,6 +7,11 @@ import {
   startAttempt,
   validateInvite
 } from "@/lib/db/repositories";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const startSchema = z.object({
   inviteToken: z.string().optional(),
@@ -23,6 +28,8 @@ const startSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.attempts.start");
+
   try {
     const body = startSchema.parse(await request.json());
     let inviteId: string | undefined;
@@ -117,8 +124,14 @@ export async function POST(request: Request) {
       timers
     });
   } catch (error) {
+    logRouteError("attempt_start_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Invalid request." },
+      {
+        ok: false,
+        message: messageFromError(error, "Invalid request."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

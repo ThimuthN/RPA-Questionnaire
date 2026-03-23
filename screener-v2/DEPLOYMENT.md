@@ -42,3 +42,13 @@ npm run deploy:prod
 - Employee magic-link delivery is still dev-style: the API returns the token directly.
 - The app now requires Postgres-backed persistence for invites, attempts, results, and magic tokens.
 - On Windows, if Prisma generation fails with `EPERM ... query_engine-windows.dll.node`, stop the running local `node`/`next dev` process and rerun `npm run prisma:generate`.
+
+## Logging and debugging
+- Server-side API failures now emit structured JSON logs with a `requestId`, route, method, path, deployment metadata, and stack trace.
+- Most mutation error responses now include the same `requestId`, which makes it easier to match a user-reported failure to a Vercel log entry.
+- To inspect a deployment after it fails, use:
+```bash
+vercel inspect <deployment-url> --logs
+vercel logs <deployment-url>
+```
+- When debugging a report from the UI, search the Vercel logs for the returned `requestId`.

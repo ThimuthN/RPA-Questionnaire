@@ -3,6 +3,11 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth/session";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateResults } from "@/lib/db/repositories";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const bulkSchema = z.object({
   action: z.enum(["assign_owner", "set_ui_status", "add_note"]),
@@ -21,6 +26,7 @@ function redirectUrl(request: Request, returnTo?: string) {
 }
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.results.bulk");
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
@@ -46,8 +52,13 @@ export async function POST(request: Request) {
     url.searchParams.set("updated", String(result.updatedCount));
     return NextResponse.redirect(url, 303);
   } catch (error) {
+    logRouteError("results_bulk_update_failed", logContext, error, {
+      userId: session.userId
+    });
+
     const url = redirectUrl(request, String(formData.get("returnTo") || ""));
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not update results.");
+    url.searchParams.set("error", messageFromError(error, "Could not update results."));
+    url.searchParams.set("requestId", logContext.requestId);
     return NextResponse.redirect(url, 303);
   }
 }
