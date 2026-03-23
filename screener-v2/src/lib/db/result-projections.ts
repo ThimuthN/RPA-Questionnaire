@@ -40,6 +40,10 @@ interface PersistedBreakdown {
   breakdownByCategory: ResultSummary["breakdownByCategory"];
 }
 
+function roundOne(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
 function toObject<T>(value: Prisma.JsonValue | null | undefined, fallback: T): T {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     return value as T;
@@ -135,6 +139,19 @@ export function toResultSummary(
       ? Object.fromEntries(
           exams.map((exam) => {
             const persisted = breakdown.examBreakdown[exam.instanceId];
+            const weightedMarksPossible = Number(persisted?.weightedMarksPossible ?? exam.weight);
+            const fallbackPercent =
+              typeof persisted?.percent === "number"
+                ? persisted.percent
+                : Number(persisted?.pointsPossible ?? 0) > 0
+                  ? (Number(persisted?.pointsEarned ?? 0) / Number(persisted?.pointsPossible ?? 0)) * 100
+                  : undefined;
+            const weightedMarksEarned =
+              typeof persisted?.weightedMarksEarned === "number"
+                ? persisted.weightedMarksEarned
+                : typeof fallbackPercent === "number"
+                  ? roundOne((fallbackPercent * weightedMarksPossible) / 100)
+                  : Number(breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ?? 0);
 
             return [
               exam.instanceId,
@@ -148,13 +165,8 @@ export function toResultSummary(
                 pointsEarned: Number(persisted?.pointsEarned ?? 0),
                 pointsPossible: Number(persisted?.pointsPossible ?? 0),
                 percent: Number(persisted?.percent ?? 0),
-                weightedMarksEarned: Number(
-                  persisted?.weightedMarksEarned ??
-                    persisted?.pointsEarned ??
-                    breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.pointsEarned ??
-                    0
-                ),
-                weightedMarksPossible: Number(persisted?.weightedMarksPossible ?? exam.weight),
+                weightedMarksEarned,
+                weightedMarksPossible,
                 requiredPercent: Number(
                   persisted?.requiredPercent ??
                     breakdown.sectionBreakdown[exam.legacySectionId ?? "core"]?.requiredPercent ??
@@ -428,7 +440,7 @@ function logicItem(task: LogicReasoningSubtask, answer: unknown): ResultReviewIt
   const mapping = answer && typeof answer === "object" ? (answer as Record<string, string>) : {};
   const expectedCount = Object.keys(task.expected).length || 1;
   const correctCount = Object.entries(task.expected).filter(([left, right]) => mapping[left] === right).length;
-  const pointsEarned = Math.round(correctCount * (pointsPossible / expectedCount));
+  const pointsEarned = Math.round(correctCount * (pointsPossible / expectedCount) * 100) / 100;
 
   return {
     id: task.id,

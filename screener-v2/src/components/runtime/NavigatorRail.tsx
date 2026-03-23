@@ -25,10 +25,10 @@ function itemClass(state: NavigatorItemState) {
 }
 
 function ItemIcon({ state }: { state: NavigatorItemState }) {
-  if (state === "answered") return <span className="text-[10px]">✓</span>;
+  if (state === "answered") return <span className="text-[10px] font-semibold">OK</span>;
   if (state === "flagged") return <span className="h-1.5 w-1.5 rounded-full bg-amber-300" />;
   if (state === "skipped") return <span className="h-1.5 w-1.5 rounded-full bg-red-300" />;
-  if (state === "locked") return <span className="text-[10px]">•</span>;
+  if (state === "locked") return <span className="text-[10px]">.</span>;
   return null;
 }
 
@@ -37,12 +37,20 @@ export function NavigatorRail({
   statusLabel,
   statusTone,
   onNextUnanswered,
+  answeredCount,
+  unansweredCount,
+  flaggedCount,
+  totalCount,
   className
 }: {
   items: NavigatorItem[];
   statusLabel: string;
   statusTone: "blue" | "teal" | "emerald" | "amber" | "red" | "neutral";
   onNextUnanswered: () => void;
+  answeredCount: number;
+  unansweredCount: number;
+  flaggedCount: number;
+  totalCount: number;
   className?: string;
 }) {
   const reduceMotion = useReducedMotion();
@@ -54,8 +62,19 @@ export function NavigatorRail({
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Navigator</p>
           <StatusPill label={statusLabel} tone={statusTone} />
         </div>
+        <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
+          <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1">
+            Answered {answeredCount}/{totalCount}
+          </span>
+          <span className="rounded-full border border-red-400/20 bg-red-500/10 px-2 py-1">
+            Unanswered {unansweredCount}
+          </span>
+          <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-1">
+            Flagged {flaggedCount}
+          </span>
+        </div>
         <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
-          {items.map((item, index) => {
+          {items.map((item) => {
             const current = item.state === "current";
             return (
               <motion.button
@@ -71,8 +90,10 @@ export function NavigatorRail({
                 animate={current && !reduceMotion ? { scale: [1, 1.03, 1] } : { scale: 1 }}
                 transition={{ duration: 0.18 }}
               >
-                <span>{index + 1}</span>
-                <span className="flex items-center justify-center">{<ItemIcon state={item.state} />}</span>
+                <span>{item.label}</span>
+                <span className="flex items-center justify-center">
+                  <ItemIcon state={item.state} />
+                </span>
               </motion.button>
             );
           })}
@@ -82,7 +103,11 @@ export function NavigatorRail({
       <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-3">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Quick actions</p>
-          <Button variant="ghost" className="h-auto px-0 py-0 text-xs text-brand-200 hover:bg-transparent" onClick={onNextUnanswered}>
+          <Button
+            variant="ghost"
+            className="h-auto px-0 py-0 text-xs text-brand-200 hover:bg-transparent"
+            onClick={onNextUnanswered}
+          >
             Next unanswered
           </Button>
         </div>

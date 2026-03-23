@@ -20,6 +20,8 @@ interface QuestionRuntimeCardProps {
   onChange: (value: any) => void;
   sectionLabel?: string;
   sectionSummary?: string;
+  questionIndex?: number;
+  questionCount?: number;
 }
 
 const formatLabel: Record<string, string> = {
@@ -72,7 +74,15 @@ const rendererRegistry: Record<string, ComponentType<BaseQuestionRendererProps>>
   logic_reasoning: LogicReasoningRenderer
 };
 
-export function QuestionRuntimeCard({ question, answer, onChange, sectionLabel, sectionSummary }: QuestionRuntimeCardProps) {
+export function QuestionRuntimeCard({
+  question,
+  answer,
+  onChange,
+  sectionLabel,
+  sectionSummary,
+  questionIndex,
+  questionCount
+}: QuestionRuntimeCardProps) {
   const formatKey = String(question?.format || "");
   const Renderer = rendererRegistry[formatKey];
 
@@ -100,6 +110,13 @@ export function QuestionRuntimeCard({ question, answer, onChange, sectionLabel, 
           <StatusPill label={sectionLabel || question.category || "Exam"} tone="blue" />
           <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
           {sectionSummary ? <StatusPill label={sectionSummary} tone="neutral" className="normal-case tracking-normal" /> : null}
+          {typeof questionIndex === "number" && typeof questionCount === "number" ? (
+            <StatusPill
+              label={`Question ${questionIndex + 1} of ${questionCount}`}
+              tone="neutral"
+              className="normal-case tracking-normal"
+            />
+          ) : null}
         </div>
         <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{promptTitle}</h3>
         {Array.isArray(question.promptBlocks) && question.promptBlocks.length > 0 ? (

@@ -1,5 +1,9 @@
 import type { LogicReasoningPack, LogicReasoningSubtask } from "./packs";
 
+function roundTwo(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 export function buildLogicReasoningQuestion(pack: LogicReasoningPack) {
   return {
     id: pack.id,
@@ -31,18 +35,8 @@ export function validateLogicReasoningAnswer(
   question: ReturnType<typeof buildLogicReasoningQuestion>,
   answer: Record<string, unknown>
 ): boolean {
-  // Basic validation - ensure all subtasks have answers
   for (const subtask of question.subtasks) {
-    const subtaskAnswer = answer[subtask.id];
-    if (!subtaskAnswer) return false;
-
-    if (subtask.type === "single_select") {
-      if (typeof subtaskAnswer !== "string") return false;
-    } else if (subtask.type === "matching") {
-      if (typeof subtaskAnswer !== "object" || subtaskAnswer === null) return false;
-      const matchingAnswer = subtaskAnswer as Record<string, string>;
-      if (Object.keys(matchingAnswer).length !== subtask.leftItems.length) return false;
-    }
+    if (!isLogicReasoningSubtaskAnswered(subtask, answer[subtask.id])) return false;
   }
   return true;
 }
@@ -63,16 +57,13 @@ export function scoreLogicReasoningQuestion(
         earned += subtask.points;
       }
     } else if (subtask.type === "matching") {
-      const matchingAnswer = subtaskAnswer as Record<string, string>;
-      let subtaskEarned = 0;
-      for (const [left, right] of Object.entries(matchingAnswer)) {
-        if (subtask.expected[left] === right) {
-          subtaskEarned += subtask.points / Object.keys(subtask.expected).length;
-        }
-      }
-      earned += Math.round(subtaskEarned);
+      const matchingAnswer = isRecord(subtaskAnswer) ? (subtaskAnswer as Record<string, string>) : {};
+      const expectedEntries = Object.entries(subtask.expected);
+      const expectedCount = expectedEntries.length || 1;
+      const correctCount = expectedEntries.filter(([left, right]) => matchingAnswer[left] === right).length;
+      earned += roundTwo(correctCount * (subtask.points / expectedCount));
     }
   }
 
-  return { earned, possible };
+  return { earned: roundTwo(earned), possible };
 }

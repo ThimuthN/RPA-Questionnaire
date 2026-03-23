@@ -150,8 +150,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
     if (saveIssue) return saveIssue;
     if (integrityNotice) return integrityNotice;
     if (uiStatus === RuntimeUiStatus.Submitting) return "Submitting your assessment now.";
-    if (uiStatus === RuntimeUiStatus.Saving || uiStatus === RuntimeUiStatus.Syncing) {
+    if (uiStatus === RuntimeUiStatus.Syncing) {
       return "Saving your latest work in the background.";
+    }
+    if (uiStatus === RuntimeUiStatus.Saved) {
+      return "Saved just now. Keep going and your latest answer will stay protected.";
     }
     if (uiStatus === RuntimeUiStatus.CriticalTimeLow) {
       return "Less than two minutes remain. Keep moving and your answers will continue to save.";
@@ -175,6 +178,24 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const stageRef = useRef<string | "submitted">(stage);
   const remainingRef = useRef<number>(currentRemaining);
   const integrityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearSyncIndicator() {
+    if (syncIndicatorTimeoutRef.current) {
+      clearTimeout(syncIndicatorTimeoutRef.current);
+      syncIndicatorTimeoutRef.current = null;
+    }
+  }
+
+  function scheduleSyncIndicator() {
+    clearSyncIndicator();
+    syncIndicatorTimeoutRef.current = setTimeout(() => {
+      setUiStatus((prev) =>
+        prev === RuntimeUiStatus.Submitting ? RuntimeUiStatus.Submitting : RuntimeUiStatus.Syncing
+      );
+      syncIndicatorTimeoutRef.current = null;
+    }, 400);
+  }
 
   function applyAutosaveResponse(
     data: {
@@ -218,6 +239,14 @@ export function RuntimeClient(props: RuntimeClientProps) {
     remainingRef.current = currentRemaining;
   }, [currentRemaining]);
 
+  useEffect(() => {
+    return () => {
+      if (syncIndicatorTimeoutRef.current) {
+        clearTimeout(syncIndicatorTimeoutRef.current);
+      }
+    };
+  }, []);
+
   function getNextExam(current: string) {
     const index = orderedExams.findIndex((exam) => exam.instanceId === current);
     if (index < 0) return null;
@@ -237,6 +266,31 @@ export function RuntimeClient(props: RuntimeClientProps) {
     return Math.max(0, exam.contentSnapshot.items.length - answered);
   }
 
+  function getFlaggedCount(examId: string) {
+    const exam = orderedExams.find((item) => item.instanceId === examId);
+    if (!exam) return 0;
+    return exam.contentSnapshot.items.filter((item) => Boolean(flagged[item.id])).length;
+  }
+
+  function jumpToExamItem(examId: string, index: number) {
+    setStage(examId);
+    setItemIndices((prev) => ({ ...prev, [examId]: index }));
+    setShowSubmitReview(false);
+    setNavOpen(false);
+  }
+
+  function jumpToFirstUnansweredAcrossExams() {
+    for (const exam of orderedExams) {
+      const nextIndex = exam.contentSnapshot.items.findIndex(
+        (item) => !isExamItemAnswered(item, examState[exam.instanceId]?.answers?.[item.id])
+      );
+      if (nextIndex >= 0) {
+        jumpToExamItem(exam.instanceId, nextIndex);
+        return;
+      }
+    }
+  }
+
   async function persistAutosave(payload?: {
     stage?: string | "submitted";
     examState?: Partial<Record<string, Partial<ExamState>>>;
@@ -248,7 +302,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
       integrity: payload?.integrity
     };
 
-    setUiStatus(RuntimeUiStatus.Syncing);
+    scheduleSyncIndicator();
     try {
       const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
         method: "PATCH",
@@ -266,10 +320,12 @@ export function RuntimeClient(props: RuntimeClientProps) {
       if (!response.ok || !data.ok) {
         throw new Error(data.message ?? "Autosave could not be confirmed.");
       }
+      clearSyncIndicator();
       applyAutosaveResponse(data);
       setUiStatus(RuntimeUiStatus.Saved);
       return true;
     } catch {
+      clearSyncIndicator();
       setSaveIssue("We could not confirm the latest save. Keep this tab open while we reconnect.");
       setUiStatus(RuntimeUiStatus.Attention);
       return false;
@@ -277,6 +333,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }
 
   async function persistHeartbeat(activeStage: string) {
+    scheduleSyncIndicator();
     try {
       const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
         method: "PATCH",
@@ -301,8 +358,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
       if (!response.ok || !data.ok) {
         throw new Error(data.message ?? "Background sync could not be confirmed.");
       }
+      clearSyncIndicator();
       applyAutosaveResponse(data, { updateStage: false, updateTimers: false });
+      setUiStatus(RuntimeUiStatus.Saved);
     } catch {
+      clearSyncIndicator();
       setSaveIssue("We could not confirm the latest save. Keep this tab open while we reconnect.");
     }
   }
@@ -645,7 +705,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
       })
     );
     setVisited((prev) => ({ ...prev, [itemId]: true }));
-    setUiStatus(RuntimeUiStatus.Saving);
     await persistAutosave({
       stage: currentExam.instanceId,
       examState: {
@@ -772,6 +831,24 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const previousExam = currentExam ? getPreviousExam(currentExam.instanceId) : null;
   const nextExam = currentExam ? getNextExam(currentExam.instanceId) : null;
   const progress = currentExam ? examProgressValue(currentExam, currentExamState) : { answered: 0, total: 0, ratio: 0 };
+  const currentFlaggedCount = currentExam ? getFlaggedCount(currentExam.instanceId) : 0;
+  const currentUnansweredCount = Math.max(0, progress.total - progress.answered);
+  const submitReviewRows = orderedExams.map((exam) => {
+    const examProgress = examProgressValue(exam, examState[exam.instanceId]);
+    const unanswered = Math.max(0, examProgress.total - examProgress.answered);
+    const flaggedCount = getFlaggedCount(exam.instanceId);
+    return {
+      exam,
+      answered: examProgress.answered,
+      total: examProgress.total,
+      unanswered,
+      flaggedCount
+    };
+  });
+  const totalAnsweredCount = submitReviewRows.reduce((sum, row) => sum + row.answered, 0);
+  const totalQuestionCount = submitReviewRows.reduce((sum, row) => sum + row.total, 0);
+  const totalUnansweredCount = submitReviewRows.reduce((sum, row) => sum + row.unanswered, 0);
+  const totalFlaggedCount = submitReviewRows.reduce((sum, row) => sum + row.flaggedCount, 0);
   const sectionProgress = currentExam
     ? { label: `${currentExam.label} progress`, value: `${progress.answered}/${progress.total}` }
     : { label: "Progress", value: `${overallProgress}%` };
@@ -838,6 +915,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
               statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
               statusTone={nextExam ? "teal" : "emerald"}
               onNextUnanswered={jumpToNextUnanswered}
+              answeredCount={progress.answered}
+              unansweredCount={currentUnansweredCount}
+              flaggedCount={currentFlaggedCount}
+              totalCount={progress.total}
             />
           </div>
 
@@ -849,6 +930,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
                 onChange={(value) => onAnswer(currentItem!.id, value)}
                 sectionLabel={currentExam.label}
                 sectionSummary={currentExam.configSummary}
+                questionIndex={currentIndex}
+                questionCount={currentItems.length}
               />
             ) : null}
 
@@ -879,6 +962,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
             statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
             statusTone={nextExam ? "teal" : "emerald"}
             onNextUnanswered={jumpToNextUnanswered}
+            answeredCount={progress.answered}
+            unansweredCount={currentUnansweredCount}
+            flaggedCount={currentFlaggedCount}
+            totalCount={progress.total}
           />
         </div>
       ) : null}
@@ -911,18 +998,39 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
       {showSubmitReview ? (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4">
-          <StagePanel className="w-full max-w-md space-y-3">
+          <StagePanel className="w-full max-w-lg space-y-4">
             <p className="text-xs uppercase tracking-[0.2em] text-brand-300">{copy.runtime.reviewSubmit}</p>
             <h3 className="text-2xl text-white">{copy.runtime.submitTitle}</h3>
-            <p className="text-sm text-slate-200">
-              {orderedExams
-                .map((exam) => {
-                  const examProgress = examProgressValue(exam, examState[exam.instanceId]);
-                  return `${exam.label} ${examProgress.answered}/${examProgress.total}`;
-                })
-                .join(" | ")}
-            </p>
+            <div className="flex flex-wrap gap-2 text-sm text-slate-200">
+              <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1">
+                Answered {totalAnsweredCount}/{totalQuestionCount}
+              </span>
+              <span className="rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1">
+                Unanswered {totalUnansweredCount}
+              </span>
+              <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-3 py-1">
+                Flagged {totalFlaggedCount}
+              </span>
+            </div>
+            <div className="space-y-2 text-sm text-slate-200">
+              {submitReviewRows.map((row) => (
+                <div
+                  key={row.exam.instanceId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/20 px-3 py-2"
+                >
+                  <span>{row.exam.label}</span>
+                  <span className="text-slate-300">
+                    {row.answered}/{row.total} answered | {row.unanswered} unanswered | {row.flaggedCount} flagged
+                  </span>
+                </div>
+              ))}
+            </div>
             <div className="flex flex-wrap gap-2">
+              {totalUnansweredCount > 0 ? (
+                <Button variant="secondary" onClick={jumpToFirstUnansweredAcrossExams}>
+                  Jump to first unanswered
+                </Button>
+              ) : null}
               <Button onClick={() => onSubmitFinal(false)} disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit"}
               </Button>
