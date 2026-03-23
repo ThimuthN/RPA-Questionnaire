@@ -1,4 +1,5 @@
 import type { SectionId } from "@/lib/sections/types";
+import type { CandidateAssessmentStatus, CandidateNextAction, CandidateStage, CandidateUiStatus } from "@/lib/candidates/types";
 
 export type RoleId = "Intern" | "Associate" | "SE" | "SeniorSE" | "TechLead";
 
@@ -345,6 +346,16 @@ export interface ResultSummary {
   attemptId: string;
   candidateName?: string;
   candidateEmail?: string;
+  candidateId?: string;
+  candidateOwner?: string;
+  candidateStage?: CandidateStage;
+  candidateNextAction?: CandidateNextAction;
+  candidateUiStatus?: CandidateUiStatus;
+  candidateAssessmentStatus?: CandidateAssessmentStatus;
+  candidateLatestActivityAt?: string;
+  candidateStaleDays?: number;
+  candidateNotesSummary?: string;
+  submittedAt?: string;
   roleId: RoleId;
   stacks: StackId[];
   sections: SectionId[];

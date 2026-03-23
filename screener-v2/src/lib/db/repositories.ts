@@ -35,6 +35,19 @@ import {
   buildInviteValidationResult,
   type InviteValidationState
 } from "@/lib/invites/validation";
+import { bulkUpdateCandidates } from "@/lib/db/candidates";
+import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
+import type {
+  CandidateFinalDecision,
+  CandidateNextAction,
+  CandidateAssessmentStatus,
+  CandidateNoteType,
+  CandidateScreeningStatus,
+  CandidateStage,
+  CandidateUiStatus
+} from "@/lib/candidates/types";
+import type { ResultListSort, ResultScoreBand, ResultsWorkspaceFilters, WorkspaceResultRow } from "@/lib/results/workspace";
+import { filterResultWorkspaceRows, toWorkspaceResultRow } from "@/lib/results/workspace";
 
 interface InviteRecord {
   id: string;
@@ -105,6 +118,19 @@ interface ExamStateEnvelope {
   activeExamInstanceId?: string;
   activeExamStartedAt?: string;
   legacySectionState: Partial<Record<SectionId, SectionState>>;
+}
+
+export interface ResultWorkspacePage {
+  rows: WorkspaceResultRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  ownerOptions: string[];
+  statusCounts: {
+    pass: number;
+    review: number;
+    fail: number;
+  };
 }
 
 function cuidLike() {
@@ -1198,6 +1224,161 @@ export async function listResults() {
     .map((row) => row.summary);
 }
 
+async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
+  const resultRows = await prisma.result.findMany({
+    where: attemptIdFilter?.length
+      ? {
+          attemptId: {
+            in: attemptIdFilter
+          }
+        }
+      : undefined,
+    orderBy: { createdAt: "desc" }
+  });
+  const attemptIds = resultRows.map((row) => row.attemptId);
+  if (attemptIds.length === 0) return [];
+
+  const attemptRows = await prisma.attempt.findMany({
+    where: { id: { in: attemptIds } }
+  });
+  const attemptsById = new Map(attemptRows.map((row) => [row.id, mapAttempt(row)]));
+  const participantIds = [...new Set(attemptRows.map((row) => row.participantId))];
+  const participantRows =
+    participantIds.length > 0
+      ? await prisma.participant.findMany({
+          where: { id: { in: participantIds } }
+        })
+      : [];
+  const participantsById = new Map(participantRows.map((row) => [row.id, mapParticipant(row)]));
+  const candidateAssessmentRows = await prisma.candidateAssessment.findMany({
+    where: {
+      attemptId: {
+        in: attemptIds
+      }
+    },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          hrOwner: true,
+          stage: true,
+          nextAction: true,
+          finalDecision: true,
+          screeningStatus: true,
+          notesSummary: true,
+          updatedAt: true
+        }
+      }
+    }
+  });
+  const candidateByAttemptId = new Map(
+    candidateAssessmentRows
+      .filter((row): row is typeof row & { attemptId: string } => Boolean(row.attemptId))
+      .map((row) => [row.attemptId, row.candidate])
+  );
+
+  return resultRows
+    .map((row) => {
+      const attempt = attemptsById.get(row.attemptId) ?? null;
+      const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
+      const summary = toResultSummary(row, attempt, participant);
+      if (!summary || !attempt) return null;
+
+      const candidate = candidateByAttemptId.get(row.attemptId);
+      const resultStatus: CandidateAssessmentStatus = row.pass ? "passed" : row.borderline ? "review" : "failed";
+      const uiStatus: CandidateUiStatus | undefined = candidate
+        ? getCandidateUiStatus({
+            stage: candidate.stage as CandidateStage,
+            finalDecision: candidate.finalDecision as CandidateFinalDecision,
+            nextAction: candidate.nextAction as CandidateNextAction,
+            screeningStatus: (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+            latestAssessmentStatus: resultStatus
+          })
+        : undefined;
+      const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
+      const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
+      const staleDays = Math.max(0, Math.floor((Date.now() - Date.parse(latestActivityAt)) / (1000 * 60 * 60 * 24)));
+
+      return toWorkspaceResultRow(summary, {
+        submittedAt,
+        candidateId: candidate?.id,
+        candidateOwner: candidate?.hrOwner ?? undefined,
+        candidateStage: candidate?.stage as CandidateStage | undefined,
+        candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
+        candidateUiStatus: uiStatus,
+        candidateAssessmentStatus: resultStatus,
+        candidateLatestActivityAt: latestActivityAt,
+        candidateStaleDays: staleDays,
+        candidateNotesSummary: candidate?.notesSummary ?? undefined
+      });
+    })
+    .filter((row): row is WorkspaceResultRow => Boolean(row));
+}
+
+export async function listResultWorkspacePage(
+  filters: ResultsWorkspaceFilters & {
+    page?: number;
+    pageSize?: number;
+    attemptIds?: string[];
+  } = {}
+): Promise<ResultWorkspacePage> {
+  const page = Math.max(1, Number(filters.page ?? 1));
+  const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
+  const rows = filterResultWorkspaceRows(await listWorkspaceResultRows(filters.attemptIds), filters);
+  const start = (page - 1) * pageSize;
+  const ownerOptions = [...new Set(rows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
+
+  return {
+    rows: rows.slice(start, start + pageSize),
+    total: rows.length,
+    page,
+    pageSize,
+    ownerOptions,
+    statusCounts: {
+      pass: rows.filter((row) => row.resultStatus === "pass").length,
+      review: rows.filter((row) => row.resultStatus === "review").length,
+      fail: rows.filter((row) => row.resultStatus === "fail").length
+    }
+  };
+}
+
+export async function bulkUpdateResults(input: {
+  attemptIds: string[];
+  action: "assign_owner" | "set_ui_status" | "add_note";
+  owner?: string;
+  status?: CandidateUiStatus;
+  noteBody?: string;
+  noteType?: CandidateNoteType;
+  createdById?: string;
+}) {
+  const attemptIds = [...new Set(input.attemptIds.filter(Boolean))];
+  if (attemptIds.length === 0) {
+    throw new Error("Select at least one result.");
+  }
+
+  const rows = await prisma.candidateAssessment.findMany({
+    where: {
+      attemptId: {
+        in: attemptIds
+      }
+    },
+    select: {
+      candidateId: true
+    }
+  });
+  const candidateIds = [...new Set(rows.map((row) => row.candidateId))];
+
+  return bulkUpdateCandidates({
+    candidateIds,
+    action: input.action,
+    owner: input.owner,
+    status: input.status,
+    noteBody: input.noteBody,
+    noteType: input.noteType,
+    createdById: input.createdById
+  });
+}
+
 export async function getResult(attemptId: string) {
   const resultRow = await prisma.result.findUnique({
     where: { attemptId }
@@ -1235,9 +1416,51 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
     where: { id: attemptRow.participantId }
   });
   const attempt = mapAttempt(attemptRow);
-  const summary = toResultSummary(resultRow, attempt, participantRow ? mapParticipant(participantRow) : null);
+  const baseSummary = toResultSummary(resultRow, attempt, participantRow ? mapParticipant(participantRow) : null);
 
-  if (!summary) return null;
+  if (!baseSummary) return null;
+
+  const link = await prisma.candidateAssessment.findFirst({
+    where: { attemptId },
+    include: {
+      candidate: {
+        select: {
+          id: true,
+          hrOwner: true,
+          stage: true,
+          nextAction: true,
+          finalDecision: true,
+          screeningStatus: true,
+          notesSummary: true,
+          updatedAt: true
+        }
+      }
+    }
+  });
+  const candidate = link?.candidate;
+  const resultStatus: CandidateAssessmentStatus = resultRow.pass ? "passed" : resultRow.borderline ? "review" : "failed";
+  const summary = toWorkspaceResultRow(baseSummary, {
+    submittedAt: attempt.submittedAt ?? attempt.startedAt ?? new Date().toISOString(),
+    candidateId: candidate?.id,
+    candidateOwner: candidate?.hrOwner ?? undefined,
+    candidateStage: candidate?.stage as CandidateStage | undefined,
+    candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
+    candidateUiStatus: candidate
+      ? getCandidateUiStatus({
+          stage: candidate.stage as CandidateStage,
+          finalDecision: candidate.finalDecision as CandidateFinalDecision,
+          nextAction: candidate.nextAction as CandidateNextAction,
+          screeningStatus: (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+          latestAssessmentStatus: resultStatus
+        })
+      : undefined,
+    candidateAssessmentStatus: resultStatus,
+    candidateLatestActivityAt: candidate?.updatedAt?.toISOString(),
+    candidateStaleDays: candidate?.updatedAt
+      ? Math.max(0, Math.floor((Date.now() - candidate.updatedAt.getTime()) / (1000 * 60 * 60 * 24)))
+      : undefined,
+    candidateNotesSummary: candidate?.notesSummary ?? undefined
+  });
 
   return {
     summary,

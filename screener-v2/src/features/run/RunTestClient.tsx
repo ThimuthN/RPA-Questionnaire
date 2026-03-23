@@ -68,8 +68,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
   const [liveIntegrityPreset, setLiveIntegrityPreset] = useState<IntegrityPresetId>("standard");
   const [liveInvite, setLiveInvite] = useState<(InviteCredentials & { slug?: string }) | null>(null);
   const [employeeEmail, setEmployeeEmail] = useState("");
-  const [employeeToken, setEmployeeToken] = useState("");
-  const [employeeVerifyUrl, setEmployeeVerifyUrl] = useState("");
+  const [employeeShortcutUrl, setEmployeeShortcutUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -156,10 +155,9 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: employeeEmail.trim() })
     });
-    const data = (await response.json()) as { ok: boolean; token?: string; verifyUrl?: string; message?: string };
+    const data = (await response.json()) as { ok: boolean; devShortcutUrl?: string; message?: string };
     if (data.ok) {
-      setEmployeeToken(data.token || "");
-      setEmployeeVerifyUrl(data.verifyUrl || "");
+      setEmployeeShortcutUrl(data.devShortcutUrl || "");
     } else {
       setError(data.message || "Could not send magic link.");
     }
@@ -290,14 +288,16 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
               <Button onClick={onRequestEmployeeMagic} disabled={!employeeEmail || loading}>
                 {loading ? "Sending..." : "Send Magic Link"}
               </Button>
-              {employeeVerifyUrl ? (
+              {employeeShortcutUrl ? (
                 <div className="space-y-2 rounded-[20px] border border-white/10 bg-white/[0.05] p-4">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Verify URL</p>
-                  <p className="break-all font-mono text-xs text-white">{employeeVerifyUrl}</p>
-                  <p className="pt-2 text-xs uppercase tracking-[0.18em] text-slate-400">Dev token</p>
-                  <p className="break-all font-mono text-xs text-white">{employeeToken}</p>
-                  <Button variant="secondary" onClick={() => window.location.assign(employeeVerifyUrl)}>
-                    Open Verify
+                  <p className="text-sm text-slate-200">
+                    Magic link issued for internal access. The raw token is hidden from the normal UI.
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Use the internal shortcut below only for local admin testing.
+                  </p>
+                  <Button variant="secondary" onClick={() => window.location.assign(employeeShortcutUrl)}>
+                    Open internal shortcut
                   </Button>
                 </div>
               ) : null}

@@ -1,8 +1,8 @@
 export const copy = {
   nav: {
-    create: "Create assessment",
+    create: "Assessments",
     candidates: "Candidates",
-    run: "Start assessment",
+    run: "Live / Access",
     results: "Results",
     users: "Users"
   },

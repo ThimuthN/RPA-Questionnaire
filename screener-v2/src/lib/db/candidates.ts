@@ -8,13 +8,25 @@ import {
   type CandidateMilestoneType
 } from "@/lib/candidates/milestones";
 import type {
+  CandidateListSort,
+  CandidateOpenWorkSummary,
+  CandidateWorkspaceItem
+} from "@/lib/candidates/workspace";
+import {
+  buildCandidateOpenWorkSummary,
+  sortCandidateWorkspaceItems,
+  toCandidateWorkspaceItem
+} from "@/lib/candidates/workspace";
+import type {
   CandidateAssessmentStatus,
   CandidateFinalDecision,
   CandidateNextAction,
   CandidateNoteType,
   CandidateScreeningStatus,
-  CandidateStage
+  CandidateStage,
+  CandidateUiStatus
 } from "@/lib/candidates/types";
+import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 
 function cuidLike() {
   return crypto.randomUUID().replace(/-/g, "");
@@ -107,6 +119,26 @@ export interface CandidateDetail extends CandidateRecord {
   assessments: CandidateAssessmentRecord[];
   milestones: CandidateMilestoneRecord[];
   currentFocus?: string;
+}
+
+export interface CandidateWorkspaceFilters {
+  q?: string;
+  status?: CandidateUiStatus;
+  stage?: CandidateStage;
+  owner?: string;
+  assessmentStatus?: CandidateAssessmentStatus;
+  sort?: CandidateListSort;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CandidateWorkspacePage {
+  rows: CandidateWorkspaceItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  ownerOptions: string[];
+  summary: CandidateOpenWorkSummary;
 }
 
 function mapCandidate(row: {
@@ -603,6 +635,77 @@ export async function addCandidateNote(input: {
   return mapNote(created);
 }
 
+export async function bulkUpdateCandidates(input: {
+  candidateIds: string[];
+  action: "assign_owner" | "set_ui_status" | "add_note";
+  owner?: string;
+  status?: CandidateUiStatus;
+  noteBody?: string;
+  noteType?: CandidateNoteType;
+  createdById?: string;
+}) {
+  const candidateIds = [...new Set(input.candidateIds.filter(Boolean))];
+  if (candidateIds.length === 0) {
+    throw new Error("Select at least one candidate.");
+  }
+
+  if (input.action === "assign_owner") {
+    await prisma.candidate.updateMany({
+      where: { id: { in: candidateIds } },
+      data: {
+        hrOwner: input.owner?.trim() || null,
+        updatedAt: new Date()
+      }
+    });
+    return { updatedCount: candidateIds.length };
+  }
+
+  if (input.action === "set_ui_status") {
+    if (!input.status) {
+      throw new Error("Choose a status.");
+    }
+
+    const fields = candidateUiStatusToStoredFields(input.status);
+    await prisma.candidate.updateMany({
+      where: { id: { in: candidateIds } },
+      data: {
+        stage: fields.stage,
+        finalDecision: fields.finalDecision,
+        nextAction: fields.nextAction,
+        screeningStatus: fields.screeningStatus ?? null,
+        updatedAt: new Date()
+      }
+    });
+    return { updatedCount: candidateIds.length };
+  }
+
+  const noteBody = input.noteBody?.trim();
+  if (!noteBody) {
+    throw new Error("Add a note before saving.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.candidateNote.createMany({
+      data: candidateIds.map((candidateId) => ({
+        id: cuidLike(),
+        candidateId,
+        type: input.noteType ?? "decision",
+        body: noteBody,
+        createdById: input.createdById ?? null
+      }))
+    });
+
+    await tx.candidate.updateMany({
+      where: { id: { in: candidateIds } },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+  });
+
+  return { updatedCount: candidateIds.length };
+}
+
 export async function updateCandidateMilestone(
   candidateId: string,
   milestoneId: string,
@@ -966,6 +1069,54 @@ export async function listCandidates(filters?: {
     }
     return true;
   });
+}
+
+export async function listCandidateWorkspacePage(
+  filters: CandidateWorkspaceFilters = {}
+): Promise<CandidateWorkspacePage> {
+  const candidates = await listCandidates({
+    stage: filters.stage,
+    assessmentStatus: filters.assessmentStatus
+  });
+  const query = filters.q?.trim().toLowerCase() ?? "";
+  const status = filters.status;
+  const owner = filters.owner?.trim() ?? "";
+  const sort = filters.sort ?? "updated_desc";
+  const page = Math.max(1, Number(filters.page ?? 1));
+  const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
+
+  const workspaceRows = candidates.map(toCandidateWorkspaceItem).filter((row) => {
+    if (query) {
+      const haystack = [
+        row.fullName,
+        row.email,
+        row.positionAppliedFor || "",
+        row.hrOwner || "",
+        row.currentFocus || "",
+        row.notesSummary || ""
+      ]
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    if (status && row.uiStatus !== status) return false;
+    if (owner && (row.hrOwner || "") !== owner) return false;
+    return true;
+  });
+
+  const sorted = sortCandidateWorkspaceItems(workspaceRows, sort);
+  const start = (page - 1) * pageSize;
+  const rows = sorted.slice(start, start + pageSize);
+  const ownerOptions = [...new Set(candidates.map((row) => row.hrOwner).filter(Boolean))].sort() as string[];
+
+  return {
+    rows,
+    total: sorted.length,
+    page,
+    pageSize,
+    ownerOptions,
+    summary: buildCandidateOpenWorkSummary(workspaceRows)
+  };
 }
 
 export async function getCandidateDetail(candidateId: string): Promise<CandidateDetail | null> {

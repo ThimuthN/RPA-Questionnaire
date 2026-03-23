@@ -15,6 +15,7 @@ import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { candidateNoteTypeLabels, candidateNoteTypeValues, candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { getCandidateDetail } from "@/lib/db/candidates";
@@ -47,6 +48,10 @@ function nextPrompt(candidate: CandidateData) {
   return "Update the next milestone when the candidate moves forward.";
 }
 
+function resultTone(status: ReturnType<typeof currentAssessmentStatus>) {
+  return status === "passed" ? "emerald" : status === "review" ? "amber" : status === "failed" ? "red" : "neutral";
+}
+
 function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
   return (
     <>
@@ -58,7 +63,6 @@ function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
       <input type="hidden" name="resumeSource" value={candidate.resumeSource || ""} />
       <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
       <input type="hidden" name="candidateFolderUrl" value={candidate.candidateFolderUrl || ""} />
-      <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
     </>
   );
 }
@@ -91,6 +95,7 @@ export default async function CandidateDetailPage({
   const canSendScreener = Boolean(
     screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
   );
+  const activityFeed = buildCandidateActivityFeed(candidate).slice(0, 8);
 
   return (
     <SceneShell
@@ -170,7 +175,7 @@ export default async function CandidateDetailPage({
             <HiddenCandidateFields candidate={candidate} />
             <div className="space-y-1">
               <h2 className="text-lg text-white">Outcome</h2>
-              <p className="text-sm text-slate-300">This is the overall candidate decision on this screen.</p>
+              <p className="text-sm text-slate-300">Pin the current decision summary here so reviewers see it before diving into the full timeline.</p>
             </div>
             <ChoicePills
               name="uiStatus"
@@ -181,6 +186,16 @@ export default async function CandidateDetailPage({
                 label: candidateUiStatusLabels[status]
               }))}
             />
+            <label className="grid gap-1">
+              <span className="text-sm text-slate-200">Decision summary</span>
+              <textarea
+                name="notesSummary"
+                rows={3}
+                defaultValue={candidate.notesSummary || ""}
+                placeholder="Summarize the decision, strongest signal, and next step."
+                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+              />
+            </label>
             <div className="flex justify-end">
               <Button type="submit">Save outcome</Button>
             </div>
@@ -188,19 +203,87 @@ export default async function CandidateDetailPage({
         </StagePanel>
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <StagePanel className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-2xl text-white">Journey</h2>
-              <p className="text-sm text-slate-300">Use this as a suggested path, not a strict checklist.</p>
-            </div>
-            <CandidateMilestoneTimeline
-              candidateId={candidate.id}
-              milestones={candidate.milestones}
-              hasResume={Boolean(currentResume)}
-            />
-          </StagePanel>
+          <div className="space-y-5">
+            <StagePanel className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Journey</h2>
+                <p className="text-sm text-slate-300">Use this as the working path for the candidate, not just a checklist.</p>
+              </div>
+              <CandidateMilestoneTimeline
+                candidateId={candidate.id}
+                milestones={candidate.milestones}
+                hasResume={Boolean(currentResume)}
+              />
+            </StagePanel>
+
+            <StagePanel className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Recent activity</h2>
+                <p className="text-sm text-slate-300">Resume, notes, result events, and milestone changes in one feed.</p>
+              </div>
+              {activityFeed.length === 0 ? (
+                <p className="text-sm text-slate-300">No activity yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {activityFeed.map((item) => (
+                    <div key={item.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill label={item.kind} tone="neutral" />
+                        <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
+                      </div>
+                      <p className="mt-3 text-sm text-white">{item.title}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">{item.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </StagePanel>
+          </div>
 
           <div className="space-y-5">
+            <StagePanel className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Latest result</h2>
+                <p className="text-sm text-slate-300">Keep score, status, and reviewer direction visible alongside the candidate profile.</p>
+              </div>
+              {latest?.attemptId ? (
+                <div className="space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
+                  <div className="flex flex-wrap gap-2">
+                    <CandidateAssessmentPill status={screener} />
+                    <StatusPill label={latest.finalPercent ? `${latest.finalPercent.toFixed(1)} / 100` : "Awaiting score"} tone="blue" />
+                    <StatusPill label={screener.replace("_", " ")} tone={resultTone(screener)} />
+                  </div>
+                  <p className="text-sm text-slate-300">
+                    {latest.submittedAt
+                      ? `Submitted ${new Date(latest.submittedAt).toLocaleString()}`
+                      : latest.startedAt
+                        ? `In progress since ${new Date(latest.startedAt).toLocaleString()}`
+                        : `Linked on ${new Date(latest.createdAt).toLocaleString()}`}
+                  </p>
+                  {candidate.notesSummary ? <p className="text-sm text-brand-100">{candidate.notesSummary}</p> : null}
+                  <div className="flex flex-wrap gap-2">
+                    <Link href={`/results/${latest.attemptId}` as Route}>
+                      <Button variant="secondary">Open result</Button>
+                    </Link>
+                    {canSendScreener && screenerMilestone ? (
+                      <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
+                        <Button>Send another screener</Button>
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                  <p className="text-sm text-slate-300">No screener result yet.</p>
+                  {canSendScreener && screenerMilestone ? (
+                    <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
+                      <Button className="mt-3">Send screener</Button>
+                    </Link>
+                  ) : null}
+                </div>
+              )}
+            </StagePanel>
+
             <StagePanel id="resume" className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Resume</h2>

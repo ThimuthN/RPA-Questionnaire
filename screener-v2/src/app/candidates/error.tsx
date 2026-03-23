@@ -1,0 +1,24 @@
+"use client";
+
+import { Button } from "@/components/primitives/Button";
+import { StagePanel } from "@/components/scene/StagePanel";
+
+export default function CandidatesError({
+  error,
+  reset
+}: {
+  error: Error;
+  reset: () => void;
+}) {
+  return (
+    <section className="space-y-4">
+      <StagePanel className="space-y-3">
+        <h1 className="text-2xl text-white">Candidates workspace unavailable</h1>
+        <p className="text-sm text-slate-300">{error.message || "Something went wrong while loading candidates."}</p>
+        <Button type="button" onClick={reset}>
+          Retry
+        </Button>
+      </StagePanel>
+    </section>
+  );
+}
