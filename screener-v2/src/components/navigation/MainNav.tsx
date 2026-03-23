@@ -2,34 +2,38 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import type { Route } from "next";
+import { Menu } from "lucide-react";
+import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
 export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" | "role"> | null }) {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const items: Array<{ href: Route; label: string }> = viewer
     ? [
         { href: "/candidates" as Route, label: copy.nav.candidates },
-        { href: "/create-test", label: copy.nav.create },
-        { href: "/run-test", label: copy.nav.run },
+        { href: "/assessments" as Route, label: copy.nav.create },
         { href: "/results", label: copy.nav.results },
+        { href: "/live" as Route, label: copy.nav.run },
         ...(viewer.role === "admin" ? [{ href: "/users" as Route, label: copy.nav.users }] : [])
       ]
-    : [{ href: "/run-test", label: copy.nav.run }];
+    : [{ href: "/live" as Route, label: copy.nav.run }];
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md">
+      <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md md:flex">
         {items.map((item) => {
           const href = item.href as string;
           const active =
             pathname === href ||
             (href === "/results" && pathname.startsWith("/results/")) ||
             (href === "/candidates" && pathname.startsWith("/candidates")) ||
-            (href === "/create-test" && pathname.startsWith("/create-test")) ||
-            (href === "/run-test" && pathname.startsWith("/run-test")) ||
+            (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
+            (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
             (href === "/users" && pathname.startsWith("/users"));
           return (
             <Link
@@ -46,6 +50,18 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
             </Link>
           );
         })}
+      </div>
+
+      <div className="md:hidden">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setMobileOpen(true)}
+          className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 transition hover:bg-white/[0.08]"
+        >
+          <Menu className="h-4 w-4" />
+          <span>{viewer ? "Menu" : "Explore"}</span>
+        </button>
       </div>
 
       {viewer ? (
@@ -70,6 +86,14 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           Log in
         </Link>
       )}
+
+      <MobileNavDrawer
+        open={mobileOpen}
+        items={items}
+        pathname={pathname}
+        viewer={viewer}
+        onClose={() => setMobileOpen(false)}
+      />
     </div>
   );
 }

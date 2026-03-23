@@ -1,36 +1,84 @@
 import Link from "next/link";
-import { AttemptTable } from "@/components/results/AttemptTable";
-import { listResults } from "@/lib/db/repositories";
-import { StatusPill } from "@/components/primitives/StatusPill";
+import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
+import { StatusPill } from "@/components/primitives/StatusPill";
+import { PaginationBar } from "@/components/workspace/PaginationBar";
+import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
-import type { RoleId } from "@/lib/assessment-engine/types";
-import { copy } from "@/lib/design/copy";
-import { filterAndSortResults, type IntegrityRiskLevel, type ResultSortKey, type ResultStatusFilter } from "@/lib/results/triage";
+import { StagePanel } from "@/components/scene/StagePanel";
+import { candidateAssessmentStatusLabels, candidateAssessmentStatusValues, candidateStageLabels, candidateStageValues, candidateUiStatusLabels, candidateUiStatusValues, type CandidateAssessmentStatus, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
+import { listResultWorkspacePage } from "@/lib/db/repositories";
+import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
+import type { ResultListSort, ResultScoreBand, WorkspaceResultRow } from "@/lib/results/workspace";
 
 export const dynamic = "force-dynamic";
 
 const statusOptions: ResultStatusFilter[] = ["pass", "review", "fail"];
 const integrityOptions: IntegrityRiskLevel[] = ["clean", "watch", "review"];
-const roleOptions: RoleId[] = ["Intern", "Associate", "SE", "SeniorSE", "TechLead"];
-const sortOptions: ResultSortKey[] = ["newest", "score_desc", "score_asc", "risk_desc"];
+const roleOptions = ["Intern", "Associate", "SE", "SeniorSE", "TechLead"] as const;
+const scoreBandOptions: ResultScoreBand[] = ["high", "mid", "low"];
+
+type PageState = {
+  deleted?: string;
+  error?: string;
+  updated?: string;
+  q?: string;
+  status?: string;
+  integrity?: string;
+  role?: string;
+  owner?: string;
+  stage?: string;
+  assessmentStatus?: string;
+  scoreBand?: string;
+  sort?: string;
+  page?: string;
+  pageSize?: string;
+  compare?: string;
+};
+
+function buildHref(params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
+  const next = new URLSearchParams(params.toString());
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!value) next.delete(key);
+    else next.set(key, value);
+  }
+  return `/results${next.toString() ? `?${next.toString()}` : ""}` as Route;
+}
+
+function compareIdsFromRaw(raw?: string) {
+  return [...new Set(String(raw || "").split(",").map((item) => item.trim()).filter(Boolean))].slice(0, 4);
+}
+
+function toggleCompare(params: URLSearchParams, attemptId: string) {
+  const ids = compareIdsFromRaw(params.get("compare") || "");
+  const nextIds = ids.includes(attemptId) ? ids.filter((id) => id !== attemptId) : [...ids, attemptId].slice(0, 4);
+  return buildHref(params, { compare: nextIds.length > 0 ? nextIds.join(",") : undefined });
+}
+
+function toneForStatus(status: ResultStatusFilter) {
+  return status === "pass" ? "emerald" : status === "review" ? "amber" : "red";
+}
+
+function toneForIntegrity(level: IntegrityRiskLevel) {
+  return level === "clean" ? "emerald" : level === "watch" ? "amber" : "red";
+}
+
+function strongestArea(row: WorkspaceResultRow) {
+  return Object.entries(row.breakdownByCategory).sort((left, right) => right[1].percent - left[1].percent)[0]?.[0] ?? "No data";
+}
 
 export default async function ResultsPage({
   searchParams
 }: {
-  searchParams: Promise<{
-    deleted?: string;
-    error?: string;
-    q?: string;
-    status?: string;
-    integrity?: string;
-    role?: string;
-    sort?: string;
-  }>;
+  searchParams: Promise<PageState>;
 }) {
   const pageState = await searchParams;
-  const allRows = await listResults();
-  const filters = {
+  const query = new URLSearchParams(
+    Object.entries(pageState)
+      .filter(([, value]) => typeof value === "string" && value.length > 0)
+      .map(([key, value]) => [key, value as string])
+  );
+  const page = await listResultWorkspacePage({
     q: pageState.q?.trim() || undefined,
     status: statusOptions.includes(pageState.status as ResultStatusFilter)
       ? (pageState.status as ResultStatusFilter)
@@ -38,108 +86,322 @@ export default async function ResultsPage({
     integrity: integrityOptions.includes(pageState.integrity as IntegrityRiskLevel)
       ? (pageState.integrity as IntegrityRiskLevel)
       : undefined,
-    role: roleOptions.includes(pageState.role as RoleId) ? (pageState.role as RoleId) : undefined,
-    sort: sortOptions.includes(pageState.sort as ResultSortKey)
-      ? (pageState.sort as ResultSortKey)
-      : "newest"
-  };
-  const rows = filterAndSortResults(allRows, filters);
-  const passCount = allRows.filter((row) => row.pass).length;
-  const reviewCount = allRows.filter((row) => row.borderline).length;
-  const failCount = allRows.filter((row) => !row.pass && !row.borderline).length;
+    role: roleOptions.includes(pageState.role as (typeof roleOptions)[number])
+      ? (pageState.role as (typeof roleOptions)[number])
+      : undefined,
+    owner: pageState.owner?.trim() || undefined,
+    stage: candidateStageValues.includes(pageState.stage as CandidateStage)
+      ? (pageState.stage as CandidateStage)
+      : undefined,
+    assessmentStatus: candidateAssessmentStatusValues.includes(pageState.assessmentStatus as CandidateAssessmentStatus)
+      ? (pageState.assessmentStatus as CandidateAssessmentStatus)
+      : undefined,
+    scoreBand: scoreBandOptions.includes(pageState.scoreBand as ResultScoreBand)
+      ? (pageState.scoreBand as ResultScoreBand)
+      : undefined,
+    sort: (pageState.sort as ResultListSort) || "newest",
+    page: Number(pageState.page ?? 1),
+    pageSize: Number(pageState.pageSize ?? 12)
+  });
+  const currentPathAndQuery = `/results${query.toString() ? `?${query.toString()}` : ""}`;
+  const compareIds = compareIdsFromRaw(pageState.compare);
+  const comparison =
+    compareIds.length > 0
+      ? await listResultWorkspacePage({
+          attemptIds: compareIds,
+          page: 1,
+          pageSize: compareIds.length
+        })
+      : null;
 
   return (
     <SceneShell
       variant="results"
-      eyebrow={copy.results.eyebrow}
-      title={copy.results.title}
-      subtitle={copy.results.subtitle}
+      eyebrow="Decision queue"
+      title="Results"
+      subtitle="Review scores with candidate context, compare shortlists, and move people forward without leaving the queue."
       utility={
         <div className="flex flex-wrap gap-2">
-          <StatusPill label={`Pass ${passCount}`} tone="emerald" />
-          <StatusPill label={`Review ${reviewCount}`} tone="amber" />
-          <StatusPill label={`Fail ${failCount}`} tone="red" />
+          <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
+          <StatusPill label={`Review ${page.statusCounts.review}`} tone="amber" />
+          <StatusPill label={`Fail ${page.statusCounts.fail}`} tone="red" />
         </div>
       }
     >
       <div className="space-y-5">
-        {pageState.deleted || pageState.error ? (
-          <div className="rounded-[24px] border border-white/10 bg-white/[0.05] p-4">
-            {pageState.deleted ? <p className="text-sm text-emerald-200">Result deleted.</p> : null}
-            {pageState.error ? <p className="text-sm text-red-200">{pageState.error}</p> : null}
+        <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
+
+        {pageState.deleted ? (
+          <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            Result deleted.
           </div>
         ) : null}
-        <form className="grid gap-3 rounded-[24px] border border-white/10 bg-white/[0.05] p-4 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,0.8fr))_auto_auto]">
-          <input
-            name="q"
-            defaultValue={filters.q ?? ""}
-            placeholder="Search candidate name or email"
-            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-          />
-          <select
-            name="status"
-            defaultValue={filters.status ?? ""}
-            className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-          >
-            <option value="">All statuses</option>
-            <option value="pass">Pass</option>
-            <option value="review">Review</option>
-            <option value="fail">Fail</option>
-          </select>
-          <select
-            name="integrity"
-            defaultValue={filters.integrity ?? ""}
-            className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-          >
-            <option value="">All integrity</option>
-            <option value="clean">Clean</option>
-            <option value="watch">Watch</option>
-            <option value="review">Review</option>
-          </select>
-          <select
-            name="role"
-            defaultValue={filters.role ?? ""}
-            className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-          >
-            <option value="">All roles</option>
-            {roleOptions.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
-          <select
-            name="sort"
-            defaultValue={filters.sort ?? "newest"}
-            className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-          >
-            <option value="newest">Newest</option>
-            <option value="score_desc">Score high to low</option>
-            <option value="score_asc">Score low to high</option>
-            <option value="risk_desc">Integrity risk</option>
-          </select>
-          <Button>Apply</Button>
-          <Link href="/results">
-            <Button type="button" variant="secondary">Clear</Button>
-          </Link>
-        </form>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.05] p-4">
-          <div className="flex flex-wrap gap-2">
-            <StatusPill label={`Showing ${rows.length}/${allRows.length}`} tone="neutral" />
-            {filters.status ? <StatusPill label={`Status ${filters.status}`} tone="neutral" /> : null}
-            {filters.integrity ? <StatusPill label={`Integrity ${filters.integrity}`} tone="neutral" /> : null}
-            {filters.role ? <StatusPill label={`Role ${filters.role}`} tone="neutral" /> : null}
+        {pageState.updated ? (
+          <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+            Updated {pageState.updated} result-linked candidate(s).
           </div>
+        ) : null}
+        {pageState.error ? (
+          <div className="rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+            {pageState.error}
+          </div>
+        ) : null}
+
+        {comparison && comparison.rows.length > 0 ? (
+          <StagePanel className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-white">Compare shortlist</h2>
+                <p className="text-sm text-slate-300">Compare up to four results side by side. Use the compare link in any row to add or remove candidates.</p>
+              </div>
+              <Link href={buildHref(query, { compare: undefined })}>
+                <Button variant="secondary">Clear compare</Button>
+              </Link>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-4">
+              {comparison.rows.map((row) => (
+                <div key={row.attemptId} className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                  <div className="space-y-2">
+                    <p className="text-lg text-white">{row.candidateName || "Unnamed candidate"}</p>
+                    <p className="text-sm text-slate-300">{row.candidateOwner || "No owner"}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
+                      <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
+                    </div>
+                    <p className="text-sm text-slate-300">Strongest area: {strongestArea(row)}</p>
+                    <p className="text-sm text-slate-400">
+                      {row.candidateStage ? candidateStageLabels[row.candidateStage] : "No stage"}{row.candidateOwner ? ` | ${row.candidateOwner}` : ""}
+                    </p>
+                    <Link href={`/results/${row.attemptId}`}>
+                      <Button variant="secondary">Open result</Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </StagePanel>
+        ) : null}
+
+        <StagePanel className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-2xl text-white">Filters</h2>
+            <p className="text-sm text-slate-300">Filter by review context, not just score. Exports follow the current view.</p>
+          </div>
+          <form className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_repeat(6,minmax(0,0.8fr))_auto_auto]">
+            <input
+              name="q"
+              defaultValue={pageState.q ?? ""}
+              placeholder="Search candidate, email, owner, notes"
+              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+            />
+            <select name="status" defaultValue={pageState.status ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All outcomes</option>
+              <option value="pass">Pass</option>
+              <option value="review">Review</option>
+              <option value="fail">Fail</option>
+            </select>
+            <select name="integrity" defaultValue={pageState.integrity ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All integrity</option>
+              <option value="clean">Clean</option>
+              <option value="watch">Watch</option>
+              <option value="review">Review</option>
+            </select>
+            <select name="role" defaultValue={pageState.role ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All roles</option>
+              {roleOptions.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
+            <select name="owner" defaultValue={pageState.owner ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All owners</option>
+              {page.ownerOptions.map((owner) => (
+                <option key={owner} value={owner}>
+                  {owner}
+                </option>
+              ))}
+            </select>
+            <select name="stage" defaultValue={pageState.stage ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All stages</option>
+              {candidateStageValues.map((stage) => (
+                <option key={stage} value={stage}>
+                  {candidateStageLabels[stage]}
+                </option>
+              ))}
+            </select>
+            <select name="assessmentStatus" defaultValue={pageState.assessmentStatus ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All screener states</option>
+              {candidateAssessmentStatusValues.map((status) => (
+                <option key={status} value={status}>
+                  {candidateAssessmentStatusLabels[status]}
+                </option>
+              ))}
+            </select>
+            <select name="scoreBand" defaultValue={pageState.scoreBand ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="">All score bands</option>
+              <option value="high">High</option>
+              <option value="mid">Mid</option>
+              <option value="low">Low</option>
+            </select>
+            <select name="sort" defaultValue={pageState.sort ?? "newest"} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
+              <option value="newest">Newest</option>
+              <option value="score_desc">Score high to low</option>
+              <option value="score_asc">Score low to high</option>
+              <option value="risk_desc">Integrity risk</option>
+              <option value="stale_desc">Most stale candidate</option>
+            </select>
+            <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
+            <Button>Apply</Button>
+            <Link href="/results">
+              <Button type="button" variant="secondary">Clear</Button>
+            </Link>
+          </form>
+
           <div className="flex flex-wrap gap-2">
-            <a href="/api/results/export.csv">
+            <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export CSV</Button>
             </a>
-            <a href="/api/results/export.json">
+            <a href={`/api/results/export.json${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export JSON</Button>
             </a>
+            <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
+              <Button variant="ghost">Review queue</Button>
+            </Link>
           </div>
-        </div>
-        <AttemptTable rows={rows} />
+        </StagePanel>
+
+        {page.rows.length === 0 ? (
+          <StagePanel className="space-y-4">
+            <h2 className="text-2xl text-white">No results match this view</h2>
+            <p className="text-slate-200">Try clearing a filter or running a new assessment.</p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/assessments">
+                <Button>Open assessments</Button>
+              </Link>
+              <Link href="/results">
+                <Button variant="secondary">Reset filters</Button>
+              </Link>
+            </div>
+          </StagePanel>
+        ) : (
+          <form action="/api/results/bulk" method="post" className="space-y-4">
+            <input type="hidden" name="returnTo" value={currentPathAndQuery} />
+            <StagePanel className="space-y-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <h2 className="text-2xl text-white">Bulk reviewer actions</h2>
+                  <p className="text-sm text-slate-300">Update ownership, promote to the next stage, or add a decision note for multiple results at once.</p>
+                </div>
+                <div className="grid gap-2 md:grid-cols-4">
+                  <select name="action" defaultValue="set_ui_status" className="rounded-[16px] border border-white/16 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none">
+                    <option value="set_ui_status">Set inbox state</option>
+                    <option value="assign_owner">Assign owner</option>
+                    <option value="add_note">Add note</option>
+                  </select>
+                  <input name="owner" placeholder="Owner" className="rounded-[16px] border border-white/16 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none" />
+                  <select name="status" defaultValue="moved_forward" className="rounded-[16px] border border-white/16 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none">
+                    {candidateUiStatusValues.map((status) => (
+                      <option key={status} value={status}>
+                        {candidateUiStatusLabels[status]}
+                      </option>
+                    ))}
+                  </select>
+                  <Button type="submit">Apply to selected</Button>
+                </div>
+              </div>
+              <textarea
+                name="noteBody"
+                rows={2}
+                placeholder="Optional reviewer note used when action = Add note"
+                className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+              />
+            </StagePanel>
+
+            <StagePanel className="overflow-hidden p-0">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="border-b border-white/10 bg-white/[0.04] text-slate-300">
+                    <tr>
+                      <th className="px-4 py-3">Select</th>
+                      <th className="px-4 py-3">Candidate</th>
+                      <th className="px-4 py-3">Result</th>
+                      <th className="px-4 py-3">Context</th>
+                      <th className="px-4 py-3">Activity</th>
+                      <th className="px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.rows.map((row) => (
+                      <tr key={row.attemptId} className="border-b border-white/10 align-top">
+                        <td className="px-4 py-4">
+                          <input type="checkbox" name="attemptId" value={row.attemptId} className="h-4 w-4 rounded border-white/20 bg-transparent text-brand-400" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <p className="font-medium text-white">{row.candidateName || "Unnamed candidate"}</p>
+                            <p className="text-slate-300">{row.candidateEmail || "No email captured"}</p>
+                            <p className="text-xs text-slate-400">{row.candidateOwner || "No owner"}{row.candidateStage ? ` | ${candidateStageLabels[row.candidateStage]}` : ""}</p>
+                            {row.candidateNotesSummary ? <p className="text-xs text-brand-100">{row.candidateNotesSummary}</p> : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-2">
+                              <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
+                              <StatusPill label={`Integrity ${row.integrityRisk}`} tone={toneForIntegrity(row.integrityRisk)} />
+                            </div>
+                            <p className="text-white">{row.finalPercent.toFixed(1)} / 100</p>
+                            <p className="text-xs text-slate-400">Strongest area: {strongestArea(row)}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-2">
+                            {row.candidateUiStatus ? (
+                              <StatusPill label={candidateUiStatusLabels[row.candidateUiStatus]} tone={row.candidateUiStatus === "moved_forward" ? "emerald" : row.candidateUiStatus === "need_review" ? "amber" : row.candidateUiStatus === "rejected" ? "red" : "blue"} />
+                            ) : null}
+                            <p className="text-slate-300">{row.roleId}</p>
+                            <p className="text-xs text-slate-400">
+                              {row.candidateAssessmentStatus ? candidateAssessmentStatusLabels[row.candidateAssessmentStatus] : "Result ready"}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <p className="text-slate-200">{row.candidateStaleDays ?? 0} day(s) stale</p>
+                            <p className="text-xs text-slate-400">{new Date(row.submittedAt).toLocaleString()}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link href={`/results/${row.attemptId}`}>
+                              <Button variant="secondary">Open result</Button>
+                            </Link>
+                            {row.candidateId ? (
+                              <Link href={`/candidates/${row.candidateId}`}>
+                                <Button variant="secondary">Open candidate</Button>
+                              </Link>
+                            ) : null}
+                            <Link href={toggleCompare(query, row.attemptId)}>
+                              <Button variant="ghost">{compareIds.includes(row.attemptId) ? "Remove compare" : "Compare"}</Button>
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </StagePanel>
+          </form>
+        )}
+
+        <PaginationBar
+          page={page.page}
+          pageSize={page.pageSize}
+          total={page.total}
+          makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
+        />
       </div>
     </SceneShell>
   );

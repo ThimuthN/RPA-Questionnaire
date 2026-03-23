@@ -1,5 +1,6 @@
 export enum RuntimeUiStatus {
   Idle = "idle",
+  Attention = "attention",
   Saving = "saving",
   Saved = "saved",
   Syncing = "syncing",

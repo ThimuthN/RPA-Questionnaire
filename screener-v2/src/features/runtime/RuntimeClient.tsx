@@ -17,6 +17,8 @@ import type {
 } from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
 import { HudBar } from "@/components/runtime/HudBar";
+import { RuntimeTrustBanner } from "@/components/runtime/RuntimeTrustBanner";
+import { RuntimeRecoveryModal } from "@/components/runtime/RuntimeRecoveryModal";
 import { NavigatorRail, type NavigatorItem } from "@/components/runtime/NavigatorRail";
 import { SectionHandoff } from "@/components/runtime/SectionHandoff";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -38,6 +40,8 @@ interface RuntimeClientProps {
 
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
   switch (status) {
+    case RuntimeUiStatus.Attention:
+      return { label: "Needs attention", tone: "amber" };
     case RuntimeUiStatus.Saving:
       return { label: "Saving", tone: "blue" };
     case RuntimeUiStatus.Saved:
@@ -53,6 +57,13 @@ function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "t
     default:
       return { label: "Autosave on", tone: "teal" };
   }
+}
+
+function syncTimeLabel(value?: string) {
+  if (!value) return "the last confirmed sync";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "the last confirmed sync";
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 function mergeExamState(
@@ -104,6 +115,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const [autoSubmitNote, setAutoSubmitNote] = useState("");
   const [integrity, setIntegrity] = useState(props.initialIntegrity);
   const [integrityNotice, setIntegrityNotice] = useState("");
+  const [saveIssue, setSaveIssue] = useState("");
+  const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date().toISOString());
   const [privacyShieldActive, setPrivacyShieldActive] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
@@ -124,11 +137,78 @@ export function RuntimeClient(props: RuntimeClientProps) {
     stage === "submitted"
       ? 0
       : Math.max(0, currentExamState?.remainingSeconds ?? (currentExam ? currentExam.durationMinutes * 60 : 0));
-  const status = useMemo(() => statusMeta(uiStatus), [uiStatus]);
+  const status = useMemo(
+    () => (saveIssue ? statusMeta(RuntimeUiStatus.Attention) : statusMeta(uiStatus)),
+    [saveIssue, uiStatus]
+  );
+  const trustNote = useMemo(() => {
+    if (privacyShieldActive) {
+      return integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
+        ? "Your session is waiting behind a recovery step. Re-enter full-screen to continue."
+        : "Your session is waiting behind a recovery step. Resume when you are ready to continue.";
+    }
+    if (saveIssue) return saveIssue;
+    if (integrityNotice) return integrityNotice;
+    if (uiStatus === RuntimeUiStatus.Submitting) return "Submitting your assessment now.";
+    if (uiStatus === RuntimeUiStatus.Saving || uiStatus === RuntimeUiStatus.Syncing) {
+      return "Saving your latest work in the background.";
+    }
+    if (uiStatus === RuntimeUiStatus.CriticalTimeLow) {
+      return "Less than two minutes remain. Keep moving and your answers will continue to save.";
+    }
+    if (uiStatus === RuntimeUiStatus.WarningTimeLow) {
+      return "Less than five minutes remain. Focus on your highest-confidence answers.";
+    }
+    if (autoSubmitNote) return autoSubmitNote;
+    return "Your answers keep saving while you work. If something interrupts the flow, you will be guided back in.";
+  }, [
+    autoSubmitNote,
+    fullscreenSupported,
+    integrityNotice,
+    integrityPolicy.requireFullscreen,
+    isFullscreenActive,
+    privacyShieldActive,
+    saveIssue,
+    uiStatus
+  ]);
 
   const stageRef = useRef<string | "submitted">(stage);
   const remainingRef = useRef<number>(currentRemaining);
   const integrityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function applyAutosaveResponse(
+    data: {
+      ok: boolean;
+      message?: string;
+      savedAt?: string;
+      stage?: string | "submitted";
+      timers?: Record<string, number>;
+      integrity?: typeof integrity;
+    },
+    options?: { updateStage?: boolean; updateTimers?: boolean }
+  ) {
+    if (options?.updateTimers !== false && data.timers) {
+      setExamState((prev) =>
+        mergeExamState(
+          prev,
+          Object.fromEntries(
+            Object.entries(data.timers ?? {}).map(([instanceId, remainingSeconds]) => [
+              instanceId,
+              { remainingSeconds }
+            ])
+          )
+        )
+      );
+    }
+    if (options?.updateStage !== false && data.stage && data.stage !== stageRef.current) {
+      setStage(data.stage);
+    }
+    if (data.integrity) {
+      setIntegrity(data.integrity);
+    }
+    setLastSyncedAt(data.savedAt ?? new Date().toISOString());
+    setSaveIssue("");
+  }
 
   useEffect(() => {
     stageRef.current = stage;
@@ -169,37 +249,62 @@ export function RuntimeClient(props: RuntimeClientProps) {
     };
 
     setUiStatus(RuntimeUiStatus.Syncing);
-    const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-    const data = (await response.json()) as {
-      ok: boolean;
-      stage?: string | "submitted";
-      timers?: Record<string, number>;
-      integrity?: typeof integrity;
-    };
-    if (data.ok && data.timers) {
-      setExamState((prev) =>
-        mergeExamState(
-          prev,
-          Object.fromEntries(
-            Object.entries(data.timers ?? {}).map(([instanceId, remainingSeconds]) => [
-              instanceId,
-              { remainingSeconds }
-            ])
-          )
-        )
-      );
+    try {
+      const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      const data = (await response.json()) as {
+        ok: boolean;
+        message?: string;
+        savedAt?: string;
+        stage?: string | "submitted";
+        timers?: Record<string, number>;
+        integrity?: typeof integrity;
+      };
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message ?? "Autosave could not be confirmed.");
+      }
+      applyAutosaveResponse(data);
+      setUiStatus(RuntimeUiStatus.Saved);
+      return true;
+    } catch {
+      setSaveIssue("We could not confirm the latest save. Keep this tab open while we reconnect.");
+      setUiStatus(RuntimeUiStatus.Attention);
+      return false;
     }
-    if (data.ok && data.stage && data.stage !== stageRef.current) {
-      setStage(data.stage);
+  }
+
+  async function persistHeartbeat(activeStage: string) {
+    try {
+      const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stage: activeStage,
+          examState: {
+            [activeStage]: {
+              remainingSeconds: Math.max(0, remainingRef.current)
+            }
+          }
+        })
+      });
+      const data = (await response.json()) as {
+        ok: boolean;
+        message?: string;
+        savedAt?: string;
+        stage?: string | "submitted";
+        timers?: Record<string, number>;
+        integrity?: typeof integrity;
+      };
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message ?? "Background sync could not be confirmed.");
+      }
+      applyAutosaveResponse(data, { updateStage: false, updateTimers: false });
+    } catch {
+      setSaveIssue("We could not confirm the latest save. Keep this tab open while we reconnect.");
     }
-    if (data.ok && data.integrity) {
-      setIntegrity(data.integrity);
-    }
-    setUiStatus(RuntimeUiStatus.Saved);
   }
 
   async function requestFullscreenMode() {
@@ -218,7 +323,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
       return Boolean(document.fullscreenElement);
     } catch {
       setIsFullscreenActive(Boolean(document.fullscreenElement));
-      showIntegrityNotice("Full-screen permission was not granted.");
+      showIntegrityNotice("Full-screen permission was not granted. Re-enter to continue.", 4200);
       return false;
     }
   }
@@ -232,28 +337,46 @@ export function RuntimeClient(props: RuntimeClientProps) {
     setPrivacyShieldActive(false);
   }
 
-  function showIntegrityNotice(message: string) {
+  function showIntegrityNotice(message: string, durationMs = 3200) {
     setIntegrityNotice(message);
     if (integrityNoticeTimeoutRef.current) {
       clearTimeout(integrityNoticeTimeoutRef.current);
     }
     integrityNoticeTimeoutRef.current = setTimeout(() => {
       setIntegrityNotice("");
-    }, 2400);
+    }, durationMs);
   }
 
   function recordIntegrity(type: keyof typeof integrity, message: string) {
     if (stageRef.current === "submitted") return;
     setIntegrity((prev) => {
       const next = { ...prev, [type]: prev[type] + 1 };
-      void fetch(`/api/attempts/${props.attemptId}/autosave`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stage: stageRef.current,
-          integrity: next
-        })
-      });
+      void (async () => {
+        try {
+          const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stage: stageRef.current,
+              integrity: next
+            })
+          });
+          const data = (await response.json()) as {
+            ok: boolean;
+            message?: string;
+            savedAt?: string;
+            stage?: string | "submitted";
+            timers?: Record<string, number>;
+            integrity?: typeof integrity;
+          };
+          if (!response.ok || !data.ok) {
+            throw new Error(data.message ?? "Integrity event could not be confirmed.");
+          }
+          applyAutosaveResponse(data, { updateStage: false, updateTimers: false });
+        } catch {
+          setSaveIssue("We noted the interruption, but the latest sync has not been confirmed yet.");
+        }
+      })();
       return next;
     });
     showIntegrityNotice(message);
@@ -283,18 +406,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
     const autosaveTimer = setInterval(() => {
       const activeStage = stageRef.current;
       if (activeStage === "submitted") return;
-      void fetch(`/api/attempts/${props.attemptId}/autosave`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          stage: activeStage,
-          examState: {
-            [activeStage]: {
-              remainingSeconds: Math.max(0, remainingRef.current)
-            }
-          }
-        })
-      });
+      void persistHeartbeat(activeStage);
     }, 15000);
     return () => clearInterval(autosaveTimer);
   }, [props.attemptId, stage]);
@@ -330,7 +442,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
         stageRef.current !== "submitted"
       ) {
         setPrivacyShieldActive(true);
-        showIntegrityNotice("Full-screen was exited. Resume to continue.");
+        showIntegrityNotice("Full-screen was exited. Your answers remain saved up to the last confirmed sync.");
       }
     }
 
@@ -345,7 +457,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
           setPrivacyShieldActive(true);
         }
         if (integrityPolicy.monitorTabSwitch) {
-          recordIntegrity("tabHiddenCount", "Tab switch detected. The timer keeps running.");
+          recordIntegrity("tabHiddenCount", "Tab switch detected. The timer kept running while you were away.");
         }
         return;
       }
@@ -356,36 +468,36 @@ export function RuntimeClient(props: RuntimeClientProps) {
       if (!integrityPolicy.monitorClipboard) return;
       if (integrityPolicy.blockClipboard) {
         event.preventDefault();
-        recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+        recordIntegrity("copyCount", "Copy is disabled for this assessment. Your progress is still safe.");
         return;
       }
-      recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
+      recordIntegrity("copyCount", "Clipboard activity was noted. You can keep working once you are ready.");
     }
 
     function onCut(event: ClipboardEvent) {
       if (!integrityPolicy.monitorClipboard) return;
       if (integrityPolicy.blockClipboard) {
         event.preventDefault();
-        recordIntegrity("copyCount", "Cut is disabled during the assessment.");
+        recordIntegrity("copyCount", "Cut is disabled for this assessment. Your progress is still safe.");
         return;
       }
-      recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
+      recordIntegrity("copyCount", "Clipboard activity was noted. You can keep working once you are ready.");
     }
 
     function onPaste(event: ClipboardEvent) {
       if (!integrityPolicy.monitorClipboard) return;
       if (integrityPolicy.blockClipboard) {
         event.preventDefault();
-        recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+        recordIntegrity("pasteCount", "Paste is disabled for this assessment. Your progress is still safe.");
         return;
       }
-      recordIntegrity("pasteCount", "Clipboard activity was noted during the assessment.");
+      recordIntegrity("pasteCount", "Clipboard activity was noted. You can keep working once you are ready.");
     }
 
     function onContextMenu(event: MouseEvent) {
       if (!integrityPolicy.blockContextMenu) return;
       event.preventDefault();
-      showIntegrityNotice("Right-click is disabled during the assessment.");
+      showIntegrityNotice("Right-click is disabled for this assessment.");
     }
 
     function onFocus() {
@@ -470,10 +582,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
         if (!integrityPolicy.monitorClipboard) return;
         if (integrityPolicy.blockClipboard) {
           event.preventDefault();
-          recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+          recordIntegrity("copyCount", "Copy is disabled for this assessment. Your progress is still safe.");
           return;
         }
-        recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
+        recordIntegrity("copyCount", "Clipboard activity was noted. You can keep working once you are ready.");
         return;
       }
 
@@ -481,16 +593,16 @@ export function RuntimeClient(props: RuntimeClientProps) {
         if (!integrityPolicy.monitorClipboard) return;
         if (integrityPolicy.blockClipboard) {
           event.preventDefault();
-          recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+          recordIntegrity("pasteCount", "Paste is disabled for this assessment. Your progress is still safe.");
           return;
         }
-        recordIntegrity("pasteCount", "Clipboard activity was noted during the assessment.");
+        recordIntegrity("pasteCount", "Clipboard activity was noted. You can keep working once you are ready.");
         return;
       }
 
       if (integrityPolicy.blockClipboard && (event.ctrlKey || event.metaKey) && key === "a") {
         event.preventDefault();
-        showIntegrityNotice("Select all is disabled during the assessment.");
+        showIntegrityNotice("Select all is disabled for this assessment.");
         return;
       }
 
@@ -557,9 +669,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
     if (data.ok) {
       setResult(data.result);
       setStage("submitted");
+      setSaveIssue("");
       setUiStatus(RuntimeUiStatus.Saved);
     } else {
-      setUiStatus(RuntimeUiStatus.Idle);
+      setSaveIssue("We could not submit just yet. Your answers remain in the attempt, so please try again.");
+      setUiStatus(RuntimeUiStatus.Attention);
     }
     setSubmitting(false);
   }
@@ -661,6 +775,20 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const sectionProgress = currentExam
     ? { label: `${currentExam.label} progress`, value: `${progress.answered}/${progress.total}` }
     : { label: "Progress", value: `${overallProgress}%` };
+  const recoveryTitle =
+    integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
+      ? "Return to full-screen to continue"
+      : "Resume your assessment";
+  const recoveryMessage =
+    integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
+      ? "Full-screen is part of this assessment's protection rules. The timer did not stop while full-screen was off."
+      : "Your assessment is ready to resume. The timer did not stop while the session was out of focus.";
+  const recoveryFacts = [
+    "Timer status: it continued running during the interruption.",
+    `Saved answers: confirmed through ${syncTimeLabel(lastSyncedAt)}.`,
+    `Integrity preset: ${integrityPolicy.label}.`,
+    `Activity counts: tab switches ${integrity.tabHiddenCount}, copy/cut ${integrity.copyCount}, paste ${integrity.pasteCount}.`
+  ];
 
   return (
     <section className="relative select-none space-y-4 overflow-hidden rounded-[30px] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.12),transparent_22%),linear-gradient(180deg,rgba(7,14,28,0.96),rgba(5,11,22,0.99))] p-4 pb-28 shadow-strong md:p-5">
@@ -692,6 +820,15 @@ export function RuntimeClient(props: RuntimeClientProps) {
           remainingSeconds={currentRemaining}
           statusLabel={status.label}
           statusTone={status.tone}
+          trustStrip={
+            <RuntimeTrustBanner
+              statusLabel={status.label}
+              statusTone={status.tone}
+              lastSyncedAt={lastSyncedAt}
+              integrityPresetLabel={integrityPolicy.shortLabel}
+              note={trustNote}
+            />
+          }
         />
 
         <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
@@ -721,17 +858,15 @@ export function RuntimeClient(props: RuntimeClientProps) {
               </StagePanel>
             ) : null}
 
-            <StagePanel className="border-white/10 bg-black/20 p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm text-slate-200">
-                  {integrityPolicy.description}
-                </p>
+            <StagePanel tone="summary" className="p-3">
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-brand-300">Assessment safeguards</p>
+                <p className="text-sm text-slate-200">{integrityPolicy.description}</p>
                 <p className="text-xs text-slate-400">
-                  Preset: {integrityPolicy.shortLabel} |{" "}
-                  Tabs hidden: {integrity.tabHiddenCount} | Copy/Cut: {integrity.copyCount} | Paste: {integrity.pasteCount}
+                  Preset {integrityPolicy.shortLabel} | Tabs hidden {integrity.tabHiddenCount} | Copy/Cut{" "}
+                  {integrity.copyCount} | Paste {integrity.pasteCount}
                 </p>
               </div>
-              {integrityNotice ? <p className="mt-2 text-sm text-amber-200">{integrityNotice}</p> : null}
             </StagePanel>
           </div>
         </div>
@@ -761,39 +896,18 @@ export function RuntimeClient(props: RuntimeClientProps) {
         />
       ) : null}
 
-      {privacyShieldActive ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/72 p-4 backdrop-blur-sm">
-          <StagePanel className="w-full max-w-xl space-y-4 text-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Assessment locked</p>
-            <h3 className="text-2xl text-white">
-              {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
-                ? "Return to full-screen to continue"
-                : "Resume your assessment"}
-            </h3>
-            <p className="text-sm leading-6 text-slate-200">
-              {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
-                ? "Full-screen mode is required during the assessment. The timer has continued running while you were away."
-                : "The timer continued while the tab was out of focus. Resume when you're ready to continue."}
-            </p>
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-left">
-              <p className="text-sm text-slate-200">
-                Candidate watermark: {props.watermarkLabel}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">Attempt ID: {props.attemptId.slice(0, 12)}</p>
-              <p className="mt-3 text-xs text-slate-400">
-                Tab switches: {integrity.tabHiddenCount} | Copy/Cut: {integrity.copyCount} | Paste: {integrity.pasteCount}
-              </p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button onClick={() => void resumeAssessmentView()}>
-                {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
-                  ? "Enter full-screen"
-                  : "Resume assessment"}
-              </Button>
-            </div>
-          </StagePanel>
-        </div>
-      ) : null}
+      <RuntimeRecoveryModal
+        open={privacyShieldActive}
+        title={recoveryTitle}
+        message={recoveryMessage}
+        facts={recoveryFacts}
+        actionLabel={
+          integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
+            ? "Enter full-screen"
+            : "Resume assessment"
+        }
+        onAction={() => void resumeAssessmentView()}
+      />
 
       {showSubmitReview ? (
         <div className="fixed inset-0 z-40 grid place-items-center bg-black/60 p-4">

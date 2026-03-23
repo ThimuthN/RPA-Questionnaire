@@ -41,13 +41,13 @@ export function SceneShell({
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_38%,transparent_60%,rgba(255,255,255,0.03))]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/12" />
 
-      <header className="relative z-10 mb-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <header className="relative z-10 mb-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end">
         <div className="space-y-3">
           <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">{eyebrow}</p>
           <h1 className="max-w-3xl font-display text-4xl leading-[0.96] text-white md:text-5xl">{title}</h1>
-          {subtitle ? <p className="max-w-xl text-sm text-slate-300">{subtitle}</p> : null}
+          {subtitle ? <p className="max-w-2xl text-sm leading-6 text-slate-300">{subtitle}</p> : null}
         </div>
-        {utility ? <div className="relative z-10">{utility}</div> : null}
+        {utility ? <div className="relative z-10 flex flex-wrap items-center gap-2 lg:justify-self-end">{utility}</div> : null}
       </header>
 
       <div className="relative z-10">{children}</div>
