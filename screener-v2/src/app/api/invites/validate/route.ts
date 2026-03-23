@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { validateInvite } from "@/lib/db/repositories";
+import { summarizeBlueprintForClient } from "@/lib/exams/client-blueprint";
 
 const validateSchema = z
   .object({
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
             stacks: checked.invite.stacks ?? [],
             sections: checked.invite.sections ?? [],
             integrityPreset: checked.invite.integrityPreset,
-            blueprint: checked.invite.blueprint
+            exams: summarizeBlueprintForClient(checked.invite.blueprint)
           }
         : null,
       totalDurationMinutes: checked.invite

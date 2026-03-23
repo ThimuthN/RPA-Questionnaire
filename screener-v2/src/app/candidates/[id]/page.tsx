@@ -91,6 +91,12 @@ export default async function CandidateDetailPage({
   const screener = currentAssessmentStatus(candidate);
   const latest = latestAssessment(candidate);
   const currentResume = candidate.resumes[0] ?? null;
+  const resumePreviewUrl = currentResume
+    ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}`
+    : null;
+  const resumeDownloadUrl = currentResume
+    ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}&download=1`
+    : null;
   const screenerMilestone = candidate.milestones.find((milestone) => milestone.type === "screener");
   const canSendScreener = Boolean(
     screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
@@ -307,7 +313,7 @@ export default async function CandidateDetailPage({
                           {new Date(currentResume.uploadedAt).toLocaleString()}
                         </p>
                       </div>
-                      <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                      <a href={resumeDownloadUrl ?? "#"} target="_blank" rel="noreferrer">
                         <Button type="button" variant="secondary">
                           {currentResume.mimeType === "application/pdf" ? "Open full size" : "Download"}
                         </Button>
@@ -317,14 +323,14 @@ export default async function CandidateDetailPage({
 
                   <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white">
                     <object
-                      data={currentResume.storageUrl}
+                      data={resumePreviewUrl ?? undefined}
                       type="application/pdf"
                       className="h-[640px] w-full"
                     >
                       <div className="flex h-[320px] items-center justify-center bg-slate-50 px-6 text-center">
                         <div className="space-y-3">
                           <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
-                          <a href={currentResume.storageUrl} target="_blank" rel="noreferrer">
+                          <a href={resumePreviewUrl ?? "#"} target="_blank" rel="noreferrer">
                             <Button type="button" variant="secondary">
                               Open PDF
                             </Button>

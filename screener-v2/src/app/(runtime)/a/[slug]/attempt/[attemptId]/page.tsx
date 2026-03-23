@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
 import { getAttempt } from "@/lib/db/repositories";
+import { sanitizeBlueprintForClient } from "@/lib/exams/client-blueprint";
 import { StagePanel } from "@/components/scene/StagePanel";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export default async function AttemptRuntimePage({
       integrityPreset={attempt.integrityPreset}
       roleId={attempt.roleId}
       stacks={attempt.stacks}
-      blueprint={attempt.blueprint}
+      blueprint={sanitizeBlueprintForClient(attempt.blueprint)}
       initialExamState={attempt.examState ?? {}}
       initialIntegrity={attempt.integrity}
       watermarkLabel={attempt.candidateEmail || attempt.candidateName || `Attempt ${attempt.id.slice(0, 12)}`}

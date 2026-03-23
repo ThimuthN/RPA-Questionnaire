@@ -105,23 +105,9 @@ export async function POST(request: Request) {
       sections: effectiveSections,
       blueprint: effectiveBlueprint
     });
-    const timers = Object.fromEntries(
-      Object.entries(started.attempt.examState ?? {}).map(([instanceId, state]) => [
-        instanceId,
-        state?.remainingSeconds ?? 0
-      ])
-    );
-
     return NextResponse.json({
       ok: true,
-      attemptId: started.attempt.id,
-      roleId: started.attempt.roleId,
-      passTarget: started.attempt.passTargetPercent,
-      integrityPreset: started.attempt.integrityPreset,
-      stacks: started.attempt.stacks,
-      blueprint: started.attempt.blueprint,
-      sections: started.attempt.sections,
-      timers
+      attemptId: started.attempt.id
     });
   } catch (error) {
     logRouteError("attempt_start_failed", logContext, error);

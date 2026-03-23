@@ -8,7 +8,7 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import type {
-  ExamBlueprint,
+  ExamSummaryItem,
   IntegrityPresetId,
   RoleId,
   StackId
@@ -32,7 +32,7 @@ interface InviteMeta {
   stacks: StackId[];
   sections: SectionId[];
   integrityPreset: IntegrityPresetId;
-  blueprint: ExamBlueprint;
+  exams: ExamSummaryItem[];
 }
 
 interface InviteValidationResponse {
@@ -66,7 +66,7 @@ function InviteStartContent() {
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(true);
 
-  const hasBlueprint = Boolean(inviteMeta?.blueprint?.exams?.length);
+  const hasExams = Boolean(inviteMeta?.exams?.length);
   const showPasscodeField = Boolean(passcode) || isInvitePasscodeState(validationState);
   const blocked = isInviteBlockedState(validationState);
   const canStart = Boolean(
@@ -74,7 +74,7 @@ function InviteStartContent() {
       email.trim() &&
       !detailsLoading &&
       validationState === "valid" &&
-      hasBlueprint
+      hasExams
   );
   const readiness = useMemo(() => {
     if (detailsLoading) return { label: "Checking access", tone: "blue" as const };
@@ -129,7 +129,7 @@ function InviteStartContent() {
   async function onStart() {
     setLoading(true);
     setError("");
-    if (!hasBlueprint) {
+    if (!hasExams) {
       setError("Test details are not ready.");
       setLoading(false);
       return;
@@ -311,8 +311,8 @@ function InviteStartContent() {
               Exams:{" "}
               {detailsLoading
                 ? "Loading..."
-                : inviteMeta?.blueprint?.exams?.length
-                  ? inviteMeta.blueprint.exams
+                : inviteMeta?.exams?.length
+                  ? inviteMeta.exams
                       .map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`)
                       .join(", ")
                   : "Not available"}
