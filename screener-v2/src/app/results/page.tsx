@@ -1,15 +1,18 @@
 import Link from "next/link";
 import type { Route } from "next";
+import type { ReactNode } from "react";
 import { Button } from "@/components/primitives/Button";
+import { BulkReviewControls } from "@/components/results/BulkReviewControls";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { candidateAssessmentStatusLabels, candidateAssessmentStatusValues, candidateStageLabels, candidateStageValues, candidateUiStatusLabels, candidateUiStatusValues, type CandidateAssessmentStatus, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
+import { candidateAssessmentStatusLabels, candidateAssessmentStatusValues, candidateStageLabels, candidateStageValues, candidateUiStatusLabels, type CandidateAssessmentStatus, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
 import type { ResultListSort, ResultScoreBand, WorkspaceResultRow } from "@/lib/results/workspace";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +68,29 @@ function toneForIntegrity(level: IntegrityRiskLevel) {
 
 function strongestArea(row: WorkspaceResultRow) {
   return Object.entries(row.breakdownByCategory).sort((left, right) => right[1].percent - left[1].percent)[0]?.[0] ?? "No data";
+}
+
+const filterControlClass =
+  "w-full rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60";
+
+const filterInputClass =
+  "w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60";
+
+function FilterField({
+  label,
+  className,
+  children
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className={cn("grid gap-2", className)}>
+      <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      {children}
+    </label>
+  );
 }
 
 export default async function ResultsPage({
@@ -187,87 +213,123 @@ export default async function ResultsPage({
             <h2 className="text-2xl text-white">Filters</h2>
             <p className="text-sm text-slate-300">Filter by review context, not just score. Exports follow the current view.</p>
           </div>
-          <form className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_repeat(6,minmax(0,0.8fr))_auto_auto]">
-            <input
-              name="q"
-              defaultValue={pageState.q ?? ""}
-              placeholder="Search candidate, email, owner, notes"
-              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-            />
-            <select name="status" defaultValue={pageState.status ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All outcomes</option>
-              <option value="pass">Pass</option>
-              <option value="review">Review</option>
-              <option value="fail">Fail</option>
-            </select>
-            <select name="integrity" defaultValue={pageState.integrity ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All integrity</option>
-              <option value="clean">Clean</option>
-              <option value="watch">Watch</option>
-              <option value="review">Review</option>
-            </select>
-            <select name="role" defaultValue={pageState.role ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All roles</option>
-              {roleOptions.map((role) => (
-                <option key={role} value={role}>
-                  {role}
-                </option>
-              ))}
-            </select>
-            <select name="owner" defaultValue={pageState.owner ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All owners</option>
-              {page.ownerOptions.map((owner) => (
-                <option key={owner} value={owner}>
-                  {owner}
-                </option>
-              ))}
-            </select>
-            <select name="stage" defaultValue={pageState.stage ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All stages</option>
-              {candidateStageValues.map((stage) => (
-                <option key={stage} value={stage}>
-                  {candidateStageLabels[stage]}
-                </option>
-              ))}
-            </select>
-            <select name="assessmentStatus" defaultValue={pageState.assessmentStatus ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All screener states</option>
-              {candidateAssessmentStatusValues.map((status) => (
-                <option key={status} value={status}>
-                  {candidateAssessmentStatusLabels[status]}
-                </option>
-              ))}
-            </select>
-            <select name="scoreBand" defaultValue={pageState.scoreBand ?? ""} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="">All score bands</option>
-              <option value="high">High</option>
-              <option value="mid">Mid</option>
-              <option value="low">Low</option>
-            </select>
-            <select name="sort" defaultValue={pageState.sort ?? "newest"} className="rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none">
-              <option value="newest">Newest</option>
-              <option value="score_desc">Score high to low</option>
-              <option value="score_asc">Score low to high</option>
-              <option value="risk_desc">Integrity risk</option>
-              <option value="stale_desc">Most stale candidate</option>
-            </select>
+          <form className="space-y-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
+              <FilterField label="Search">
+                <input
+                  name="q"
+                  defaultValue={pageState.q ?? ""}
+                  placeholder="Candidate, email, owner, or notes"
+                  className={filterInputClass}
+                />
+              </FilterField>
+              <FilterField label="Sort by">
+                <select name="sort" defaultValue={pageState.sort ?? "newest"} className={filterControlClass}>
+                  <option value="newest">Newest</option>
+                  <option value="score_desc">Score high to low</option>
+                  <option value="score_asc">Score low to high</option>
+                  <option value="risk_desc">Integrity risk</option>
+                  <option value="stale_desc">Most stale candidate</option>
+                </select>
+              </FilterField>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <FilterField label="Outcome">
+                <select name="status" defaultValue={pageState.status ?? ""} className={filterControlClass}>
+                  <option value="">All outcomes</option>
+                  <option value="pass">Pass</option>
+                  <option value="review">Review</option>
+                  <option value="fail">Fail</option>
+                </select>
+              </FilterField>
+              <FilterField label="Integrity">
+                <select name="integrity" defaultValue={pageState.integrity ?? ""} className={filterControlClass}>
+                  <option value="">All integrity levels</option>
+                  <option value="clean">Clean</option>
+                  <option value="watch">Watch</option>
+                  <option value="review">Review</option>
+                </select>
+              </FilterField>
+              <FilterField label="Role">
+                <select name="role" defaultValue={pageState.role ?? ""} className={filterControlClass}>
+                  <option value="">All roles</option>
+                  {roleOptions.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Owner">
+                <select name="owner" defaultValue={pageState.owner ?? ""} className={filterControlClass}>
+                  <option value="">All owners</option>
+                  {page.ownerOptions.map((owner) => (
+                    <option key={owner} value={owner}>
+                      {owner}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Candidate stage">
+                <select name="stage" defaultValue={pageState.stage ?? ""} className={filterControlClass}>
+                  <option value="">All stages</option>
+                  {candidateStageValues.map((stage) => (
+                    <option key={stage} value={stage}>
+                      {candidateStageLabels[stage]}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Screener state">
+                <select
+                  name="assessmentStatus"
+                  defaultValue={pageState.assessmentStatus ?? ""}
+                  className={filterControlClass}
+                >
+                  <option value="">All screener states</option>
+                  {candidateAssessmentStatusValues.map((status) => (
+                    <option key={status} value={status}>
+                      {candidateAssessmentStatusLabels[status]}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Score band">
+                <select name="scoreBand" defaultValue={pageState.scoreBand ?? ""} className={filterControlClass}>
+                  <option value="">All score bands</option>
+                  <option value="high">High</option>
+                  <option value="mid">Mid</option>
+                  <option value="low">Low</option>
+                </select>
+              </FilterField>
+              <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Quick view</p>
+                <p className="mt-2">
+                  Use filters to focus the queue. Exports include only the results visible in this view.
+                </p>
+              </div>
+            </div>
             <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
-            <Button>Apply</Button>
-            <Link href="/results">
-              <Button type="button" variant="secondary">Clear</Button>
-            </Link>
+            <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
+              <Button>Apply filters</Button>
+              <Link href="/results">
+                <Button type="button" variant="secondary">Clear filters</Button>
+              </Link>
+              <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
+                <Button type="button" variant="ghost">Open review queue</Button>
+              </Link>
+            </div>
           </form>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Export current view</span>
             <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export CSV</Button>
             </a>
             <a href={`/api/results/export.json${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export JSON</Button>
             </a>
-            <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
-              <Button variant="ghost">Review queue</Button>
-            </Link>
           </div>
         </StagePanel>
 
@@ -285,37 +347,10 @@ export default async function ResultsPage({
             </div>
           </StagePanel>
         ) : (
-          <form action="/api/results/bulk" method="post" className="space-y-4">
+          <form id="results-bulk-form" action="/api/results/bulk" method="post" className="space-y-4">
             <input type="hidden" name="returnTo" value={currentPathAndQuery} />
             <StagePanel className="space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <h2 className="text-2xl text-white">Bulk reviewer actions</h2>
-                  <p className="text-sm text-slate-300">Update ownership, promote to the next stage, or add a decision note for multiple results at once.</p>
-                </div>
-                <div className="grid gap-2 md:grid-cols-4">
-                  <select name="action" defaultValue="set_ui_status" className="rounded-[16px] border border-white/16 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none">
-                    <option value="set_ui_status">Set inbox state</option>
-                    <option value="assign_owner">Assign owner</option>
-                    <option value="add_note">Add note</option>
-                  </select>
-                  <input name="owner" placeholder="Owner" className="rounded-[16px] border border-white/16 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none" />
-                  <select name="status" defaultValue="moved_forward" className="rounded-[16px] border border-white/16 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none">
-                    {candidateUiStatusValues.map((status) => (
-                      <option key={status} value={status}>
-                        {candidateUiStatusLabels[status]}
-                      </option>
-                    ))}
-                  </select>
-                  <Button type="submit">Apply to selected</Button>
-                </div>
-              </div>
-              <textarea
-                name="noteBody"
-                rows={2}
-                placeholder="Optional reviewer note used when action = Add note"
-                className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
-              />
+              <BulkReviewControls formId="results-bulk-form" />
             </StagePanel>
 
             <StagePanel className="overflow-hidden p-0">
