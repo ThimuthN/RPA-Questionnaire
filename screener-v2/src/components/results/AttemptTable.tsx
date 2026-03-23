@@ -5,15 +5,12 @@ import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { copy } from "@/lib/design/copy";
+import { getIntegrityRiskLevel } from "@/lib/results/triage";
 
 function statusLabel(row: ResultSummary) {
   if (row.pass) return "Pass";
   if (row.borderline) return "Review";
   return "Fail";
-}
-
-function integrityRisk(row: ResultSummary) {
-  return row.integrity.tabHiddenCount * 2 + row.integrity.copyCount + row.integrity.pasteCount;
 }
 
 function sectionSummary(row: ResultSummary) {
@@ -51,16 +48,19 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
 
   return (
     <div className="space-y-3">
-      {rows.map((row) => (
-        <StagePanel key={row.attemptId} className="p-4">
+      {rows.map((row) => {
+        const integrityLevel = getIntegrityRiskLevel(row);
+
+        return (
+          <StagePanel key={row.attemptId} className="p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill label={statusLabel(row)} tone={row.pass ? "emerald" : row.borderline ? "amber" : "red"} />
                 <StatusPill label={row.roleId} tone="neutral" />
                 <StatusPill
-                  label={`Integrity ${integrityRisk(row) >= 6 ? "Review" : integrityRisk(row) >= 2 ? "Watch" : "Clean"}`}
-                  tone={integrityRisk(row) >= 6 ? "red" : integrityRisk(row) >= 2 ? "amber" : "emerald"}
+                  label={`Integrity ${integrityLevel === "review" ? "Review" : integrityLevel === "watch" ? "Watch" : "Clean"}`}
+                  tone={integrityLevel === "review" ? "red" : integrityLevel === "watch" ? "amber" : "emerald"}
                 />
               </div>
               <div className="space-y-1">
@@ -105,8 +105,9 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
               </div>
             </div>
           </div>
-        </StagePanel>
-      ))}
+          </StagePanel>
+        );
+      })}
     </div>
   );
 }

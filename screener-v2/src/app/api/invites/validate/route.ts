@@ -23,24 +23,28 @@ export async function POST(request: Request) {
       passcode: body.passcode,
       roleId: body.roleId as RoleId | undefined
     });
-    if (!checked.ok || !checked.invite) {
-      return NextResponse.json({ ok: false, message: checked.message || "Invite invalid." }, { status: 400 });
-    }
     return NextResponse.json({
-      ok: true,
-      invite: {
-        id: checked.invite.id,
-        slug: checked.invite.slug,
-        roleLocked: checked.invite.roleLocked,
-        stackLocked: checked.invite.stackLocked,
-        roleId: checked.invite.roleId ?? null,
-        passTarget: checked.invite.passTargetPercent,
-        stacks: checked.invite.stacks ?? [],
-        sections: checked.invite.sections ?? [],
-        blueprint: checked.invite.blueprint
-      },
-      totalDurationMinutes: checked.invite.blueprint.exams.reduce((sum, exam) => sum + exam.durationMinutes, 0),
-      remainingAttempts: checked.remainingAttempts ?? 0
+      ok: checked.ok,
+      state: checked.state,
+      message: checked.message,
+      invite: checked.invite
+        ? {
+            id: checked.invite.id,
+            slug: checked.invite.slug,
+            roleLocked: checked.invite.roleLocked,
+            stackLocked: checked.invite.stackLocked,
+            roleId: checked.invite.roleId ?? null,
+            passTarget: checked.invite.passTargetPercent,
+            stacks: checked.invite.stacks ?? [],
+            sections: checked.invite.sections ?? [],
+            integrityPreset: checked.invite.integrityPreset,
+            blueprint: checked.invite.blueprint
+          }
+        : null,
+      totalDurationMinutes: checked.invite
+        ? checked.invite.blueprint.exams.reduce((sum, exam) => sum + exam.durationMinutes, 0)
+        : null,
+      remainingAttempts: checked.remainingAttempts
     });
   } catch (error) {
     return NextResponse.json(

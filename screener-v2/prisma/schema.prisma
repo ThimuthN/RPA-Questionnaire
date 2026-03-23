@@ -44,6 +44,7 @@ model Invite {
   slug                String   @unique
   tokenHash           String   @unique
   passcodeHash        String?
+  integrityPreset     String?
   roleLocked          Boolean  @default(true)
   stackLocked         Boolean  @default(true)
   roleId              String?
@@ -77,6 +78,7 @@ model Attempt {
   assessmentVersionId    String
   inviteId               String?
   participantId          String
+  integrityPreset        String?
   roleId                 String
   passTargetPercent      Int
   stacksJson             Json

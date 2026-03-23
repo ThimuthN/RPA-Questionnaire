@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { IntegrityPresetId, RoleId, StackId } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
@@ -13,6 +13,7 @@ const createInviteSchema = z.object({
   mode: z.enum(["candidate", "employee", "live"]).default("candidate"),
   candidateId: z.string().optional(),
   candidateMilestoneId: z.string().optional(),
+  integrityPreset: z.enum(["strict", "standard", "relaxed"]).default("standard"),
   roleLocked: z.boolean().optional(),
   stackLocked: z.boolean().optional(),
   roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
@@ -85,6 +86,7 @@ export async function POST(request: Request) {
       candidateId: body.candidateId,
       candidateMilestoneId: body.candidateMilestoneId,
       createdById: session?.userId ?? undefined,
+      integrityPreset: body.integrityPreset as IntegrityPresetId,
       roleLocked: body.roleLocked,
       stackLocked: body.stackLocked,
       roleId: effectiveRoleId,
@@ -104,6 +106,7 @@ export async function POST(request: Request) {
       slug: created.row.slug,
       token: created.token,
       passcode: created.passcode || null,
+      integrityPreset: created.row.integrityPreset,
       passTarget: created.row.passTargetPercent,
       entryUrl: `${appUrl}/a/${created.row.slug}?t=${encodeURIComponent(created.token)}`
     });

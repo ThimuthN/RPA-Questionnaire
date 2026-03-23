@@ -6,12 +6,14 @@ import { useSearchParams } from "next/navigation";
 import type {
   ExamBlueprintDraftItem,
   ExamConfigFieldDefinition,
-  ExamDefinitionId
+  ExamDefinitionId,
+  IntegrityPresetId
 } from "@/lib/assessment-engine/types";
 import {
   InviteCredentialsPanel,
   type InviteCredentials
 } from "@/components/access/InviteCredentialsPanel";
+import { IntegrityPresetPicker } from "@/components/access/IntegrityPresetPicker";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StepRail } from "@/components/primitives/StepRail";
@@ -23,6 +25,7 @@ import {
   examCatalog,
   orderedExamCatalog
 } from "@/lib/exams/catalog";
+import { integrityPresetMeta } from "@/lib/integrity/policy";
 
 interface CreateInviteSuccess extends InviteCredentials {
   ok: true;
@@ -174,6 +177,7 @@ export default function CreateTestPage() {
   const [selectedExams, setSelectedExams] = useState<ExamBlueprintDraftItem[]>([]);
   const [expandedExamIds, setExpandedExamIds] = useState<ExamDefinitionId[]>([]);
   const [passTarget, setPassTarget] = useState(60);
+  const [integrityPreset, setIntegrityPreset] = useState<IntegrityPresetId>("standard");
   const [invite, setInvite] = useState<(InviteCredentials & { slug: string; inviteId: string }) | null>(
     null
   );
@@ -275,6 +279,7 @@ export default function CreateTestPage() {
         mode: "candidate",
         candidateId: linkedCandidateId,
         candidateMilestoneId: linkedCandidateMilestoneId,
+        integrityPreset,
         roleLocked: true,
         stackLocked: true,
         passTarget,
@@ -339,6 +344,11 @@ export default function CreateTestPage() {
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Total time</p>
           <p className="mt-2 text-lg text-white">{totalTimeMinutes} min</p>
           <p className="mt-1 text-sm text-slate-300">Time grows automatically as exams are added.</p>
+        </div>
+        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Integrity controls</p>
+          <p className="mt-2 text-lg text-white">{integrityPresetMeta[integrityPreset].shortLabel}</p>
+          <p className="mt-1 text-sm text-slate-300">{integrityPresetMeta[integrityPreset].description}</p>
         </div>
       </div>
 
@@ -809,6 +819,13 @@ export default function CreateTestPage() {
                     {contributionMessage}
                   </div>
                 </div>
+              </div>
+              <div className="rounded-[22px] border border-white/12 bg-black/15 p-4">
+                <IntegrityPresetPicker
+                  value={integrityPreset}
+                  onChange={setIntegrityPreset}
+                  description="Choose how protective the runtime should feel before you generate access."
+                />
               </div>
               {validExamMessages.length > 0 ? (
                 <div className="space-y-2">

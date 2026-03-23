@@ -6,6 +6,8 @@ export type StackId = "UiPath" | "AutomationAnywhere" | "Python" | "PowerAutomat
 
 export type AddonId = "applied_logic_reasoning";
 
+export type IntegrityPresetId = "strict" | "standard" | "relaxed";
+
 export type ExamDefinitionId =
   | "core_exam"
   | "practical_exam"

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { InviteCredentialsPanel, type InviteCredentials } from "@/components/access/InviteCredentialsPanel";
-import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { IntegrityPresetId, RoleId, StackId } from "@/lib/assessment-engine/types";
 
 interface CreateInviteSuccess extends InviteCredentials {
   ok: true;
@@ -18,10 +18,12 @@ interface CreateInviteError {
 
 export function PublishDrawer({
   roleId,
-  stacks = ["UiPath"]
+  stacks = ["UiPath"],
+  integrityPreset = "standard"
 }: {
   roleId: RoleId;
   stacks?: StackId[];
+  integrityPreset?: IntegrityPresetId;
 }) {
   const [loading, setLoading] = useState(false);
   const [invite, setInvite] = useState<InviteCredentials | null>(null);
@@ -37,6 +39,7 @@ export function PublishDrawer({
       body: JSON.stringify({
         assessmentVersionId: "v1-default",
         mode: "candidate",
+        integrityPreset,
         roleLocked: true,
         stackLocked: true,
         roleId,

@@ -10,6 +10,7 @@ import type {
   ExamBlueprint,
   ExamQuestion,
   ExamState,
+  IntegrityPresetId,
   ResultSummary,
   RoleId,
   StackId
@@ -21,10 +22,12 @@ import { SectionHandoff } from "@/components/runtime/SectionHandoff";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { copy } from "@/lib/design/copy";
 import { answeredItemCount, examProgressValue, isExamItemAnswered } from "@/lib/exams/runtime";
+import { getIntegrityPolicy } from "@/lib/integrity/policy";
 
 interface RuntimeClientProps {
   slug: string;
   attemptId: string;
+  integrityPreset: IntegrityPresetId;
   roleId: RoleId;
   stacks: StackId[];
   blueprint: ExamBlueprint;
@@ -77,6 +80,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
     () => [...props.blueprint.exams].sort((a, b) => a.order - b.order),
     [props.blueprint.exams]
   );
+  const integrityPolicy = useMemo(() => getIntegrityPolicy(props.integrityPreset), [props.integrityPreset]);
   const [stage, setStage] = useState<string | "submitted">(() => orderedExams[0]?.instanceId ?? "submitted");
   const [itemIndices, setItemIndices] = useState<Record<string, number>>({});
   const [examState, setExamState] = useState<Partial<Record<string, ExamState>>>(() => {
@@ -220,7 +224,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }
 
   async function resumeAssessmentView() {
-    if (fullscreenSupported && !isFullscreenActive) {
+    if (integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive) {
       const ok = await requestFullscreenMode();
       if (!ok) return;
     }
@@ -319,7 +323,12 @@ export function RuntimeClient(props: RuntimeClientProps) {
     function onFullscreenChange() {
       const active = Boolean(document.fullscreenElement);
       setIsFullscreenActive(active);
-      if (!active && document.fullscreenEnabled && stageRef.current !== "submitted") {
+      if (
+        integrityPolicy.requireFullscreen &&
+        !active &&
+        document.fullscreenEnabled &&
+        stageRef.current !== "submitted"
+      ) {
         setPrivacyShieldActive(true);
         showIntegrityNotice("Full-screen was exited. Resume to continue.");
       }
@@ -327,40 +336,60 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
     document.addEventListener("fullscreenchange", onFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
-  }, []);
+  }, [integrityPolicy.requireFullscreen]);
 
   useEffect(() => {
     function onVisibilityChange() {
       if (document.hidden) {
-        setPrivacyShieldActive(true);
-        recordIntegrity("tabHiddenCount", "Tab switch detected. The timer keeps running.");
+        if (integrityPolicy.blurShieldEnabled) {
+          setPrivacyShieldActive(true);
+        }
+        if (integrityPolicy.monitorTabSwitch) {
+          recordIntegrity("tabHiddenCount", "Tab switch detected. The timer keeps running.");
+        }
         return;
       }
       void persistAutosave();
     }
 
     function onCopy(event: ClipboardEvent) {
-      event.preventDefault();
-      recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+      if (!integrityPolicy.monitorClipboard) return;
+      if (integrityPolicy.blockClipboard) {
+        event.preventDefault();
+        recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+        return;
+      }
+      recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
     }
 
     function onCut(event: ClipboardEvent) {
-      event.preventDefault();
-      recordIntegrity("copyCount", "Cut is disabled during the assessment.");
+      if (!integrityPolicy.monitorClipboard) return;
+      if (integrityPolicy.blockClipboard) {
+        event.preventDefault();
+        recordIntegrity("copyCount", "Cut is disabled during the assessment.");
+        return;
+      }
+      recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
     }
 
     function onPaste(event: ClipboardEvent) {
-      event.preventDefault();
-      recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+      if (!integrityPolicy.monitorClipboard) return;
+      if (integrityPolicy.blockClipboard) {
+        event.preventDefault();
+        recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+        return;
+      }
+      recordIntegrity("pasteCount", "Clipboard activity was noted during the assessment.");
     }
 
     function onContextMenu(event: MouseEvent) {
+      if (!integrityPolicy.blockContextMenu) return;
       event.preventDefault();
       showIntegrityNotice("Right-click is disabled during the assessment.");
     }
 
     function onFocus() {
-      if (stageRef.current !== "submitted") {
+      if (integrityPolicy.blurShieldEnabled && stageRef.current !== "submitted") {
         setPrivacyShieldActive(true);
       }
       void persistAutosave();
@@ -384,14 +413,21 @@ export function RuntimeClient(props: RuntimeClientProps) {
         clearTimeout(integrityNoticeTimeoutRef.current);
       }
     };
-  }, [props.attemptId]);
+  }, [
+    integrityPolicy.blockClipboard,
+    integrityPolicy.blockContextMenu,
+    integrityPolicy.blurShieldEnabled,
+    integrityPolicy.monitorClipboard,
+    integrityPolicy.monitorTabSwitch,
+    props.attemptId
+  ]);
 
   useEffect(() => {
-    if (!fullscreenSupported || stage === "submitted") return;
+    if (!integrityPolicy.requireFullscreen || !fullscreenSupported || stage === "submitted") return;
     if (!isFullscreenActive) {
       setPrivacyShieldActive(true);
     }
-  }, [fullscreenSupported, isFullscreenActive, stage]);
+  }, [fullscreenSupported, integrityPolicy.requireFullscreen, isFullscreenActive, stage]);
 
   useEffect(() => {
     if (stage === "submitted" || currentRemaining > 0 || submitting || pendingTransition || !currentExam) return;
@@ -431,18 +467,28 @@ export function RuntimeClient(props: RuntimeClientProps) {
       }
 
       if ((event.ctrlKey || event.metaKey) && (key === "c" || key === "x")) {
-        event.preventDefault();
-        recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+        if (!integrityPolicy.monitorClipboard) return;
+        if (integrityPolicy.blockClipboard) {
+          event.preventDefault();
+          recordIntegrity("copyCount", "Copy is disabled during the assessment.");
+          return;
+        }
+        recordIntegrity("copyCount", "Clipboard activity was noted during the assessment.");
         return;
       }
 
       if ((event.ctrlKey || event.metaKey) && key === "v") {
-        event.preventDefault();
-        recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+        if (!integrityPolicy.monitorClipboard) return;
+        if (integrityPolicy.blockClipboard) {
+          event.preventDefault();
+          recordIntegrity("pasteCount", "Paste is disabled during the assessment.");
+          return;
+        }
+        recordIntegrity("pasteCount", "Clipboard activity was noted during the assessment.");
         return;
       }
 
-      if ((event.ctrlKey || event.metaKey) && key === "a") {
+      if (integrityPolicy.blockClipboard && (event.ctrlKey || event.metaKey) && key === "a") {
         event.preventDefault();
         showIntegrityNotice("Select all is disabled during the assessment.");
         return;
@@ -477,7 +523,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [currentExam, currentIndex, currentItem, currentItems, stage]);
+  }, [currentExam, currentIndex, currentItem, currentItems, integrityPolicy.blockClipboard, integrityPolicy.monitorClipboard, stage]);
 
   async function onAnswer(itemId: string, value: unknown) {
     if (!currentExam) return;
@@ -678,9 +724,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
             <StagePanel className="border-white/10 bg-black/20 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm text-slate-200">
-                  Security controls active: copy, paste, cut, right-click, and tab switching are monitored.
+                  {integrityPolicy.description}
                 </p>
                 <p className="text-xs text-slate-400">
+                  Preset: {integrityPolicy.shortLabel} |{" "}
                   Tabs hidden: {integrity.tabHiddenCount} | Copy/Cut: {integrity.copyCount} | Paste: {integrity.pasteCount}
                 </p>
               </div>
@@ -719,12 +766,12 @@ export function RuntimeClient(props: RuntimeClientProps) {
           <StagePanel className="w-full max-w-xl space-y-4 text-center">
             <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Assessment locked</p>
             <h3 className="text-2xl text-white">
-              {fullscreenSupported && !isFullscreenActive
+              {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
                 ? "Return to full-screen to continue"
                 : "Resume your assessment"}
             </h3>
             <p className="text-sm leading-6 text-slate-200">
-              {fullscreenSupported && !isFullscreenActive
+              {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
                 ? "Full-screen mode is required during the assessment. The timer has continued running while you were away."
                 : "The timer continued while the tab was out of focus. Resume when you're ready to continue."}
             </p>
@@ -739,7 +786,9 @@ export function RuntimeClient(props: RuntimeClientProps) {
             </div>
             <div className="flex flex-wrap justify-center gap-3">
               <Button onClick={() => void resumeAssessmentView()}>
-                {fullscreenSupported && !isFullscreenActive ? "Enter full-screen" : "Resume assessment"}
+                {integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
+                  ? "Enter full-screen"
+                  : "Resume assessment"}
               </Button>
             </div>
           </StagePanel>

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
 import { getAttempt } from "@/lib/db/repositories";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -28,12 +28,12 @@ export default async function AttemptRuntimePage({
           <h1 className="text-3xl text-white">This attempt is complete.</h1>
           <p className="mt-2 text-slate-300">Viewing results... you cannot resume the assessment.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <a href={`/a/${slug}/result/${attempt.id}`}>
+            <Link href={`/a/${slug}/result/${attempt.id}`}>
               <button className="rounded-[12px] bg-brand-500 px-4 py-2 text-white">Continue to results</button>
-            </a>
-            <a href="/">
+            </Link>
+            <Link href="/">
               <button className="rounded-[12px] border border-white/20 bg-white/5 px-4 py-2 text-white">Return home</button>
-            </a>
+            </Link>
           </div>
         </StagePanel>
       </section>
@@ -43,6 +43,7 @@ export default async function AttemptRuntimePage({
     <RuntimeClient
       slug={slug}
       attemptId={attempt.id}
+      integrityPreset={attempt.integrityPreset}
       roleId={attempt.roleId}
       stacks={attempt.stacks}
       blueprint={attempt.blueprint}

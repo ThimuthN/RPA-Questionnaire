@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { RoleId, StackId } from "@/lib/assessment-engine/types";
+import type { IntegrityPresetId, RoleId, StackId } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import {
   createOrGetParticipant,
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     const body = startSchema.parse(await request.json());
     let inviteId: string | undefined;
     let assessmentVersionId: string | undefined;
+    let integrityPreset: IntegrityPresetId | undefined;
     let effectiveRoleId = body.roleId as RoleId | undefined;
     let effectiveStacks = body.stacks as StackId[] | undefined;
     let effectiveSections: SectionId[] | undefined;
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       }
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
+      integrityPreset = inviteCheck.invite.integrityPreset;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
       }
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
+      integrityPreset = inviteCheck.invite.integrityPreset;
       effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
@@ -88,6 +91,7 @@ export async function POST(request: Request) {
       inviteId,
       assessmentVersionId,
       participantId: participant.id,
+      integrityPreset,
       roleId: effectiveRoleId,
       passTargetPercent: effectivePassTarget,
       stacks: effectiveStacks,
@@ -106,6 +110,7 @@ export async function POST(request: Request) {
       attemptId: started.attempt.id,
       roleId: started.attempt.roleId,
       passTarget: started.attempt.passTargetPercent,
+      integrityPreset: started.attempt.integrityPreset,
       stacks: started.attempt.stacks,
       blueprint: started.attempt.blueprint,
       sections: started.attempt.sections,

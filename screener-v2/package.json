@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run",
     "clean": "node scripts/clean-next.mjs",
     "validate:questions": "node scripts/validate-question-bank.mjs",
     "postinstall": "node scripts/postinstall-prisma.mjs",
@@ -37,13 +38,18 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/node": "^22.10.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.20",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.1",
     "postcss": "^8.4.49",
     "prisma": "^6.6.0",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.0"
   }
 }

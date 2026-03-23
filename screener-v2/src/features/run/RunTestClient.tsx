@@ -2,11 +2,13 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { IntegrityPresetPicker } from "@/components/access/IntegrityPresetPicker";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { InviteCredentialsPanel, type InviteCredentials } from "@/components/access/InviteCredentialsPanel";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import type { IntegrityPresetId } from "@/lib/assessment-engine/types";
 import { copy } from "@/lib/design/copy";
 
 type RunMode = "join_link" | "test_id" | "live_call" | "employee";
@@ -63,6 +65,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
   const [testId, setTestId] = useState("");
   const [token, setToken] = useState("");
   const [passcode, setPasscode] = useState("");
+  const [liveIntegrityPreset, setLiveIntegrityPreset] = useState<IntegrityPresetId>("standard");
   const [liveInvite, setLiveInvite] = useState<(InviteCredentials & { slug?: string }) | null>(null);
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [employeeToken, setEmployeeToken] = useState("");
@@ -121,6 +124,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
       body: JSON.stringify({
         assessmentVersionId: "v1-default",
         mode: "live",
+        integrityPreset: liveIntegrityPreset,
         roleLocked: true,
         stackLocked: true,
         roleId: "Associate",
@@ -257,6 +261,11 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
 
           {canManageAccess && mode === "live_call" ? (
             <div className="space-y-3 scene-fade-up">
+              <IntegrityPresetPicker
+                value={liveIntegrityPreset}
+                onChange={setLiveIntegrityPreset}
+                description="Choose the runtime guardrails before generating a live assessment link."
+              />
               <Button onClick={onGenerateLive} disabled={loading}>
                 {loading ? "Generating..." : copy.create.generate}
               </Button>
