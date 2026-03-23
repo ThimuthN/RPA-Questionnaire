@@ -1,7 +1,6 @@
 "use client";
 
 import { startTransition, useRef, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import {
@@ -14,10 +13,6 @@ type UploadState = "idle" | "uploading" | "processing" | "uploaded" | "failed";
 
 function allowedMimeType(file: File) {
   return candidateResumeMimeTypes.includes(file.type as (typeof candidateResumeMimeTypes)[number]);
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function ResumeUploader({
@@ -35,57 +30,6 @@ export function ResumeUploader({
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [dragging, setDragging] = useState(false);
-
-  async function saveResumeRecord(args: {
-    fileName: string;
-    mimeType: string;
-    sizeBytes: number;
-    storageKey: string;
-    storageUrl: string;
-  }) {
-    const completeResponse = await fetch(`/api/candidates/${candidateId}/resume`, {
-      method: "POST",
-      credentials: "same-origin",
-      headers: {
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "complete",
-        ...args
-      })
-    });
-
-    if (!completeResponse.ok) {
-      const payload = (await completeResponse.json().catch(() => null)) as { message?: string } | null;
-      throw new Error(payload?.message || "Could not save the uploaded resume.");
-    }
-  }
-
-  async function confirmResume(storageKey: string) {
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      const response = await fetch(`/api/candidates/${candidateId}/resume`, {
-        cache: "no-store",
-        credentials: "same-origin"
-      });
-
-      if (!response.ok) {
-        throw new Error("Could not confirm the resume upload.");
-      }
-
-      const payload = (await response.json()) as {
-        ok: boolean;
-        resume?: { storageKey?: string } | null;
-      };
-
-      if (payload.resume?.storageKey === storageKey) {
-        return;
-      }
-
-      await sleep(800);
-    }
-
-    throw new Error("Upload finished, but the resume is still processing. Please try again.");
-  }
 
   async function handleFile(file: File | null) {
     if (!file) {
@@ -110,43 +54,30 @@ export function ResumeUploader({
     }
 
     setUploadState("uploading");
-    setProgress(0);
+    setProgress(null);
     setError("");
     setMessage("");
 
     try {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-");
       const storageKey = `candidate-resumes/${candidateId}/${stamp}-${normalizeResumeFileName(file.name)}`;
-      const blob = await upload(storageKey, file, {
-        access: "public",
-        handleUploadUrl: `/api/candidates/${candidateId}/resume`,
-        clientPayload: JSON.stringify({
-          fileName: file.name,
-          sizeBytes: file.size
-        }),
-        contentType: file.type,
-        multipart: true,
-        onUploadProgress: ({ percentage }) => {
-          setProgress(Math.round(percentage));
-        }
+      const formData = new FormData();
+      formData.append("action", "upload");
+      formData.append("pathname", storageKey);
+      formData.append("file", file, file.name);
+
+      const response = await fetch(`/api/candidates/${candidateId}/resume`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData
       });
 
-      setUploadState("processing");
-      setMessage("Saving resume...");
-
-      try {
-        await confirmResume(blob.pathname);
-      } catch {
-        // Recover when the blob callback is slow or unavailable by persisting the
-        // uploaded file through the app route before the final confirmation check.
-        await saveResumeRecord({
-          fileName: file.name,
-          sizeBytes: file.size,
-          mimeType: file.type,
-          storageKey: blob.pathname,
-          storageUrl: blob.url
-        });
-        await confirmResume(blob.pathname);
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as
+          | { message?: string; requestId?: string }
+          | null;
+        const detail = payload?.requestId ? ` (Request ID: ${payload.requestId})` : "";
+        throw new Error((payload?.message || "Upload failed.") + detail);
       }
 
       setUploadState("uploaded");

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { put } from "@vercel/blob";
 import {
   generateClientTokenFromReadWriteToken,
   handleUpload,
@@ -36,6 +37,62 @@ export async function POST(
   });
 
   try {
+    const contentType = request.headers.get("content-type") || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const session = await getSession();
+      if (!session) {
+        throw new Error("Login required.");
+      }
+
+      const exists = await candidateExists(id);
+      if (!exists) {
+        throw new Error("Candidate not found.");
+      }
+
+      const formData = await request.formData();
+      const action = formData.get("action");
+      const pathname = typeof formData.get("pathname") === "string" ? String(formData.get("pathname")) : "";
+      const file = formData.get("file");
+
+      if (action !== "upload") {
+        throw new Error("Invalid upload action.");
+      }
+
+      if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
+        throw new Error("Invalid resume upload path.");
+      }
+
+      if (!(file instanceof File)) {
+        throw new Error("Choose a resume file first.");
+      }
+
+      if (!candidateResumeMimeTypes.includes(file.type as (typeof candidateResumeMimeTypes)[number])) {
+        throw new Error("Unsupported resume file type.");
+      }
+
+      if (!Number.isFinite(file.size) || file.size <= 0 || file.size > candidateResumeMaxSizeBytes) {
+        throw new Error("Resume size is invalid.");
+      }
+
+      const blob = await put(pathname, file, {
+        access: "public",
+        addRandomSuffix: false,
+        contentType: file.type
+      });
+
+      const resume = await addCandidateResume({
+        candidateId: id,
+        fileName: file.name.trim() || pathname.split("/").pop() || "resume",
+        mimeType: file.type,
+        sizeBytes: Math.round(file.size),
+        storageKey: blob.pathname,
+        storageUrl: blob.url
+      });
+
+      return NextResponse.json({ ok: true, resume });
+    }
+
     const body = (await request.json()) as unknown;
 
     if (isRecord(body) && body.action === "token") {
