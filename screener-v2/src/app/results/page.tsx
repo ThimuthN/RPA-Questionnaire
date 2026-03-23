@@ -7,7 +7,12 @@ import { copy } from "@/lib/design/copy";
 
 export const dynamic = "force-dynamic";
 
-export default async function ResultsPage() {
+export default async function ResultsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ deleted?: string; error?: string }>;
+}) {
+  const pageState = await searchParams;
   const rows = await listResults();
   const passCount = rows.filter((row) => row.pass).length;
   const reviewCount = rows.filter((row) => row.borderline).length;
@@ -28,6 +33,12 @@ export default async function ResultsPage() {
       }
     >
       <div className="space-y-5">
+        {pageState.deleted || pageState.error ? (
+          <div className="rounded-[24px] border border-white/10 bg-white/[0.05] p-4">
+            {pageState.deleted ? <p className="text-sm text-emerald-200">Result deleted.</p> : null}
+            {pageState.error ? <p className="text-sm text-red-200">{pageState.error}</p> : null}
+          </div>
+        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.05] p-4">
           <div className="flex flex-wrap gap-2">
             <StatusPill label={`Total ${rows.length}`} tone="neutral" />

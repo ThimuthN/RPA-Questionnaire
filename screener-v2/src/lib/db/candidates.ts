@@ -448,6 +448,96 @@ export async function updateCandidate(
   return mapCandidate(updated);
 }
 
+export async function deleteCandidate(candidateId: string) {
+  const candidate = await prisma.candidate.findUnique({
+    where: { id: candidateId },
+    select: {
+      id: true,
+      assessments: {
+        select: {
+          inviteId: true,
+          attemptId: true
+        }
+      }
+    }
+  });
+
+  if (!candidate) {
+    throw new Error("Candidate not found.");
+  }
+
+  const inviteIds = [...new Set(candidate.assessments.map((assessment) => assessment.inviteId))];
+  const attemptIds = [
+    ...new Set(
+      candidate.assessments
+        .map((assessment) => assessment.attemptId)
+        .filter((value): value is string => Boolean(value))
+    )
+  ];
+
+  await prisma.$transaction(async (tx) => {
+    const attempts =
+      attemptIds.length > 0
+        ? await tx.attempt.findMany({
+            where: {
+              id: {
+                in: attemptIds
+              }
+            },
+            select: {
+              id: true,
+              participantId: true
+            }
+          })
+        : [];
+    const participantIds = [...new Set(attempts.map((attempt) => attempt.participantId))];
+
+    if (attemptIds.length > 0) {
+      await tx.result.deleteMany({
+        where: {
+          attemptId: {
+            in: attemptIds
+          }
+        }
+      });
+
+      await tx.attempt.deleteMany({
+        where: {
+          id: {
+            in: attemptIds
+          }
+        }
+      });
+    }
+
+    if (inviteIds.length > 0) {
+      await tx.invite.deleteMany({
+        where: {
+          id: {
+            in: inviteIds
+          }
+        }
+      });
+    }
+
+    await tx.candidate.delete({
+      where: { id: candidateId }
+    });
+
+    for (const participantId of participantIds) {
+      const remainingAttempts = await tx.attempt.count({
+        where: { participantId }
+      });
+
+      if (remainingAttempts === 0) {
+        await tx.participant.delete({
+          where: { id: participantId }
+        });
+      }
+    }
+  });
+}
+
 export async function addCandidateResume(input: {
   candidateId: string;
   fileName: string;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
+import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -85,13 +86,22 @@ export function AttemptTable({ rows }: { rows: ResultSummary[] }) {
                   Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
                 </p>
               </div>
-              <div className="flex items-center lg:justify-end">
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                 <Link
                   className="inline-flex rounded-full border border-brand-300/50 px-3 py-1.5 text-xs font-medium text-brand-200 transition hover:border-brand-300 hover:bg-brand-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
                   href={`/results/${row.attemptId}`}
                 >
                   Open result
                 </Link>
+                <form action={`/api/results/${row.attemptId}/delete`} method="post">
+                  <ConfirmSubmitButton
+                    variant="danger"
+                    className="px-3 py-1.5 text-xs"
+                    confirmMessage={`Delete the result for ${row.candidateName || "this candidate"}? This removes the saved result and attempt.`}
+                  >
+                    Delete
+                  </ConfirmSubmitButton>
+                </form>
               </div>
             </div>
           </div>

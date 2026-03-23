@@ -1696,3 +1696,77 @@ export async function getAttempt(attemptId: string) {
     candidateEmail: participant?.email ?? undefined
   };
 }
+
+export async function deleteResultAttempt(attemptId: string) {
+  const [attempt, result] = await Promise.all([
+    prisma.attempt.findUnique({
+      where: { id: attemptId },
+      select: {
+        id: true,
+        inviteId: true,
+        participantId: true
+      }
+    }),
+    prisma.result.findUnique({
+      where: { attemptId },
+      select: {
+        attemptId: true
+      }
+    })
+  ]);
+
+  if (!attempt && !result) {
+    throw new Error("Result not found.");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.result.deleteMany({
+      where: { attemptId }
+    });
+
+    if (!attempt) {
+      return;
+    }
+
+    if (attempt.inviteId) {
+      await tx.candidateAssessment.updateMany({
+        where: { attemptId },
+        data: {
+          attemptId: null
+        }
+      });
+
+      const invite = await tx.invite.findUnique({
+        where: { id: attempt.inviteId },
+        select: {
+          usedAttempts: true
+        }
+      });
+
+      if (invite && invite.usedAttempts > 0) {
+        await tx.invite.update({
+          where: { id: attempt.inviteId },
+          data: {
+            usedAttempts: {
+              decrement: 1
+            }
+          }
+        });
+      }
+    }
+
+    await tx.attempt.delete({
+      where: { id: attempt.id }
+    });
+
+    const remainingAttempts = await tx.attempt.count({
+      where: { participantId: attempt.participantId }
+    });
+
+    if (remainingAttempts === 0) {
+      await tx.participant.delete({
+        where: { id: attempt.participantId }
+      });
+    }
+  });
+}

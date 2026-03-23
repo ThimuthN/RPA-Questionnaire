@@ -11,6 +11,7 @@ import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInf
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
+import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -154,6 +155,14 @@ export default async function CandidateDetailPage({
               ) : null}
 
               <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
+              <form action={`/api/candidates/${candidate.id}/delete`} method="post">
+                <ConfirmSubmitButton
+                  variant="danger"
+                  confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked screener data.`}
+                >
+                  Delete candidate
+                </ConfirmSubmitButton>
+              </form>
             </div>
           </div>
 

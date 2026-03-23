@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
+import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import {
@@ -93,7 +94,7 @@ function chipClass(active: boolean) {
 export default async function CandidatesPage({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; deleted?: string; error?: string }>;
 }) {
   const params = await searchParams;
   const status = params.status && isCandidateUiStatus(params.status) ? params.status : undefined;
@@ -117,6 +118,12 @@ export default async function CandidatesPage({
       }
     >
       <div className="space-y-5">
+        {params.deleted || params.error ? (
+          <StagePanel className="space-y-2">
+            {params.deleted ? <p className="text-sm text-emerald-200">Candidate deleted.</p> : null}
+            {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
+          </StagePanel>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           {trackerFilterOptions.map((option) => {
             const active = (option.value ?? "") === (status ?? "");
@@ -170,9 +177,19 @@ export default async function CandidatesPage({
                       <p className="text-xs text-slate-400">
                         Updated {new Date(candidate.updatedAt).toLocaleString()}
                       </p>
-                      <Link href={action.href}>
-                        <Button variant={actionIsPrimary ? "primary" : "secondary"}>{action.label}</Button>
-                      </Link>
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={action.href}>
+                          <Button variant={actionIsPrimary ? "primary" : "secondary"}>{action.label}</Button>
+                        </Link>
+                        <form action={`/api/candidates/${candidate.id}/delete`} method="post">
+                          <ConfirmSubmitButton
+                            variant="danger"
+                            confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked screener data.`}
+                          >
+                            Delete
+                          </ConfirmSubmitButton>
+                        </form>
+                      </div>
                     </div>
                   </div>
                 </StagePanel>

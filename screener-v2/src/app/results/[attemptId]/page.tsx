@@ -6,6 +6,7 @@ import { ResultReviewSections } from "@/components/results/ResultReviewSections"
 import { SignalCard } from "@/components/primitives/SignalCard";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { DecisionStage } from "@/components/results/DecisionStage";
+import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { copy } from "@/lib/design/copy";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { confidenceBand } from "@/lib/assessment-engine/thresholds";
@@ -67,6 +68,14 @@ export default async function ResultDetailPage({
           <Link href="/results">
             <Button variant="secondary">Back to Results</Button>
           </Link>
+          <form action={`/api/results/${attemptId}/delete`} method="post">
+            <ConfirmSubmitButton
+              variant="danger"
+              confirmMessage={`Delete the result for ${row.candidateName || "this candidate"}? This removes the saved result and attempt.`}
+            >
+              Delete
+            </ConfirmSubmitButton>
+          </form>
           <a href="/api/results/export.csv">
             <Button>Export CSV</Button>
           </a>
