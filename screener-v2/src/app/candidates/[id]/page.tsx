@@ -16,7 +16,12 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
-import { candidateNoteTypeLabels, candidateNoteTypeValues, candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidates/types";
+import {
+  candidateNoteTypeLabels,
+  candidateNoteTypeValues,
+  candidateUiStatusLabels,
+  candidateUiStatusValues
+} from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { getCandidateDetail } from "@/lib/db/candidates";
 
@@ -102,6 +107,13 @@ export default async function CandidateDetailPage({
     screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
   );
   const activityFeed = buildCandidateActivityFeed(candidate).slice(0, 8);
+  const outcomeBadges = (
+    <div className="flex flex-wrap gap-2">
+      <CandidateUiStatusPill status={uiStatus} />
+      <CandidateAssessmentPill status={screener} />
+      {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
+    </div>
+  );
 
   return (
     <SceneShell
@@ -110,17 +122,13 @@ export default async function CandidateDetailPage({
       title={candidate.fullName}
       subtitle={candidate.positionAppliedFor || candidate.email}
       utility={
-        <div className="flex flex-wrap gap-2">
-          <CandidateUiStatusPill status={uiStatus} />
-          <CandidateAssessmentPill status={screener} />
-          <Link href={"/candidates" as Route}>
-            <Button variant="secondary">Back</Button>
-          </Link>
-        </div>
+        <Link href={"/candidates" as Route}>
+          <Button variant="secondary">Back to candidates</Button>
+        </Link>
       }
     >
       <div className="space-y-5">
-        {(pageState.created || pageState.updated || pageState.noteAdded || pageState.resumeUploaded || pageState.error) ? (
+        {pageState.created || pageState.updated || pageState.noteAdded || pageState.resumeUploaded || pageState.error ? (
           <StagePanel className="space-y-2">
             {pageState.created || pageState.updated ? <p className="text-sm text-emerald-200">Candidate saved.</p> : null}
             {pageState.noteAdded ? <p className="text-sm text-emerald-200">Note added.</p> : null}
@@ -129,42 +137,27 @@ export default async function CandidateDetailPage({
           </StagePanel>
         ) : null}
 
-        <StagePanel className="space-y-5">
+        <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <CandidateUiStatusPill status={uiStatus} />
-                <CandidateAssessmentPill status={screener} />
-                {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
-              </div>
-
-              <div className="space-y-1">
-                <p className="text-sm text-slate-300">{candidate.email}</p>
-                <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
-                <p className="text-sm text-slate-400">{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner"}</p>
-                <p className="text-sm text-brand-100">{nextPrompt(candidate)}</p>
-              </div>
+            <div className="space-y-2">
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Decision focus</p>
+              <h2 className="text-3xl text-white">Outcome</h2>
+              <p className="max-w-2xl text-sm text-slate-300">
+                Keep the current decision, strongest signal, and next move visible here before the team dives into the full journey.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {!currentResume ? (
-                <a href="#resume">
-                  <Button>Add resume</Button>
-                </a>
-              ) : null}
-
               {canSendScreener && screenerMilestone ? (
                 <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
                   <Button>Send screener</Button>
                 </Link>
               ) : null}
-
               {latest?.attemptId && typeof latest.finalPercent === "number" ? (
                 <Link href={`/results/${latest.attemptId}` as Route}>
                   <Button variant="secondary">View result</Button>
                 </Link>
               ) : null}
-
               <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
               <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                 <ConfirmSubmitButton
@@ -177,35 +170,84 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <form action={`/api/candidates/${candidate.id}`} method="post" className="space-y-3 rounded-[22px] border border-white/10 bg-black/20 p-4">
-            <HiddenCandidateFields candidate={candidate} />
-            <div className="space-y-1">
-              <h2 className="text-lg text-white">Outcome</h2>
-              <p className="text-sm text-slate-300">Pin the current decision summary here so reviewers see it before diving into the full timeline.</p>
+          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+            <div className="space-y-4">
+              {outcomeBadges}
+
+              <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate snapshot</p>
+                  <p className="text-sm text-slate-200">{candidate.email}</p>
+                  <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
+                  <p className="text-sm text-slate-400">
+                    {candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}
+                  </p>
+                  <p className="text-sm text-brand-100">{nextPrompt(candidate)}</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Latest score</p>
+                  <p className="mt-2 text-xl text-white">
+                    {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {latest?.submittedAt
+                      ? `Submitted ${new Date(latest.submittedAt).toLocaleDateString()}`
+                      : "No screener submitted yet"}
+                  </p>
+                </div>
+                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Resume</p>
+                  <p className="mt-2 text-xl text-white">{currentResume ? "Attached" : "Missing"}</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
+                  </p>
+                </div>
+                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Reviewer note</p>
+                  <p className="mt-2 text-sm text-slate-200">
+                    {candidate.notesSummary || "No pinned decision summary yet."}
+                  </p>
+                </div>
+              </div>
             </div>
-            <ChoicePills
-              name="uiStatus"
-              idPrefix={`candidate-status-${candidate.id}`}
-              defaultValue={uiStatus}
-              options={candidateUiStatusValues.map((status) => ({
-                value: status,
-                label: candidateUiStatusLabels[status]
-              }))}
-            />
-            <label className="grid gap-1">
-              <span className="text-sm text-slate-200">Decision summary</span>
-              <textarea
-                name="notesSummary"
-                rows={3}
-                defaultValue={candidate.notesSummary || ""}
-                placeholder="Summarize the decision, strongest signal, and next step."
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+
+            <form
+              action={`/api/candidates/${candidate.id}`}
+              method="post"
+              className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5"
+            >
+              <HiddenCandidateFields candidate={candidate} />
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Current decision</p>
+                <h3 className="text-xl text-white">Set the reviewer-visible outcome</h3>
+              </div>
+              <ChoicePills
+                name="uiStatus"
+                idPrefix={`candidate-status-${candidate.id}`}
+                defaultValue={uiStatus}
+                options={candidateUiStatusValues.map((status) => ({
+                  value: status,
+                  label: candidateUiStatusLabels[status]
+                }))}
               />
-            </label>
-            <div className="flex justify-end">
-              <Button type="submit">Save outcome</Button>
-            </div>
-          </form>
+              <label className="grid gap-2">
+                <span className="text-sm text-slate-200">Decision summary</span>
+                <textarea
+                  name="notesSummary"
+                  rows={5}
+                  defaultValue={candidate.notesSummary || ""}
+                  placeholder="Summarize the strongest signal, current decision, and exact next step."
+                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                />
+              </label>
+              <div className="flex justify-end">
+                <Button type="submit">Save outcome</Button>
+              </div>
+            </form>
+          </div>
         </StagePanel>
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -213,7 +255,9 @@ export default async function CandidateDetailPage({
             <StagePanel className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Journey</h2>
-                <p className="text-sm text-slate-300">Use this as the working path for the candidate, not just a checklist.</p>
+                <p className="text-sm text-slate-300">
+                  Keep the active step open. Completed and untouched steps stay collapsed until the team needs them.
+                </p>
               </div>
               <CandidateMilestoneTimeline
                 candidateId={candidate.id}
@@ -250,13 +294,16 @@ export default async function CandidateDetailPage({
             <StagePanel className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Latest result</h2>
-                <p className="text-sm text-slate-300">Keep score, status, and reviewer direction visible alongside the candidate profile.</p>
+                <p className="text-sm text-slate-300">Keep the latest screener signal visible without turning the rail into a second dashboard.</p>
               </div>
               {latest?.attemptId ? (
                 <div className="space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
                   <div className="flex flex-wrap gap-2">
                     <CandidateAssessmentPill status={screener} />
-                    <StatusPill label={latest.finalPercent ? `${latest.finalPercent.toFixed(1)} / 100` : "Awaiting score"} tone="blue" />
+                    <StatusPill
+                      label={latest.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "Awaiting score"}
+                      tone="blue"
+                    />
                     <StatusPill label={screener.replace("_", " ")} tone={resultTone(screener)} />
                   </div>
                   <p className="text-sm text-slate-300">
@@ -266,7 +313,6 @@ export default async function CandidateDetailPage({
                         ? `In progress since ${new Date(latest.startedAt).toLocaleString()}`
                         : `Linked on ${new Date(latest.createdAt).toLocaleString()}`}
                   </p>
-                  {candidate.notesSummary ? <p className="text-sm text-brand-100">{candidate.notesSummary}</p> : null}
                   <div className="flex flex-wrap gap-2">
                     <Link href={`/results/${latest.attemptId}` as Route}>
                       <Button variant="secondary">Open result</Button>
@@ -292,52 +338,40 @@ export default async function CandidateDetailPage({
 
             <StagePanel id="resume" className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Resume</h2>
-                <p className="text-sm text-slate-300">{currentResume ? "Current resume is attached below." : "No resume yet."}</p>
+                <h2 className="text-2xl text-white">Resume files</h2>
+                <p className="text-sm text-slate-300">
+                  Keep upload and file actions here. The preview sits below as a larger secondary section.
+                </p>
               </div>
 
               <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
 
               {currentResume ? (
-                <div className="space-y-4">
-                  <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap gap-2">
-                          <StatusPill label="Current" tone="blue" />
-                          <StatusPill label="PDF" tone="neutral" />
-                        </div>
-                        <p className="text-sm text-white">{currentResume.fileName}</p>
-                        <p className="text-xs text-slate-400">
-                          {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
-                          {new Date(currentResume.uploadedAt).toLocaleString()}
-                        </p>
-                      </div>
+                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill label="Current" tone="blue" />
+                      <StatusPill label="PDF" tone="neutral" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-white">{currentResume.fileName}</p>
+                      <p className="text-xs text-slate-400">
+                        {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
+                        {new Date(currentResume.uploadedAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                       <a href={resumeDownloadUrl ?? "#"} target="_blank" rel="noreferrer">
                         <Button type="button" variant="secondary">
-                          {currentResume.mimeType === "application/pdf" ? "Open full size" : "Download"}
+                          Download PDF
+                        </Button>
+                      </a>
+                      <a href="#resume-preview">
+                        <Button type="button" variant="secondary">
+                          Open preview below
                         </Button>
                       </a>
                     </div>
-                  </div>
-
-                  <div className="overflow-hidden rounded-[20px] border border-white/10 bg-white">
-                    <object
-                      data={resumePreviewUrl ?? undefined}
-                      type="application/pdf"
-                      className="h-[640px] w-full"
-                    >
-                      <div className="flex h-[320px] items-center justify-center bg-slate-50 px-6 text-center">
-                        <div className="space-y-3">
-                          <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
-                          <a href={resumePreviewUrl ?? "#"} target="_blank" rel="noreferrer">
-                            <Button type="button" variant="secondary">
-                              Open PDF
-                            </Button>
-                          </a>
-                        </div>
-                      </div>
-                    </object>
                   </div>
                 </div>
               ) : null}
@@ -346,7 +380,7 @@ export default async function CandidateDetailPage({
             <StagePanel className="space-y-5">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Notes</h2>
-                <p className="text-sm text-slate-300">Keep interview notes, strengths, and concerns here.</p>
+                <p className="text-sm text-slate-300">Capture interview notes, strengths, and concerns without crowding the journey.</p>
               </div>
 
               <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
@@ -389,7 +423,9 @@ export default async function CandidateDetailPage({
                         <div className="flex flex-wrap gap-2">
                           <CandidateNoteTypePill type={note.type} />
                           <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
-                          {author ? <StatusPill label={`by ${author}`} tone="neutral" className="normal-case tracking-normal" /> : null}
+                          {author ? (
+                            <StatusPill label={`by ${author}`} tone="neutral" className="normal-case tracking-normal" />
+                          ) : null}
                         </div>
                         <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{note.body}</p>
                       </div>
@@ -400,6 +436,36 @@ export default async function CandidateDetailPage({
             </StagePanel>
           </div>
         </div>
+
+        {currentResume ? (
+          <StagePanel id="resume-preview" className="space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-2xl text-white">Resume preview</h2>
+              <p className="text-sm text-slate-300">
+                The preview is kept secondary here so the main rail can stay focused on workflow and notes.
+              </p>
+            </div>
+
+            <div className="overflow-hidden rounded-[22px] border border-white/10 bg-white">
+              <object
+                data={resumePreviewUrl ?? undefined}
+                type="application/pdf"
+                className="h-[920px] w-full"
+              >
+                <div className="flex h-[360px] items-center justify-center bg-slate-50 px-6 text-center">
+                  <div className="space-y-3">
+                    <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
+                    <a href={resumePreviewUrl ?? "#"} target="_blank" rel="noreferrer">
+                      <Button type="button" variant="secondary">
+                        Open PDF
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </object>
+            </div>
+          </StagePanel>
+        ) : null}
       </div>
     </SceneShell>
   );

@@ -5,7 +5,6 @@ import Link from "next/link";
 import type { Route } from "next";
 import {
   CandidateAssessmentPill,
-  CandidateMilestoneModePill,
   CandidateMilestoneStatusPill,
   CandidateMilestoneTypePill
 } from "@/components/candidates/CandidatePills";
@@ -106,7 +105,7 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
   }
 
   if (milestone.notes?.trim()) {
-    return milestone.notes.trim();
+    return milestone.notes.trim().slice(0, 120);
   }
 
   return milestone.status === "not_started" ? "No updates yet." : candidateMilestoneStatusLabels[milestone.status];
@@ -224,6 +223,13 @@ function TestMilestoneCard({
         <input type="hidden" name="title" value={milestone.title} />
         {isPlatform ? <input type="hidden" name="result" value="" /> : null}
 
+        <div className="flex flex-wrap gap-2">
+          <StatusPill label={selectedMode === "platform" ? "Hub path" : "Manual path"} tone="neutral" />
+          {milestone.date ? (
+            <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
+          ) : null}
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
           <div className="grid gap-1.5">
             <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Test path</span>
@@ -334,6 +340,12 @@ function DocumentationMilestoneCard({
       <input type="hidden" name="title" value={milestone.title} />
       <input type="hidden" name="mode" value={milestone.mode} />
 
+      {milestone.date ? (
+        <div className="flex flex-wrap gap-2">
+          <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
+        </div>
+      ) : null}
+
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
         <label className="grid gap-1">
           <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Date</span>
@@ -400,10 +412,19 @@ export function CandidateMilestoneTimeline({
     <div className="space-y-3">
       {milestones.map((milestone, index) => {
         const result = derivedResult(milestone);
+        const hasActivity = Boolean(
+          milestone.assessment ||
+            milestone.notes?.trim() ||
+            milestone.date ||
+            typeof milestone.score === "number" ||
+            result
+        );
         const compactByDefault =
-          milestone.status === "done" ||
-          milestone.status === "skipped" ||
-          (milestone.type === "registration" && hasResume);
+          milestone.status !== "in_progress" &&
+          (milestone.status === "done" ||
+            milestone.status === "skipped" ||
+            (milestone.status === "not_started" && !hasActivity) ||
+            (milestone.type === "registration" && hasResume));
 
         return (
           <details
@@ -425,9 +446,11 @@ export function CandidateMilestoneTimeline({
                       <div className="flex flex-wrap gap-2">
                         <CandidateMilestoneTypePill type={milestone.type} />
                         <CandidateMilestoneStatusPill status={milestone.status} />
-                        <CandidateMilestoneModePill mode={milestone.mode} />
                         {result ? (
                           <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+                        ) : null}
+                        {milestone.assessment?.status === "in_progress" ? (
+                          <CandidateAssessmentPill status={milestone.assessment.status} />
                         ) : null}
                       </div>
 
