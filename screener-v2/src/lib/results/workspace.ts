@@ -1,6 +1,10 @@
-import type { ResultSummary, RoleId } from "@/lib/assessment-engine/types";
 import type {
-  CandidateAssessmentStatus,
+  AssessmentContextType,
+  ResultReviewState,
+  ResultSummary,
+  RoleId
+} from "@/lib/assessment-engine/types";
+import type {
   CandidateNextAction,
   CandidateStage,
   CandidateUiStatus
@@ -11,13 +15,14 @@ export type ResultListSort = "newest" | "score_desc" | "score_asc" | "risk_desc"
 export type ResultScoreBand = "high" | "mid" | "low";
 
 export interface WorkspaceResultRow extends ResultSummary {
+  contextType: AssessmentContextType;
+  reviewState: ResultReviewState;
   submittedAt: string;
   candidateId?: string;
   candidateOwner?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
   candidateUiStatus?: CandidateUiStatus;
-  candidateAssessmentStatus?: CandidateAssessmentStatus;
   candidateLatestActivityAt?: string;
   candidateStaleDays?: number;
   candidateNotesSummary?: string;
@@ -28,23 +33,25 @@ export interface WorkspaceResultRow extends ResultSummary {
 export interface ResultsWorkspaceFilters {
   q?: string;
   status?: ResultStatusFilter;
+  reviewState?: ResultReviewState;
+  contextType?: AssessmentContextType;
   integrity?: IntegrityRiskLevel;
   role?: RoleId;
   owner?: string;
   stage?: CandidateStage;
-  assessmentStatus?: CandidateAssessmentStatus;
   scoreBand?: ResultScoreBand;
   sort?: ResultListSort;
 }
 
 type WorkspaceResultExtras = {
+  contextType?: AssessmentContextType;
+  reviewState?: ResultReviewState;
   submittedAt?: string;
   candidateId?: string;
   candidateOwner?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
   candidateUiStatus?: CandidateUiStatus;
-  candidateAssessmentStatus?: CandidateAssessmentStatus;
   candidateLatestActivityAt?: string;
   candidateStaleDays?: number;
   candidateNotesSummary?: string;
@@ -71,11 +78,12 @@ export function filterResultWorkspaceRows(rows: WorkspaceResultRow[], filters: R
       if (!haystack.includes(query)) return false;
     }
     if (filters.status && row.resultStatus !== filters.status) return false;
+    if (filters.reviewState && row.reviewState !== filters.reviewState) return false;
+    if (filters.contextType && row.contextType !== filters.contextType) return false;
     if (filters.integrity && row.integrityRisk !== filters.integrity) return false;
     if (filters.role && row.roleId !== filters.role) return false;
     if (filters.owner && (row.candidateOwner || "") !== filters.owner) return false;
     if (filters.stage && row.candidateStage !== filters.stage) return false;
-    if (filters.assessmentStatus && row.candidateAssessmentStatus !== filters.assessmentStatus) return false;
     if (filters.scoreBand && scoreBandForResult(row.finalPercent) !== filters.scoreBand) return false;
     return true;
   });
@@ -96,13 +104,14 @@ export function toWorkspaceResultRow(
 ): WorkspaceResultRow {
   return {
     ...row,
+    contextType: extras?.contextType ?? row.contextType ?? "general",
+    reviewState: extras?.reviewState ?? row.reviewState ?? "unreviewed",
     submittedAt: extras?.submittedAt ?? new Date().toISOString(),
     candidateId: extras?.candidateId,
     candidateOwner: extras?.candidateOwner,
     candidateStage: extras?.candidateStage,
     candidateNextAction: extras?.candidateNextAction,
     candidateUiStatus: extras?.candidateUiStatus,
-    candidateAssessmentStatus: extras?.candidateAssessmentStatus,
     candidateLatestActivityAt: extras?.candidateLatestActivityAt,
     candidateStaleDays: extras?.candidateStaleDays,
     candidateNotesSummary: extras?.candidateNotesSummary,

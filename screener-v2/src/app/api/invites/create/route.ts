@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { IntegrityPresetId, RoleId, StackId } from "@/lib/assessment-engine/types";
+import {
+  assessmentContextTypeValues,
+  type AssessmentContextType,
+  type IntegrityPresetId,
+  type RoleId,
+  type StackId
+} from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
@@ -16,6 +22,7 @@ import {
 const createInviteSchema = z.object({
   assessmentVersionId: z.string().default("v1-default"),
   mode: z.enum(["candidate", "employee", "live"]).default("candidate"),
+  contextType: z.enum(assessmentContextTypeValues).default("general"),
   candidateId: z.string().optional(),
   candidateMilestoneId: z.string().optional(),
   integrityPreset: z.enum(["strict", "standard", "relaxed"]).default("standard"),
@@ -90,6 +97,7 @@ export async function POST(request: Request) {
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,
       mode: body.mode,
+      contextType: body.contextType as AssessmentContextType,
       candidateId: body.candidateId,
       candidateMilestoneId: body.candidateMilestoneId,
       createdById: session?.userId ?? undefined,

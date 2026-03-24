@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
+import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
 import { getSession } from "@/lib/auth/session";
 import "./globals.css";
@@ -24,8 +25,15 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Assessment Hub",
-  description: "A platform for creating, taking, and reviewing technical assessments."
+  title: {
+    default: "Assessment Hub",
+    template: "%s | Assessment Hub"
+  },
+  description: "A polished workspace for creating, running, and reviewing technical assessments.",
+  themeColor: "#07111f",
+  icons: {
+    icon: "/icon.svg"
+  }
 };
 
 export default async function RootLayout({
@@ -41,8 +49,8 @@ export default async function RootLayout({
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.16),transparent_28%),linear-gradient(180deg,#040913,#091326)] text-white">
           <header className="sticky top-0 z-30 border-b border-white/10 bg-ink-950/68 backdrop-blur-xl">
             <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
-              <Link href="/" className="font-display text-lg tracking-wide text-white">
-                Assessment Hub
+              <Link href="/" className="transition hover:opacity-95">
+                <AppLogo />
               </Link>
               <MainNav viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
             </nav>

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
+import { AppLogo } from "@/components/brand/AppLogo";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +16,7 @@ export function MobileNavDrawer({
   onClose
 }: {
   open: boolean;
-  items: Array<{ href: Route; label: string }>;
+  items: Array<{ href: Route; label: string; icon: LucideIcon }>;
   pathname: string;
   viewer: Pick<AppSession, "email" | "name" | "role"> | null;
   onClose: () => void;
@@ -31,10 +33,13 @@ export function MobileNavDrawer({
       />
       <aside className="absolute right-0 top-0 h-full w-[min(86vw,360px)] border-l border-white/10 bg-ink-950/96 p-5 shadow-[var(--shadow-scene)]">
         <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Workspace</p>
-            <p className="text-lg text-white">{viewer?.name || viewer?.email || "Assessment Hub"}</p>
-            {viewer ? <p className="text-sm text-slate-400">{viewer.role}</p> : null}
+          <div className="space-y-3">
+            <AppLogo compact />
+            <div className="space-y-1">
+              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Workspace</p>
+              <p className="text-lg text-white">{viewer?.name || viewer?.email || "Assessment Hub"}</p>
+              {viewer ? <p className="text-sm text-slate-400">{viewer.role}</p> : null}
+            </div>
           </div>
           <button
             type="button"
@@ -48,6 +53,7 @@ export function MobileNavDrawer({
 
         <div className="mt-6 space-y-2">
           {items.map((item) => {
+            const Icon = item.icon;
             const href = item.href as string;
             const active =
               pathname === href ||
@@ -64,12 +70,13 @@ export function MobileNavDrawer({
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "block rounded-[18px] border px-4 py-3 text-sm transition",
+                  "flex items-center gap-3 rounded-[18px] border px-4 py-3 text-sm transition",
                   active
                     ? "border-brand-300/50 bg-brand-500/12 text-white"
                     : "border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
                 )}
               >
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );

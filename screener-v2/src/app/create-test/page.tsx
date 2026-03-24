@@ -277,6 +277,7 @@ export default function CreateTestPage() {
       body: JSON.stringify({
         assessmentVersionId: "v1-default",
         mode: "candidate",
+        contextType: linkedCandidateId ? "hiring" : "general",
         candidateId: linkedCandidateId,
         candidateMilestoneId: linkedCandidateMilestoneId,
         integrityPreset,

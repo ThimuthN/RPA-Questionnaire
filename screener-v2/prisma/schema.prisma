@@ -41,6 +41,7 @@ model Invite {
   id                  String   @id @default(cuid())
   assessmentVersionId String
   mode                String
+  contextType         String   @default("general")
   slug                String   @unique
   tokenHash           String   @unique
   passcodeHash        String?
@@ -78,6 +79,7 @@ model Attempt {
   assessmentVersionId    String
   inviteId               String?
   participantId          String
+  contextType            String   @default("general")
   integrityPreset        String?
   roleId                 String
   passTargetPercent      Int
@@ -112,6 +114,8 @@ model Attempt {
 model Result {
   id               String   @id @default(cuid())
   attemptId        String   @unique
+  contextType      String   @default("general")
+  reviewState      String   @default("unreviewed")
   corePercent      Float
   practicalPercent Float
   finalPercent     Float
@@ -122,6 +126,7 @@ model Result {
   createdAt        DateTime @default(now())
 
   @@index([finalPercent])
+  @@index([reviewState, createdAt])
 }
 
 model MagicToken {

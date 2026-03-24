@@ -9,6 +9,20 @@ export type AddonId = "applied_logic_reasoning";
 
 export type IntegrityPresetId = "strict" | "standard" | "relaxed";
 
+export const assessmentContextTypeValues = [
+  "general",
+  "hiring",
+  "promotion",
+  "training",
+  "certification"
+] as const;
+
+export type AssessmentContextType = (typeof assessmentContextTypeValues)[number];
+
+export const resultReviewStateValues = ["unreviewed", "reviewed", "flagged"] as const;
+
+export type ResultReviewState = (typeof resultReviewStateValues)[number];
+
 export type ExamDefinitionId =
   | "core_exam"
   | "practical_exam"
@@ -346,6 +360,8 @@ export interface ResultSummary {
   attemptId: string;
   candidateName?: string;
   candidateEmail?: string;
+  contextType?: AssessmentContextType;
+  reviewState?: ResultReviewState;
   candidateId?: string;
   candidateOwner?: string;
   candidateStage?: CandidateStage;

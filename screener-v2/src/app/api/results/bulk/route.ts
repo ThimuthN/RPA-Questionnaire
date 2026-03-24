@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { resultReviewStateValues } from "@/lib/assessment-engine/types";
 import { getSession } from "@/lib/auth/session";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateResults } from "@/lib/db/repositories";
@@ -10,7 +11,8 @@ import {
 } from "@/lib/server/logger";
 
 const bulkSchema = z.object({
-  action: z.enum(["assign_owner", "set_ui_status", "add_note"]),
+  action: z.enum(["set_review_state", "assign_owner", "set_ui_status", "add_note"]),
+  reviewState: z.enum(resultReviewStateValues).optional(),
   owner: z.string().optional(),
   status: z.enum(candidateUiStatusValues).optional(),
   noteBody: z.string().optional(),
@@ -41,6 +43,7 @@ export async function POST(request: Request) {
         .map((value) => String(value))
         .filter(Boolean),
       action: parsed.action,
+      reviewState: parsed.reviewState,
       owner: parsed.owner,
       status: parsed.status,
       noteBody: parsed.noteBody,

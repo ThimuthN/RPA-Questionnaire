@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { IntegrityPresetId, RoleId, StackId } from "@/lib/assessment-engine/types";
+import {
+  assessmentContextTypeValues,
+  type AssessmentContextType,
+  type IntegrityPresetId,
+  type RoleId,
+  type StackId
+} from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import {
   createOrGetParticipant,
@@ -17,6 +23,7 @@ const startSchema = z.object({
   inviteToken: z.string().optional(),
   inviteSlug: z.string().optional(),
   passcode: z.string().optional(),
+  contextType: z.enum(assessmentContextTypeValues).optional(),
   participant: z.object({
     kind: z.enum(["candidate", "employee"]),
     fullName: z.string().min(2),
@@ -40,6 +47,7 @@ export async function POST(request: Request) {
     let effectiveSections: SectionId[] | undefined;
     let effectivePassTarget: number | undefined;
     let effectiveBlueprint;
+    let effectiveContextType = (body.contextType as AssessmentContextType | undefined) ?? "general";
 
     if (body.inviteToken) {
       const inviteCheck = await validateInvite({
@@ -60,6 +68,7 @@ export async function POST(request: Request) {
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;
       effectiveBlueprint = inviteCheck.invite.blueprint;
+      effectiveContextType = inviteCheck.invite.contextType;
     } else if (body.inviteSlug) {
       const inviteCheck = await validateInvite({
         slug: body.inviteSlug,
@@ -79,6 +88,7 @@ export async function POST(request: Request) {
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;
       effectiveBlueprint = inviteCheck.invite.blueprint;
+      effectiveContextType = inviteCheck.invite.contextType;
     }
 
     if (!effectiveBlueprint && (!effectiveRoleId || !effectiveStacks?.length)) {
@@ -98,6 +108,7 @@ export async function POST(request: Request) {
       inviteId,
       assessmentVersionId,
       participantId: participant.id,
+      contextType: effectiveContextType,
       integrityPreset,
       roleId: effectiveRoleId,
       passTargetPercent: effectivePassTarget,

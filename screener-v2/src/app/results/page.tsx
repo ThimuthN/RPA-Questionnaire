@@ -1,6 +1,12 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
+import {
+  assessmentContextTypeValues,
+  type AssessmentContextType,
+  resultReviewStateValues,
+  type ResultReviewState
+} from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import { BulkReviewControls } from "@/components/results/BulkReviewControls";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -18,6 +24,8 @@ export const dynamic = "force-dynamic";
 
 const statusOptions: ResultStatusFilter[] = ["pass", "review", "fail"];
 const integrityOptions: IntegrityRiskLevel[] = ["clean", "watch", "review"];
+const reviewStateOptions: ResultReviewState[] = [...resultReviewStateValues];
+const contextTypeOptions: AssessmentContextType[] = [...assessmentContextTypeValues];
 const roleOptions = ["Intern", "Associate", "SE", "SeniorSE", "TechLead"] as const;
 const scoreBandOptions: ResultScoreBand[] = ["high", "mid", "low"];
 
@@ -27,6 +35,8 @@ type PageState = {
   updated?: string;
   q?: string;
   status?: string;
+  reviewState?: string;
+  contextType?: string;
   integrity?: string;
   role?: string;
   owner?: string;
@@ -77,6 +87,26 @@ function linkedStatusLabel(status: CandidateUiStatus) {
   if (status === "need_review") return "Needs review";
   if (status === "rejected") return "Closed";
   return "In progress";
+}
+
+function reviewStateTone(state: ResultReviewState) {
+  if (state === "reviewed") return "emerald";
+  if (state === "flagged") return "amber";
+  return "neutral";
+}
+
+function reviewStateLabel(state: ResultReviewState) {
+  if (state === "reviewed") return "Reviewed";
+  if (state === "flagged") return "Flagged";
+  return "Unreviewed";
+}
+
+function contextTypeLabel(type: AssessmentContextType) {
+  if (type === "hiring") return "Hiring";
+  if (type === "promotion") return "Promotion";
+  if (type === "training") return "Training";
+  if (type === "certification") return "Certification";
+  return "General";
 }
 
 function strongestArea(row: WorkspaceResultRow) {
@@ -137,6 +167,12 @@ export default async function ResultsPage({
     status: statusOptions.includes(pageState.status as ResultStatusFilter)
       ? (pageState.status as ResultStatusFilter)
       : undefined,
+    reviewState: reviewStateOptions.includes(pageState.reviewState as ResultReviewState)
+      ? (pageState.reviewState as ResultReviewState)
+      : undefined,
+    contextType: contextTypeOptions.includes(pageState.contextType as AssessmentContextType)
+      ? (pageState.contextType as AssessmentContextType)
+      : undefined,
     integrity: integrityOptions.includes(pageState.integrity as IntegrityRiskLevel)
       ? (pageState.integrity as IntegrityRiskLevel)
       : undefined,
@@ -189,7 +225,7 @@ export default async function ResultsPage({
         ) : null}
         {pageState.updated ? (
           <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            Updated {pageState.updated} linked workflow record(s).
+            Updated {pageState.updated} record(s).
           </div>
         ) : null}
         {pageState.error ? (
@@ -216,6 +252,8 @@ export default async function ResultsPage({
                     <p className="text-lg text-white">{row.candidateName || "Unnamed participant"}</p>
                     <p className="text-sm text-slate-300">{row.candidateEmail || "No email captured"}</p>
                     <div className="flex flex-wrap gap-2">
+                      <StatusPill label={contextTypeLabel(row.contextType)} tone="neutral" />
+                      <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
                       <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                       <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
                     </div>
@@ -235,7 +273,7 @@ export default async function ResultsPage({
         <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Filters</h2>
-            <p className="text-sm text-slate-300">Filter by result, integrity, target profile, and optional linked workflow metadata. Exports follow the current view.</p>
+            <p className="text-sm text-slate-300">Filter by result, review state, assessment context, target profile, and optional linked workflow metadata. Exports follow the current view.</p>
           </div>
           <form className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
@@ -265,6 +303,26 @@ export default async function ResultsPage({
                   <option value="pass">Pass</option>
                   <option value="review">Review</option>
                   <option value="fail">Fail</option>
+                </select>
+              </FilterField>
+              <FilterField label="Review state">
+                <select name="reviewState" defaultValue={pageState.reviewState ?? ""} className={filterControlClass}>
+                  <option value="">All review states</option>
+                  {reviewStateOptions.map((state) => (
+                    <option key={state} value={state}>
+                      {reviewStateLabel(state)}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+              <FilterField label="Assessment context">
+                <select name="contextType" defaultValue={pageState.contextType ?? ""} className={filterControlClass}>
+                  <option value="">All contexts</option>
+                  {contextTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {contextTypeLabel(type)}
+                    </option>
+                  ))}
                 </select>
               </FilterField>
               <FilterField label="Integrity">
@@ -397,6 +455,7 @@ export default async function ResultsPage({
                           <div className="space-y-1">
                             <p className="text-white">{row.roleId}</p>
                             <p className="text-xs text-slate-400">{stackSummary(row)}</p>
+                            <p className="text-xs text-slate-400">{contextTypeLabel(row.contextType)}</p>
                             <p className="text-xs text-slate-400">
                               {row.exams.length} exam{row.exams.length === 1 ? "" : "s"}
                             </p>
@@ -405,6 +464,7 @@ export default async function ResultsPage({
                         <td className="px-4 py-4">
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-2">
+                              <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
                               <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                               <StatusPill label={`Integrity ${row.integrityRisk}`} tone={toneForIntegrity(row.integrityRisk)} />
                             </div>

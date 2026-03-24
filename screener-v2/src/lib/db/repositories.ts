@@ -1,11 +1,13 @@
 import { Prisma } from "@prisma/client";
 import crypto from "node:crypto";
 import type {
+  AssessmentContextType,
   DetailedResultSummary,
   ExamBlueprint,
   ExamBlueprintDraftItem,
   ExamState,
   IntegrityPresetId,
+  ResultReviewState,
   ResultSummary,
   RoleId,
   StackId
@@ -51,6 +53,7 @@ interface InviteRecord {
   id: string;
   assessmentVersionId: string;
   mode: "candidate" | "employee" | "live";
+  contextType: AssessmentContextType;
   slug: string;
   tokenHash: string;
   passcodeHash?: string;
@@ -82,6 +85,7 @@ interface AttemptRecord {
   assessmentVersionId: string;
   inviteId?: string;
   participantId: string;
+  contextType: AssessmentContextType;
   candidateName?: string;
   candidateEmail?: string;
   integrityPreset: IntegrityPresetId;
@@ -507,6 +511,7 @@ function mapInvite(row: {
   id: string;
   assessmentVersionId: string;
   mode: string;
+  contextType: string;
   slug: string;
   tokenHash: string;
   passcodeHash: string | null;
@@ -541,6 +546,7 @@ function mapInvite(row: {
     id: row.id,
     assessmentVersionId: row.assessmentVersionId,
     mode: row.mode as InviteRecord["mode"],
+    contextType: row.contextType as AssessmentContextType,
     slug: row.slug,
     tokenHash: row.tokenHash,
     passcodeHash: row.passcodeHash ?? undefined,
@@ -582,6 +588,7 @@ function mapAttempt(row: {
   assessmentVersionId: string;
   inviteId: string | null;
   participantId: string;
+  contextType: string;
   integrityPreset: string | null;
   roleId: string;
   passTargetPercent: number | null;
@@ -662,6 +669,7 @@ function mapAttempt(row: {
     assessmentVersionId: row.assessmentVersionId,
     inviteId: row.inviteId ?? undefined,
     participantId: row.participantId,
+    contextType: row.contextType as AssessmentContextType,
     integrityPreset: normalizeIntegrityPreset(row.integrityPreset, "strict"),
     roleId,
     passTargetPercent,
@@ -700,6 +708,7 @@ function mapAttempt(row: {
 export async function createInvite(input: {
   assessmentVersionId: string;
   mode: "candidate" | "employee" | "live";
+  contextType?: AssessmentContextType;
   candidateId?: string;
   candidateMilestoneId?: string;
   createdById?: string;
@@ -765,6 +774,7 @@ export async function createInvite(input: {
         id: cuidLike(),
         assessmentVersionId: input.assessmentVersionId,
         mode: input.mode,
+        contextType: input.contextType ?? "general",
         slug: randomToken(6).toLowerCase(),
         tokenHash: hashValue(token),
         passcodeHash: passcode ? hashValue(passcode) : null,
@@ -892,6 +902,7 @@ export async function startAttempt(input: {
   inviteId?: string;
   assessmentVersionId?: string;
   participantId: string;
+  contextType?: AssessmentContextType;
   integrityPreset?: IntegrityPresetId;
   roleId?: RoleId;
   passTargetPercent?: number;
@@ -933,6 +944,7 @@ export async function startAttempt(input: {
         assessmentVersionId: input.assessmentVersionId ?? "v1-default",
         inviteId: input.inviteId ?? null,
         participantId: input.participantId,
+        contextType: input.contextType ?? "general",
         integrityPreset,
         roleId: effectiveRoleId,
         passTargetPercent,
@@ -1149,6 +1161,7 @@ export async function submitAttempt(input: { attemptId: string }) {
     await tx.result.upsert({
       where: { attemptId: input.attemptId },
       update: {
+        contextType: current.contextType,
         corePercent: result.corePercent,
         practicalPercent: result.practicalPercent,
         finalPercent: result.finalPercent,
@@ -1167,6 +1180,8 @@ export async function submitAttempt(input: { attemptId: string }) {
       create: {
         id: cuidLike(),
         attemptId: input.attemptId,
+        contextType: current.contextType,
+        reviewState: "unreviewed",
         corePercent: result.corePercent,
         practicalPercent: result.practicalPercent,
         finalPercent: result.finalPercent,
@@ -1298,13 +1313,14 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
       const staleDays = Math.max(0, Math.floor((Date.now() - Date.parse(latestActivityAt)) / (1000 * 60 * 60 * 24)));
 
       return toWorkspaceResultRow(summary, {
+        contextType: summary.contextType,
+        reviewState: summary.reviewState,
         submittedAt,
         candidateId: candidate?.id,
         candidateOwner: candidate?.hrOwner ?? undefined,
         candidateStage: candidate?.stage as CandidateStage | undefined,
         candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
         candidateUiStatus: uiStatus,
-        candidateAssessmentStatus: resultStatus,
         candidateLatestActivityAt: latestActivityAt,
         candidateStaleDays: staleDays,
         candidateNotesSummary: candidate?.notesSummary ?? undefined
@@ -1342,7 +1358,8 @@ export async function listResultWorkspacePage(
 
 export async function bulkUpdateResults(input: {
   attemptIds: string[];
-  action: "assign_owner" | "set_ui_status" | "add_note";
+  action: "set_review_state" | "assign_owner" | "set_ui_status" | "add_note";
+  reviewState?: ResultReviewState;
   owner?: string;
   status?: CandidateUiStatus;
   noteBody?: string;
@@ -1352,6 +1369,25 @@ export async function bulkUpdateResults(input: {
   const attemptIds = [...new Set(input.attemptIds.filter(Boolean))];
   if (attemptIds.length === 0) {
     throw new Error("Select at least one result.");
+  }
+
+  if (input.action === "set_review_state") {
+    if (!input.reviewState) {
+      throw new Error("Choose a review state.");
+    }
+
+    const updated = await prisma.result.updateMany({
+      where: {
+        attemptId: {
+          in: attemptIds
+        }
+      },
+      data: {
+        reviewState: input.reviewState
+      }
+    });
+
+    return { updatedCount: updated.count };
   }
 
   const rows = await prisma.candidateAssessment.findMany({
@@ -1442,6 +1478,8 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
   const candidate = link?.candidate;
   const resultStatus: CandidateAssessmentStatus = resultRow.pass ? "passed" : resultRow.borderline ? "review" : "failed";
   const summary = toWorkspaceResultRow(baseSummary, {
+    contextType: baseSummary.contextType,
+    reviewState: baseSummary.reviewState,
     submittedAt: attempt.submittedAt ?? attempt.startedAt ?? new Date().toISOString(),
     candidateId: candidate?.id,
     candidateOwner: candidate?.hrOwner ?? undefined,
@@ -1456,7 +1494,6 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
           latestAssessmentStatus: resultStatus
         })
       : undefined,
-    candidateAssessmentStatus: resultStatus,
     candidateLatestActivityAt: candidate?.updatedAt?.toISOString(),
     candidateStaleDays: candidate?.updatedAt
       ? Math.max(0, Math.floor((Date.now() - candidate.updatedAt.getTime()) / (1000 * 60 * 60 * 24)))

@@ -1,9 +1,11 @@
 import { Prisma } from "@prisma/client";
 import type {
+  AssessmentContextType,
   ExamBlueprint,
   ExamState,
   Question,
   ResultReviewItem,
+  ResultReviewState,
   ResultReviewSection,
   ResultSummary,
   RoleId,
@@ -117,6 +119,8 @@ function parseBreakdown(
 export function toResultSummary(
   resultRow: {
     attemptId: string;
+    contextType?: string;
+    reviewState?: string;
     corePercent: number;
     practicalPercent: number;
     finalPercent: number;
@@ -211,6 +215,8 @@ export function toResultSummary(
     attemptId: resultRow.attemptId,
     candidateName: participant?.fullName,
     candidateEmail: participant?.email,
+    contextType: (resultRow.contextType as AssessmentContextType | undefined) ?? "general",
+    reviewState: (resultRow.reviewState as ResultReviewState | undefined) ?? "unreviewed",
     roleId: attempt.roleId,
     stacks: attempt.stacks,
     sections: breakdown.sections,

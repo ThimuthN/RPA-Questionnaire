@@ -4,29 +4,35 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Route } from "next";
-import { Menu } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Activity, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
 import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
+type NavItem = { href: Route; label: string; icon: LucideIcon };
+
 export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" | "role"> | null }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const items: Array<{ href: Route; label: string }> = viewer
+  const items: NavItem[] = viewer
     ? [
-        { href: "/candidates" as Route, label: copy.nav.candidates },
-        { href: "/assessments" as Route, label: copy.nav.create },
-        { href: "/results", label: copy.nav.results },
-        { href: "/live" as Route, label: copy.nav.run },
-        ...(viewer.role === "admin" ? [{ href: "/users" as Route, label: copy.nav.users }] : [])
+        { href: "/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
+        { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
+        { href: "/results", label: copy.nav.results, icon: Activity },
+        { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
+        ...(viewer.role === "admin"
+          ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }]
+          : [])
       ]
-    : [{ href: "/live" as Route, label: copy.nav.run }];
+    : [{ href: "/live" as Route, label: copy.nav.run, icon: RadioTower }];
 
   return (
     <div className="flex items-center gap-3">
       <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md md:flex">
         {items.map((item) => {
+          const Icon = item.icon;
           const href = item.href as string;
           const active =
             pathname === href ||
@@ -40,12 +46,13 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950",
+                "inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950",
                 active
                   ? "bg-[linear-gradient(135deg,rgba(31,111,255,0.24),rgba(47,134,255,0.12))] text-white"
                   : "text-slate-200 hover:bg-white/[0.06] hover:text-white"
               )}
             >
+              <Icon className="h-4 w-4" />
               {item.label}
             </Link>
           );

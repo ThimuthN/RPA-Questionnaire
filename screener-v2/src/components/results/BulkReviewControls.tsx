@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { resultReviewStateValues, type ResultReviewState } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import {
   candidateNoteTypeLabels,
@@ -19,6 +20,12 @@ const linkedStatusLabels: Record<(typeof candidateUiStatusValues)[number], strin
   need_review: "Needs review",
   moved_forward: "Advanced",
   rejected: "Closed"
+};
+
+const reviewStateLabels: Record<ResultReviewState, string> = {
+  unreviewed: "Unreviewed",
+  reviewed: "Reviewed",
+  flagged: "Flagged"
 };
 
 const noteTypeLabels: Record<(typeof candidateNoteTypeValues)[number], string> = {
@@ -48,7 +55,7 @@ function setAllSelected(form: HTMLFormElement | null, checked: boolean) {
 }
 
 export function BulkReviewControls({ formId }: { formId: string }) {
-  const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note">("set_ui_status");
+  const [action, setAction] = useState<"set_review_state" | "assign_owner" | "set_ui_status" | "add_note">("set_review_state");
   const [selectedCount, setSelectedCount] = useState(0);
 
   useEffect(() => {
@@ -74,9 +81,9 @@ export function BulkReviewControls({ formId }: { formId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-2xl text-white">Linked workflow actions</h2>
+          <h2 className="text-2xl text-white">Bulk actions</h2>
           <p className="text-sm text-slate-300">
-            These actions update linked profile records for selected results. Assessment-only results are unchanged.
+            Update review state for any result, or apply linked workflow actions when a profile record exists.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -114,15 +121,29 @@ export function BulkReviewControls({ formId }: { formId: string }) {
             name="action"
             value={action}
             onChange={(event) =>
-              setAction(event.target.value as "assign_owner" | "set_ui_status" | "add_note")
+              setAction(event.target.value as "set_review_state" | "assign_owner" | "set_ui_status" | "add_note")
             }
             className={fieldClass}
           >
+            <option value="set_review_state">Update review state</option>
             <option value="set_ui_status">Update linked status</option>
             <option value="assign_owner">Assign linked owner</option>
             <option value="add_note">Add linked note</option>
           </select>
         </label>
+
+        {action === "set_review_state" ? (
+          <label className="grid gap-2">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Review state</span>
+            <select name="reviewState" defaultValue="reviewed" className={fieldClass}>
+              {resultReviewStateValues.map((state) => (
+                <option key={state} value={state}>
+                  {reviewStateLabels[state]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
 
         {action === "assign_owner" ? (
           <label className="grid gap-2">

@@ -7,6 +7,8 @@ function result(overrides: Partial<ResultSummary>): ResultSummary {
     attemptId: "attempt-1",
     candidateName: "Jane Doe",
     candidateEmail: "jane@example.com",
+    contextType: "general",
+    reviewState: "unreviewed",
     roleId: "Associate",
     stacks: ["UiPath"],
     sections: ["core", "practical"],
@@ -27,19 +29,28 @@ function result(overrides: Partial<ResultSummary>): ResultSummary {
 }
 
 describe("result workspace filters", () => {
-  it("filters by owner and score band", () => {
+  it("filters by owner, score band, context, and review state", () => {
     const rows = [
       toWorkspaceResultRow(result({ attemptId: "a1", finalPercent: 82 }), {
         submittedAt: "2026-03-23T00:00:00.000Z",
-        candidateOwner: "Alex"
+        candidateOwner: "Alex",
+        contextType: "training",
+        reviewState: "reviewed"
       }),
       toWorkspaceResultRow(result({ attemptId: "a2", finalPercent: 48, pass: false }), {
         submittedAt: "2026-03-23T00:00:00.000Z",
-        candidateOwner: "Jamie"
+        candidateOwner: "Jamie",
+        contextType: "hiring",
+        reviewState: "flagged"
       })
     ];
 
-    const filtered = filterResultWorkspaceRows(rows, { owner: "Alex", scoreBand: "high" });
+    const filtered = filterResultWorkspaceRows(rows, {
+      owner: "Alex",
+      scoreBand: "high",
+      contextType: "training",
+      reviewState: "reviewed"
+    });
     expect(filtered.map((row) => row.attemptId)).toEqual(["a1"]);
   });
 });
