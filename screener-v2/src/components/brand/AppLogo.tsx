@@ -17,7 +17,7 @@ export function AppLogo({
       {!compact ? (
         <div className="space-y-0.5">
           <p className="font-display text-lg tracking-[0.02em] text-white">Assessment Hub</p>
-          <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Orbit Assistant</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Screening workspace</p>
         </div>
       ) : null}
     </div>

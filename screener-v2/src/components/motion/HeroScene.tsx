@@ -23,14 +23,14 @@ export function HeroScene({ className }: { className?: string }) {
       <div className="relative z-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-brand-300">
-            Guided screening engine
+            Assessment experience
           </div>
           <div className="space-y-3">
             <h3 className="max-w-sm font-display text-3xl leading-tight text-white">
-              Meet Orbit, the helper that keeps your assessments feeling alive.
+              A friendlier front door for candidates and teams.
             </h3>
             <p className="max-w-sm text-sm leading-6 text-slate-300">
-              A brighter first impression, clearer motion cues, and polished flow from invite to decision.
+              Orbit adds warmth to loading and launch moments while the workspace stays focused on real work.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-slate-200">

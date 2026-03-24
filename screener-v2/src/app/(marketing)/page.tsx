@@ -1,15 +1,11 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Bot,
   BriefcaseBusiness,
   CheckCircle2,
-  PlayCircle,
-  Sparkles,
-  Stars,
-  TimerReset
+  Clock3,
+  PlayCircle
 } from "lucide-react";
-import { OrbitMascot } from "@/components/brand/OrbitMascot";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { HeroScene } from "@/components/motion/HeroScene";
 import { Button } from "@/components/primitives/Button";
@@ -48,9 +44,9 @@ export default async function MarketingHomePage() {
       <SceneTransition>
         <SceneShell
           variant="results"
-          eyebrow="Ops bridge"
-          title="A sharper command center for your hiring flow"
-          subtitle="Keep screening momentum high with a branded workspace, clearer next actions, and a friendlier first impression for every visit."
+          eyebrow="Workspace"
+          title="Hiring workspace"
+          subtitle="Review candidates, check recent results, and keep the next hiring decision moving."
           utility={
             <div className="flex flex-wrap gap-2">
               <Link href="/candidates">
@@ -66,58 +62,23 @@ export default async function MarketingHomePage() {
           }
         >
           <div className="space-y-5">
-            <StagePanel tone="summary" className="overflow-hidden">
-              <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/20 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-brand-300">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Orbit overview
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="font-display text-3xl text-white">Open the site and know what matters first.</h2>
-                    <p className="max-w-2xl text-sm leading-6 text-slate-300">
-                      A stronger first screen, better visual hierarchy, and a little character make the workspace feel more product-grade without slowing your workflow down.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Fresh triage</p>
-                      <p className="mt-2 text-2xl text-white">{candidateWorkspace.rows.length}</p>
-                      <p className="mt-1 text-sm text-slate-400">Inbox candidates ready to move.</p>
-                    </div>
-                    <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Latest result</p>
-                      <p className="mt-2 text-2xl text-white">
-                        {resultWorkspace.rows[0]?.finalPercent.toFixed(1) ?? "--"}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-400">Most recent score snapshot.</p>
-                    </div>
-                    <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Decision rhythm</p>
-                      <p className="mt-2 text-2xl text-white">{candidateWorkspace.summary.readyForReview}</p>
-                      <p className="mt-1 text-sm text-slate-400">Profiles waiting for review.</p>
-                    </div>
-                  </div>
+            <StagePanel tone="summary" className="py-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Today</p>
+                  <p className="text-sm text-slate-200">
+                    {candidateWorkspace.summary.needsResume} candidates need setup,{" "}
+                    {candidateWorkspace.summary.readyForReview} are ready for review, and{" "}
+                    {candidateWorkspace.summary.stalled} have gone quiet.
+                  </p>
                 </div>
-                <div className="relative flex justify-center">
-                  <div className="absolute inset-0 rounded-[28px] bg-[radial-gradient(circle,rgba(47,134,255,0.22),transparent_58%)] blur-3xl" />
-                  <div className="relative rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-6">
-                    <OrbitMascot size="xl" />
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-slate-200">
-                        <Stars className="h-4 w-4 text-brand-300" />
-                        Brand layer active
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-200">
-                        <TimerReset className="h-4 w-4 text-teal-300" />
-                        Loading states ready
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-slate-200">
-                        <Bot className="h-4 w-4 text-amber-300" />
-                        Mascot moments added
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill label={`${candidateWorkspace.rows.length} inbox items`} tone="blue" />
+                  <StatusPill label={`${resultWorkspace.rows.length} recent results`} tone="neutral" />
+                  <StatusPill
+                    label={`${resultWorkspace.rows.filter((row) => row.resultStatus === "review").length} needs review`}
+                    tone="amber"
+                  />
                 </div>
               </div>
             </StagePanel>
@@ -150,7 +111,7 @@ export default async function MarketingHomePage() {
               <StagePanel className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <TimerReset className="h-4 w-4 text-rose-300" />
+                    <Clock3 className="h-4 w-4 text-rose-300" />
                     <p className="text-sm text-slate-300">Stalled</p>
                   </div>
                   <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
@@ -247,37 +208,33 @@ export default async function MarketingHomePage() {
     <SceneTransition>
       <SceneShell
         variant="create"
-        eyebrow="Orbit-powered assessment studio"
-        title="Make your assessment platform feel like a finished product"
-        subtitle="A brighter first load, a stronger landing page, and a polished runtime from invite to result."
+        eyebrow="Technical assessment platform"
+        title="Create, run, and review assessments in one place"
+        subtitle="Give candidates a polished experience and keep hiring decisions moving with one shared workspace."
       >
         <div className="space-y-5">
           <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.28em] text-brand-300">
-                <Sparkles className="h-3.5 w-3.5" />
-                Finalize the experience
-              </div>
               <div className="space-y-3">
                 <h2 className="max-w-2xl font-display text-5xl leading-[0.95] text-white md:text-6xl">
-                  Screening software that feels smart, branded, and ready to ship.
+                  A calmer way to manage screening from invite to decision.
                 </h2>
                 <p className="max-w-2xl text-base leading-7 text-slate-300">
-                  Launch role-aware assessments, give candidates a more memorable front door, and review results in a workspace that already feels premium.
+                  Launch role-aware assessments, give candidates a clear front door, and review outcomes in a workspace built for day-to-day hiring work.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Branded first load</p>
-                  <p className="mt-2 text-sm text-slate-200">Mascot-led loading and motion cues that soften transitions.</p>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Create quickly</p>
+                  <p className="mt-2 text-sm text-slate-200">Build assessments with role-aware sections and a cleaner share flow.</p>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Better landing</p>
-                  <p className="mt-2 text-sm text-slate-200">A hero section with more personality, hierarchy, and confidence.</p>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Run smoothly</p>
+                  <p className="mt-2 text-sm text-slate-200">Guide candidates through a polished runtime with automatic saving.</p>
                 </div>
                 <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Tab + nav icons</p>
-                  <p className="mt-2 text-sm text-slate-200">Sharper scanability in the browser and inside the app.</p>
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Review clearly</p>
+                  <p className="mt-2 text-sm text-slate-200">Compare recent results and move hiring decisions forward faster.</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -297,56 +254,6 @@ export default async function MarketingHomePage() {
             </div>
             <HeroScene className="min-h-[440px]" />
           </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <StagePanel className="space-y-3">
-              <div className="flex items-center gap-2 text-brand-300">
-                <Bot className="h-4 w-4" />
-                <p className="text-[11px] uppercase tracking-[0.22em]">Cute without clutter</p>
-              </div>
-              <h3 className="text-2xl text-white">Mascot moments</h3>
-              <p className="text-sm leading-6 text-slate-300">
-                Orbit appears in loading states, hero panels, and empty-feeling surfaces to make the product feel welcoming.
-              </p>
-            </StagePanel>
-
-            <StagePanel className="space-y-3">
-              <div className="flex items-center gap-2 text-teal-300">
-                <Sparkles className="h-4 w-4" />
-                <p className="text-[11px] uppercase tracking-[0.22em]">Motion that helps</p>
-              </div>
-              <h3 className="text-2xl text-white">Smoother perception</h3>
-              <p className="text-sm leading-6 text-slate-300">
-                Loading bars, ambient backgrounds, and reveal transitions make the app feel responsive instead of abrupt.
-              </p>
-            </StagePanel>
-
-            <StagePanel className="space-y-3">
-              <div className="flex items-center gap-2 text-amber-300">
-                <Stars className="h-4 w-4" />
-                <p className="text-[11px] uppercase tracking-[0.22em]">Product polish</p>
-              </div>
-              <h3 className="text-2xl text-white">A stronger front door</h3>
-              <p className="text-sm leading-6 text-slate-300">
-                New branding, improved navigation, and a richer landing page raise trust before users touch any workflow.
-              </p>
-            </StagePanel>
-          </div>
-
-          <StagePanel tone="summary" className="overflow-hidden">
-            <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
-              <div className="flex justify-center lg:justify-start">
-                <OrbitMascot size="xl" />
-              </div>
-              <div className="space-y-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">What this first pass adds</p>
-                <h3 className="font-display text-3xl text-white">A product that immediately reads as cared for.</h3>
-                <p className="text-sm leading-6 text-slate-300">
-                  Start with the polished home experience, then extend the same mascot, icon, and motion language to empty states, runtime loading, and share flows.
-                </p>
-              </div>
-            </div>
-          </StagePanel>
         </div>
       </SceneShell>
     </SceneTransition>
