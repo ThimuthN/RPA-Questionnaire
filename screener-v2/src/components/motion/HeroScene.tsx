@@ -23,30 +23,24 @@ export function HeroScene({ className }: { className?: string }) {
       <div className="relative z-10 grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-brand-300">
-            Assessment experience
+            For candidates and teams
           </div>
           <div className="space-y-3">
             <h3 className="max-w-sm font-display text-3xl leading-tight text-white">
-              A friendlier front door for candidates and teams.
+              Clear for candidates. Easy for your team.
             </h3>
             <p className="max-w-sm text-sm leading-6 text-slate-300">
-              Orbit adds warmth to loading and launch moments while the workspace stays focused on real work.
+              A simple test flow for candidates, with one place for your team to create assessments and review results.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-slate-200">
-            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Role-aware scoring</span>
-            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Live workspace</span>
-            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Branded runtime</span>
+            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Role-based</span>
+            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Auto-save</span>
+            <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Results review</span>
           </div>
         </div>
         <div className="relative mx-auto flex w-full max-w-[260px] items-center justify-center">
           <OrbitMascot size="xl" />
-          <div className="absolute -left-1 top-7 rounded-full border border-white/14 bg-white/[0.08] px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-slate-100">
-            Syncing scenes
-          </div>
-          <div className="absolute -right-2 bottom-8 rounded-full border border-teal-400/30 bg-teal-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-teal-100">
-            Brand ready
-          </div>
         </div>
       </div>
       <svg viewBox="0 0 320 220" className="relative z-10 mt-6 h-full w-full">
@@ -88,9 +82,9 @@ export function HeroScene({ className }: { className?: string }) {
         </g>
       </svg>
       <div className="relative z-10 mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-wide text-slate-200">
-        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Core: 20m</span>
-        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Practical: 10m</span>
-        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Orbit assistant</span>
+        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Core + practical</span>
+        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Saved automatically</span>
+        <span className="rounded-full border border-white/20 bg-white/5 px-2 py-1">Built for hiring</span>
       </div>
     </div>
   );

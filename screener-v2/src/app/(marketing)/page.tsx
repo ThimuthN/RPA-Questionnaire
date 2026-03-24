@@ -73,7 +73,7 @@ export default async function MarketingHomePage() {
                     <p className="text-sm text-slate-200">
                       {candidateWorkspace.summary.needsResume} candidates need setup,{" "}
                       {candidateWorkspace.summary.readyForReview} are ready for review, and{" "}
-                      {candidateWorkspace.summary.stalled} have gone quiet.
+                      {candidateWorkspace.summary.stalled} have been inactive.
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -187,7 +187,7 @@ export default async function MarketingHomePage() {
                   ) : (
                     <WorkspaceEmptyState
                       title="No candidates need attention right now."
-                      description="When new candidates arrive or someone needs review, Orbit will help this inbox feel less empty."
+                      description="New candidates or review work will show up here when something needs attention."
                     />
                   )}
                 </StagePanel>
@@ -232,7 +232,7 @@ export default async function MarketingHomePage() {
                   ) : (
                     <WorkspaceEmptyState
                       title="No results yet."
-                      description="Completed assessments will show up here with score snapshots and review status."
+                      description="Completed assessments will show up here with scores and review status."
                     />
                   )}
                 </StagePanel>
@@ -248,40 +248,30 @@ export default async function MarketingHomePage() {
     <SceneTransition>
       <SceneShell
         variant="create"
-        eyebrow="Technical assessment platform"
-        title="Create, run, and review assessments in one place"
-        subtitle="Give candidates a polished experience and keep hiring decisions moving with one shared workspace."
+        eyebrow="Technical assessments"
+        title="Create assessments, invite candidates, and review results in one place."
+        subtitle="A simple workspace for running role-based screening and keeping hiring decisions moving."
       >
         <StaggerGroup className="space-y-5">
           <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <StaggerGroup className="space-y-5" delay={0.04}>
-              <StaggerItem>
-                <div className="space-y-3">
-                  <h2 className="max-w-2xl font-display text-5xl leading-[0.95] text-white md:text-6xl">
-                    A calmer way to manage screening from invite to decision.
-                  </h2>
-                  <p className="max-w-2xl text-base leading-7 text-slate-300">
-                    Launch role-aware assessments, give candidates a clear front door, and review outcomes in a workspace built for day-to-day hiring work.
-                  </p>
-                </div>
-              </StaggerItem>
               <StaggerGroup className="grid gap-3 sm:grid-cols-3" delay={0.1}>
                 <StaggerItem hover>
                   <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Create quickly</p>
-                    <p className="mt-2 text-sm text-slate-200">Build assessments with role-aware sections and a cleaner share flow.</p>
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Create assessments</p>
+                    <p className="mt-2 text-sm text-slate-200">Set up role-based assessments and share them quickly.</p>
                   </div>
                 </StaggerItem>
                 <StaggerItem hover>
                   <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
                     <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Run smoothly</p>
-                    <p className="mt-2 text-sm text-slate-200">Guide candidates through a polished runtime with automatic saving.</p>
+                    <p className="mt-2 text-sm text-slate-200">Give candidates a clear test flow with automatic saving.</p>
                   </div>
                 </StaggerItem>
                 <StaggerItem hover>
                   <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Review clearly</p>
-                    <p className="mt-2 text-sm text-slate-200">Compare recent results and move hiring decisions forward faster.</p>
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Review results</p>
+                    <p className="mt-2 text-sm text-slate-200">Check outcomes, compare submissions, and move faster.</p>
                   </div>
                 </StaggerItem>
               </StaggerGroup>

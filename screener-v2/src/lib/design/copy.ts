@@ -7,8 +7,8 @@ export const copy = {
     users: "Users"
   },
   landing: {
-    headline: "A better way to assess candidates",
-    subtext: "Includes core and practical sections, with results ready to review.",
+    headline: "Create assessments, invite candidates, and review results in one place.",
+    subtext: "A simple workspace for running role-based screening and keeping hiring decisions moving.",
     primaryCta: "Create assessment",
     secondaryCta: "Start assessment"
   },
