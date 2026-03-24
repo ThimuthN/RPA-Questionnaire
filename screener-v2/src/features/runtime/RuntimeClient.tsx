@@ -754,7 +754,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
     setShowSubmitReview(true);
   }
 
-  function itemState(item: ExamQuestion, index: number): NavigatorItem["state"] {
+  function itemState(item: ExamQuestion): NavigatorItem["state"] {
     const isCurrent = currentItem?.id === item.id;
     const answer = currentExamState?.answers?.[item.id];
     const isAnswered = isExamItemAnswered(item, answer);
@@ -773,7 +773,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
     return currentExam.contentSnapshot.items.map((item, index) => ({
       id: item.id,
       label: String(index + 1),
-      state: itemState(item, index),
+      state: itemState(item),
       onSelect: () => {
         setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: index }));
         setNavOpen(false);

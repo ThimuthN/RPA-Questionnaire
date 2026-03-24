@@ -802,41 +802,6 @@ export async function quickUpdateCandidateMilestoneStatus(
   return mapMilestone(updated);
 }
 
-export async function createCandidateAssessmentLink(input: {
-  candidateId: string;
-  inviteId: string;
-  createdById?: string;
-}) {
-  return prisma.candidateAssessment.create({
-    data: {
-      id: cuidLike(),
-      candidateId: input.candidateId,
-      inviteId: input.inviteId,
-      createdById: input.createdById ?? null
-    }
-  });
-}
-
-export async function attachAttemptToCandidateAssessment(input: {
-  inviteId: string;
-  attemptId: string;
-}) {
-  const link = await prisma.candidateAssessment.findUnique({
-    where: { inviteId: input.inviteId }
-  });
-
-  if (!link) {
-    return null;
-  }
-
-  return prisma.candidateAssessment.update({
-    where: { inviteId: input.inviteId },
-    data: {
-      attemptId: input.attemptId
-    }
-  });
-}
-
 export async function linkCandidateAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;

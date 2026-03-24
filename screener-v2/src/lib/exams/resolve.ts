@@ -6,7 +6,6 @@ import type {
   FrozenExamInstance,
   LogicReasoningQuestion,
   PracticalTaskQuestion,
-  Question,
   RoleId,
   StackId
 } from "@/lib/assessment-engine/types";

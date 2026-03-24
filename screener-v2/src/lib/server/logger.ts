@@ -106,14 +106,6 @@ export function createRequestLogContext(
   };
 }
 
-export function logInfo(event: string, context: LogContext) {
-  writeLog("info", event, context);
-}
-
-export function logWarn(event: string, context: LogContext) {
-  writeLog("warn", event, context);
-}
-
 export function logError(event: string, context: LogContext) {
   writeLog("error", event, context);
 }

@@ -11,17 +11,15 @@ import type {
   StackId
 } from "@/lib/assessment-engine/types";
 import { buildResultSummary } from "@/lib/assessment-engine/scoring";
-import { getQuestionsByIds, getRoleConfig, questionBank } from "@/lib/data/question-bank";
+import { getQuestionsByIds, getRoleConfig } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
 import {
   createSectionState,
   getDefaultSelectedSections,
-  normalizeSelectedSections,
-  sectionRegistry
+  normalizeSelectedSections
 } from "@/lib/sections/registry";
 import type { SectionId, SectionState } from "@/lib/sections/types";
 import { hashValue, randomPasscode, randomToken } from "@/lib/tokens/token-service";
-import { definitionIdFromLegacySection, deriveExamSelectionMetadata } from "@/lib/exams/catalog";
 import {
   blueprintLegacySections,
   blueprintRoleId,
@@ -46,7 +44,7 @@ import type {
   CandidateStage,
   CandidateUiStatus
 } from "@/lib/candidates/types";
-import type { ResultListSort, ResultScoreBand, ResultsWorkspaceFilters, WorkspaceResultRow } from "@/lib/results/workspace";
+import type { ResultsWorkspaceFilters, WorkspaceResultRow } from "@/lib/results/workspace";
 import { filterResultWorkspaceRows, toWorkspaceResultRow } from "@/lib/results/workspace";
 
 interface InviteRecord {

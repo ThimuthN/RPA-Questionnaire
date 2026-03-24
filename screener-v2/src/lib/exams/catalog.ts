@@ -134,14 +134,6 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
 
 export const orderedExamCatalog = Object.values(examCatalog);
 
-export function getExamCatalogEntry(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId];
-}
-
-export function getLegacySectionId(definitionId: ExamDefinitionId): SectionId | undefined {
-  return examCatalog[definitionId].legacySectionId;
-}
-
 export function definitionIdFromLegacySection(sectionId: SectionId): ExamDefinitionId {
   switch (sectionId) {
     case "core":

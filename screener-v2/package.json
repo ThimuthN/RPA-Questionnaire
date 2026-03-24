@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
+    "typecheck:unused": "tsc --noEmit --noUnusedLocals --noUnusedParameters",
     "test": "vitest run",
     "clean": "node scripts/clean-next.mjs",
     "validate:questions": "node scripts/validate-question-bank.mjs",

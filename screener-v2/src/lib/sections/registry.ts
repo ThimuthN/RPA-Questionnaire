@@ -78,10 +78,6 @@ export function getSectionDurationMinutes(sectionId: SectionId, roleId: RoleId):
   return sectionRegistry[sectionId].durationMinutes;
 }
 
-export function getTotalDurationMinutes(sections: SectionId[], roleId: RoleId): number {
-  return normalizeSelectedSections(sections).reduce((sum, sectionId) => sum + getSectionDurationMinutes(sectionId, roleId), 0);
-}
-
 export function createSectionState(args: {
   roleId: RoleId;
   stacks: StackId[];
