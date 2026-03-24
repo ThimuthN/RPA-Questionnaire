@@ -616,9 +616,7 @@ export function CreateAssessmentBuilder({
                 <div className="space-y-3">
                   {previewExams.map((exam, index) => {
                     const expanded = expandedExamKeys.includes(exam.key);
-                    const configFields = examCatalog[exam.definitionId].configFields.filter(
-                      (field) => field.key !== "roleId"
-                    );
+                    const configFields = examCatalog[exam.definitionId].configFields;
                     const sourceAddon = exam.sourceAddonId ? addonLookup.get(exam.sourceAddonId) : null;
 
                     return (
