@@ -63,7 +63,8 @@ function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
       <input type="hidden" name="fullName" value={candidate.fullName} />
       <input type="hidden" name="email" value={candidate.email} />
       <input type="hidden" name="phone" value={candidate.phone || ""} />
-      <input type="hidden" name="positionAppliedFor" value={candidate.positionAppliedFor || ""} />
+      <input type="hidden" name="roleId" value={candidate.roleId || ""} />
+      <input type="hidden" name="positionAppliedFor" value={candidate.roleLabel || candidate.positionAppliedFor || ""} />
       <input type="hidden" name="batchId" value={candidate.batchId || ""} />
       <input type="hidden" name="resumeSource" value={candidate.resumeSource || ""} />
       <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
@@ -120,7 +121,7 @@ export default async function CandidateDetailPage({
       variant="results"
       eyebrow="Candidate"
       title={candidate.fullName}
-      subtitle={candidate.positionAppliedFor || candidate.email}
+      subtitle={candidate.roleLabel || candidate.email}
       utility={
         <Link href={"/candidates" as Route}>
           <Button variant="secondary">Back to candidates</Button>
@@ -178,7 +179,7 @@ export default async function CandidateDetailPage({
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate details</p>
                   <p className="text-sm text-slate-200">{candidate.email}</p>
-                  <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
+                  <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
                   <p className="text-sm text-slate-400">
                     {candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}
                   </p>

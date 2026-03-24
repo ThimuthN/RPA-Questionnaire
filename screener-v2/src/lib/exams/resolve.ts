@@ -13,6 +13,7 @@ import { buildSelection } from "@/lib/assessment-engine/selection";
 import { getQuestionsByIds, questionBank } from "@/lib/data/question-bank";
 import { generalCapabilityQuestions } from "@/features/general-capability/questions";
 import {
+  resolveCoreBasisRoleId,
   defaultDraftForDefinition,
   definitionIdFromLegacySection,
   deriveExamSelectionMetadata
@@ -31,12 +32,8 @@ function ensureStacks(value: unknown, fallback: StackId[] = ["UiPath"]): StackId
   return stacks.length > 0 ? stacks : fallback;
 }
 
-function ensureRoleId(value: unknown, fallback: RoleId = "Associate"): RoleId {
-  return String(value || fallback) as RoleId;
-}
-
 function resolveCoreItems(config: Record<string, unknown>): { items: ExamQuestion[]; roleId: RoleId; stacks: StackId[] } {
-  const roleId = ensureRoleId(config.roleId);
+  const roleId = resolveCoreBasisRoleId(config);
   const stacks = ensureStacks(config.stacks);
   const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
   const selection = buildSelection(roleId, stacks, selectionSeed, questionBank);
@@ -99,8 +96,11 @@ export function normalizeExamDrafts(args: {
     return args.exams.map((exam) => ({
       definitionId: exam.definitionId,
       config: exam.config ?? {},
+      durationMinutes: exam.durationMinutes,
       weight: exam.weight,
-      requiredPercent: exam.requiredPercent
+      weightMode: exam.weightMode,
+      requiredPercent: exam.requiredPercent,
+      requiredPercentMode: exam.requiredPercentMode
     }));
   }
 
@@ -111,6 +111,8 @@ export function normalizeExamDrafts(args: {
       if (definitionId === "core_exam") {
         draft.config = {
           roleId: args.roleId ?? "Associate",
+          roleLabel: args.roleId ?? "Associate",
+          coreBasisRoleId: args.roleId ?? "Associate",
           stacks: args.stacks?.length ? args.stacks : ["UiPath"]
         };
       }
@@ -153,7 +155,10 @@ export function resolveExamBlueprint(args: {
       order: index,
       config: draft.config ?? {},
       configSummary: metadata.configSummary,
-      durationMinutes: metadata.durationMinutes,
+      durationMinutes:
+        typeof draft.durationMinutes === "number" && Number.isFinite(draft.durationMinutes)
+          ? Math.max(1, Math.round(draft.durationMinutes))
+          : metadata.durationMinutes,
       weight: typeof draft.weight === "number" ? draft.weight : 1,
       requiredPercent:
         typeof draft.requiredPercent === "number" ? draft.requiredPercent : metadata.requiredPercent,
@@ -172,7 +177,7 @@ export function resolveExamBlueprint(args: {
 
 export function blueprintRoleId(blueprint: ExamBlueprint, fallback: RoleId = "Associate"): RoleId {
   const core = blueprint.exams.find((exam) => exam.definitionId === "core_exam");
-  return ensureRoleId(core?.config?.roleId, fallback);
+  return resolveCoreBasisRoleId(core?.config ?? {}, fallback);
 }
 
 export function blueprintStacks(blueprint: ExamBlueprint, fallback: StackId[] = ["UiPath"]): StackId[] {

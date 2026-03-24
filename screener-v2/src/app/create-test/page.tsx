@@ -17,6 +17,7 @@ import { IntegrityPresetPicker } from "@/components/access/IntegrityPresetPicker
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StepRail } from "@/components/primitives/StepRail";
+import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import {
@@ -46,6 +47,71 @@ interface PreviewExam extends ExamBlueprintDraftItem {
   durationMinutes: number;
   requiredPercent: number;
   validity: { valid: boolean; messages: string[] };
+}
+
+function clampPercent(value: number) {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+function clampDuration(value: number) {
+  return Math.max(1, Math.round(value));
+}
+
+function derivePreviewExam(exam: ExamBlueprintDraftItem, passTarget: number): PreviewExam {
+  const meta = deriveExamSelectionMetadata(exam.definitionId, exam.config ?? {}, passTarget);
+  return {
+    ...exam,
+    label: meta.label,
+    configSummary: meta.configSummary,
+    durationMinutes:
+      typeof exam.durationMinutes === "number" && Number.isFinite(exam.durationMinutes)
+        ? clampDuration(exam.durationMinutes)
+        : meta.durationMinutes,
+    requiredPercent:
+      exam.requiredPercentMode === "manual" && typeof exam.requiredPercent === "number"
+        ? clampPercent(exam.requiredPercent)
+        : meta.requiredPercent,
+    validity: validateExam(exam.definitionId, exam.config ?? {})
+  };
+}
+
+function rebalanceWeights(exams: PreviewExam[]): PreviewExam[] {
+  const manualWeightTotal = exams.reduce(
+    (sum, exam) => sum + (exam.weightMode === "manual" ? Math.max(0, Number(exam.weight ?? 0)) : 0),
+    0
+  );
+  const autoExams = exams.filter((exam) => exam.weightMode !== "manual");
+  if (autoExams.length === 0) {
+    return exams.map((exam) => ({
+      ...exam,
+      weight: Math.max(0, Math.round(Number(exam.weight ?? 0)))
+    }));
+  }
+
+  const remaining = Math.max(0, 100 - manualWeightTotal);
+  const totalAutoMinutes = autoExams.reduce((sum, exam) => sum + exam.durationMinutes, 0) || autoExams.length;
+  let assigned = 0;
+
+  return exams.map((exam) => {
+    if (exam.weightMode === "manual") {
+      return {
+        ...exam,
+        weight: Math.max(0, Math.round(Number(exam.weight ?? 0)))
+      };
+    }
+
+    const autoIndex = autoExams.findIndex((item) => item.definitionId === exam.definitionId);
+    const nextWeight =
+      autoIndex === autoExams.length - 1
+        ? remaining - assigned
+        : Math.max(0, Math.round((remaining * exam.durationMinutes) / totalAutoMinutes));
+    assigned += nextWeight;
+
+    return {
+      ...exam,
+      weight: Math.max(0, nextWeight)
+    };
+  });
 }
 
 function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
@@ -190,19 +256,7 @@ export default function CreateTestPage() {
   const linkedCandidateMilestoneId = candidateMilestoneId.length > 0 ? candidateMilestoneId : undefined;
 
   const previewExams = useMemo<PreviewExam[]>(
-    () =>
-      selectedExams.map((exam) => {
-        const meta = deriveExamSelectionMetadata(exam.definitionId, exam.config ?? {}, passTarget);
-        return {
-          ...exam,
-          label: meta.label,
-          configSummary: meta.configSummary,
-          durationMinutes: meta.durationMinutes,
-          requiredPercent:
-            typeof exam.requiredPercent === "number" ? exam.requiredPercent : meta.requiredPercent,
-          validity: validateExam(exam.definitionId, exam.config ?? {})
-        };
-      }),
+    () => rebalanceWeights(selectedExams.map((exam) => derivePreviewExam(exam, passTarget))),
     [passTarget, selectedExams]
   );
 
@@ -231,7 +285,14 @@ export default function CreateTestPage() {
         return next;
       }
 
-      const next = [...prev, defaultDraftForDefinition(definitionId)];
+      const next = [
+        ...prev,
+        {
+            ...defaultDraftForDefinition(definitionId),
+            weightMode: "auto" as const,
+            requiredPercentMode: "auto" as const
+          }
+        ];
       setExpandedExamIds((current) => [...new Set([...current, definitionId])]);
       setStep("configure");
       setError("");
@@ -288,8 +349,11 @@ export default function CreateTestPage() {
           exams: previewExams.map((exam) => ({
             definitionId: exam.definitionId,
             config: exam.config,
+            durationMinutes: exam.durationMinutes,
             weight: exam.weight,
-            requiredPercent: exam.requiredPercent
+            weightMode: exam.weightMode,
+            requiredPercent: exam.requiredPercent,
+            requiredPercentMode: exam.requiredPercentMode
           }))
         },
         withPasscode: true,
@@ -641,19 +705,49 @@ export default function CreateTestPage() {
                                 )}
 
                                 {examCatalog[exam.definitionId].configFields.length > 0 ? (
-                                  examCatalog[exam.definitionId].configFields.map((field) => (
-                                    <ConfigField
-                                      key={field.key}
-                                      field={field}
-                                      value={(exam.config ?? {})[field.key]}
-                                      onChange={(next) =>
-                                        updateExam(exam.definitionId, (current) => ({
-                                          ...current,
-                                          config: { ...(current.config ?? {}), [field.key]: next }
-                                        }))
-                                      }
-                                    />
-                                  ))
+                                  examCatalog[exam.definitionId].configFields.map((field) =>
+                                    field.key === "roleId" ? (
+                                      <RolePicker
+                                        key={field.key}
+                                        label={field.label}
+                                        value={
+                                          typeof exam.config?.roleId === "string" && typeof exam.config?.roleLabel === "string"
+                                            ? {
+                                                id: exam.config.roleId,
+                                                label: exam.config.roleLabel,
+                                                coreBasisRoleId: (String(
+                                                  exam.config.coreBasisRoleId || "Associate"
+                                                ) as RolePickerOption["coreBasisRoleId"])
+                                              }
+                                            : null
+                                        }
+                                        helperText={field.description}
+                                        onChange={(next) =>
+                                          updateExam(exam.definitionId, (current) => ({
+                                            ...current,
+                                            config: {
+                                              ...(current.config ?? {}),
+                                              roleId: next?.id ?? "",
+                                              roleLabel: next?.label ?? "",
+                                              coreBasisRoleId: next?.coreBasisRoleId ?? "Associate"
+                                            }
+                                          }))
+                                        }
+                                      />
+                                    ) : (
+                                      <ConfigField
+                                        key={field.key}
+                                        field={field}
+                                        value={(exam.config ?? {})[field.key]}
+                                        onChange={(next) =>
+                                          updateExam(exam.definitionId, (current) => ({
+                                            ...current,
+                                            config: { ...(current.config ?? {}), [field.key]: next }
+                                          }))
+                                        }
+                                      />
+                                    )
+                                  )
                                 ) : (
                                   <p className="text-sm text-slate-300">
                                     This exam does not need additional settings.
@@ -739,17 +833,17 @@ export default function CreateTestPage() {
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
                           <label className="space-y-2">
                             <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                              Score contribution
+                              Time for this exam
                             </span>
                             <input
                               type="number"
                               min={1}
                               step={1}
-                              value={exam.weight ?? 0}
+                              value={exam.durationMinutes}
                               onChange={(event) =>
                                 updateExam(exam.definitionId, (current) => ({
                                   ...current,
-                                  weight: Math.max(1, Math.round(Number(event.target.value) || 0))
+                                  durationMinutes: clampDuration(Number(event.target.value) || 1)
                                 }))
                               }
                               className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
@@ -758,7 +852,27 @@ export default function CreateTestPage() {
 
                           <label className="space-y-2">
                             <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
-                              Minimum pass for this exam
+                              Score contribution {exam.weightMode === "manual" ? "(manual)" : "(auto)"}
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step={1}
+                              value={exam.weight ?? 0}
+                              onChange={(event) =>
+                                updateExam(exam.definitionId, (current) => ({
+                                  ...current,
+                                  weight: Math.max(0, Math.round(Number(event.target.value) || 0)),
+                                  weightMode: "manual"
+                                }))
+                              }
+                              className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                            />
+                          </label>
+
+                          <label className="space-y-2">
+                            <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
+                              Minimum pass for this exam {exam.requiredPercentMode === "manual" ? "(manual)" : "(auto)"}
                             </span>
                             <input
                               type="number"
@@ -772,7 +886,8 @@ export default function CreateTestPage() {
                                   requiredPercent: Math.min(
                                     100,
                                     Math.max(0, Math.round(Number(event.target.value) || 0))
-                                  )
+                                  ),
+                                  requiredPercentMode: "manual"
                                 }))
                               }
                               className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
@@ -788,8 +903,8 @@ export default function CreateTestPage() {
                   )}
                 </div>
 
-                <div className="space-y-3 rounded-[22px] border border-white/12 bg-black/15 p-4">
-                  <label className="space-y-2">
+                  <div className="space-y-3 rounded-[22px] border border-white/12 bg-black/15 p-4">
+                    <label className="space-y-2">
                     <span className="text-xs uppercase tracking-[0.18em] text-slate-400">Overall pass</span>
                     <input
                       type="number"
@@ -805,10 +920,24 @@ export default function CreateTestPage() {
                       className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
                     />
                   </label>
-                  <p className="text-sm leading-6 text-slate-300">
-                    Candidates need this final weighted score plus any exam-level minimum passes to pass overall.
-                  </p>
-                  <div
+                    <p className="text-sm leading-6 text-slate-300">
+                      Candidates need this final weighted score plus any exam-level minimum passes to pass overall.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() =>
+                        setSelectedExams((prev) =>
+                          prev.map((exam) => ({
+                            ...exam,
+                            weightMode: "auto"
+                          }))
+                        )
+                      }
+                    >
+                      Rebalance by time
+                    </Button>
+                    <div
                     className={`rounded-[16px] border px-4 py-3 text-sm ${
                       contributionTone === "emerald"
                         ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"

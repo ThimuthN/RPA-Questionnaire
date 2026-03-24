@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { validateInvite } from "@/lib/db/repositories";
 import { summarizeBlueprintForClient } from "@/lib/exams/client-blueprint";
 
@@ -8,8 +7,7 @@ const validateSchema = z
   .object({
     token: z.string().min(8).optional(),
     slug: z.string().min(3).optional(),
-    passcode: z.string().optional(),
-    roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional()
+    passcode: z.string().optional()
   })
   .refine((value) => Boolean(value.token || value.slug), {
     message: "Token or slug is required."
@@ -21,8 +19,7 @@ export async function POST(request: Request) {
     const checked = await validateInvite({
       token: body.token,
       slug: body.slug,
-      passcode: body.passcode,
-      roleId: body.roleId as RoleId | undefined
+      passcode: body.passcode
     });
     return NextResponse.json({
       ok: checked.ok,

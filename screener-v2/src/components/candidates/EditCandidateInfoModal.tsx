@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
+import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
 import { resumeSourceOptions, type CandidateUiStatus } from "@/lib/candidates/types";
 import type { CandidateDetail } from "@/lib/db/candidates";
 
@@ -14,6 +15,15 @@ export function EditCandidateInfoModal({
   uiStatus: CandidateUiStatus;
 }) {
   const [open, setOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<RolePickerOption | null>(
+    candidate.roleId && candidate.roleLabel
+      ? {
+          id: candidate.roleId,
+          label: candidate.roleLabel,
+          coreBasisRoleId: (candidate.coreBasisRoleId ?? "Associate")
+        }
+      : null
+  );
 
   return (
     <>
@@ -39,6 +49,7 @@ export function EditCandidateInfoModal({
               <input type="hidden" name="phone" value={candidate.phone || ""} />
               <input type="hidden" name="batchId" value={candidate.batchId || ""} />
               <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
+              <input type="hidden" name="positionAppliedFor" value={selectedRole?.label || ""} />
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-1">
@@ -62,14 +73,14 @@ export function EditCandidateInfoModal({
                   />
                 </label>
 
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-200">Role</span>
-                  <input
-                    name="positionAppliedFor"
-                    defaultValue={candidate.positionAppliedFor || ""}
-                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
+                <RolePicker
+                  name="roleId"
+                  label="Role"
+                  value={selectedRole}
+                  onChange={setSelectedRole}
+                  placeholder="Optional"
+                  className="grid gap-1"
+                />
 
                 <label className="grid gap-1">
                   <span className="text-sm text-slate-200">Owner</span>

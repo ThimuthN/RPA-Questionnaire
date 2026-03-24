@@ -42,7 +42,7 @@ export async function POST(request: Request) {
     let inviteId: string | undefined;
     let assessmentVersionId: string | undefined;
     let integrityPreset: IntegrityPresetId | undefined;
-    let effectiveRoleId = body.roleId as RoleId | undefined;
+    const effectiveRoleId = body.roleId as RoleId | undefined;
     let effectiveStacks = body.stacks as StackId[] | undefined;
     let effectiveSections: SectionId[] | undefined;
     let effectivePassTarget: number | undefined;
@@ -63,7 +63,6 @@ export async function POST(request: Request) {
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       integrityPreset = inviteCheck.invite.integrityPreset;
-      effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;
@@ -83,7 +82,6 @@ export async function POST(request: Request) {
       inviteId = inviteCheck.invite.id;
       assessmentVersionId = inviteCheck.invite.assessmentVersionId;
       integrityPreset = inviteCheck.invite.integrityPreset;
-      effectiveRoleId = inviteCheck.invite.roleId ?? effectiveRoleId;
       effectivePassTarget = inviteCheck.invite.passTargetPercent;
       effectiveStacks = inviteCheck.invite.stacks ?? effectiveStacks;
       effectiveSections = inviteCheck.invite.sections;

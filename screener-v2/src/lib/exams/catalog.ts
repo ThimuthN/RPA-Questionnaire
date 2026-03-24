@@ -13,6 +13,15 @@ import type { SectionId } from "@/lib/sections/types";
 
 const configV2 = configRaw as ConfigV2;
 
+export function resolveCoreBasisRoleId(config: Record<string, unknown>, fallback: RoleId = configV2.defaultRoleId ?? "Associate"): RoleId {
+  return String(config.coreBasisRoleId || config.roleId || fallback) as RoleId;
+}
+
+export function resolveCoreRoleLabel(config: Record<string, unknown>) {
+  const basisRoleId = resolveCoreBasisRoleId(config);
+  return String(config.roleLabel || configV2.roles[basisRoleId]?.label || basisRoleId);
+}
+
 export interface ExamDefinitionCatalogEntry {
   id: ExamDefinitionId;
   legacySectionId?: SectionId;
@@ -31,6 +40,8 @@ const roleOptions = configV2.canonicalRoleOrder.map((roleId) => ({
   value: roleId,
   label: configV2.roles[roleId].label
 }));
+
+export const coreBasisRoleOptions = [...roleOptions];
 
 const stackOptions = configV2.stacks.map((stackId) => ({
   value: stackId,
@@ -65,16 +76,17 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     defaultWeight: 50,
     defaultConfig: {
       roleId: configV2.defaultRoleId,
+      roleLabel: configV2.roles[configV2.defaultRoleId ?? "Associate"]?.label ?? "Associate",
+      coreBasisRoleId: configV2.defaultRoleId,
       stacks: [configV2.stacks[0]]
     },
     buildDurationMinutes: (config) => {
-      const roleId = String(config.roleId || configV2.defaultRoleId) as RoleId;
+      const roleId = resolveCoreBasisRoleId(config);
       return Number(configV2.roles[roleId]?.time_limit_minutes ?? 20);
     },
     buildConfigSummary: (config) => {
-      const roleId = String(config.roleId || configV2.defaultRoleId) as RoleId;
       const stacks = Array.isArray(config.stacks) ? config.stacks.map(String) : [];
-      return [configV2.roles[roleId]?.label ?? roleId, stacks.join(", ")].filter(Boolean).join(" | ");
+      return [resolveCoreRoleLabel(config), stacks.join(", ")].filter(Boolean).join(" | ");
     },
     buildRequiredPercent: (_config, fallbackPassPercent) => fallbackPassPercent
   },

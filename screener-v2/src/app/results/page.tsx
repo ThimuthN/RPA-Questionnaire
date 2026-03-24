@@ -26,7 +26,6 @@ const statusOptions: ResultStatusFilter[] = ["pass", "review", "fail"];
 const integrityOptions: IntegrityRiskLevel[] = ["clean", "watch", "review"];
 const reviewStateOptions: ResultReviewState[] = [...resultReviewStateValues];
 const contextTypeOptions: AssessmentContextType[] = [...assessmentContextTypeValues];
-const roleOptions = ["Intern", "Associate", "SE", "SeniorSE", "TechLead"] as const;
 const scoreBandOptions: ResultScoreBand[] = ["high", "mid", "low"];
 
 type PageState = {
@@ -176,9 +175,7 @@ export default async function ResultsPage({
     integrity: integrityOptions.includes(pageState.integrity as IntegrityRiskLevel)
       ? (pageState.integrity as IntegrityRiskLevel)
       : undefined,
-    role: roleOptions.includes(pageState.role as (typeof roleOptions)[number])
-      ? (pageState.role as (typeof roleOptions)[number])
-      : undefined,
+    role: pageState.role?.trim() || undefined,
     owner: pageState.owner?.trim() || undefined,
     stage: candidateStageValues.includes(pageState.stage as CandidateStage)
       ? (pageState.stage as CandidateStage)
@@ -257,7 +254,7 @@ export default async function ResultsPage({
                       <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                       <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
                     </div>
-                    <p className="text-sm text-slate-300">{row.roleId} | {stackSummary(row)}</p>
+                    <p className="text-sm text-slate-300">{row.candidateRoleLabel || "No candidate role"} | {stackSummary(row)}</p>
                     <p className="text-sm text-slate-300">Strongest area: {strongestArea(row)}</p>
                     <p className="text-sm text-slate-400">{linkedWorkflowSummary(row)}</p>
                     <Link href={`/results/${row.attemptId}`}>
@@ -273,7 +270,7 @@ export default async function ResultsPage({
         <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Filters</h2>
-            <p className="text-sm text-slate-300">Filter by result, review state, assessment context, target profile, and optional linked workflow metadata. Exports follow the current view.</p>
+            <p className="text-sm text-slate-300">Filter by result, review state, assessment context, candidate role, and optional linked workflow metadata. Exports follow the current view.</p>
           </div>
           <form className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
@@ -333,12 +330,12 @@ export default async function ResultsPage({
                   <option value="review">Review</option>
                 </select>
               </FilterField>
-              <FilterField label="Role / target profile">
+              <FilterField label="Candidate role">
                 <select name="role" defaultValue={pageState.role ?? ""} className={filterControlClass}>
                   <option value="">All roles</option>
-                  {roleOptions.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
+                  {page.roleOptions.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.label}
                     </option>
                   ))}
                 </select>
@@ -453,7 +450,8 @@ export default async function ResultsPage({
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-1">
-                            <p className="text-white">{row.roleId}</p>
+                            <p className="text-white">{row.candidateRoleLabel || "No candidate role"}</p>
+                            <p className="text-xs text-slate-400">{row.coreExamRoleLabel || row.roleId || "Generic assessment"}</p>
                             <p className="text-xs text-slate-400">{stackSummary(row)}</p>
                             <p className="text-xs text-slate-400">{contextTypeLabel(row.contextType)}</p>
                             <p className="text-xs text-slate-400">

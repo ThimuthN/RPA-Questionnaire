@@ -48,6 +48,7 @@ import type {
 } from "@/lib/candidates/types";
 import type { ResultsWorkspaceFilters, WorkspaceResultRow } from "@/lib/results/workspace";
 import { filterResultWorkspaceRows, toWorkspaceResultRow } from "@/lib/results/workspace";
+import { listRoleCatalog } from "@/lib/roles/catalog";
 
 interface InviteRecord {
   id: string;
@@ -60,7 +61,7 @@ interface InviteRecord {
   integrityPreset: IntegrityPresetId;
   roleLocked: boolean;
   stackLocked: boolean;
-  roleId?: RoleId;
+  roleId?: string;
   passTargetPercent: number;
   stacks?: StackId[];
   sections: SectionId[];
@@ -89,7 +90,7 @@ interface AttemptRecord {
   candidateName?: string;
   candidateEmail?: string;
   integrityPreset: IntegrityPresetId;
-  roleId: RoleId;
+  roleId?: string;
   passTargetPercent: number;
   stacks: StackId[];
   sections: SectionId[];
@@ -127,6 +128,7 @@ export interface ResultWorkspacePage {
   total: number;
   page: number;
   pageSize: number;
+  roleOptions: Array<{ id: string; label: string }>;
   ownerOptions: string[];
   statusCounts: {
     pass: number;
@@ -548,14 +550,14 @@ function mapInvite(row: {
     mode: row.mode as InviteRecord["mode"],
     contextType: row.contextType as AssessmentContextType,
     slug: row.slug,
-    tokenHash: row.tokenHash,
-    passcodeHash: row.passcodeHash ?? undefined,
-    integrityPreset: normalizeIntegrityPreset(row.integrityPreset, "strict"),
-    roleLocked: row.roleLocked,
-    stackLocked: row.stackLocked,
-    roleId: roleId ?? blueprintRoleId(blueprint, "Associate"),
-    passTargetPercent,
-    stacks: stacks.length > 0 ? stacks : blueprintStacks(blueprint, ["UiPath"]),
+      tokenHash: row.tokenHash,
+      passcodeHash: row.passcodeHash ?? undefined,
+      integrityPreset: normalizeIntegrityPreset(row.integrityPreset, "strict"),
+      roleLocked: row.roleLocked,
+      stackLocked: row.stackLocked,
+      roleId: row.roleId ?? undefined,
+      passTargetPercent,
+      stacks: stacks.length > 0 ? stacks : blueprintStacks(blueprint, ["UiPath"]),
     sections,
     blueprint,
     maxAttempts: row.maxAttempts,
@@ -590,7 +592,7 @@ function mapAttempt(row: {
   participantId: string;
   contextType: string;
   integrityPreset: string | null;
-  roleId: string;
+  roleId: string | null;
   passTargetPercent: number | null;
   stacksJson: Prisma.JsonValue;
   sectionsJson: Prisma.JsonValue | null;
@@ -614,14 +616,14 @@ function mapAttempt(row: {
   startedAt: Date;
   submittedAt: Date | null;
 }): AttemptRecord {
-  const roleId = row.roleId as RoleId;
+  const roleId = (row.roleId as RoleId | null) ?? undefined;
   const stacks = toStacks(row.stacksJson);
   const sections = toSections(row.sectionsJson);
   const passTargetPercent = normalizePassTargetPercent(row.passTargetPercent, roleId);
   const blueprint = parseBlueprint(
     row.blueprintJson,
     buildAttemptBlueprintFromLegacy({
-      roleId,
+      roleId: roleId ?? "Associate",
       stacks,
       sections,
       passPercent: passTargetPercent,
@@ -638,7 +640,7 @@ function mapAttempt(row: {
   });
   const storedSectionState = parsedExamState.legacySectionState;
   const sectionState = ensureSectionState({
-    roleId,
+    roleId: roleId ?? blueprintRoleId(blueprint, "Associate"),
     stacks,
     sections,
     stored: storedSectionState,
@@ -668,11 +670,11 @@ function mapAttempt(row: {
     id: row.id,
     assessmentVersionId: row.assessmentVersionId,
     inviteId: row.inviteId ?? undefined,
-    participantId: row.participantId,
-    contextType: row.contextType as AssessmentContextType,
-    integrityPreset: normalizeIntegrityPreset(row.integrityPreset, "strict"),
-    roleId,
-    passTargetPercent,
+      participantId: row.participantId,
+      contextType: row.contextType as AssessmentContextType,
+      integrityPreset: normalizeIntegrityPreset(row.integrityPreset, "strict"),
+      roleId: roleId ?? undefined,
+      passTargetPercent,
     stacks,
     sections: effectiveSections,
     blueprint,
@@ -728,7 +730,7 @@ export async function createInvite(input: {
   const passcode = input.withPasscode ? randomPasscode() : undefined;
   const integrityPreset = normalizeIntegrityPreset(input.integrityPreset, "standard");
   const selectedSections = normalizeSelectedSections(input.sections);
-  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
+  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent);
   const drafts = normalizeExamDrafts({
     exams: input.blueprint?.exams,
     roleId: input.roleId,
@@ -740,7 +742,6 @@ export async function createInvite(input: {
     drafts,
     passPercent: passTargetPercent
   });
-  const roleId = input.roleId ?? blueprintRoleId(blueprint, "Associate");
   const stacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
   const sections = blueprintLegacySections(blueprint);
 
@@ -777,12 +778,12 @@ export async function createInvite(input: {
         contextType: input.contextType ?? "general",
         slug: randomToken(6).toLowerCase(),
         tokenHash: hashValue(token),
-        passcodeHash: passcode ? hashValue(passcode) : null,
-        integrityPreset,
-        roleLocked: input.roleLocked ?? true,
-        stackLocked: input.stackLocked ?? true,
-        roleId: roleId ?? null,
-        passTargetPercent,
+          passcodeHash: passcode ? hashValue(passcode) : null,
+          integrityPreset,
+          roleLocked: input.roleLocked ?? true,
+          stackLocked: input.stackLocked ?? true,
+          roleId: input.roleId ?? null,
+          passTargetPercent,
         stacksJson: stacks.length ? toJsonValue(stacks) : Prisma.JsonNull,
         sectionsJson: toJsonValue(sections),
         blueprintJson: toJsonValue(blueprint),
@@ -824,7 +825,6 @@ export async function validateInvite(input: {
   token?: string;
   slug?: string;
   passcode?: string;
-  roleId?: RoleId;
 }): Promise<{
   ok: boolean;
   state: InviteValidationState;
@@ -841,9 +841,7 @@ export async function validateInvite(input: {
       : null;
 
   const invite = row ? mapInvite(row) : undefined;
-  const roleMismatch = Boolean(
-    invite?.roleLocked && invite.roleId && input.roleId && input.roleId !== invite.roleId
-  );
+  const roleMismatch = false;
   const requiresPasscode = Boolean(invite?.passcodeHash);
   const providedPasscode = String(input.passcode ?? "").trim().length > 0;
   const passcodeMatches =
@@ -911,22 +909,24 @@ export async function startAttempt(input: {
   blueprint?: ExamBlueprint;
   exams?: ExamBlueprintDraftItem[];
 }) {
-  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent, input.roleId);
+  const passTargetPercent = normalizePassTargetPercent(input.passTargetPercent);
   const integrityPreset = normalizeIntegrityPreset(input.integrityPreset, "standard");
   const selectedSections = normalizeSelectedSections(input.sections);
   const blueprint =
     input.blueprint ??
-    resolveExamBlueprint({
-      drafts: normalizeExamDrafts({
-        exams: input.exams,
+      resolveExamBlueprint({
+        drafts: normalizeExamDrafts({
+          exams: input.exams,
         roleId: input.roleId,
         stacks: input.stacks,
         sections: selectedSections,
         passPercent: passTargetPercent
-      }),
-      passPercent: passTargetPercent
-    });
-  const effectiveRoleId = input.roleId ?? blueprintRoleId(blueprint, "Associate");
+        }),
+        passPercent: passTargetPercent
+      });
+  const effectiveRoleId = blueprint.exams.some((exam) => exam.definitionId === "core_exam")
+    ? blueprintRoleId(blueprint, "Associate")
+    : input.roleId;
   const effectiveStacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
   const effectiveSections = blueprintLegacySections(blueprint);
   const examState = createExamState(blueprint);
@@ -943,10 +943,10 @@ export async function startAttempt(input: {
         id: attemptId,
         assessmentVersionId: input.assessmentVersionId ?? "v1-default",
         inviteId: input.inviteId ?? null,
-        participantId: input.participantId,
-        contextType: input.contextType ?? "general",
-        integrityPreset,
-        roleId: effectiveRoleId,
+          participantId: input.participantId,
+          contextType: input.contextType ?? "general",
+          integrityPreset,
+          roleId: effectiveRoleId ?? null,
         passTargetPercent,
         stacksJson: toJsonValue(effectiveStacks),
         sectionsJson: toJsonValue(effectiveSections),
@@ -1270,19 +1270,26 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
       }
     },
     include: {
-      candidate: {
-        select: {
-          id: true,
-          hrOwner: true,
-          stage: true,
-          nextAction: true,
-          finalDecision: true,
-          screeningStatus: true,
-          notesSummary: true,
-          updatedAt: true
+        candidate: {
+          select: {
+            id: true,
+            roleId: true,
+            positionAppliedFor: true,
+            hrOwner: true,
+            stage: true,
+            nextAction: true,
+            finalDecision: true,
+            screeningStatus: true,
+            notesSummary: true,
+            updatedAt: true,
+            role: {
+              select: {
+                label: true
+              }
+            }
+          }
         }
       }
-    }
   });
   const candidateByAttemptId = new Map(
     candidateAssessmentRows
@@ -1291,15 +1298,14 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
   );
 
   return resultRows
-    .map((row) => {
-      const attempt = attemptsById.get(row.attemptId) ?? null;
-      const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
-      const summary = toResultSummary(row, attempt, participant);
-      if (!summary || !attempt) return null;
-
-      const candidate = candidateByAttemptId.get(row.attemptId);
-      const resultStatus: CandidateAssessmentStatus = row.pass ? "passed" : row.borderline ? "review" : "failed";
-      const uiStatus: CandidateUiStatus | undefined = candidate
+      .map((row) => {
+        const attempt = attemptsById.get(row.attemptId) ?? null;
+        const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
+        const candidate = candidateByAttemptId.get(row.attemptId);
+        const summary = toResultSummary(row, attempt, participant, candidate ?? null);
+        if (!summary || !attempt) return null;
+        const resultStatus: CandidateAssessmentStatus = row.pass ? "passed" : row.borderline ? "review" : "failed";
+        const uiStatus: CandidateUiStatus | undefined = candidate
         ? getCandidateUiStatus({
             stage: candidate.stage as CandidateStage,
             finalDecision: candidate.finalDecision as CandidateFinalDecision,
@@ -1315,10 +1321,12 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
       return toWorkspaceResultRow(summary, {
         contextType: summary.contextType,
         reviewState: summary.reviewState,
-        submittedAt,
-        candidateId: candidate?.id,
-        candidateOwner: candidate?.hrOwner ?? undefined,
-        candidateStage: candidate?.stage as CandidateStage | undefined,
+          submittedAt,
+          candidateId: candidate?.id,
+          candidateRoleId: candidate?.roleId ?? undefined,
+          candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
+          candidateOwner: candidate?.hrOwner ?? undefined,
+          candidateStage: candidate?.stage as CandidateStage | undefined,
         candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
         candidateUiStatus: uiStatus,
         candidateLatestActivityAt: latestActivityAt,
@@ -1340,6 +1348,10 @@ export async function listResultWorkspacePage(
   const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
   const rows = filterResultWorkspaceRows(await listWorkspaceResultRows(filters.attemptIds), filters);
   const start = (page - 1) * pageSize;
+  const roleOptions = (await listRoleCatalog()).map((role) => ({
+    id: role.id,
+    label: role.label
+  }));
   const ownerOptions = [...new Set(rows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
 
   return {
@@ -1347,6 +1359,7 @@ export async function listResultWorkspacePage(
     total: rows.length,
     page,
     pageSize,
+    roleOptions,
     ownerOptions,
     statusCounts: {
       pass: rows.filter((row) => row.resultStatus === "pass").length,
@@ -1454,35 +1467,42 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
     where: { id: attemptRow.participantId }
   });
   const attempt = mapAttempt(attemptRow);
-  const baseSummary = toResultSummary(resultRow, attempt, participantRow ? mapParticipant(participantRow) : null);
-
-  if (!baseSummary) return null;
-
   const link = await prisma.candidateAssessment.findFirst({
     where: { attemptId },
     include: {
-      candidate: {
-        select: {
-          id: true,
-          hrOwner: true,
-          stage: true,
-          nextAction: true,
-          finalDecision: true,
-          screeningStatus: true,
-          notesSummary: true,
-          updatedAt: true
+        candidate: {
+          select: {
+            id: true,
+            roleId: true,
+            positionAppliedFor: true,
+            hrOwner: true,
+            stage: true,
+            nextAction: true,
+            finalDecision: true,
+            screeningStatus: true,
+            notesSummary: true,
+            updatedAt: true,
+            role: {
+              select: {
+                label: true
+              }
+            }
+          }
         }
       }
-    }
-  });
-  const candidate = link?.candidate;
+    });
+    const candidate = link?.candidate;
   const resultStatus: CandidateAssessmentStatus = resultRow.pass ? "passed" : resultRow.borderline ? "review" : "failed";
-  const summary = toWorkspaceResultRow(baseSummary, {
-    contextType: baseSummary.contextType,
-    reviewState: baseSummary.reviewState,
-    submittedAt: attempt.submittedAt ?? attempt.startedAt ?? new Date().toISOString(),
-    candidateId: candidate?.id,
-    candidateOwner: candidate?.hrOwner ?? undefined,
+  const baseWithCandidate = toResultSummary(resultRow, attempt, participantRow ? mapParticipant(participantRow) : null, candidate ?? null);
+  if (!baseWithCandidate) return null;
+  const summary = toWorkspaceResultRow(baseWithCandidate, {
+      contextType: baseWithCandidate.contextType,
+      reviewState: baseWithCandidate.reviewState,
+      submittedAt: attempt.submittedAt ?? attempt.startedAt ?? new Date().toISOString(),
+      candidateId: candidate?.id,
+      candidateRoleId: candidate?.roleId ?? undefined,
+      candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
+      candidateOwner: candidate?.hrOwner ?? undefined,
     candidateStage: candidate?.stage as CandidateStage | undefined,
     candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
     candidateUiStatus: candidate

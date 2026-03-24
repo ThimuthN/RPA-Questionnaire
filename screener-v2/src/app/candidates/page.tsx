@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 
 type PageState = {
   q?: string;
+  roleId?: string;
   status?: string;
   stage?: string;
   owner?: string;
@@ -80,6 +81,7 @@ export default async function CandidatesPage({
   );
   const page = await listCandidateWorkspacePage({
     q: params.q?.trim() || undefined,
+    roleId: params.roleId?.trim() || undefined,
     status: candidateUiStatusValues.includes(params.status as CandidateUiStatus)
       ? (params.status as CandidateUiStatus)
       : undefined,
@@ -137,7 +139,7 @@ export default async function CandidatesPage({
             </div>
           </div>
 
-          <form className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,0.9fr))_auto_auto]">
+          <form className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
             <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
             <input
               name="q"
@@ -145,6 +147,18 @@ export default async function CandidatesPage({
               placeholder="Search name, email, owner, notes"
               className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
             />
+            <select
+              name="roleId"
+              defaultValue={params.roleId ?? ""}
+              className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+            >
+              <option value="">All roles</option>
+              {page.roleOptions.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
             <select
               name="status"
               defaultValue={params.status ?? ""}
@@ -216,7 +230,7 @@ export default async function CandidatesPage({
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-white">Import candidates from CSV</p>
-                <p className="text-sm text-slate-400">Headers: `fullName,email,positionAppliedFor,hrOwner`.</p>
+                <p className="text-sm text-slate-400">Headers: `fullName,email,role,hrOwner`.</p>
               </div>
               <form action="/api/candidates/bulk" method="post" encType="multipart/form-data" className="flex flex-col gap-3 lg:flex-row lg:items-center">
                 <input type="hidden" name="action" value="import_csv" />
@@ -325,7 +339,7 @@ export default async function CandidatesPage({
                         <div className="space-y-2">
                           <div className="space-y-1">
                             <p className="text-lg text-white">{candidate.fullName}</p>
-                            <p className="text-sm text-slate-300">{candidate.positionAppliedFor || "Role not set"}</p>
+                            <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
                           </div>
                           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
                             <span>{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}</span>

@@ -4,7 +4,6 @@ import type {
   ExamQuestion,
   ExamState,
   ResultSummary,
-  RoleId,
   ScoreOutput,
   StackId
 } from "@/lib/assessment-engine/types";
@@ -53,7 +52,7 @@ function scoreExamItem(item: ExamQuestion, answer: unknown): ScoreOutput {
 
 export interface BuildResultInput {
   attemptId: string;
-  roleId: RoleId;
+  roleId?: string;
   stacks: StackId[];
   passTargetPercent?: number;
   blueprint: ExamBlueprint;

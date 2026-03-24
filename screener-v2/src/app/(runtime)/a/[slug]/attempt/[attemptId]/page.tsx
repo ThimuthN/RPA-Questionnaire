@@ -45,7 +45,7 @@ export default async function AttemptRuntimePage({
       slug={slug}
       attemptId={attempt.id}
       integrityPreset={attempt.integrityPreset}
-      roleId={attempt.roleId}
+      roleId={attempt.blueprint.exams.find((exam) => exam.definitionId === "core_exam")?.config?.roleLabel as string | undefined ?? attempt.roleId}
       stacks={attempt.stacks}
       blueprint={sanitizeBlueprintForClient(attempt.blueprint)}
       initialExamState={attempt.examState ?? {}}

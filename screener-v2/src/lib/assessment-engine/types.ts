@@ -191,8 +191,11 @@ export interface ExamConfigFieldDefinition {
 export interface ExamBlueprintDraftItem {
   definitionId: ExamDefinitionId;
   config: Record<string, unknown>;
+  durationMinutes?: number;
   weight?: number;
+  weightMode?: "auto" | "manual";
   requiredPercent?: number;
+  requiredPercentMode?: "auto" | "manual";
 }
 
 export interface FrozenExamInstance {
@@ -360,6 +363,8 @@ export interface ResultSummary {
   attemptId: string;
   candidateName?: string;
   candidateEmail?: string;
+  candidateRoleId?: string;
+  candidateRoleLabel?: string;
   contextType?: AssessmentContextType;
   reviewState?: ResultReviewState;
   candidateId?: string;
@@ -372,7 +377,9 @@ export interface ResultSummary {
   candidateStaleDays?: number;
   candidateNotesSummary?: string;
   submittedAt?: string;
-  roleId: RoleId;
+  roleId?: string;
+  coreExamRoleId?: string;
+  coreExamRoleLabel?: string;
   stacks: StackId[];
   sections: SectionId[];
   exams: ExamSummaryItem[];

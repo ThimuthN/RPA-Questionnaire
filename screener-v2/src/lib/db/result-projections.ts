@@ -8,7 +8,6 @@ import type {
   ResultReviewState,
   ResultReviewSection,
   ResultSummary,
-  RoleId,
   StackId
 } from "@/lib/assessment-engine/types";
 import { scoreQuestion } from "@/lib/assessment-engine/scoring";
@@ -19,7 +18,7 @@ import { getDefaultSelectedSections, normalizeSelectedSections, orderedSections 
 import type { SectionId } from "@/lib/sections/types";
 
 interface ResultProjectionAttempt {
-  roleId: RoleId;
+  roleId?: string | null;
   stacks: StackId[];
   sections: SectionId[];
   blueprint: ExamBlueprint;
@@ -30,6 +29,12 @@ interface ResultProjectionAttempt {
 interface ResultProjectionParticipant {
   fullName: string;
   email: string;
+}
+
+interface ResultProjectionCandidate {
+  roleId?: string | null;
+  positionAppliedFor?: string | null;
+  role?: { label: string | null } | null;
 }
 
 interface PersistedBreakdown {
@@ -129,7 +134,8 @@ export function toResultSummary(
     breakdownJson: Prisma.JsonValue;
   },
   attempt: ResultProjectionAttempt | null,
-  participant?: ResultProjectionParticipant | null
+  participant?: ResultProjectionParticipant | null,
+  candidate?: ResultProjectionCandidate | null
 ): ResultSummary | null {
   if (!attempt) return null;
 
@@ -138,6 +144,15 @@ export function toResultSummary(
   const practicalPercent = breakdown.sectionBreakdown.practical?.percent ?? resultRow.practicalPercent;
   const exams =
     breakdown.exams.length > 0 ? breakdown.exams : attempt.blueprint.exams.map(summarizeExamInstance);
+  const coreExam = attempt.blueprint.exams.find((exam) => exam.definitionId === "core_exam");
+  const coreExamRoleId =
+    typeof coreExam?.config?.roleId === "string" && coreExam.config.roleId.trim().length > 0
+      ? coreExam.config.roleId.trim()
+      : undefined;
+  const coreExamRoleLabel =
+    typeof coreExam?.config?.roleLabel === "string" && coreExam.config.roleLabel.trim().length > 0
+      ? coreExam.config.roleLabel.trim()
+      : undefined;
   const examBreakdown =
     Object.keys(breakdown.examBreakdown).length > 0
       ? Object.fromEntries(
@@ -211,14 +226,18 @@ export function toResultSummary(
           ])
         );
 
-  return {
-    attemptId: resultRow.attemptId,
-    candidateName: participant?.fullName,
-    candidateEmail: participant?.email,
-    contextType: (resultRow.contextType as AssessmentContextType | undefined) ?? "general",
-    reviewState: (resultRow.reviewState as ResultReviewState | undefined) ?? "unreviewed",
-    roleId: attempt.roleId,
-    stacks: attempt.stacks,
+    return {
+      attemptId: resultRow.attemptId,
+      candidateName: participant?.fullName,
+      candidateEmail: participant?.email,
+      candidateRoleId: candidate?.roleId ?? undefined,
+      candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
+      contextType: (resultRow.contextType as AssessmentContextType | undefined) ?? "general",
+      reviewState: (resultRow.reviewState as ResultReviewState | undefined) ?? "unreviewed",
+      roleId: attempt.roleId ?? undefined,
+      coreExamRoleId,
+      coreExamRoleLabel,
+      stacks: attempt.stacks,
     sections: breakdown.sections,
     exams,
     corePercent,

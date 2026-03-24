@@ -165,7 +165,7 @@ export default async function MarketingHomePage() {
                               <div className="space-y-1">
                                 <p className="text-base text-white">{candidate.fullName}</p>
                                 <p className="text-sm text-slate-300">
-                                  {candidate.positionAppliedFor || "Role not set"}
+                                  {candidate.roleLabel || "Role not set"}
                                   {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
                                 </p>
                               </div>

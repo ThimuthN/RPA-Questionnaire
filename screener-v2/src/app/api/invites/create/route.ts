@@ -4,13 +4,11 @@ import {
   assessmentContextTypeValues,
   type AssessmentContextType,
   type IntegrityPresetId,
-  type RoleId,
   type StackId
 } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
-import { getRoleConfig } from "@/lib/data/question-bank";
 import { getAppUrl } from "@/lib/server/app-url";
 import { getSession } from "@/lib/auth/session";
 import {
@@ -28,7 +26,6 @@ const createInviteSchema = z.object({
   integrityPreset: z.enum(["strict", "standard", "relaxed"]).default("standard"),
   roleLocked: z.boolean().optional(),
   stackLocked: z.boolean().optional(),
-  roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
   passTarget: z.number().int().min(40).max(90).optional(),
   stacks: z.array(z.enum(["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"])).optional(),
   sections: z.array(z.enum(["core", "practical", "applied_logic_reasoning"])).optional(),
@@ -44,8 +41,11 @@ const createInviteSchema = z.object({
               "general_capability_exam"
             ]),
             config: z.record(z.string(), z.unknown()).default({}),
+            durationMinutes: z.number().int().positive().optional(),
             weight: z.number().int().positive().optional(),
-            requiredPercent: z.number().min(0).max(100).optional()
+            weightMode: z.enum(["auto", "manual"]).optional(),
+            requiredPercent: z.number().min(0).max(100).optional(),
+            requiredPercentMode: z.enum(["auto", "manual"]).optional()
           })
         )
         .optional()
@@ -77,13 +77,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const effectiveRoleId = body.roleId as RoleId | undefined;
-    const passTargetPercent =
-      typeof body.passTarget === "number"
-        ? body.passTarget
-        : effectiveRoleId
-          ? Number(getRoleConfig(effectiveRoleId).pass_percentage)
-          : 60;
+    const passTargetPercent = typeof body.passTarget === "number" ? body.passTarget : 60;
     if (body.blueprint?.exams?.length) {
       const totalContribution = body.blueprint.exams.reduce((sum, exam) => sum + Number(exam.weight ?? 0), 0);
       if (totalContribution !== 100) {
@@ -104,7 +98,6 @@ export async function POST(request: Request) {
       integrityPreset: body.integrityPreset as IntegrityPresetId,
       roleLocked: body.roleLocked,
       stackLocked: body.stackLocked,
-      roleId: effectiveRoleId,
       passTargetPercent,
       stacks: body.stacks as StackId[] | undefined,
       sections: normalizedSections,

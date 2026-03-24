@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
+import type { RoleId } from "@/lib/assessment-engine/types";
 import {
   defaultCandidateMilestones,
   type CandidateMilestoneMode,
@@ -17,6 +18,7 @@ import {
   sortCandidateWorkspaceItems,
   toCandidateWorkspaceItem
 } from "@/lib/candidates/workspace";
+import { listRoleCatalog, resolveOrCreateRoleCatalogEntry } from "@/lib/roles/catalog";
 import type {
   CandidateAssessmentStatus,
   CandidateFinalDecision,
@@ -37,6 +39,9 @@ export interface CandidateRecord {
   fullName: string;
   email: string;
   phone?: string;
+  roleId?: string;
+  roleLabel?: string;
+  coreBasisRoleId?: RoleId;
   positionAppliedFor?: string;
   batchId?: string;
   resumeSource?: string;
@@ -123,6 +128,7 @@ export interface CandidateDetail extends CandidateRecord {
 
 export interface CandidateWorkspaceFilters {
   q?: string;
+  roleId?: string;
   status?: CandidateUiStatus;
   stage?: CandidateStage;
   owner?: string;
@@ -137,6 +143,7 @@ export interface CandidateWorkspacePage {
   total: number;
   page: number;
   pageSize: number;
+  roleOptions: Array<{ id: string; label: string }>;
   ownerOptions: string[];
   summary: CandidateOpenWorkSummary;
 }
@@ -146,6 +153,8 @@ function mapCandidate(row: {
   fullName: string;
   email: string;
   phone: string | null;
+  roleId: string | null;
+  role: { label: string; coreBasisRoleId: string } | null;
   positionAppliedFor: string | null;
   batchId: string | null;
   resumeSource: string | null;
@@ -164,7 +173,10 @@ function mapCandidate(row: {
     fullName: row.fullName,
     email: row.email,
     phone: row.phone ?? undefined,
-    positionAppliedFor: row.positionAppliedFor ?? undefined,
+    roleId: row.roleId ?? undefined,
+    roleLabel: row.role?.label ?? row.positionAppliedFor ?? undefined,
+    coreBasisRoleId: (row.role?.coreBasisRoleId as RoleId | null) ?? undefined,
+    positionAppliedFor: row.positionAppliedFor ?? row.role?.label ?? undefined,
     batchId: row.batchId ?? undefined,
     resumeSource: row.resumeSource ?? undefined,
     hrOwner: row.hrOwner ?? undefined,
@@ -391,6 +403,7 @@ export async function createCandidate(input: {
   fullName: string;
   email: string;
   phone?: string;
+  roleId?: string;
   positionAppliedFor?: string;
   batchId?: string;
   resumeSource?: string;
@@ -402,6 +415,13 @@ export async function createCandidate(input: {
   candidateFolderUrl?: string;
   notesSummary?: string;
 }) {
+  const resolvedRole = await resolveOrCreateRoleCatalogEntry({
+    roleId: input.roleId,
+    legacyRoleLabel: input.positionAppliedFor,
+    createIfMissing: Boolean(input.positionAppliedFor?.trim()),
+    defaultCoreBasisRoleId: "Associate"
+  });
+
   const created = await prisma.$transaction(async (tx) => {
     const candidate = await tx.candidate.create({
       data: {
@@ -409,7 +429,8 @@ export async function createCandidate(input: {
         fullName: input.fullName.trim(),
         email: input.email.trim().toLowerCase(),
         phone: input.phone?.trim() || null,
-        positionAppliedFor: input.positionAppliedFor?.trim() || null,
+        roleId: resolvedRole?.id ?? null,
+        positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
@@ -419,6 +440,14 @@ export async function createCandidate(input: {
         screeningStatus: input.screeningStatus ?? null,
         candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
         notesSummary: input.notesSummary?.trim() || null
+      },
+      include: {
+        role: {
+          select: {
+            label: true,
+            coreBasisRoleId: true
+          }
+        }
       }
     });
 
@@ -446,6 +475,7 @@ export async function updateCandidate(
     fullName: string;
     email: string;
     phone?: string;
+    roleId?: string;
     positionAppliedFor?: string;
     batchId?: string;
     resumeSource?: string;
@@ -458,13 +488,21 @@ export async function updateCandidate(
     notesSummary?: string;
   }
 ) {
+  const resolvedRole = await resolveOrCreateRoleCatalogEntry({
+    roleId: input.roleId,
+    legacyRoleLabel: input.positionAppliedFor,
+    createIfMissing: Boolean(input.positionAppliedFor?.trim()),
+    defaultCoreBasisRoleId: "Associate"
+  });
+
   const updated = await prisma.candidate.update({
     where: { id: candidateId },
     data: {
       fullName: input.fullName.trim(),
       email: input.email.trim().toLowerCase(),
       phone: input.phone?.trim() || null,
-      positionAppliedFor: input.positionAppliedFor?.trim() || null,
+      roleId: resolvedRole?.id ?? null,
+      positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
       batchId: input.batchId?.trim() || null,
       resumeSource: input.resumeSource?.trim() || null,
       hrOwner: input.hrOwner?.trim() || null,
@@ -474,6 +512,14 @@ export async function updateCandidate(
       screeningStatus: input.screeningStatus ?? null,
       candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
       notesSummary: input.notesSummary?.trim() || null
+    },
+    include: {
+      role: {
+        select: {
+          label: true,
+          coreBasisRoleId: true
+        }
+      }
     }
   });
 
@@ -961,6 +1007,7 @@ export async function candidateExists(candidateId: string) {
 }
 
 export async function listCandidates(filters?: {
+  roleId?: string;
   stage?: CandidateStage;
   finalDecision?: CandidateFinalDecision;
   assessmentStatus?: CandidateAssessmentStatus;
@@ -1010,6 +1057,12 @@ export async function listCandidates(filters?: {
           createdAt: true,
           updatedAt: true
         }
+      },
+      role: {
+        select: {
+          label: true,
+          coreBasisRoleId: true
+        }
       }
     }
   });
@@ -1037,6 +1090,7 @@ export async function listCandidates(filters?: {
   });
 
   return mapped.filter((row) => {
+    if (filters?.roleId && row.roleId !== filters.roleId) return false;
     if (filters?.stage && row.stage !== filters.stage) return false;
     if (filters?.finalDecision && row.finalDecision !== filters.finalDecision) return false;
     if (filters?.assessmentStatus) {
@@ -1051,10 +1105,12 @@ export async function listCandidateWorkspacePage(
   filters: CandidateWorkspaceFilters = {}
 ): Promise<CandidateWorkspacePage> {
   const candidates = await listCandidates({
+    roleId: filters.roleId,
     stage: filters.stage,
     assessmentStatus: filters.assessmentStatus
   });
   const query = filters.q?.trim().toLowerCase() ?? "";
+  const roleId = filters.roleId?.trim() ?? "";
   const status = filters.status;
   const owner = filters.owner?.trim() ?? "";
   const sort = filters.sort ?? "updated_desc";
@@ -1075,6 +1131,7 @@ export async function listCandidateWorkspacePage(
         .toLowerCase();
       if (!haystack.includes(query)) return false;
     }
+    if (roleId && (row.roleId || "") !== roleId) return false;
     if (status && row.uiStatus !== status) return false;
     if (owner && (row.hrOwner || "") !== owner) return false;
     return true;
@@ -1083,6 +1140,10 @@ export async function listCandidateWorkspacePage(
   const sorted = sortCandidateWorkspaceItems(workspaceRows, sort);
   const start = (page - 1) * pageSize;
   const rows = sorted.slice(start, start + pageSize);
+  const roleOptions = (await listRoleCatalog()).map((role) => ({
+    id: role.id,
+    label: role.label
+  }));
   const ownerOptions = [...new Set(candidates.map((row) => row.hrOwner).filter(Boolean))].sort() as string[];
 
   return {
@@ -1090,6 +1151,7 @@ export async function listCandidateWorkspacePage(
     total: sorted.length,
     page,
     pageSize,
+    roleOptions,
     ownerOptions,
     summary: buildCandidateOpenWorkSummary(workspaceRows)
   };
@@ -1141,6 +1203,12 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
               }
             }
           }
+        }
+      },
+      role: {
+        select: {
+          label: true,
+          coreBasisRoleId: true
         }
       }
     }

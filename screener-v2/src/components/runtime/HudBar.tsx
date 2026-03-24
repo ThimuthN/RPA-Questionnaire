@@ -24,7 +24,7 @@ export function HudBar({
   trustStrip
 }: {
   stageLabel: string;
-  roleId: string;
+  roleId?: string;
   stacks: string[];
   sectionProgressLabel: string;
   sectionProgressValue: string;
@@ -44,7 +44,7 @@ export function HudBar({
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill label={stageLabel} tone={stageLabel.toLowerCase().includes("core") ? "blue" : "teal"} />
-              <StatusPill label={roleId} tone="neutral" />
+              <StatusPill label={roleId || "Generic"} tone="neutral" />
             </div>
             <p className="text-sm text-slate-200">{stacks.join(", ")}</p>
           </div>

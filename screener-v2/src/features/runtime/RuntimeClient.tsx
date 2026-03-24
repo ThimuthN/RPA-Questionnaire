@@ -10,11 +10,10 @@ import type {
   ExamBlueprint,
   ExamQuestion,
   ExamState,
-  IntegrityPresetId,
-  ResultSummary,
-  RoleId,
-  StackId
-} from "@/lib/assessment-engine/types";
+    IntegrityPresetId,
+    ResultSummary,
+    StackId
+  } from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
 import { HudBar } from "@/components/runtime/HudBar";
 import { RuntimeTrustBanner } from "@/components/runtime/RuntimeTrustBanner";
@@ -30,7 +29,7 @@ interface RuntimeClientProps {
   slug: string;
   attemptId: string;
   integrityPreset: IntegrityPresetId;
-  roleId: RoleId;
+  roleId?: string;
   stacks: StackId[];
   blueprint: ExamBlueprint;
   initialExamState: Partial<Record<string, ExamState>>;

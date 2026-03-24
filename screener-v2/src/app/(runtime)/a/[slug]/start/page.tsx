@@ -10,7 +10,6 @@ import { StagePanel } from "@/components/scene/StagePanel";
 import type {
   ExamSummaryItem,
   IntegrityPresetId,
-  RoleId,
   StackId
 } from "@/lib/assessment-engine/types";
 import {
@@ -27,7 +26,6 @@ import type { SectionId } from "@/lib/sections/types";
 interface InviteMeta {
   roleLocked: boolean;
   stackLocked: boolean;
-  roleId: RoleId | null;
   passTarget: number | null;
   stacks: StackId[];
   sections: SectionId[];
@@ -54,7 +52,6 @@ function InviteStartContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [roleId, setRoleId] = useState<RoleId | null>(null);
   const [stacks, setStacks] = useState<StackId[]>([]);
   const [passcode, setPasscode] = useState(passcodeFromQuery);
   const [inviteMeta, setInviteMeta] = useState<InviteMeta | null>(null);
@@ -115,7 +112,6 @@ function InviteStartContent() {
       setTotalDurationMinutes(
         typeof data.totalDurationMinutes === "number" ? data.totalDurationMinutes : null
       );
-      setRoleId(data.invite?.roleId ?? null);
       setStacks(data.invite?.stacks ?? []);
       setDetailsLoading(false);
     }
@@ -152,13 +148,11 @@ function InviteStartContent() {
     }
 
     const invite = validated.invite;
-    const effectiveRoleId = invite.roleId ?? roleId;
     const effectiveStacks = invite.stacks?.length ? invite.stacks : stacks;
     setInviteMeta(invite);
     setTotalDurationMinutes(
       typeof validated.totalDurationMinutes === "number" ? validated.totalDurationMinutes : null
     );
-    setRoleId(effectiveRoleId);
     setStacks(effectiveStacks);
 
     const startResponse = await fetch("/api/attempts/start", {
@@ -174,7 +168,6 @@ function InviteStartContent() {
           email,
           phone
         },
-        roleId: effectiveRoleId,
         stacks: effectiveStacks
       })
     });
@@ -195,7 +188,7 @@ function InviteStartContent() {
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label="Identity" tone="blue" />
-          <StatusPill label={isInvitePasscodeState(validationState) ? "Passcode" : "Role + Stack"} tone="teal" />
+          <StatusPill label={isInvitePasscodeState(validationState) ? "Passcode" : "Assessment details"} tone="teal" />
           <StatusPill label={blocked ? "Blocked" : "Start"} tone={blocked ? "red" : "emerald"} />
         </div>
       }
@@ -284,9 +277,6 @@ function InviteStartContent() {
           <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Test details</p>
           <StatusPill label={readiness.label} tone={readiness.tone} />
           <div className="space-y-2 text-sm">
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
-              Role: {detailsLoading ? "Loading..." : roleId ?? "Not available"}
-            </p>
             <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
               Stack: {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
             </p>

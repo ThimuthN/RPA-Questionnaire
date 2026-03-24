@@ -1,8 +1,7 @@
 import type {
   AssessmentContextType,
   ResultReviewState,
-  ResultSummary,
-  RoleId
+  ResultSummary
 } from "@/lib/assessment-engine/types";
 import type {
   CandidateNextAction,
@@ -20,6 +19,8 @@ export interface WorkspaceResultRow extends ResultSummary {
   submittedAt: string;
   candidateId?: string;
   candidateOwner?: string;
+  candidateRoleId?: string;
+  candidateRoleLabel?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
   candidateUiStatus?: CandidateUiStatus;
@@ -36,7 +37,7 @@ export interface ResultsWorkspaceFilters {
   reviewState?: ResultReviewState;
   contextType?: AssessmentContextType;
   integrity?: IntegrityRiskLevel;
-  role?: RoleId;
+  role?: string;
   owner?: string;
   stage?: CandidateStage;
   scoreBand?: ResultScoreBand;
@@ -48,6 +49,8 @@ type WorkspaceResultExtras = {
   reviewState?: ResultReviewState;
   submittedAt?: string;
   candidateId?: string;
+  candidateRoleId?: string;
+  candidateRoleLabel?: string;
   candidateOwner?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
@@ -70,6 +73,7 @@ export function filterResultWorkspaceRows(rows: WorkspaceResultRow[], filters: R
       const haystack = [
         row.candidateName ?? "",
         row.candidateEmail ?? "",
+        row.candidateRoleLabel ?? "",
         row.candidateOwner ?? "",
         row.candidateNotesSummary ?? ""
       ]
@@ -81,7 +85,7 @@ export function filterResultWorkspaceRows(rows: WorkspaceResultRow[], filters: R
     if (filters.reviewState && row.reviewState !== filters.reviewState) return false;
     if (filters.contextType && row.contextType !== filters.contextType) return false;
     if (filters.integrity && row.integrityRisk !== filters.integrity) return false;
-    if (filters.role && row.roleId !== filters.role) return false;
+    if (filters.role && row.candidateRoleId !== filters.role) return false;
     if (filters.owner && (row.candidateOwner || "") !== filters.owner) return false;
     if (filters.stage && row.candidateStage !== filters.stage) return false;
     if (filters.scoreBand && scoreBandForResult(row.finalPercent) !== filters.scoreBand) return false;
@@ -108,6 +112,8 @@ export function toWorkspaceResultRow(
     reviewState: extras?.reviewState ?? row.reviewState ?? "unreviewed",
     submittedAt: extras?.submittedAt ?? new Date().toISOString(),
     candidateId: extras?.candidateId,
+    candidateRoleId: extras?.candidateRoleId,
+    candidateRoleLabel: extras?.candidateRoleLabel,
     candidateOwner: extras?.candidateOwner,
     candidateStage: extras?.candidateStage,
     candidateNextAction: extras?.candidateNextAction,
