@@ -5,7 +5,6 @@ import { Button } from "@/components/primitives/Button";
 import {
   candidateNoteTypeLabels,
   candidateNoteTypeValues,
-  candidateUiStatusLabels,
   candidateUiStatusValues
 } from "@/lib/candidates/types";
 
@@ -14,6 +13,21 @@ const fieldClass =
 
 const inputClass =
   "w-full rounded-[16px] border border-white/16 bg-white/[0.05] px-3 py-2.5 text-sm text-white outline-none";
+
+const linkedStatusLabels: Record<(typeof candidateUiStatusValues)[number], string> = {
+  in_progress: "In progress",
+  need_review: "Needs review",
+  moved_forward: "Advanced",
+  rejected: "Closed"
+};
+
+const noteTypeLabels: Record<(typeof candidateNoteTypeValues)[number], string> = {
+  screening: "Review",
+  interview: "Interview",
+  technical: "Technical",
+  decision: "Decision",
+  general: "General"
+};
 
 function countSelected(form: HTMLFormElement | null) {
   if (!form) return 0;
@@ -60,9 +74,9 @@ export function BulkReviewControls({ formId }: { formId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-2xl text-white">Bulk actions</h2>
+          <h2 className="text-2xl text-white">Linked workflow actions</h2>
           <p className="text-sm text-slate-300">
-            Update status, assign an owner, or add a note to selected results.
+            These actions update linked profile records for selected results. Assessment-only results are unchanged.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -104,26 +118,26 @@ export function BulkReviewControls({ formId }: { formId: string }) {
             }
             className={fieldClass}
           >
-            <option value="set_ui_status">Change status</option>
-            <option value="assign_owner">Assign owner</option>
-            <option value="add_note">Add note</option>
+            <option value="set_ui_status">Update linked status</option>
+            <option value="assign_owner">Assign linked owner</option>
+            <option value="add_note">Add linked note</option>
           </select>
         </label>
 
         {action === "assign_owner" ? (
           <label className="grid gap-2">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Owner</span>
-            <input name="owner" placeholder="Reviewer name" className={inputClass} />
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Linked owner</span>
+            <input name="owner" placeholder="Owner or reviewer" className={inputClass} />
           </label>
         ) : null}
 
         {action === "set_ui_status" ? (
           <label className="grid gap-2">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Status</span>
+            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Linked status</span>
             <select name="status" defaultValue="moved_forward" className={fieldClass}>
               {candidateUiStatusValues.map((status) => (
                 <option key={status} value={status}>
-                  {candidateUiStatusLabels[status]}
+                  {linkedStatusLabels[status]}
                 </option>
               ))}
             </select>
@@ -136,7 +150,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
             <select name="noteType" defaultValue="decision" className={fieldClass}>
               {candidateNoteTypeValues.map((type) => (
                 <option key={type} value={type}>
-                  {candidateNoteTypeLabels[type]}
+                  {noteTypeLabels[type] ?? candidateNoteTypeLabels[type]}
                 </option>
               ))}
             </select>
@@ -157,7 +171,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
           <textarea
             name="noteBody"
             rows={3}
-            placeholder="Add the note that should be saved to every selected candidate."
+            placeholder="Add a note to each linked profile selected from this results view."
             className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
           />
         </label>

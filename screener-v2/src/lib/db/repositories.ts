@@ -1368,6 +1368,10 @@ export async function bulkUpdateResults(input: {
   });
   const candidateIds = [...new Set(rows.map((row) => row.candidateId))];
 
+  if (candidateIds.length === 0) {
+    throw new Error("Selected results do not have linked workflow records yet.");
+  }
+
   return bulkUpdateCandidates({
     candidateIds,
     action: input.action,

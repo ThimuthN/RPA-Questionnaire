@@ -8,7 +8,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { candidateAssessmentStatusLabels, candidateAssessmentStatusValues, candidateStageLabels, candidateStageValues, candidateUiStatusLabels, type CandidateAssessmentStatus, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
+import { candidateStageLabels, candidateStageValues, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
 import type { ResultListSort, ResultScoreBand, WorkspaceResultRow } from "@/lib/results/workspace";
@@ -31,7 +31,6 @@ type PageState = {
   role?: string;
   owner?: string;
   stage?: string;
-  assessmentStatus?: string;
   scoreBand?: string;
   sort?: string;
   page?: string;
@@ -66,8 +65,37 @@ function toneForIntegrity(level: IntegrityRiskLevel) {
   return level === "clean" ? "emerald" : level === "watch" ? "amber" : "red";
 }
 
+function toneForLinkedStatus(status: CandidateUiStatus) {
+  if (status === "moved_forward") return "emerald";
+  if (status === "need_review") return "amber";
+  if (status === "rejected") return "red";
+  return "blue";
+}
+
+function linkedStatusLabel(status: CandidateUiStatus) {
+  if (status === "moved_forward") return "Advanced";
+  if (status === "need_review") return "Needs review";
+  if (status === "rejected") return "Closed";
+  return "In progress";
+}
+
 function strongestArea(row: WorkspaceResultRow) {
   return Object.entries(row.breakdownByCategory).sort((left, right) => right[1].percent - left[1].percent)[0]?.[0] ?? "No data";
+}
+
+function stackSummary(row: WorkspaceResultRow) {
+  if (row.stacks.length === 0) return "General";
+  if (row.stacks.length === 1) return row.stacks[0];
+  return `${row.stacks[0]} +${row.stacks.length - 1}`;
+}
+
+function linkedWorkflowSummary(row: WorkspaceResultRow) {
+  if (!row.candidateId) return "Assessment-only result";
+  const details = [
+    row.candidateStage ? candidateStageLabels[row.candidateStage] : null,
+    row.candidateOwner ? `Owner ${row.candidateOwner}` : null
+  ].filter(Boolean);
+  return details.length > 0 ? details.join(" | ") : "Linked profile record";
 }
 
 const filterControlClass =
@@ -119,9 +147,6 @@ export default async function ResultsPage({
     stage: candidateStageValues.includes(pageState.stage as CandidateStage)
       ? (pageState.stage as CandidateStage)
       : undefined,
-    assessmentStatus: candidateAssessmentStatusValues.includes(pageState.assessmentStatus as CandidateAssessmentStatus)
-      ? (pageState.assessmentStatus as CandidateAssessmentStatus)
-      : undefined,
     scoreBand: scoreBandOptions.includes(pageState.scoreBand as ResultScoreBand)
       ? (pageState.scoreBand as ResultScoreBand)
       : undefined,
@@ -143,9 +168,9 @@ export default async function ResultsPage({
   return (
     <SceneShell
       variant="results"
-      eyebrow="Results to review"
+      eyebrow="Assessment review"
       title="Results"
-      subtitle="Review scores with candidate context, compare shortlists, and update decisions in one place."
+      subtitle="Review assessment outcomes across hiring, internal growth, promotions, certification, and ad hoc evaluations."
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
@@ -164,7 +189,7 @@ export default async function ResultsPage({
         ) : null}
         {pageState.updated ? (
           <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            Updated {pageState.updated} result-linked candidate(s).
+            Updated {pageState.updated} linked workflow record(s).
           </div>
         ) : null}
         {pageState.error ? (
@@ -177,8 +202,8 @@ export default async function ResultsPage({
           <StagePanel className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Compare shortlist</h2>
-                <p className="text-sm text-slate-300">Compare up to four results side by side. Use the compare link in any row to add or remove candidates.</p>
+                <h2 className="text-2xl text-white">Compare results</h2>
+                <p className="text-sm text-slate-300">Compare up to four assessment results side by side. Use Compare in any row to add or remove them.</p>
               </div>
               <Link href={buildHref(query, { compare: undefined })}>
                 <Button variant="secondary">Clear compare</Button>
@@ -188,16 +213,15 @@ export default async function ResultsPage({
               {comparison.rows.map((row) => (
                 <div key={row.attemptId} className="rounded-[22px] border border-white/10 bg-black/20 p-4">
                   <div className="space-y-2">
-                    <p className="text-lg text-white">{row.candidateName || "Unnamed candidate"}</p>
-                    <p className="text-sm text-slate-300">{row.candidateOwner || "No owner"}</p>
+                    <p className="text-lg text-white">{row.candidateName || "Unnamed participant"}</p>
+                    <p className="text-sm text-slate-300">{row.candidateEmail || "No email captured"}</p>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                       <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
                     </div>
+                    <p className="text-sm text-slate-300">{row.roleId} | {stackSummary(row)}</p>
                     <p className="text-sm text-slate-300">Strongest area: {strongestArea(row)}</p>
-                    <p className="text-sm text-slate-400">
-                      {row.candidateStage ? candidateStageLabels[row.candidateStage] : "No stage"}{row.candidateOwner ? ` | ${row.candidateOwner}` : ""}
-                    </p>
+                    <p className="text-sm text-slate-400">{linkedWorkflowSummary(row)}</p>
                     <Link href={`/results/${row.attemptId}`}>
                       <Button variant="secondary">Open result</Button>
                     </Link>
@@ -211,7 +235,7 @@ export default async function ResultsPage({
         <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Filters</h2>
-            <p className="text-sm text-slate-300">Filter by result, risk, owner, and stage. Exports follow the current view.</p>
+            <p className="text-sm text-slate-300">Filter by result, integrity, target profile, and optional linked workflow metadata. Exports follow the current view.</p>
           </div>
           <form className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
@@ -219,7 +243,7 @@ export default async function ResultsPage({
                 <input
                   name="q"
                   defaultValue={pageState.q ?? ""}
-                  placeholder="Candidate, email, owner, or notes"
+                  placeholder="Participant, email, owner, or notes"
                   className={filterInputClass}
                 />
               </FilterField>
@@ -229,7 +253,7 @@ export default async function ResultsPage({
                   <option value="score_desc">Score high to low</option>
                   <option value="score_asc">Score low to high</option>
                   <option value="risk_desc">Integrity risk</option>
-                  <option value="stale_desc">Most stale candidate</option>
+                  <option value="stale_desc">Most stale linked workflow</option>
                 </select>
               </FilterField>
             </div>
@@ -251,7 +275,7 @@ export default async function ResultsPage({
                   <option value="review">Review</option>
                 </select>
               </FilterField>
-              <FilterField label="Role">
+              <FilterField label="Role / target profile">
                 <select name="role" defaultValue={pageState.role ?? ""} className={filterControlClass}>
                   <option value="">All roles</option>
                   {roleOptions.map((role) => (
@@ -261,9 +285,9 @@ export default async function ResultsPage({
                   ))}
                 </select>
               </FilterField>
-              <FilterField label="Owner">
+              <FilterField label="Linked owner">
                 <select name="owner" defaultValue={pageState.owner ?? ""} className={filterControlClass}>
-                  <option value="">All owners</option>
+                  <option value="">All linked owners</option>
                   {page.ownerOptions.map((owner) => (
                     <option key={owner} value={owner}>
                       {owner}
@@ -271,26 +295,12 @@ export default async function ResultsPage({
                   ))}
                 </select>
               </FilterField>
-              <FilterField label="Candidate stage">
+              <FilterField label="Linked workflow stage">
                 <select name="stage" defaultValue={pageState.stage ?? ""} className={filterControlClass}>
-                  <option value="">All stages</option>
+                  <option value="">All linked stages</option>
                   {candidateStageValues.map((stage) => (
                     <option key={stage} value={stage}>
                       {candidateStageLabels[stage]}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Assessment status">
-                <select
-                  name="assessmentStatus"
-                  defaultValue={pageState.assessmentStatus ?? ""}
-                  className={filterControlClass}
-                >
-                  <option value="">All assessment statuses</option>
-                  {candidateAssessmentStatusValues.map((status) => (
-                    <option key={status} value={status}>
-                      {candidateAssessmentStatusLabels[status]}
                     </option>
                   ))}
                 </select>
@@ -304,9 +314,9 @@ export default async function ResultsPage({
                 </select>
               </FilterField>
               <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Quick view</p>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Optional workflow data</p>
                 <p className="mt-2">
-                  Exports include only the results shown in this view.
+                  Owner and stage filters only apply to results that are linked to a people workflow.
                 </p>
               </div>
             </div>
@@ -359,10 +369,11 @@ export default async function ResultsPage({
                   <thead className="border-b border-white/10 bg-white/[0.04] text-slate-300">
                     <tr>
                       <th className="px-4 py-3">Select</th>
-                      <th className="px-4 py-3">Candidate</th>
-                      <th className="px-4 py-3">Result</th>
-                      <th className="px-4 py-3">Context</th>
-                      <th className="px-4 py-3">Activity</th>
+                      <th className="px-4 py-3">Participant</th>
+                      <th className="px-4 py-3">Assessment</th>
+                      <th className="px-4 py-3">Review</th>
+                      <th className="px-4 py-3">Linked workflow</th>
+                      <th className="px-4 py-3">Submitted</th>
                       <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
@@ -374,10 +385,21 @@ export default async function ResultsPage({
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-1">
-                            <p className="font-medium text-white">{row.candidateName || "Unnamed candidate"}</p>
+                            <p className="font-medium text-white">{row.candidateName || "Unnamed participant"}</p>
                             <p className="text-slate-300">{row.candidateEmail || "No email captured"}</p>
-                            <p className="text-xs text-slate-400">{row.candidateOwner || "No owner"}{row.candidateStage ? ` | ${candidateStageLabels[row.candidateStage]}` : ""}</p>
+                            <p className="text-xs text-slate-400">
+                              {row.candidateId ? "Linked profile attached" : "Assessment-only result"}
+                            </p>
                             {row.candidateNotesSummary ? <p className="text-xs text-brand-100">{row.candidateNotesSummary}</p> : null}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="space-y-1">
+                            <p className="text-white">{row.roleId}</p>
+                            <p className="text-xs text-slate-400">{stackSummary(row)}</p>
+                            <p className="text-xs text-slate-400">
+                              {row.exams.length} exam{row.exams.length === 1 ? "" : "s"}
+                            </p>
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -391,20 +413,28 @@ export default async function ResultsPage({
                           </div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            {row.candidateUiStatus ? (
-                              <StatusPill label={candidateUiStatusLabels[row.candidateUiStatus]} tone={row.candidateUiStatus === "moved_forward" ? "emerald" : row.candidateUiStatus === "need_review" ? "amber" : row.candidateUiStatus === "rejected" ? "red" : "blue"} />
-                            ) : null}
-                            <p className="text-slate-300">{row.roleId}</p>
-                            <p className="text-xs text-slate-400">
-                              {row.candidateAssessmentStatus ? candidateAssessmentStatusLabels[row.candidateAssessmentStatus] : "Result ready"}
-                            </p>
-                          </div>
+                          {row.candidateId ? (
+                            <div className="space-y-2">
+                              {row.candidateUiStatus ? (
+                                <StatusPill label={linkedStatusLabel(row.candidateUiStatus)} tone={toneForLinkedStatus(row.candidateUiStatus)} />
+                              ) : null}
+                              <p className="text-slate-300">{row.candidateOwner || "No linked owner"}</p>
+                              <p className="text-xs text-slate-400">
+                                {row.candidateStage ? candidateStageLabels[row.candidateStage] : "No linked stage"}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-400">No linked workflow record.</p>
+                          )}
                         </td>
                         <td className="px-4 py-4">
                           <div className="space-y-1">
-                            <p className="text-slate-200">{row.candidateStaleDays ?? 0} day(s) stale</p>
-                            <p className="text-xs text-slate-400">{new Date(row.submittedAt).toLocaleString()}</p>
+                            <p className="text-slate-200">{new Date(row.submittedAt).toLocaleString()}</p>
+                            <p className="text-xs text-slate-400">
+                              {row.candidateId
+                                ? `${row.candidateStaleDays ?? 0} day(s) since linked workflow activity`
+                                : "Assessment-only result"}
+                            </p>
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -414,7 +444,7 @@ export default async function ResultsPage({
                             </Link>
                             {row.candidateId ? (
                               <Link href={`/candidates/${row.candidateId}`}>
-                                <Button variant="secondary">Open candidate</Button>
+                                <Button variant="secondary">Open profile</Button>
                               </Link>
                             ) : null}
                             <Link href={toggleCompare(query, row.attemptId)}>
