@@ -37,6 +37,55 @@ model AssessmentVersion {
   createdAt        DateTime @default(now())
 }
 
+model AddonCatalog {
+  id                    String   @id @default(cuid())
+  slug                  String   @unique
+  label                 String
+  description           String
+  engineType            String
+  defaultConfigJson     Json
+  defaultDurationMinutes Int
+  defaultRequiredPercent Int
+  defaultWeight         Int
+  isActive              Boolean  @default(true)
+  sortOrder             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  presetItems           AssessmentPresetItem[]
+
+  @@index([isActive, sortOrder])
+}
+
+model AssessmentPreset {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  label       String
+  description String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  items       AssessmentPresetItem[]
+
+  @@index([isActive, sortOrder])
+}
+
+model AssessmentPresetItem {
+  id                 String   @id @default(cuid())
+  presetId           String
+  addonId            String
+  sortOrder          Int
+  configOverrideJson Json?
+  weightOverride     Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  preset             AssessmentPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  addon              AddonCatalog     @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@index([presetId, sortOrder])
+  @@index([addonId])
+}
+
 model Invite {
   id                  String   @id @default(cuid())
   assessmentVersionId String

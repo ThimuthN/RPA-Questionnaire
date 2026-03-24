@@ -95,6 +95,10 @@ export function normalizeExamDrafts(args: {
   if (Array.isArray(args.exams) && args.exams.length > 0) {
     return args.exams.map((exam) => ({
       definitionId: exam.definitionId,
+      sourceAddonId: exam.sourceAddonId,
+      sourcePresetId: exam.sourcePresetId,
+      label: exam.label,
+      description: exam.description,
       config: exam.config ?? {},
       durationMinutes: exam.durationMinutes,
       weight: exam.weight,
@@ -151,7 +155,7 @@ export function resolveExamBlueprint(args: {
       instanceId: cuidLike(),
       definitionId: draft.definitionId,
       legacySectionId: metadata.legacySectionId,
-      label: metadata.label,
+      label: draft.label?.trim() || metadata.label,
       order: index,
       config: draft.config ?? {},
       configSummary: metadata.configSummary,
@@ -163,8 +167,8 @@ export function resolveExamBlueprint(args: {
       requiredPercent:
         typeof draft.requiredPercent === "number" ? draft.requiredPercent : metadata.requiredPercent,
       contentSnapshot: {
-        title: metadata.label,
-        description: metadata.configSummary,
+        title: draft.label?.trim() || metadata.label,
+        description: draft.description?.trim() || metadata.configSummary,
         items
       }
     };

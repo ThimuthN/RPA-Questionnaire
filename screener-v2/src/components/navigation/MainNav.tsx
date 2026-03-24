@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
+import { Activity, Blocks, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
 import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
@@ -19,6 +19,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
   const items: NavItem[] = viewer
     ? [
         { href: "/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
+        { href: "/addons" as Route, label: copy.nav.addons, icon: Blocks },
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
         { href: "/results", label: copy.nav.results, icon: Activity },
         { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
@@ -38,6 +39,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
             pathname === href ||
             (href === "/results" && pathname.startsWith("/results/")) ||
             (href === "/candidates" && pathname.startsWith("/candidates")) ||
+            (href === "/addons" && pathname.startsWith("/addons")) ||
             (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
             (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
             (href === "/users" && pathname.startsWith("/users"));

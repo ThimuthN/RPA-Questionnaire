@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME, sanitizeNextPath, verifySessionToken } from "@/lib
 
 const authRequiredPrefixes = [
   "/candidates",
+  "/addons",
   "/create-test",
   "/results",
   "/studio",
@@ -11,7 +12,9 @@ const authRequiredPrefixes = [
   "/api/results",
   "/api/invites/create",
   "/api/auth/magic/request",
-  "/api/users"
+  "/api/users",
+  "/api/addons",
+  "/api/addon-presets"
 ];
 
 const adminOnlyPrefixes = ["/users", "/api/users"];
@@ -65,6 +68,7 @@ export const config = {
   matcher: [
     "/login",
     "/candidates/:path*",
+    "/addons/:path*",
     "/create-test/:path*",
     "/results/:path*",
     "/studio/:path*",
@@ -72,6 +76,8 @@ export const config = {
     "/api/results/:path*",
     "/api/invites/create",
     "/api/auth/magic/request",
-    "/api/users/:path*"
+    "/api/users/:path*",
+    "/api/addons/:path*",
+    "/api/addon-presets/:path*"
   ]
 };

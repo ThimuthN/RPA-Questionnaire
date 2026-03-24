@@ -190,6 +190,10 @@ export interface ExamConfigFieldDefinition {
 
 export interface ExamBlueprintDraftItem {
   definitionId: ExamDefinitionId;
+  sourceAddonId?: string;
+  sourcePresetId?: string;
+  label?: string;
+  description?: string;
   config: Record<string, unknown>;
   durationMinutes?: number;
   weight?: number;

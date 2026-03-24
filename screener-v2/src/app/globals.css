@@ -36,6 +36,27 @@ body {
   color: var(--white);
 }
 
+html {
+  color-scheme: dark;
+}
+
+select,
+option,
+optgroup {
+  color-scheme: dark;
+}
+
+select {
+  background-color: #0f172a;
+  color: var(--white);
+}
+
+option,
+optgroup {
+  background-color: #0f172a;
+  color: var(--white);
+}
+
 h1,
 h2,
 h3,
@@ -98,6 +119,16 @@ pre,
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, rgba(138, 184, 255, 0.9), transparent);
   animation: loading-bar 1.6s ease-in-out infinite;
+}
+
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background: #0f172a;
+  color: #f8fafc;
 }
 
 @keyframes runtime-pulse {

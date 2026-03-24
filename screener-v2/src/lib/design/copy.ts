@@ -1,5 +1,6 @@
 export const copy = {
   nav: {
+    addons: "Add-ons",
     create: "Assessments",
     candidates: "Candidates",
     run: "Live sessions",
@@ -8,7 +9,7 @@ export const copy = {
   },
   landing: {
     headline: "Create assessments, invite candidates, and review results in one place.",
-    subtext: "A simple workspace for running role-based screening and keeping hiring decisions moving.",
+    subtext: "A simple workspace for running technical screening and keeping hiring decisions moving.",
     primaryCta: "Create assessment",
     secondaryCta: "Start assessment"
   },

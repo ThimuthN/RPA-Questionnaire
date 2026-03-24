@@ -40,6 +40,10 @@ const createInviteSchema = z.object({
               "applied_logic_exam",
               "general_capability_exam"
             ]),
+            sourceAddonId: z.string().optional(),
+            sourcePresetId: z.string().optional(),
+            label: z.string().optional(),
+            description: z.string().optional(),
             config: z.record(z.string(), z.unknown()).default({}),
             durationMinutes: z.number().int().positive().optional(),
             weight: z.number().int().positive().optional(),
