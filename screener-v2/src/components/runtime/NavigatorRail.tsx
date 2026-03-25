@@ -2,7 +2,6 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/primitives/Button";
-import { StatusPill } from "@/components/primitives/StatusPill";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { cn } from "@/lib/utils";
 
@@ -60,17 +59,17 @@ export function NavigatorRail({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Navigator</p>
-          <StatusPill label={statusLabel} tone={statusTone} />
+          <span className="text-xs text-slate-400">{statusLabel}</span>
         </div>
-        <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
-          <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1">
-            Answered {answeredCount}/{totalCount}
+        <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-300">
+          <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1 text-center">
+            {answeredCount} done
           </span>
-          <span className="rounded-full border border-red-400/20 bg-red-500/10 px-2 py-1">
-            Unanswered {unansweredCount}
+          <span className="rounded-full border border-red-400/20 bg-red-500/10 px-2 py-1 text-center">
+            {unansweredCount} left
           </span>
-          <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-1">
-            Flagged {flaggedCount}
+          <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-1 text-center">
+            {flaggedCount} flagged
           </span>
         </div>
         <div className="grid grid-cols-4 gap-2 lg:grid-cols-2">
@@ -99,25 +98,9 @@ export function NavigatorRail({
           })}
         </div>
       </div>
-
-      <div className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-3">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Quick actions</p>
-          <Button
-            variant="ghost"
-            className="h-auto px-0 py-0 text-xs text-brand-200 hover:bg-transparent"
-            onClick={onNextUnanswered}
-          >
-            Next unanswered
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
-          <span className="rounded-full border border-white/10 px-2 py-1">N Next</span>
-          <span className="rounded-full border border-white/10 px-2 py-1">P Back</span>
-          <span className="rounded-full border border-white/10 px-2 py-1">F Flag</span>
-          <span className="rounded-full border border-white/10 px-2 py-1">J Toggle</span>
-        </div>
-      </div>
+      <Button variant="ghost" className="w-full justify-center" onClick={onNextUnanswered}>
+        Next unanswered
+      </Button>
     </StagePanel>
   );
 }

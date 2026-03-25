@@ -107,12 +107,10 @@ export function QuestionRuntimeCard({
     <StagePanel className="space-y-5 border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))]">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <StatusPill label={sectionLabel || question.category || "Exam"} tone="blue" />
           <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
-          {sectionSummary ? <StatusPill label={sectionSummary} tone="neutral" className="normal-case tracking-normal" /> : null}
           {typeof questionIndex === "number" && typeof questionCount === "number" ? (
             <StatusPill
-              label={`Question ${questionIndex + 1} of ${questionCount}`}
+              label={`${questionIndex + 1} of ${questionCount}`}
               tone="neutral"
               className="normal-case tracking-normal"
             />

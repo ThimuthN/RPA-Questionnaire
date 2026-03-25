@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { QuestionRuntimeCard } from "@/components/runtime/QuestionRuntimeCard";
 import { Button } from "@/components/primitives/Button";
 import { Card } from "@/components/primitives/Card";
-import { ActionRail } from "@/components/primitives/ActionRail";
 import type {
   ExamBlueprint,
   ExamQuestion,
@@ -125,12 +124,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const currentItems = currentExam?.contentSnapshot.items ?? [];
   const currentItem = currentItems[currentIndex] ?? null;
   const currentExamState = currentExam ? examState[currentExam.instanceId] : undefined;
-
-  const overallProgress = useMemo(() => {
-    if (orderedExams.length === 0) return 0;
-    const ratios = orderedExams.map((exam) => examProgressValue(exam, examState[exam.instanceId]).ratio);
-    return Math.round((ratios.reduce((sum, value) => sum + value, 0) / ratios.length) * 100);
-  }, [examState, orderedExams]);
 
   const currentRemaining =
     stage === "submitted"
@@ -848,9 +841,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const totalQuestionCount = submitReviewRows.reduce((sum, row) => sum + row.total, 0);
   const totalUnansweredCount = submitReviewRows.reduce((sum, row) => sum + row.unanswered, 0);
   const totalFlaggedCount = submitReviewRows.reduce((sum, row) => sum + row.flaggedCount, 0);
-  const sectionProgress = currentExam
-    ? { label: `${currentExam.label} progress`, value: `${progress.answered}/${progress.total}` }
-    : { label: "Progress", value: `${overallProgress}%` };
+  const sectionProgressValue = `${progress.answered}/${progress.total}`;
   const recoveryTitle =
     integrityPolicy.requireFullscreen && fullscreenSupported && !isFullscreenActive
       ? "Return to full-screen to continue"
@@ -889,17 +880,12 @@ export function RuntimeClient(props: RuntimeClientProps) {
         <HudBar
           stageLabel={currentExam?.label ?? "Submitted"}
           roleId={props.roleId}
-          stacks={props.stacks}
-          sectionProgressLabel={sectionProgress.label}
-          sectionProgressValue={sectionProgress.value}
-          overallProgress={overallProgress}
+          sectionProgressValue={sectionProgressValue}
           remainingSeconds={currentRemaining}
           statusLabel={status.label}
           statusTone={status.tone}
           trustStrip={
             <RuntimeTrustBanner
-              statusLabel={status.label}
-              statusTone={status.tone}
               lastSyncedAt={lastSyncedAt}
               integrityPresetLabel={integrityPolicy.shortLabel}
               note={trustNote}
@@ -940,16 +926,57 @@ export function RuntimeClient(props: RuntimeClientProps) {
               </StagePanel>
             ) : null}
 
-            <StagePanel tone="summary" className="p-3">
-              <div className="space-y-2">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-brand-300">Assessment safeguards</p>
-                <p className="text-sm text-slate-200">{integrityPolicy.description}</p>
-                <p className="text-xs text-slate-400">
-                  Preset {integrityPolicy.shortLabel} | Tabs hidden {integrity.tabHiddenCount} | Copy/Cut{" "}
-                  {integrity.copyCount} | Paste {integrity.pasteCount}
-                </p>
-              </div>
-            </StagePanel>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" className="lg:hidden" onClick={() => setNavOpen((prev) => !prev)}>
+                {navOpen ? "Hide navigator" : "Open navigator"}
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={!currentExam || (currentIndex === 0 && !previousExam)}
+                onClick={() => {
+                  if (!currentExam) return;
+                  if (currentIndex > 0) {
+                    setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: Math.max(0, currentIndex - 1) }));
+                    return;
+                  }
+                  if (previousExam) {
+                    setStage(previousExam.instanceId);
+                    setItemIndices((prev) => ({
+                      ...prev,
+                      [previousExam.instanceId]: Math.max(0, previousExam.contentSnapshot.items.length - 1)
+                    }));
+                  }
+                }}
+              >
+                {copy.runtime.back}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => currentItem && setFlagged((prev) => ({ ...prev, [currentItem.id]: !prev[currentItem.id] }))}
+              >
+                {currentItem && flagged[currentItem.id] ? "Unflag" : "Flag"}
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!currentExam) return;
+                  if (currentIndex < currentExam.contentSnapshot.items.length - 1) {
+                    setItemIndices((prev) => ({
+                      ...prev,
+                      [currentExam.instanceId]: Math.min(currentExam.contentSnapshot.items.length - 1, currentIndex + 1)
+                    }));
+                    return;
+                  }
+                  goToNextOrSubmit();
+                }}
+                disabled={submitting}
+              >
+                {currentExam && currentIndex < currentExam.contentSnapshot.items.length - 1
+                  ? "Next"
+                  : nextExam
+                    ? "Next section"
+                    : copy.runtime.reviewSubmit}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -1041,50 +1068,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
         </div>
       ) : null}
 
-      <ActionRail className="sticky bottom-0 left-0 mt-2 rounded-[22px] border-white/10 bg-ink-950/88">
-        <Button variant="secondary" className="lg:hidden" onClick={() => setNavOpen((prev) => !prev)}>
-          Navigator
-        </Button>
-        {currentExam && currentExam.contentSnapshot.items.length > 1 ? (
-          <>
-            <Button
-              variant="secondary"
-              disabled={currentIndex === 0}
-              onClick={() =>
-                setItemIndices((prev) => ({ ...prev, [currentExam.instanceId]: Math.max(0, currentIndex - 1) }))
-              }
-            >
-              {copy.runtime.back}
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={currentIndex === currentExam.contentSnapshot.items.length - 1}
-              onClick={() =>
-                setItemIndices((prev) => ({
-                  ...prev,
-                  [currentExam.instanceId]: Math.min(currentExam.contentSnapshot.items.length - 1, currentIndex + 1)
-                }))
-              }
-            >
-              Next
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => currentItem && setFlagged((prev) => ({ ...prev, [currentItem.id]: !prev[currentItem.id] }))}
-            >
-              {currentItem && flagged[currentItem.id] ? "Unflag" : "Flag"}
-            </Button>
-          </>
-        ) : previousExam ? (
-          <Button variant="secondary" onClick={() => setStage(previousExam.instanceId)}>
-            {copy.runtime.back}
-          </Button>
-        ) : null}
-
-        <Button onClick={goToNextOrSubmit} disabled={submitting}>
-          {nextExam ? `Go to ${nextExam.label}` : copy.runtime.reviewSubmit}
-        </Button>
-      </ActionRail>
     </section>
   );
 }
