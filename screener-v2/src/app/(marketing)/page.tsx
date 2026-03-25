@@ -287,32 +287,25 @@ export default async function MarketingHomePage() {
       <SceneShell
         variant="create"
         eyebrow="Technical assessments"
-        title="Create assessments, invite candidates, and review results in one place."
-        subtitle="A simple workspace for running role-based screening and keeping hiring decisions moving."
+        title="Build sharp assessments. Run them beautifully."
+        subtitle="A premium assessment workspace for creating, sending, and reviewing without the usual clutter."
       >
         <StaggerGroup className="space-y-5">
-          <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <StaggerGroup className="space-y-5" delay={0.04}>
-              <StaggerGroup className="grid gap-3 sm:grid-cols-3" delay={0.1}>
-                <StaggerItem hover>
-                  <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Create assessments</p>
-                    <p className="mt-2 text-sm text-slate-200">Set up role-based assessments and share them quickly.</p>
-                  </div>
-                </StaggerItem>
-                <StaggerItem hover>
-                  <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Run smoothly</p>
-                    <p className="mt-2 text-sm text-slate-200">Give candidates a clear test flow with automatic saving.</p>
-                  </div>
-                </StaggerItem>
-                <StaggerItem hover>
-                  <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Review results</p>
-                    <p className="mt-2 text-sm text-slate-200">Check outcomes, compare submissions, and move faster.</p>
-                  </div>
-                </StaggerItem>
-              </StaggerGroup>
+              <StaggerItem>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill label="Builder + library" tone="blue" />
+                  <StatusPill label="Live autosave" tone="emerald" />
+                  <StatusPill label="Fast review" tone="amber" />
+                </div>
+              </StaggerItem>
+              <StaggerItem>
+                <p className="max-w-xl text-lg leading-8 text-slate-300">
+                  Create polished assessments, invite anyone, and review results in a flow that feels calm, fast,
+                  and intentional.
+                </p>
+              </StaggerItem>
               <StaggerItem>
                 <div className="flex flex-wrap gap-3">
                   <Link href={createHref}>
@@ -329,9 +322,25 @@ export default async function MarketingHomePage() {
                   </Link>
                 </div>
               </StaggerItem>
+              <StaggerItem>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Compose</p>
+                    <p className="mt-2 text-sm text-slate-200">Mix core, practical, and role-specific add-ons.</p>
+                  </div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-teal-300">Operate</p>
+                    <p className="mt-2 text-sm text-slate-200">Run sessions with graceful autosave and lighter review stress.</p>
+                  </div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-amber-300">Decide</p>
+                    <p className="mt-2 text-sm text-slate-200">See strong signals quickly instead of digging through noise.</p>
+                  </div>
+                </div>
+              </StaggerItem>
             </StaggerGroup>
             <StaggerItem>
-              <HeroScene className="min-h-[440px]" />
+              <HeroScene className="min-h-[520px]" />
             </StaggerItem>
           </div>
         </StaggerGroup>
