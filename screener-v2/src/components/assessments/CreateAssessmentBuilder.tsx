@@ -183,6 +183,19 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
   );
 }
 
+function examPanelClass(definitionId: PreviewExam["definitionId"]) {
+  if (definitionId === "core_exam") {
+    return "border-brand-300/20 bg-[linear-gradient(180deg,rgba(31,111,255,0.12),rgba(7,12,24,0.54))]";
+  }
+  if (definitionId === "practical_exam") {
+    return "border-teal-400/20 bg-[linear-gradient(180deg,rgba(18,179,168,0.12),rgba(7,12,24,0.54))]";
+  }
+  if (definitionId === "applied_logic_exam") {
+    return "border-purple-400/20 bg-[linear-gradient(180deg,rgba(148,93,255,0.12),rgba(7,12,24,0.54))]";
+  }
+  return "border-amber-400/20 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(7,12,24,0.54))]";
+}
+
 function StepHeader({
   step,
   title,
@@ -751,7 +764,26 @@ export function CreateAssessmentBuilder({
                 step="Step 2"
                 title="Adjust selected add-ons"
                 description="Only the settings that belong to this assessment live here. Time and minimum pass stay anchored to the add-on library."
+                action={<StatusPill label={`${previewExams.length} in setup`} tone="blue" />}
               />
+
+              <div className="grid gap-3 md:grid-cols-3">
+                <SelectionMetric
+                  label="Ready"
+                  value={String(previewExams.filter((exam) => exam.validity.valid).length)}
+                  tone="blue"
+                />
+                <SelectionMetric
+                  label="Need input"
+                  value={String(previewExams.filter((exam) => !exam.validity.valid).length)}
+                  tone="purple"
+                />
+                <SelectionMetric
+                  label="Library-owned"
+                  value="Time + pass"
+                  tone="teal"
+                />
+              </div>
 
               {previewExams.length > 0 ? (
                 <div className="space-y-3">
@@ -765,14 +797,14 @@ export function CreateAssessmentBuilder({
                         key={exam.key}
                         layout={!reduceMotion}
                         transition={transition}
-                        className="overflow-hidden rounded-[24px] border border-white/12 bg-black/15"
+                        className={`overflow-hidden rounded-[24px] border ${examPanelClass(exam.definitionId)}`}
                       >
                         <button
                           type="button"
                           onClick={() => toggleAccordion(exam.key)}
-                          className="flex w-full flex-wrap items-center justify-between gap-3 p-5 text-left"
+                          className="flex w-full flex-wrap items-center justify-between gap-4 p-5 text-left"
                         >
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusPill label={`#${index + 1}`} tone="neutral" />
                               <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
@@ -781,16 +813,22 @@ export function CreateAssessmentBuilder({
                                 tone={exam.validity.valid ? "emerald" : "amber"}
                               />
                             </div>
-                            <p className="text-sm text-slate-100">{exam.configSummary}</p>
-                            <p className="text-xs text-slate-400">
-                              {exam.durationMinutes}m | Score contribution {exam.weight}/100 | Minimum pass{" "}
-                              {exam.requiredPercent}%
-                            </p>
+                            <div className="space-y-1">
+                              <p className="text-base text-white">{exam.configSummary}</p>
+                              <p className="text-xs text-slate-400">
+                                Assessment-level setup for this add-on lives here. Library defaults stay fixed unless the source add-on changes.
+                              </p>
+                            </div>
                             {sourceAddon ? (
                               <p className="text-xs text-slate-500">Source add-on: {sourceAddon.label}</p>
                             ) : null}
                           </div>
-                          <StatusPill label={expanded ? "Collapse" : "Expand"} tone="neutral" />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusPill label={`${exam.durationMinutes}m`} tone="neutral" />
+                            <StatusPill label={`${exam.weight}/100`} tone="neutral" />
+                            <StatusPill label={`Min ${exam.requiredPercent}%`} tone="neutral" />
+                            <StatusPill label={expanded ? "Collapse" : "Expand"} tone="neutral" />
+                          </div>
                         </button>
 
                         <AnimatePresence initial={false}>
@@ -802,48 +840,90 @@ export function CreateAssessmentBuilder({
                               transition={transition}
                               className="border-t border-white/10"
                             >
-                              <div className="space-y-5 p-5">
-                                <div className="rounded-[16px] border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300">
-                                  <p>Time: {exam.durationMinutes} minutes</p>
-                                  <p>Minimum pass: {exam.requiredPercent}%</p>
-                                  <p>These defaults are managed from the add-on library.</p>
+                              <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_250px]">
+                                <div className="space-y-5">
+                                  {exam.validity.messages.length > 0 ? (
+                                    exam.validity.messages.map((message) => (
+                                      <p
+                                        key={`${exam.key}-${message}`}
+                                        className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+                                      >
+                                        {message}
+                                      </p>
+                                    ))
+                                  ) : (
+                                    <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                                      This add-on is configured and ready for scoring.
+                                    </div>
+                                  )}
+
+                                  {configFields.length > 0 ? (
+                                    <div className="space-y-5 rounded-[20px] border border-white/10 bg-black/20 p-4">
+                                      <div className="space-y-1">
+                                        <p className="text-sm text-white">Assessment overrides</p>
+                                        <p className="text-xs text-slate-400">
+                                          These controls affect this assessment only and won&apos;t change the add-on library defaults.
+                                        </p>
+                                      </div>
+                                      {configFields.map((field) => (
+                                        <ConfigFieldEditor
+                                          key={`${exam.key}-${field.key}`}
+                                          field={field}
+                                          value={(exam.config ?? {})[field.key]}
+                                          onChange={(next) =>
+                                            updateExam(exam.key, (current) => ({
+                                              ...current,
+                                              config: { ...(current.config ?? {}), [field.key]: next }
+                                            }))
+                                          }
+                                        />
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                                      <p className="text-sm text-white">No extra setup needed</p>
+                                      <p className="mt-1 text-sm text-slate-300">
+                                        This add-on doesn&apos;t expose assessment-level configuration. You can move straight to scoring.
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button variant="ghost" onClick={() => removeExam(exam.key)}>
+                                      Remove add-on
+                                    </Button>
+                                  </div>
                                 </div>
 
-                                {exam.validity.messages.length > 0 ? (
-                                  exam.validity.messages.map((message) => (
-                                    <p
-                                      key={`${exam.key}-${message}`}
-                                      className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
-                                    >
-                                      {message}
+                                <div className="space-y-3">
+                                  <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                                      Library defaults
                                     </p>
-                                  ))
-                                ) : null}
-
-                                {configFields.length > 0 ? (
-                                  configFields.map((field) => (
-                                    <ConfigFieldEditor
-                                      key={`${exam.key}-${field.key}`}
-                                      field={field}
-                                      value={(exam.config ?? {})[field.key]}
-                                      onChange={(next) =>
-                                        updateExam(exam.key, (current) => ({
-                                          ...current,
-                                          config: { ...(current.config ?? {}), [field.key]: next }
-                                        }))
-                                      }
-                                    />
-                                  ))
-                                ) : (
-                                  <p className="text-sm text-slate-300">
-                                    This add-on does not expose extra assessment-level settings.
-                                  </p>
-                                )}
-
-                                <div className="flex flex-wrap gap-2">
-                                  <Button variant="ghost" onClick={() => removeExam(exam.key)}>
-                                    Remove add-on
-                                  </Button>
+                                    <div className="mt-3 space-y-3 text-sm text-slate-300">
+                                      <div>
+                                        <p className="text-slate-500">Time</p>
+                                        <p className="mt-1 text-white">{exam.durationMinutes} minutes</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-slate-500">Minimum pass</p>
+                                        <p className="mt-1 text-white">{exam.requiredPercent}%</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-slate-500">Default source</p>
+                                        <p className="mt-1 text-white">{sourceAddon?.label ?? exam.label}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+                                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                                      Scoring snapshot
+                                    </p>
+                                    <p className="mt-3 text-2xl text-white">{exam.weight}/100</p>
+                                    <p className="mt-1 text-sm text-slate-300">
+                                      This contribution is tuned in the scoring step.
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </motion.div>
@@ -868,6 +948,16 @@ export function CreateAssessmentBuilder({
                 action={<StatusPill label={`${totalContribution}/100 total`} tone={contributionTone} />}
               />
 
+              <div className="grid gap-3 md:grid-cols-3">
+                <SelectionMetric label="Total time" value={`${totalTimeMinutes} min`} tone="teal" />
+                <SelectionMetric label="Overall pass" value={`${passTarget}%`} tone="purple" />
+                <SelectionMetric
+                  label="Status"
+                  value={totalContribution === 100 ? "Balanced" : totalContribution > 100 ? "Over" : "Pending"}
+                  tone="blue"
+                />
+              </div>
+
               <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
                 <p className="text-sm leading-6 text-slate-300">
                   Each add-on is scored out of 100 internally, then converted into its score contribution.
@@ -875,7 +965,7 @@ export function CreateAssessmentBuilder({
                 </p>
               </div>
 
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
                 <div className="space-y-3">
                   {previewExams.length > 0 ? (
                     previewExams.map((exam, index) => (
@@ -883,15 +973,16 @@ export function CreateAssessmentBuilder({
                         key={exam.key}
                         layout={!reduceMotion}
                         transition={transition}
-                        className="rounded-[22px] border border-white/12 bg-black/15 p-4"
+                        className={`rounded-[22px] border p-4 ${examPanelClass(exam.definitionId)}`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                             <div className="flex flex-wrap items-center gap-2">
                               <StatusPill label={`#${index + 1}`} tone="neutral" />
                               <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
+                              <StatusPill label={exam.weightMode === "manual" ? "Manual" : "Auto"} tone={exam.weightMode === "manual" ? "amber" : "blue"} />
                             </div>
-                            <p className="text-sm text-slate-100">{exam.configSummary}</p>
+                            <p className="text-base text-white">{exam.configSummary}</p>
                             <p className="text-xs text-slate-400">
                               {exam.durationMinutes} minutes | Min pass {exam.requiredPercent}%
                             </p>
@@ -920,7 +1011,19 @@ export function CreateAssessmentBuilder({
                           </div>
                         </div>
 
-                        <div className="mt-4 grid gap-3 md:grid-cols-1">
+                        <div className="mt-4 space-y-3">
+                          <div className="rounded-[16px] border border-white/10 bg-black/20 px-4 py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Score contribution</p>
+                                <p className="mt-1 text-2xl text-white">{exam.weight ?? 0}/100</p>
+                              </div>
+                              <div className="text-right text-xs text-slate-400">
+                                <p>{exam.durationMinutes} min</p>
+                                <p>{exam.weightMode === "manual" ? "Pinned manually" : "Balanced by time"}</p>
+                              </div>
+                            </div>
+                          </div>
                           <label className="space-y-2">
                             <span className="text-xs uppercase tracking-[0.18em] text-slate-400">
                               Score contribution {exam.weightMode === "manual" ? "(manual)" : "(auto)"}
@@ -950,40 +1053,51 @@ export function CreateAssessmentBuilder({
                   )}
                 </div>
 
-                <div className="space-y-3 rounded-[22px] border border-white/12 bg-black/15 p-4">
-                  <label className="space-y-2">
-                    <span className="text-xs uppercase tracking-[0.18em] text-slate-400">Overall pass</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={passTarget}
-                      onChange={(event) =>
-                        setPassTarget(Math.min(100, Math.max(0, Math.round(Number(event.target.value) || 0))))
+                <div className="space-y-3">
+                  <div className="rounded-[22px] border border-white/12 bg-black/15 p-4">
+                    <label className="space-y-2">
+                      <span className="text-xs uppercase tracking-[0.18em] text-slate-400">Overall pass</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={passTarget}
+                        onChange={(event) =>
+                          setPassTarget(Math.min(100, Math.max(0, Math.round(Number(event.target.value) || 0))))
+                        }
+                        className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                      />
+                    </label>
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      Candidates need this final weighted score plus any add-on-level minimum passes to pass overall.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-white/12 bg-black/15 p-4">
+                    <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Auto-balance</p>
+                    <p className="mt-2 text-sm text-slate-300">
+                      Reset manual weights and redistribute score contribution based on each add-on&apos;s time.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="mt-4 w-full"
+                      onClick={() =>
+                        setSelectedExams((current) =>
+                          current.map((exam) => ({
+                            ...exam,
+                            weightMode: "auto"
+                          }))
+                        )
                       }
-                      className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
-                    />
-                  </label>
-                  <p className="text-sm leading-6 text-slate-300">
-                    Candidates need this final weighted score plus any add-on-level minimum passes to pass overall.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() =>
-                      setSelectedExams((current) =>
-                        current.map((exam) => ({
-                          ...exam,
-                          weightMode: "auto"
-                        }))
-                      )
-                    }
-                  >
-                    Rebalance by time
-                  </Button>
+                    >
+                      Rebalance by time
+                    </Button>
+                  </div>
+
                   <div
-                    className={`rounded-[16px] border px-4 py-3 text-sm ${
+                    className={`rounded-[22px] border px-4 py-4 text-sm ${
                       contributionTone === "emerald"
                         ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"
                         : contributionTone === "red"
@@ -991,7 +1105,8 @@ export function CreateAssessmentBuilder({
                           : "border-amber-400/30 bg-amber-500/10 text-amber-100"
                     }`}
                   >
-                    {contributionMessage}
+                    <p className="text-[11px] uppercase tracking-[0.18em] opacity-80">Score status</p>
+                    <p className="mt-2 font-medium">{contributionMessage}</p>
                   </div>
                 </div>
               </div>
