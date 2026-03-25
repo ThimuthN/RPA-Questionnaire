@@ -9,6 +9,8 @@ import {
 } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import { BulkReviewControls } from "@/components/results/BulkReviewControls";
+import { SceneTransition } from "@/components/motion/SceneTransition";
+import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
@@ -199,40 +201,50 @@ export default async function ResultsPage({
       : null;
 
   return (
-    <SceneShell
-      variant="results"
-      eyebrow="Assessment review"
-      title="Results"
-      subtitle="Review assessment outcomes across hiring, internal growth, promotions, certification, and ad hoc evaluations."
-      utility={
-        <div className="flex flex-wrap gap-2">
-          <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
-          <StatusPill label={`Review ${page.statusCounts.review}`} tone="amber" />
-          <StatusPill label={`Fail ${page.statusCounts.fail}`} tone="red" />
-        </div>
-      }
-    >
-      <div className="space-y-5">
-        <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
+    <SceneTransition>
+      <SceneShell
+        variant="results"
+        eyebrow="Assessment review"
+        title="Results"
+        subtitle="Review assessment outcomes across hiring, internal growth, promotions, certification, and ad hoc evaluations."
+        utility={
+          <div className="flex flex-wrap gap-2">
+            <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
+            <StatusPill label={`Review ${page.statusCounts.review}`} tone="amber" />
+            <StatusPill label={`Fail ${page.statusCounts.fail}`} tone="red" />
+          </div>
+        }
+      >
+        <StaggerGroup className="space-y-5" delay={0.04}>
+          <StaggerItem>
+            <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
+          </StaggerItem>
 
-        {pageState.deleted ? (
-          <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            Result deleted.
-          </div>
-        ) : null}
-        {pageState.updated ? (
-          <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-            Updated {pageState.updated} record(s).
-          </div>
-        ) : null}
-        {pageState.error ? (
-          <div className="rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
-            {pageState.error}
-          </div>
-        ) : null}
+          {pageState.deleted ? (
+            <StaggerItem>
+              <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                Result deleted.
+              </div>
+            </StaggerItem>
+          ) : null}
+          {pageState.updated ? (
+            <StaggerItem>
+              <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                Updated {pageState.updated} record(s).
+              </div>
+            </StaggerItem>
+          ) : null}
+          {pageState.error ? (
+            <StaggerItem>
+              <div className="rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+                {pageState.error}
+              </div>
+            </StaggerItem>
+          ) : null}
 
-        {comparison && comparison.rows.length > 0 ? (
-          <StagePanel className="space-y-4">
+          {comparison && comparison.rows.length > 0 ? (
+            <StaggerItem>
+              <StagePanel className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Compare results</h2>
@@ -264,10 +276,12 @@ export default async function ResultsPage({
                 </div>
               ))}
             </div>
-          </StagePanel>
-        ) : null}
+              </StagePanel>
+            </StaggerItem>
+          ) : null}
 
-        <StagePanel className="space-y-4">
+          <StaggerItem>
+            <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Filters</h2>
             <p className="text-sm text-slate-300">Filter by result, review state, assessment context, candidate role, and optional linked workflow metadata. Exports follow the current view.</p>
@@ -396,23 +410,27 @@ export default async function ResultsPage({
               <Button variant="secondary">Export JSON</Button>
             </a>
           </div>
-        </StagePanel>
+            </StagePanel>
+          </StaggerItem>
 
-        {page.rows.length === 0 ? (
-          <StagePanel className="space-y-4">
-            <h2 className="text-2xl text-white">No results match this view</h2>
-            <p className="text-slate-200">Try clearing a filter or running a new assessment.</p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/assessments">
-                <Button>Open assessments</Button>
-              </Link>
-              <Link href="/results">
-                <Button variant="secondary">Reset filters</Button>
-              </Link>
-            </div>
-          </StagePanel>
-        ) : (
-          <form id="results-bulk-form" action="/api/results/bulk" method="post" className="space-y-4">
+          {page.rows.length === 0 ? (
+            <StaggerItem>
+              <StagePanel className="space-y-4">
+                <h2 className="text-2xl text-white">No results match this view</h2>
+                <p className="text-slate-200">Try clearing a filter or running a new assessment.</p>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/assessments">
+                    <Button>Open assessments</Button>
+                  </Link>
+                  <Link href="/results">
+                    <Button variant="secondary">Reset filters</Button>
+                  </Link>
+                </div>
+              </StagePanel>
+            </StaggerItem>
+          ) : (
+            <StaggerItem>
+              <form id="results-bulk-form" action="/api/results/bulk" method="post" className="space-y-4">
             <input type="hidden" name="returnTo" value={currentPathAndQuery} />
             <StagePanel className="space-y-4">
               <BulkReviewControls formId="results-bulk-form" />
@@ -516,16 +534,20 @@ export default async function ResultsPage({
                 </table>
               </div>
             </StagePanel>
-          </form>
-        )}
+              </form>
+            </StaggerItem>
+          )}
 
-        <PaginationBar
-          page={page.page}
-          pageSize={page.pageSize}
-          total={page.total}
-          makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
-        />
-      </div>
-    </SceneShell>
+          <StaggerItem>
+            <PaginationBar
+              page={page.page}
+              pageSize={page.pageSize}
+              total={page.total}
+              makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
+            />
+          </StaggerItem>
+        </StaggerGroup>
+      </SceneShell>
+    </SceneTransition>
   );
 }

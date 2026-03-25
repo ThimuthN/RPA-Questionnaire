@@ -2,6 +2,8 @@ import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { SceneTransition } from "@/components/motion/SceneTransition";
+import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { CandidateAssessmentPill, CandidateUiStatusPill } from "@/components/candidates/CandidatePills";
 import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
@@ -100,34 +102,38 @@ export default async function CandidatesPage({
   const currentPathAndQuery = `/candidates${query.toString() ? `?${query.toString()}` : ""}`;
 
   return (
-    <SceneShell
-      variant="results"
-      eyebrow="Hiring workspace"
-      title="Candidates"
-      subtitle="Run the candidate inbox from one place: import, triage, assign, and move people forward."
-      utility={
-        <div className="flex flex-wrap gap-2">
-          <Link href="/candidates/new">
-            <Button>Register candidate</Button>
-          </Link>
-          <Link href={buildHref(query, { sort: "inbox", page: "1" })}>
-            <Button variant="secondary">Open inbox</Button>
-          </Link>
-        </div>
-      }
-    >
-      <div className="space-y-5">
-        {params.deleted ? <div className={messageTone("success")}>Candidate deleted.</div> : null}
-        {params.updated ? <div className={messageTone("success")}>Updated {params.updated} candidate(s).</div> : null}
-        {params.imported ? (
-          <div className={messageTone("success")}>
-            Imported {params.imported} candidate(s).
-            {params.skipped ? ` Skipped ${params.skipped} duplicate email(s).` : ""}
+    <SceneTransition>
+      <SceneShell
+        variant="results"
+        eyebrow="Hiring workspace"
+        title="Candidates"
+        subtitle="Run the candidate inbox from one place: import, triage, assign, and move people forward."
+        utility={
+          <div className="flex flex-wrap gap-2">
+            <Link href="/candidates/new">
+              <Button>Register candidate</Button>
+            </Link>
+            <Link href={buildHref(query, { sort: "inbox", page: "1" })}>
+              <Button variant="secondary">Open inbox</Button>
+            </Link>
           </div>
-        ) : null}
-        {params.error ? <div className={messageTone("error")}>{params.error}</div> : null}
+        }
+      >
+        <StaggerGroup className="space-y-5" delay={0.04}>
+          {params.deleted ? <StaggerItem><div className={messageTone("success")}>Candidate deleted.</div></StaggerItem> : null}
+          {params.updated ? <StaggerItem><div className={messageTone("success")}>Updated {params.updated} candidate(s).</div></StaggerItem> : null}
+          {params.imported ? (
+            <StaggerItem>
+              <div className={messageTone("success")}>
+                Imported {params.imported} candidate(s).
+                {params.skipped ? ` Skipped ${params.skipped} duplicate email(s).` : ""}
+              </div>
+            </StaggerItem>
+          ) : null}
+          {params.error ? <StaggerItem><div className={messageTone("error")}>{params.error}</div></StaggerItem> : null}
 
-        <StagePanel className="space-y-4">
+          <StaggerItem>
+            <StagePanel className="space-y-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div className="space-y-1">
               <h2 className="text-xl text-white">Candidate inbox</h2>
@@ -246,23 +252,27 @@ export default async function CandidatesPage({
               </form>
             </div>
           </div>
-        </StagePanel>
+            </StagePanel>
+          </StaggerItem>
 
-        {page.rows.length === 0 ? (
-          <StagePanel className="space-y-3">
-            <h2 className="text-2xl text-white">No candidates match this view</h2>
-            <p className="text-sm text-slate-300">Try clearing a filter, importing candidates, or registering a new candidate.</p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/candidates/new">
-                <Button>Register candidate</Button>
-              </Link>
-              <Link href="/candidates">
-                <Button variant="secondary">Reset filters</Button>
-              </Link>
-            </div>
-          </StagePanel>
-        ) : (
-          <form action="/api/candidates/bulk" method="post" className="space-y-4">
+          {page.rows.length === 0 ? (
+            <StaggerItem>
+              <StagePanel className="space-y-3">
+                <h2 className="text-2xl text-white">No candidates match this view</h2>
+                <p className="text-sm text-slate-300">Try clearing a filter, importing candidates, or registering a new candidate.</p>
+                <div className="flex flex-wrap gap-3">
+                  <Link href="/candidates/new">
+                    <Button>Register candidate</Button>
+                  </Link>
+                  <Link href="/candidates">
+                    <Button variant="secondary">Reset filters</Button>
+                  </Link>
+                </div>
+              </StagePanel>
+            </StaggerItem>
+          ) : (
+            <StaggerItem>
+              <form action="/api/candidates/bulk" method="post" className="space-y-4">
             <input type="hidden" name="returnTo" value={currentPathAndQuery} />
             <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -381,16 +391,20 @@ export default async function CandidatesPage({
                 </div>
               ))}
             </div>
-          </form>
-        )}
+              </form>
+            </StaggerItem>
+          )}
 
-        <PaginationBar
-          page={page.page}
-          pageSize={page.pageSize}
-          total={page.total}
-          makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
-        />
-      </div>
-    </SceneShell>
+          <StaggerItem>
+            <PaginationBar
+              page={page.page}
+              pageSize={page.pageSize}
+              total={page.total}
+              makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
+            />
+          </StaggerItem>
+        </StaggerGroup>
+      </SceneShell>
+    </SceneTransition>
   );
 }

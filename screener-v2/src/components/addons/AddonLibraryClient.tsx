@@ -7,6 +7,7 @@ import type {
 } from "@/lib/addons/catalog";
 import type { ExamDefinitionId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
+import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { ConfigFieldEditor } from "@/components/addons/ConfigFieldEditor";
@@ -295,20 +296,23 @@ export function AddonLibraryClient({
   }
 
   return (
-    <div className="space-y-5">
+    <StaggerGroup className="space-y-5" delay={0.04}>
       {message ? (
-        <div
-          className={
-            message.tone === "success"
-              ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
-              : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100"
-          }
-        >
-          {message.text}
-        </div>
+        <StaggerItem>
+          <div
+            className={
+              message.tone === "success"
+                ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
+                : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100"
+            }
+          >
+            {message.text}
+          </div>
+        </StaggerItem>
       ) : null}
 
-      <StagePanel className="space-y-4">
+      <StaggerItem>
+        <StagePanel className="space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
             <h1 className="text-2xl text-white">{viewMode === "addons" ? "Add-on library" : "Presets"}</h1>
@@ -348,9 +352,11 @@ export function AddonLibraryClient({
             </div>
           </div>
         </div>
-      </StagePanel>
+        </StagePanel>
+      </StaggerItem>
 
-      <StagePanel className="space-y-4">
+      <StaggerItem>
+        <StagePanel className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-2xl text-white">{viewMode === "addons" ? "All add-ons" : "All presets"}</h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -443,7 +449,8 @@ export function AddonLibraryClient({
             </div>
           </div>
         )}
-      </StagePanel>
+        </StagePanel>
+      </StaggerItem>
 
       {addonModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4 backdrop-blur-sm">
@@ -806,6 +813,6 @@ export function AddonLibraryClient({
           </div>
         </div>
       ) : null}
-    </div>
+    </StaggerGroup>
   );
 }

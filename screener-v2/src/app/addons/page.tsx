@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AddonLibraryClient } from "@/components/addons/AddonLibraryClient";
+import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { getSession } from "@/lib/auth/session";
@@ -17,19 +18,21 @@ export default async function AddonsPage() {
   ]);
 
   return (
-    <SceneShell
-      variant="create"
-      eyebrow="Add-ons"
-      title="Add-on library"
-      subtitle="Manage global add-on defaults and simple presets."
-      utility={
-        <div className="flex flex-wrap gap-2">
-          <StatusPill label={`${addons.length} add-ons`} tone="blue" />
-          <StatusPill label={`${presets.length} presets`} tone="purple" />
-        </div>
-      }
-    >
-      <AddonLibraryClient initialAddons={addons} initialPresets={presets} />
-    </SceneShell>
+    <SceneTransition>
+      <SceneShell
+        variant="create"
+        eyebrow="Add-ons"
+        title="Add-on library"
+        subtitle="Manage global add-on defaults and simple presets."
+        utility={
+          <div className="flex flex-wrap gap-2">
+            <StatusPill label={`${addons.length} add-ons`} tone="blue" />
+            <StatusPill label={`${presets.length} presets`} tone="purple" />
+          </div>
+        }
+      >
+        <AddonLibraryClient initialAddons={addons} initialPresets={presets} />
+      </SceneShell>
+    </SceneTransition>
   );
 }

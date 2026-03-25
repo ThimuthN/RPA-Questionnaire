@@ -1,4 +1,5 @@
 import { CreateAssessmentBuilder } from "@/components/assessments/CreateAssessmentBuilder";
+import { SceneTransition } from "@/components/motion/SceneTransition";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
 
 export default async function CreateTestPage({
@@ -10,11 +11,13 @@ export default async function CreateTestPage({
   const [addons, presets] = await Promise.all([listAddonCatalog(), listAssessmentPresets()]);
 
   return (
-    <CreateAssessmentBuilder
-      initialAddons={addons}
-      initialPresets={presets}
-      linkedCandidateId={params.candidateId?.trim() || undefined}
-      linkedCandidateMilestoneId={params.milestoneId?.trim() || undefined}
-    />
+    <SceneTransition>
+      <CreateAssessmentBuilder
+        initialAddons={addons}
+        initialPresets={presets}
+        linkedCandidateId={params.candidateId?.trim() || undefined}
+        linkedCandidateMilestoneId={params.milestoneId?.trim() || undefined}
+      />
+    </SceneTransition>
   );
 }
