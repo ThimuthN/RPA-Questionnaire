@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
 import type {
   AddonCatalogEntry,
@@ -110,6 +111,7 @@ export function AddonLibraryClient({
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
 }) {
+  const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
   const [addons, setAddons] = useState(initialAddons);
   const [presets, setPresets] = useState(initialPresets);
@@ -452,9 +454,22 @@ export function AddonLibraryClient({
         </StagePanel>
       </StaggerItem>
 
+      <AnimatePresence>
       {addonModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(6px)" }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+          transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4"
+        >
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985, filter: "blur(10px)" }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.992, filter: "blur(8px)" }}
+            transition={{ duration: reduceMotion ? 0.14 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">{selectedAddon?.label ?? "New add-on"}</h2>
@@ -603,13 +618,27 @@ export function AddonLibraryClient({
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
 
+      <AnimatePresence>
       {presetModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(6px)" }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+          transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4"
+        >
+          <motion.div
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985, filter: "blur(10px)" }}
+            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.992, filter: "blur(8px)" }}
+            transition={{ duration: reduceMotion ? 0.14 : 0.26, ease: [0.22, 1, 0.36, 1] }}
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+          >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">{selectedPreset?.label ?? "New preset"}</h2>
@@ -810,9 +839,10 @@ export function AddonLibraryClient({
                 Cancel
               </Button>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       ) : null}
+      </AnimatePresence>
     </StaggerGroup>
   );
 }

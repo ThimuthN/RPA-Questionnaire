@@ -21,6 +21,8 @@
   --scene-stagger: 80ms;
   --shadow-scene: 0 28px 80px rgba(4, 12, 28, 0.38);
   --shadow-elevated: 0 18px 40px rgba(7, 17, 35, 0.28);
+  --shadow-premium: 0 24px 64px rgba(4, 12, 28, 0.34);
+  --glow-brand-soft: 0 0 0 1px rgba(138, 184, 255, 0.16), 0 0 24px rgba(47, 134, 255, 0.16);
 }
 
 * {
@@ -32,7 +34,10 @@ body {
   margin: 0;
   padding: 0;
   font-family: var(--font-body), sans-serif;
-  background: linear-gradient(180deg, #040913, #091326);
+  background:
+    radial-gradient(circle at top left, rgba(47, 134, 255, 0.12), transparent 26%),
+    radial-gradient(circle at top right, rgba(18, 179, 168, 0.08), transparent 22%),
+    linear-gradient(180deg, #040913, #091326);
   color: var(--white);
 }
 
@@ -73,6 +78,39 @@ pre,
 ::selection {
   background: rgba(47, 134, 255, 0.28);
   color: var(--white);
+}
+
+a,
+button,
+input,
+textarea,
+select {
+  transition:
+    border-color var(--scene-interaction) ease,
+    background-color var(--scene-interaction) ease,
+    color var(--scene-interaction) ease,
+    box-shadow var(--scene-interaction) ease,
+    transform var(--scene-micro) ease,
+    opacity var(--scene-interaction) ease;
+}
+
+a {
+  text-underline-offset: 0.16em;
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select):hover {
+  border-color: rgba(138, 184, 255, 0.24);
+}
+
+:where(input:not([type="checkbox"]):not([type="radio"]), textarea, select):focus-visible {
+  box-shadow: var(--glow-brand-soft);
+}
+
+button:disabled,
+input:disabled,
+textarea:disabled,
+select:disabled {
+  filter: saturate(0.86);
 }
 
 .runtime-timer-critical {
