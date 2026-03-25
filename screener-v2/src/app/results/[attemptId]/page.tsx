@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
-import { getDetailedResult } from "@/lib/db/repositories";
+import { getDetailedResult, getNextUnreviewedAttemptId, getScoreContextForAttempt } from "@/lib/db/repositories";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
 import { ResultReviewSections } from "@/components/results/ResultReviewSections";
+import { StickyDecisionBar } from "@/components/results/StickyDecisionBar";
 import { SignalCard } from "@/components/primitives/SignalCard";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { DecisionStage } from "@/components/results/DecisionStage";
@@ -63,7 +64,11 @@ export default async function ResultDetailPage({
   }
   const row = result.summary;
   const signals = getSignals(row);
-  const candidate = row.candidateId ? await getCandidateDetail(row.candidateId) : null;
+  const [candidate, nextUnreviewedId, scoreContext] = await Promise.all([
+    row.candidateId ? getCandidateDetail(row.candidateId) : Promise.resolve(null),
+    getNextUnreviewedAttemptId(attemptId),
+    getScoreContextForAttempt(attemptId, row.finalPercent)
+  ]);
   const activity = candidate ? buildCandidateActivityFeed(candidate).slice(0, 5) : [];
 
   return (
@@ -77,6 +82,11 @@ export default async function ResultDetailPage({
           <Link href="/results">
             <Button variant="secondary">Back to Results</Button>
           </Link>
+          {nextUnreviewedId && nextUnreviewedId !== attemptId && (
+            <Link href={`/results/${nextUnreviewedId}`}>
+              <Button variant="secondary">Next unreviewed →</Button>
+            </Link>
+          )}
           <form action={`/api/results/${attemptId}/delete`} method="post">
             <ConfirmSubmitButton
               variant="danger"
@@ -111,7 +121,14 @@ export default async function ResultDetailPage({
             <SignalCard label={copy.results.topStrength} value={signals.strength} tone="emerald" />
             <SignalCard label={copy.results.mainRisk} value={signals.risk} tone="amber" />
             <SignalCard label={copy.results.confidence} value={signals.confidence} tone="blue" />
-            <SignalCard label="Integrity" value={signals.integrity} tone="amber" className="md:col-span-3" />
+            <SignalCard label="Integrity" value={signals.integrity} tone="amber" className="md:col-span-2" />
+            {scoreContext.label ? (
+              <SignalCard
+                label="Role benchmark"
+                value={scoreContext.label}
+                tone={scoreContext.percentile !== null && scoreContext.percentile >= 50 ? "emerald" : "amber"}
+              />
+            ) : null}
           </>
         }
       >
@@ -221,6 +238,15 @@ export default async function ResultDetailPage({
           </div>
         </div>
       </DecisionStage>
+      <StickyDecisionBar
+        attemptId={attemptId}
+        candidateName={row.candidateName || `Attempt ${attemptId.slice(0, 12)}`}
+        score={row.finalPercent}
+        resultStatus={row.resultStatus}
+        hasLinkedCandidate={!!candidate}
+        candidateId={candidate?.id}
+        nextUnreviewedId={nextUnreviewedId ?? undefined}
+      />
     </SceneShell>
   );
 }

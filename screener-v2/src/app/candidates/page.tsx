@@ -4,6 +4,7 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { CandidateAssessmentPill, CandidateUiStatusPill } from "@/components/candidates/CandidatePills";
+import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { candidateAssessmentStatusLabels, candidateAssessmentStatusValues, candidateUiStatusLabels, candidateUiStatusValues, candidateStageLabels, candidateStageValues, type CandidateAssessmentStatus, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
@@ -321,7 +322,11 @@ export default async function CandidatesPage({
                       </div>
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
-                          <CandidateUiStatusPill status={candidate.uiStatus} />
+                          <InlineStatusSelect
+                            candidateId={candidate.id}
+                            currentStatus={candidate.uiStatus}
+                            returnTo={currentPathAndQuery}
+                          />
                           <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
                           <StatusPill
                             label={bucketLabel(candidate.openWorkBucket)}

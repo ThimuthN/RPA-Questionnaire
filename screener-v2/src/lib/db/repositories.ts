@@ -1,5 +1,4 @@
 import { Prisma } from "@prisma/client";
-import crypto from "node:crypto";
 import type {
   AssessmentContextType,
   DetailedResultSummary,
@@ -21,7 +20,7 @@ import {
   normalizeSelectedSections
 } from "@/lib/sections/registry";
 import type { SectionId, SectionState } from "@/lib/sections/types";
-import { hashValue, randomPasscode, randomToken } from "@/lib/tokens/token-service";
+import { cuidLike, hashValue, randomPasscode, randomToken } from "@/lib/tokens/token-service";
 import {
   blueprintLegacySections,
   blueprintRoleId,
@@ -36,6 +35,7 @@ import {
   type InviteValidationState
 } from "@/lib/invites/validation";
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
+import { toObject } from "@/lib/db/db-utils";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import type {
   CandidateAssessmentStatus,
@@ -137,10 +137,6 @@ export interface ResultWorkspacePage {
   };
 }
 
-function cuidLike() {
-  return crypto.randomUUID().replace(/-/g, "");
-}
-
 function toJsonValue(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
@@ -160,12 +156,6 @@ function toStringArray(value: Prisma.JsonValue | null | undefined): string[] {
   return Array.isArray(value) ? value.map((item) => String(item)) : [];
 }
 
-function toObject<T>(value: Prisma.JsonValue | null | undefined, fallback: T): T {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as T;
-  }
-  return fallback;
-}
 
 function buildLegacyBlueprintFromSections(args: {
   roleId: RoleId;
@@ -1525,6 +1515,58 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
     summary,
     reviewSections: buildReviewSections(attempt)
   };
+}
+
+export async function getScoreContextForAttempt(
+  attemptId: string,
+  finalPercent: number
+): Promise<{ roleAverage: number | null; percentile: number | null; label: string }> {
+  const attempt = await prisma.attempt.findUnique({
+    where: { id: attemptId },
+    select: { roleId: true }
+  });
+  const roleId = attempt?.roleId;
+  if (!roleId) return { roleAverage: null, percentile: null, label: "" };
+
+  const sameRole = await prisma.attempt.findMany({
+    where: { roleId, status: "submitted" },
+    select: { id: true }
+  });
+  if (sameRole.length < 2) return { roleAverage: null, percentile: null, label: "" };
+
+  const ids = sameRole.map((a) => a.id);
+  const results = await prisma.result.findMany({
+    where: { attemptId: { in: ids } },
+    select: { finalPercent: true }
+  });
+  if (results.length < 2) return { roleAverage: null, percentile: null, label: "" };
+
+  const scores = results.map((r) => r.finalPercent);
+  const avg = scores.reduce((sum, s) => sum + s, 0) / scores.length;
+  const below = scores.filter((s) => s < finalPercent).length;
+  const percentile = Math.round((below / scores.length) * 100);
+  const diff = finalPercent - avg;
+  const label =
+    diff > 8
+      ? `Top performer — ${percentile}th percentile for this role`
+      : diff > 0
+        ? `Above average — ${percentile}th percentile for this role`
+        : diff > -8
+          ? `Near average — ${percentile}th percentile for this role`
+          : `Below average — ${percentile}th percentile for this role`;
+
+  return { roleAverage: Math.round(avg * 10) / 10, percentile, label };
+}
+
+export async function getNextUnreviewedAttemptId(currentAttemptId: string): Promise<string | null> {
+  const rows = await prisma.result.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { attemptId: true, reviewState: true }
+  });
+  const ids = rows.filter((r) => r.reviewState === "unreviewed").map((r) => r.attemptId);
+  const idx = ids.indexOf(currentAttemptId);
+  if (idx === -1) return ids[0] ?? null;
+  return ids[idx + 1] ?? null;
 }
 
 export async function getAttempt(attemptId: string) {

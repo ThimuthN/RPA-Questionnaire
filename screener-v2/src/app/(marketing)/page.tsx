@@ -65,6 +65,44 @@ export default async function MarketingHomePage() {
           }
         >
           <StaggerGroup className="space-y-5">
+            {candidateWorkspace.total === 0 && resultWorkspace.total === 0 && (
+              <StaggerItem>
+                <StagePanel className="space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Get started</p>
+                    <h2 className="text-xl text-white">Your workspace is empty</h2>
+                    <p className="text-sm text-slate-300">
+                      Create an assessment, register a candidate, and send them an invite link — that's all it takes to get your first result.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Step 1</p>
+                      <p className="mt-2 text-sm font-medium text-white">Create an assessment</p>
+                      <p className="mt-1 text-xs text-slate-400">Pick a role, choose exams, and set a pass target.</p>
+                    </div>
+                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Step 2</p>
+                      <p className="mt-2 text-sm font-medium text-white">Register a candidate</p>
+                      <p className="mt-1 text-xs text-slate-400">Add their name, email, and role to your pipeline.</p>
+                    </div>
+                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Step 3</p>
+                      <p className="mt-2 text-sm font-medium text-white">Send the invite</p>
+                      <p className="mt-1 text-xs text-slate-400">Share the link and review results when they submit.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Link href="/create-test">
+                      <Button>Create assessment</Button>
+                    </Link>
+                    <Link href="/candidates/new">
+                      <Button variant="secondary">Register candidate</Button>
+                    </Link>
+                  </div>
+                </StagePanel>
+              </StaggerItem>
+            )}
             <StaggerItem>
               <StagePanel tone="summary" className="py-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
