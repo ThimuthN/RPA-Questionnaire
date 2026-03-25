@@ -13,10 +13,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "An API call sometimes times out after the external system has already accepted the request. What is the safest retry design?",
     options: [
-      "Retry immediately until a 200 response is returned",
-      "Retry only after checking whether the business action already completed",
-      "Disable retries for all timeout cases",
-      "Add a fixed 30-second sleep before each retry"
+      "Retry with exponential backoff and a strict max-attempt limit",
+      "Retry only after reconciling whether the business action already completed by transaction key",
+      "Treat every timeout as a business exception and wait for manual confirmation",
+      "Retry after a fixed delay if the upstream availability probe turns green"
     ],
     correctAnswer: ["B"],
     explanation: "The design has to reconcile prior side effects before replaying.",
@@ -35,12 +35,12 @@ const core2BaseQuestions: Question[] = [
     prompt: "What is the most likely root issue?",
     logSnippet: "Txn\tAttempt\tAPI\tLedger check\tOutcome\nINV-441\t1\tTimeout after request sent\tNot checked\tRetry queued\nINV-441\t2\t201 Created\tRecord from attempt 1 exists\tPosted again",
     options: [
-      "The timeout was harmless because attempt 2 succeeded",
-      "Duplicate prevention is missing because replay happened before reconciliation",
-      "The ERP credentials rotated during processing",
-      "The logger failed to persist the first attempt"
+      "The retry policy is running before the process proves whether the first side effect already committed",
+      "The timeout threshold is too aggressive and is causing harmless duplicate submissions",
+      "The ledger check is likely reading from an eventually consistent replica so the replay is unavoidable",
+      "The first attempt should have been ignored because timeouts cannot be trusted as accepted requests"
     ],
-    correctAnswer: ["B"],
+    correctAnswer: ["A"],
     explanation: "The retry path should have verified prior completion before reposting.",
     rationale: "Tests incident diagnosis from noisy logs."
   } as Question,
@@ -132,10 +132,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "A worker posts a shipment request, crashes before marking the queue item complete, then on restart finds the carrier reference already exists. What is the safest completion path?",
     options: [
-      "Repost the shipment because the worker crashed",
-      "Mark the item successful after reconciling the existing carrier state",
-      "Mark the item failed because the run was interrupted",
-      "Skip the item and let operations resolve it manually"
+      "Repost the shipment because internal completion state was never written",
+      "Reconcile the carrier state, persist the recovery evidence, and then mark the item successful",
+      "Mark the item retryable and let the platform attempt it again from the start",
+      "Route the item to manual review because any crash makes the transaction ambiguous"
     ],
     correctAnswer: ["B"],
     explanation: "Recovery should reconcile external state and avoid duplicate side effects.",
@@ -153,7 +153,7 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "partial_by_blank",
     prompt: "To trace one transaction across bot, queue, and API logs, emit the same ____ ID at every step.",
     blank: "Select the missing word.",
-    choices: ["browser", "correlation", "delay", "temporary"],
+    choices: ["session", "correlation", "sequence", "browser"],
     acceptedAnswers: ["correlation", "correlation id"],
     explanation: "A shared correlation ID is the backbone of cross-system tracing.",
     rationale: "Tests observability maturity."
@@ -170,10 +170,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "Backlog catch-up floods a dependency, 429 errors spike, and retries make both queue depth and database load worse. What is the best next step?",
     options: [
-      "Increase parallel workers so the queue drains faster",
-      "Shape throughput with bounded concurrency and backoff to match dependency capacity",
-      "Disable retry limits because the backlog is urgent",
-      "Move all failing items to business exception immediately"
+      "Increase worker count but reduce retry attempts so the backlog clears sooner",
+      "Shape throughput with bounded concurrency, backoff, and queue pacing to match dependency capacity",
+      "Pause all retries until the backlog is gone, then replay the failed items in one batch",
+      "Move throttled items straight to business exception to protect the queue database"
     ],
     correctAnswer: ["B"],
     explanation: "Throughput has to be limited to dependency capacity or retries amplify congestion.",
@@ -191,10 +191,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "A performer marks a queue item successful before the external business action is confirmed. What is the main problem?",
     options: [
-      "The queue item may appear complete even though the business side effect never happened",
-      "The queue will process slightly more slowly",
-      "The dashboard percentages may round differently",
-      "The item can no longer be retried automatically by the platform"
+      "The queue may show a completed transaction even though the real business side effect never committed",
+      "The queue throughput becomes artificially limited by downstream confirmation latency",
+      "The platform can no longer attach technical logs to the item after success",
+      "The process loses the ability to classify failures as business exceptions"
     ],
     correctAnswer: ["A"],
     explanation: "Success should be recorded only at the real business commit point.",
@@ -234,10 +234,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "A few items always fail with the same malformed payload while healthy items continue. What is the best handling strategy?",
     options: [
-      "Retry the items indefinitely until the downstream service accepts them",
-      "Route the poisoned items to a dead-letter path and keep the healthy flow moving",
-      "Stop the entire queue until every malformed item is fixed",
-      "Drop the items silently so the queue stays green"
+      "Retry the malformed items with a longer delay so the downstream schema has time to stabilize",
+      "Route the poisoned items to a dead-letter path, capture the failure reason, and keep the healthy flow moving",
+      "Pause the queue and require a full data cleanse before any additional healthy items run",
+      "Skip the items after three failures and monitor whether business users raise them manually"
     ],
     correctAnswer: ["B"],
     explanation: "Poisoned items should be isolated for review rather than blocking or corrupting the main flow.",
@@ -256,12 +256,12 @@ const core2BaseQuestions: Question[] = [
     prompt: "What is the strongest conclusion from these incident notes?",
     logSnippet: "11:00 Queue depth rising\n11:02 App latency 6x normal\n11:03 Worker restarts begin\n11:05 Logs from queue, app, and runner cannot be tied to one item\n11:07 Support cannot prove whether retries or restarts are primary",
     options: [
-      "The only issue is that log retention is too short",
-      "The system lacks end-to-end correlation, so symptoms cannot be connected into one failure chain",
-      "The workers should never restart automatically",
-      "The app latency spike is definitely unrelated to queue depth"
+      "The logging model lacks end-to-end correlation, so support cannot connect symptoms into one causal chain",
+      "The worker restart policy is the main issue because it obscures whether app latency matters",
+      "The queue backlog is expected and the real problem is short-term log retention",
+      "The app latency spike is likely secondary because queue depth rose first"
     ],
-    correctAnswer: ["B"],
+    correctAnswer: ["A"],
     explanation: "Without shared correlation, support sees fragments instead of causality.",
     rationale: "Tests operational debugging priorities."
   } as Question,
@@ -298,10 +298,10 @@ const core2BaseQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "Which improvement gives the best long-term resilience signal?",
     options: [
-      "Adding longer delays around unstable actions",
-      "Replacing blind retries with explicit state checks and commit boundaries",
-      "Suppressing warning logs to reduce noise",
-      "Increasing VM size before understanding the failure mode"
+      "Adding targeted delays around the most unstable dependency calls",
+      "Replacing blind retries with explicit state checks, reconciliation, and commit boundaries",
+      "Lowering warning log volume so real failures stand out more clearly",
+      "Provisioning larger runners so intermittent latency no longer triggers timeouts"
     ],
     correctAnswer: ["B"],
     explanation: "State-aware recovery is more durable than delay-based stabilization.",
@@ -323,10 +323,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "A UiPath bot clicks a virtualized grid row successfully, then after scroll acts on the wrong row because the DOM re-renders. What is the best fix?",
       options: [
-        "Add a longer delay before every click",
-        "Target rows by stable business data instead of visual position",
-        "Retry the same positional selector three times",
-        "Replace the workflow with image automation"
+        "Add a post-scroll wait and retry the same selector once the grid settles",
+        "Target rows by stable business data or extracted row identity instead of visual position",
+        "Capture the row by screen coordinates before each scroll and reapply the click",
+        "Switch the final click to image automation while keeping positional row targeting"
       ],
       correctAnswer: ["B"],
       explanation: "Dynamic grids need stable row identity, not positional selectors.",
@@ -344,10 +344,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "A UiPath performer marks a queue item successful, then the ERP crashes before the invoice is actually posted. What should change?",
       options: [
-        "Move the success mark to after the ERP post is confirmed",
-        "Retry successful items every hour",
-        "Increase robot memory allocation",
-        "Disable screenshots during the final step"
+        "Move the success mark to after the ERP post is confirmed and recovery state is written",
+        "Keep the success mark early but add a compensating queue item when ERP posting fails",
+        "Increase robot memory allocation so the ERP client is less likely to crash",
+        "Keep the current success timing and retry the ERP post separately if it fails"
       ],
       correctAnswer: ["A"],
       explanation: "The queue success should align to the real business commit point.",
@@ -367,10 +367,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "Two Automation Anywhere runners write intermediate files to one shared folder and overwrite each other. What is the best fix?",
       options: [
-        "Increase file retry count",
+        "Increase file retry count so transient file locks resolve naturally",
         "Give each runner a unique working directory and publish final output atomically",
-        "Add a fixed 10-second delay before writing files",
-        "Ask operations to clear the folder between runs"
+        "Serialize the final write step but keep shared intermediate files",
+        "Ask operations to archive the shared folder before each batch window"
       ],
       correctAnswer: ["B"],
       explanation: "Parallel runners need isolated working state and controlled publish behavior.",
@@ -388,10 +388,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "One Automation Anywhere bot works on Runner A but fails on Runner B after a credential rotation. What is the best next step?",
       options: [
-        "Hardcode the new password in the bot so both runners can proceed",
-        "Check credential vault access, package version, and runner config parity before rerun",
-        "Increase the bot timeout until Runner B catches up",
-        "Delete the failed run history and reschedule all jobs"
+        "Hardcode the new password in the bot temporarily so both runners can proceed",
+        "Check vault access, package version, and runner config parity before rerun",
+        "Promote the package again so both runners definitely use the same runtime history",
+        "Delete the failed run history and reschedule all affected jobs on Runner A only"
       ],
       correctAnswer: ["B"],
       explanation: "Runner-specific failures after credential change usually point to environment/config parity gaps.",
@@ -413,9 +413,9 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       options: [
         "Persist per-record state outside process memory",
         "Use an idempotency key or business key on each POST",
-        "Catch all exceptions and continue without recording them",
+        "Catch all exceptions and continue only if the record can be retried safely without audit loss",
         "Reconcile destination state before replaying uncertain records",
-        "Handle throttling, validation, and timeout failures the same way"
+        "Handle throttling, validation, and timeout failures with the same recovery path"
       ],
       correctAnswer: ["A", "B", "D"],
       explanation: "Replay safety depends on durable state, identity, and reconciliation, not silent continuation.",
@@ -433,10 +433,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "A batch sometimes reads an input file before the upstream process is finished writing it. What is the best protection?",
       options: [
-        "Retry parsing until the JSON loads successfully",
-        "Check for a reliable completion signal before processing the file",
-        "Ignore the last line if parsing fails",
-        "Process the file faster so the race window shrinks"
+        "Retry parsing until the JSON loads successfully twice in a row",
+        "Check for a reliable completion signal or atomic handoff before processing the file",
+        "Ignore the final block if parsing fails and let downstream validation catch partial records",
+        "Poll file size changes for a few seconds and assume the write is complete if growth stops"
       ],
       correctAnswer: ["B"],
       explanation: "File readiness should be proven, not guessed from timing.",
@@ -456,10 +456,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "A Power Automate flow updates a Dataverse row, which retriggers the same flow and creates duplicate downstream actions. What is the best fix?",
       options: [
-        "Add a longer delay after every row update",
+        "Add a delay after every row update so the next trigger sees the final state",
         "Use trigger conditions or state flags so self-generated updates do not re-enter the same path",
-        "Split the flow into two identical flows",
-        "Disable retries on the entire flow"
+        "Split the flow into two flows so each one owns half of the state transition",
+        "Disable retries on the flow so duplicates do not repeat after transient errors"
       ],
       correctAnswer: ["B"],
       explanation: "Self-trigger loops are prevented with explicit trigger guards or state transitions.",
@@ -477,10 +477,10 @@ const core2StackQuestions: Record<StackId, Question[]> = {
       scoringMethod: "all_or_nothing",
       prompt: "Connector throttling starts returning 429 responses and overlapping runs create duplicated approvals. What is the strongest control?",
       options: [
-        "Increase trigger concurrency so items finish sooner",
+        "Increase trigger concurrency so older approvals clear before they overlap again",
         "Use bounded retry/backoff and reduce concurrency to match connector capacity",
-        "Turn off run history during the incident",
-        "Let users manually clean up duplicate approvals afterward"
+        "Turn off run history during the incident to reduce connector overhead",
+        "Allow duplicate approvals temporarily and rely on users to reject extras"
       ],
       correctAnswer: ["B"],
       explanation: "Retry pressure and concurrency have to be shaped to connector limits.",

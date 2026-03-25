@@ -13,12 +13,12 @@ export const businessAnalysisQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "A stakeholder says, 'The report should be fast and easy to use.' Which acceptance criterion is strongest?",
     options: [
-      "Users should like the report",
-      "The report should open quickly on most laptops",
-      "The report loads in under 3 seconds for the standard monthly dataset",
-      "The report should feel more efficient than the current one"
+      "At least 80% of pilot users should say the report feels faster than the current one",
+      "The report loads in under 3 seconds for the standard monthly dataset on the supported corporate laptop profile",
+      "The report should open quickly enough that finance users do not complain during month-end",
+      "The report should require fewer clicks than the current version for common tasks"
     ],
-    correctAnswer: ["C"],
+    correctAnswer: ["B"],
     explanation: "A strong criterion is specific, measurable, and testable.",
     rationale: "Tests whether vague stakeholder language can be converted into a valid requirement."
   } as Question,
@@ -35,10 +35,10 @@ export const businessAnalysisQuestions: Question[] = [
     prompt: "Which signs suggest the requirement set is still unsafe to build from? Select all that apply.",
     options: [
       "Different stakeholders use the same term to mean different things",
-      "The current-state process has one known workaround",
+      "The current-state process includes a manual workaround that is documented and consistently applied",
       "A required decision path has no business owner",
       "An output field has no agreed source of truth",
-      "The delivery date is ambitious"
+      "The delivery date is ambitious but the scope is clearly defined"
     ],
     correctAnswer: ["A", "C", "D"],
     explanation: "Terminology conflicts, owner gaps, and missing source-of-truth definitions create requirements risk.",
@@ -56,12 +56,12 @@ export const businessAnalysisQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "Two stakeholders disagree on whether a request should auto-approve above $5,000. Delivery is blocked. What is the best next step?",
     options: [
-      "Build the lower-risk rule and let users complain if it is wrong",
-      "Document the conflict, identify the final decision owner, and force a resolution before locking the rule",
-      "Average the two positions and use $7,500 as a compromise",
-      "Delay the entire project until both stakeholders agree informally"
+      "Document the conflict, identify the final decision owner, and resolve the rule before it is committed to build",
+      "Model both rule variants and let engineering choose the safer one during implementation",
+      "Use the stricter rule for launch, then revisit the threshold after go-live data arrives",
+      "Set a temporary midpoint threshold and capture the disagreement as a post-release improvement"
     ],
-    correctAnswer: ["B"],
+    correctAnswer: ["A"],
     explanation: "A blocked business rule needs explicit ownership and resolution, not assumption or compromise by guesswork.",
     rationale: "Tests decision governance under conflicting inputs."
   } as Question,
@@ -132,10 +132,10 @@ export const businessAnalysisQuestions: Question[] = [
     prompt: "What is the most likely analysis gap from this UAT defect log?",
     logSnippet: "Case\tInput\tExpected\tActual\n1021\tAmount=7500, Contract=Yes\tNeeds approval\tAuto-approved\n1022\tAmount=7500, Contract=No\tAuto-approved\tAuto-approved\n1023\tAmount=12000, Contract=Yes\tNeeds approval\tNeeds approval",
     options: [
-      "The data type for amount is wrong",
-      "The rule interaction between contract status and approval threshold was not fully specified",
-      "The users were not trained on UAT execution",
-      "The environment has stale test data"
+      "The approval threshold was implemented with the wrong numeric comparison",
+      "The rule interaction between contract status and amount threshold was not fully specified or tested",
+      "The UAT cases were run in an environment with inconsistent seed data",
+      "The contract flag is probably mapped to the wrong source column in one scenario"
     ],
     correctAnswer: ["B"],
     explanation: "The defect pattern points to a missing or ambiguous business rule combination, not random execution noise.",
@@ -153,10 +153,10 @@ export const businessAnalysisQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "Which change should be prioritized first by business impact?",
     options: [
-      "A typo in an internal dashboard label",
-      "A missing audit field on customer approvals",
-      "A one-click shortcut requested by a power user",
-      "A color update to match the design system"
+      "A dashboard label typo in an internal operations screen",
+      "A missing audit field on customer approvals required for traceability",
+      "A new shortcut requested by senior reviewers to save one click per case",
+      "A reporting widget that refreshes 10 minutes later than users would prefer"
     ],
     correctAnswer: ["B"],
     explanation: "Missing audit data creates stronger operational and compliance risk than cosmetic or convenience changes.",
@@ -172,7 +172,7 @@ export const businessAnalysisQuestions: Question[] = [
     format: "trace_execution",
     points: 1,
     scoringMethod: "all_or_nothing",
-    prompt: "A rule says: reject if country is blank; otherwise if tax ID is blank, send for review; otherwise approve. What happens for Country = 'US', Tax ID = blank?",
+    prompt: "A rule says: reject if country is blank or if tax ID is blank for Vendors; otherwise if tax ID is blank, send for review; otherwise approve. What happens for Country = 'US', Tax ID = blank, Onboarding Type = 'Employee'?",
     options: [
       "Reject",
       "Send for review",
@@ -193,10 +193,10 @@ export const businessAnalysisQuestions: Question[] = [
     format: "fill_blank_constrained",
     points: 1,
     scoringMethod: "partial_by_blank",
-    prompt: "A good acceptance criterion should be measurable and ____.",
+    prompt: "A good acceptance criterion should be measurable and ____ enough that two testers would reach the same pass/fail result.",
     blank: "Select the missing word.",
-    choices: ["popular", "testable", "flexible", "broad"],
-    acceptedAnswers: ["testable"],
+    choices: ["repeatable", "popular", "broad", "aspirational"],
+    acceptedAnswers: ["repeatable"],
     explanation: "Requirements should be verifiable, not just well worded.",
     rationale: "Tests fundamentals of requirement quality."
   } as Question,
@@ -212,10 +212,10 @@ export const businessAnalysisQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "A stakeholder asks for 'one export button' but there are three export destinations with different field rules. What is the strongest BA response?",
     options: [
-      "Keep one story and let developers decide the differences later",
-      "Split the requirement by export destination and define the data rules for each path",
-      "Assume the most common export path is enough for version one",
-      "Reject the request until a future phase"
+      "Keep one requirement but add a note that downstream destinations may vary slightly",
+      "Split the requirement by destination and define the field rules, validations, and ownership for each path",
+      "Design the most common destination now and treat the others as edge cases after release",
+      "Force a single common export structure even if the destinations use different mandatory fields"
     ],
     correctAnswer: ["B"],
     explanation: "Different rules across destinations usually mean separate requirements and explicit mapping.",
@@ -235,9 +235,9 @@ export const businessAnalysisQuestions: Question[] = [
     options: [
       "What is the source of truth for each target field?",
       "What transformation or default rule applies when the source is blank?",
-      "Who requested the mapping first?",
+      "Who requested the mapping first and how quickly do they need it?",
       "How are duplicates detected or prevented?",
-      "Whether the target screen color will change later"
+      "Whether the target UI layout might change in a later release"
     ],
     correctAnswer: ["A", "B", "D"],
     explanation: "Mappings need source ownership, transformation behavior, and duplicate logic.",
@@ -255,10 +255,10 @@ export const businessAnalysisQuestions: Question[] = [
     scoringMethod: "all_or_nothing",
     prompt: "Mid-sprint, a stakeholder asks for one extra field and 'just a tiny rule change,' but the new rule affects three downstream outputs. What is the best next step?",
     options: [
-      "Accept it immediately because the request sounds small",
-      "Assess downstream impact, update scope explicitly, and decide through change control",
-      "Reject it because no sprint changes should ever be allowed",
-      "Add the field now and leave the outputs for a later fix"
+      "Accept the field now and schedule the downstream impact assessment after the sprint demo",
+      "Assess downstream impact, update scope explicitly, and route the decision through change control",
+      "Reject the request outright because any sprint change creates delivery risk",
+      "Implement the field and apply the new rule only where it causes no obvious breakage"
     ],
     correctAnswer: ["B"],
     explanation: "Small inputs can have large downstream impact, so the change needs impact analysis and explicit scope control.",
