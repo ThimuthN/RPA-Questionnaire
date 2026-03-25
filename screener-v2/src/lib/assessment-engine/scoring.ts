@@ -144,7 +144,9 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     .map((exam) => exam.legacySectionId)
     .filter((sectionId): sectionId is NonNullable<typeof sectionId> => Boolean(sectionId));
   const corePercent =
-    Object.values(examBreakdown).find((item) => item.definitionId === "core_exam")?.percent ??
+    Object.values(examBreakdown).find(
+      (item) => item.definitionId === "core_exam" || item.definitionId === "core_2_exam"
+    )?.percent ??
     sectionBreakdown.core?.percent ??
     0;
   const practicalBreakdown = Object.values(examBreakdown).find((item) => item.definitionId === "practical_exam");

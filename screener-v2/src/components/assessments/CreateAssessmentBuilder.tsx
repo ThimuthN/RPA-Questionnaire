@@ -160,7 +160,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
             <div
               key={exam.key}
               className={
-                exam.definitionId === "core_exam"
+                exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
                   ? "bg-[linear-gradient(90deg,rgba(47,134,255,0.95),rgba(93,167,255,0.92))]"
                   : exam.definitionId === "practical_exam"
                     ? "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]"
@@ -191,7 +191,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
 }
 
 function examPanelClass(definitionId: PreviewExam["definitionId"]) {
-  if (definitionId === "core_exam") {
+  if (definitionId === "core_exam" || definitionId === "core_2_exam") {
     return "border-brand-300/20 bg-[linear-gradient(180deg,rgba(31,111,255,0.12),rgba(7,12,24,0.54))]";
   }
   if (definitionId === "practical_exam") {

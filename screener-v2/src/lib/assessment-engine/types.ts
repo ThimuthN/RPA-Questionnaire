@@ -25,9 +25,11 @@ export type ResultReviewState = (typeof resultReviewStateValues)[number];
 
 export type ExamDefinitionId =
   | "core_exam"
+  | "core_2_exam"
   | "practical_exam"
   | "applied_logic_exam"
-  | "general_capability_exam";
+  | "general_capability_exam"
+  | "business_analysis_exam";
 
 export type QuestionFormatId =
   | "single_select"

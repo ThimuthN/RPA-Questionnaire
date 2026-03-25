@@ -674,7 +674,9 @@ function mapAttempt(row: {
     stage: normalizeStage(row.stage, blueprint, row.status),
     status: row.status as AttemptRecord["status"],
     coreQuestionIds:
-      blueprint.exams.find((exam) => exam.definitionId === "core_exam")?.contentSnapshot.items.map((item) => item.id) ??
+      blueprint.exams
+        .find((exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam")
+        ?.contentSnapshot.items.map((item) => item.id) ??
       toStringArray(row.coreQuestionIdsJson),
     coreAnswers: split.coreAnswers,
     practicalAnswer: split.practicalAnswer,
@@ -914,7 +916,9 @@ export async function startAttempt(input: {
         }),
         passPercent: passTargetPercent
       });
-  const effectiveRoleId = blueprint.exams.some((exam) => exam.definitionId === "core_exam")
+  const effectiveRoleId = blueprint.exams.some(
+    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
+  )
     ? blueprintRoleId(blueprint, "Associate")
     : input.roleId;
   const effectiveStacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
@@ -925,7 +929,9 @@ export async function startAttempt(input: {
   const attemptId = cuidLike();
   const startedAt = new Date();
   const coreQuestionIds =
-    blueprint.exams.find((exam) => exam.definitionId === "core_exam")?.contentSnapshot.items.map((item) => item.id) ?? [];
+    blueprint.exams
+      .find((exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam")
+      ?.contentSnapshot.items.map((item) => item.id) ?? [];
 
   const attempt = await prisma.$transaction(async (tx) => {
     const created = await tx.attempt.create({

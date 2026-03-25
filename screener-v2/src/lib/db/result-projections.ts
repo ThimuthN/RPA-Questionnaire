@@ -139,7 +139,9 @@ export function toResultSummary(
   const practicalPercent = breakdown.sectionBreakdown.practical?.percent ?? resultRow.practicalPercent;
   const exams =
     breakdown.exams.length > 0 ? breakdown.exams : attempt.blueprint.exams.map(summarizeExamInstance);
-  const coreExam = attempt.blueprint.exams.find((exam) => exam.definitionId === "core_exam");
+  const coreExam = attempt.blueprint.exams.find(
+    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
+  );
   const coreExamRoleId =
     typeof coreExam?.config?.roleId === "string" && coreExam.config.roleId.trim().length > 0
       ? coreExam.config.roleId.trim()

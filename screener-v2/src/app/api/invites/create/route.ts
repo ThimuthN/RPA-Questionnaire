@@ -36,9 +36,11 @@ const createInviteSchema = z.object({
           z.object({
             definitionId: z.enum([
               "core_exam",
+              "core_2_exam",
               "practical_exam",
               "applied_logic_exam",
-              "general_capability_exam"
+              "general_capability_exam",
+              "business_analysis_exam"
             ]),
             sourceAddonId: z.string().optional(),
             sourcePresetId: z.string().optional(),

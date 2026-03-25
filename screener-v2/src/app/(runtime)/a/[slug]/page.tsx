@@ -86,11 +86,12 @@ export default async function InviteLandingPage({
                       key={exam.instanceId}
                       label={`${exam.label} ${exam.durationMinutes}m`}
                       tone={
-                        exam.definitionId === "core_exam"
+                        exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
                           ? "blue"
                           : exam.definitionId === "practical_exam"
                             ? "teal"
-                            : exam.definitionId === "general_capability_exam"
+                            : exam.definitionId === "general_capability_exam" ||
+                                exam.definitionId === "business_analysis_exam"
                               ? "amber"
                               : "purple"
                       }

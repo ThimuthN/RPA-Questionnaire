@@ -43,6 +43,10 @@ const roleOptions = configV2.canonicalRoleOrder.map((roleId) => ({
 
 export const coreBasisRoleOptions = [...roleOptions];
 
+const advancedCoreRoleOptions = roleOptions.filter((option) =>
+  ["SE", "SeniorSE", "TechLead"].includes(option.value)
+);
+
 const stackOptions = configV2.stacks.map((stackId) => ({
   value: stackId,
   label: configV2.stackLabels[stackId]
@@ -89,6 +93,43 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
       return [resolveCoreRoleLabel(config), stacks.join(", ")].filter(Boolean).join(" | ");
     },
     buildRequiredPercent: (_config, fallbackPassPercent) => fallbackPassPercent
+  },
+  core_2_exam: {
+    id: "core_2_exam",
+    label: "Core 2.0",
+    description: "Hard-mode core exam focused on deeper debugging, architecture, and reliability judgment.",
+    accentTone: "blue",
+    configFields: [
+      {
+        key: "roleId",
+        label: "Role",
+        description: "Choose the role level this advanced core exam should target.",
+        type: "single_select",
+        required: true,
+        options: advancedCoreRoleOptions
+      },
+      {
+        key: "stacks",
+        label: "Tech stack",
+        description: "Choose the primary automation stack context for the advanced core exam.",
+        type: "multi_select",
+        required: true,
+        options: stackOptions
+      }
+    ],
+    defaultWeight: 50,
+    defaultConfig: {
+      roleId: "SE",
+      roleLabel: configV2.roles.SE?.label ?? "Software Engineer (SE)",
+      coreBasisRoleId: "SE",
+      stacks: [configV2.stacks[0]]
+    },
+    buildDurationMinutes: () => 30,
+    buildConfigSummary: (config) => {
+      const stacks = Array.isArray(config.stacks) ? config.stacks.map(String) : [];
+      return [resolveCoreRoleLabel(config), stacks.join(", ")].filter(Boolean).join(" | ");
+    },
+    buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 72)
   },
   practical_exam: {
     id: "practical_exam",
@@ -141,6 +182,18 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     buildDurationMinutes: () => 30,
     buildConfigSummary: () => "Universal hiring screener",
     buildRequiredPercent: (_config, fallbackPassPercent) => fallbackPassPercent
+  },
+  business_analysis_exam: {
+    id: "business_analysis_exam",
+    label: "Business Analysis Assessment",
+    description: "Requirements, process, and decision-quality assessment for BA-style work.",
+    accentTone: "amber",
+    configFields: [],
+    defaultWeight: 30,
+    defaultConfig: {},
+    buildDurationMinutes: () => 30,
+    buildConfigSummary: () => "Business analysis assessment",
+    buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 68)
   }
 };
 

@@ -9,9 +9,11 @@ const addonSchema = z.object({
   description: z.string().default(""),
   engineType: z.enum([
     "core_exam",
+    "core_2_exam",
     "practical_exam",
     "applied_logic_exam",
-    "general_capability_exam"
+    "general_capability_exam",
+    "business_analysis_exam"
   ]),
   defaultConfig: z.record(z.string(), z.unknown()).default({}),
   defaultDurationMinutes: z.number().int().positive(),
