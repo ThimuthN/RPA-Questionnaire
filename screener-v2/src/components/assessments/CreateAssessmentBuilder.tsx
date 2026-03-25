@@ -290,6 +290,8 @@ export function CreateAssessmentBuilder({
   const [selectedExams, setSelectedExams] = useState<ExamBlueprintDraftItem[]>([]);
   const [passTarget, setPassTarget] = useState(60);
   const [integrityPreset, setIntegrityPreset] = useState<IntegrityPresetId>("standard");
+  const [configuringAddonId, setConfiguringAddonId] = useState<string | null>(null);
+  const [configuringExam, setConfiguringExam] = useState<ExamBlueprintDraftItem | null>(null);
   const [invite, setInvite] = useState<(InviteCredentials & { slug: string; inviteId: string }) | null>(
     null
   );
@@ -357,30 +359,48 @@ export function CreateAssessmentBuilder({
   const showCalibrateDetail = previewExams.length > 0 && step === "calibrate";
   const showShareDetail = Boolean(invite) || step === "share";
 
-  function toggleAddon(addon: AddonCatalogEntry) {
+  function beginAddonConfig(addon: AddonCatalogEntry) {
+    const existing = selectedExams.find((exam) => exam.sourceAddonId === addon.id);
+    setSelectedPresetId(null);
+    setConfiguringAddonId(addon.id);
+    setConfiguringExam(existing ? structuredClone(existing) : buildDraftFromAddon(addon));
+    setError("");
+  }
+
+  function removeSelectedAddon(addonId: string) {
+    setSelectedPresetId(null);
+    setSelectedExams((current) => current.filter((exam) => exam.sourceAddonId !== addonId));
+    if (configuringAddonId === addonId) {
+      setConfiguringAddonId(null);
+      setConfiguringExam(null);
+    }
+  }
+
+  function applyConfiguredAddon() {
+    if (!configuringAddonId || !configuringExam) return;
+
     setSelectedPresetId(null);
     setSelectedExams((current) => {
-      const exists = current.some((exam) => exam.sourceAddonId === addon.id);
+      const exists = current.some((exam) => exam.sourceAddonId === configuringAddonId);
       if (exists) {
-        const next = current.filter((exam) => exam.sourceAddonId !== addon.id);
-        setStep(next.length > 0 ? "customize" : "select");
-        return next;
+        return current.map((exam) =>
+          exam.sourceAddonId === configuringAddonId ? structuredClone(configuringExam) : exam
+        );
       }
-
-      const next = [...current, buildDraftFromAddon(addon)];
-      setStep("customize");
-      setError("");
-      return next;
+      return [...current, structuredClone(configuringExam)];
     });
+    setConfiguringAddonId(null);
+    setConfiguringExam(null);
   }
 
   function applyPreset(preset: AssessmentPresetEntry) {
     const drafts = buildDraftsFromPreset(preset);
     setSelectedPresetId(preset.id);
     setSelectedExams(drafts);
+    setConfiguringAddonId(null);
+    setConfiguringExam(null);
     setInvite(null);
     setError("");
-    setStep("customize");
   }
 
   function updateExam(
@@ -600,6 +620,8 @@ export function CreateAssessmentBuilder({
                       onClick={() => {
                         setSelectedPresetId(null);
                         setSelectedExams([]);
+                        setConfiguringAddonId(null);
+                        setConfiguringExam(null);
                         setInvite(null);
                         setError("");
                         setStep("select");
@@ -710,6 +732,8 @@ export function CreateAssessmentBuilder({
                             const active = selectedExams.some((exam) => exam.sourceAddonId === addon.id);
                             const selectedExam = selectedExams.find((exam) => exam.sourceAddonId === addon.id);
                             const configFields = examCatalog[addon.engineType].configFields;
+                            const isConfiguring = configuringAddonId === addon.id && configuringExam !== null;
+                            const draftExam = isConfiguring ? configuringExam : selectedExam ?? null;
                             return (
                               <>
                                 <tr
@@ -734,19 +758,26 @@ export function CreateAssessmentBuilder({
                                   <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultRequiredPercent}%</td>
                                   <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultWeight}/100</td>
                                   <td className="px-4 py-3 text-right align-top">
-                                    <Button
-                                      type="button"
-                                      variant={active ? "secondary" : "ghost"}
-                                      onClick={() => toggleAddon(addon)}
-                                    >
-                                      {active ? "Remove" : "Add"}
-                                    </Button>
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        type="button"
+                                        variant={active ? "secondary" : "ghost"}
+                                        onClick={() => beginAddonConfig(addon)}
+                                      >
+                                        {active ? "Edit" : "Configure"}
+                                      </Button>
+                                      {active ? (
+                                        <Button type="button" variant="ghost" onClick={() => removeSelectedAddon(addon.id)}>
+                                          Remove
+                                        </Button>
+                                      ) : null}
+                                    </div>
                                   </td>
                                 </tr>
-                                {active ? (
+                                {isConfiguring ? (
                                   <tr className="border-t border-white/10 bg-white/[0.03]">
                                     <td colSpan={6} className="px-4 py-4">
-                                      {configFields.length > 0 && selectedExam ? (
+                                      {configFields.length > 0 && draftExam ? (
                                         <div className="space-y-4 rounded-[18px] border border-white/10 bg-black/20 p-4">
                                           <div className="space-y-1">
                                             <p className="text-sm text-white">Assessment-specific configuration</p>
@@ -759,20 +790,41 @@ export function CreateAssessmentBuilder({
                                               <ConfigFieldEditor
                                                 key={`${addon.id}-${field.key}`}
                                                 field={field}
-                                                value={(selectedExam.config ?? {})[field.key]}
+                                                value={(draftExam.config ?? {})[field.key]}
                                                 onChange={(next) =>
-                                                  updateExam(selectedExam.sourceAddonId ?? selectedExam.definitionId, (current) => ({
-                                                    ...current,
-                                                    config: { ...(current.config ?? {}), [field.key]: next }
-                                                  }))
+                                                  setConfiguringExam((current) =>
+                                                    current
+                                                      ? {
+                                                          ...current,
+                                                          config: { ...(current.config ?? {}), [field.key]: next }
+                                                        }
+                                                      : current
+                                                  )
                                                 }
                                               />
                                             ))}
                                           </div>
                                         </div>
                                       ) : (
-                                        <p className="text-sm text-slate-300">No extra configuration needed for this add-on.</p>
+                                        <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
+                                          No extra configuration needed for this add-on.
+                                        </div>
                                       )}
+                                      <div className="mt-4 flex flex-wrap gap-2">
+                                        <Button type="button" onClick={applyConfiguredAddon}>
+                                          {active ? "Save changes" : "Add to assessment"}
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="secondary"
+                                          onClick={() => {
+                                            setConfiguringAddonId(null);
+                                            setConfiguringExam(null);
+                                          }}
+                                        >
+                                          Cancel
+                                        </Button>
+                                      </div>
                                     </td>
                                   </tr>
                                 ) : null}
@@ -1085,6 +1137,8 @@ export function CreateAssessmentBuilder({
                       onClick={() => {
                         setSelectedPresetId(null);
                         setSelectedExams([]);
+                        setConfiguringAddonId(null);
+                        setConfiguringExam(null);
                         setInvite(null);
                         setError("");
                         setStep("select");
