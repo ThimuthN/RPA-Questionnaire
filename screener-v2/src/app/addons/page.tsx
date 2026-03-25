@@ -20,8 +20,8 @@ export default async function AddonsPage() {
     <SceneShell
       variant="create"
       eyebrow="Add-ons"
-      title="Build the add-on library"
-      subtitle="Manage reusable exam entries and presets here, then assemble assessments from them in the builder."
+      title="Add-on library"
+      subtitle="Manage global add-on defaults and simple presets."
       utility={
         <div className="flex flex-wrap gap-2">
           <StatusPill label={`${addons.length} add-ons`} tone="blue" />

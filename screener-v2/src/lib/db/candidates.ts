@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import {
@@ -29,10 +28,8 @@ import type {
   CandidateUiStatus
 } from "@/lib/candidates/types";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
+import { cuidLike } from "@/lib/tokens/token-service";
 
-function cuidLike() {
-  return crypto.randomUUID().replace(/-/g, "");
-}
 
 export interface CandidateRecord {
   id: string;

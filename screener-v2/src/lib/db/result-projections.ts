@@ -16,6 +16,7 @@ import type { LogicReasoningSubtask } from "@/features/logic-reasoning/packs";
 import type { PracticalSubtask } from "@/features/practical/packs";
 import { getDefaultSelectedSections, normalizeSelectedSections, orderedSections } from "@/lib/sections/registry";
 import type { SectionId } from "@/lib/sections/types";
+import { toObject } from "@/lib/db/db-utils";
 
 interface ResultProjectionAttempt {
   roleId?: string | null;
@@ -51,12 +52,6 @@ function roundOne(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-function toObject<T>(value: Prisma.JsonValue | null | undefined, fallback: T): T {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value as T;
-  }
-  return fallback;
-}
 
 function normalizeBreakdown(
   raw: ResultSummary["sectionBreakdown"] | Record<string, unknown>,

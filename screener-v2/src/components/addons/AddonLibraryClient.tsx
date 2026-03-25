@@ -125,8 +125,6 @@ export function AddonLibraryClient({
   );
   const selectedAddon = editingAddonId ? addonLookup.get(editingAddonId) ?? null : null;
   const selectedPreset = editingPresetId ? presets.find((preset) => preset.id === editingPresetId) ?? null : null;
-  const activeAddonCount = addonOptions.filter((addon) => addon.isActive).length;
-  const activePresetCount = presets.filter((preset) => preset.isActive).length;
 
   async function submitAddon() {
     setSavingAddon(true);
@@ -274,67 +272,45 @@ export function AddonLibraryClient({
         </div>
       ) : null}
 
-      <StagePanel className="space-y-5 overflow-hidden">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl space-y-2">
-            <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Add-ons</p>
-            <h1 className="text-3xl text-white sm:text-4xl">Shape the library your builders start from.</h1>
-            <p className="text-sm text-slate-300 sm:text-base">
-              Keep the workspace focused by separating reusable add-on defaults from reusable preset
-              mixes. Pick a mode, update one thing at a time, and the builder inherits the cleaner
-              starting point.
+      <StagePanel className="space-y-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl text-white">{viewMode === "addons" ? "Add-on library" : "Presets"}</h1>
+            <p className="text-sm text-slate-300">
+              {viewMode === "addons"
+                ? "Global defaults used by the assessment builder."
+                : "Reusable add-on mixes for faster setup."}
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2 self-start rounded-full border border-white/12 bg-black/20 p-1">
-            <button
-              type="button"
-              onClick={() => setViewMode("addons")}
-              className={`rounded-full px-4 py-2 text-sm transition ${
-                viewMode === "addons"
-                  ? "bg-brand-500 text-white shadow-[0_0_24px_rgba(52,124,255,0.35)]"
-                  : "text-slate-300 hover:text-white"
-              }`}
-            >
-              Add-ons
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("presets")}
-              className={`rounded-full px-4 py-2 text-sm transition ${
-                viewMode === "presets"
-                  ? "bg-white/12 text-white"
-                  : "text-slate-300 hover:text-white"
-              }`}
-            >
-              Presets
-            </button>
-          </div>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-[22px] border border-brand-300/20 bg-brand-500/10 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-200">Active add-ons</p>
-            <p className="mt-2 text-3xl text-white">{activeAddonCount}</p>
-            <p className="mt-1 text-sm text-slate-300">{addons.length} entries in the current library.</p>
-          </div>
-          <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Active presets</p>
-            <p className="mt-2 text-3xl text-white">{activePresetCount}</p>
-            <p className="mt-1 text-sm text-slate-300">Reusable mixes ready for builders to load.</p>
-          </div>
-          <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Current focus</p>
-            <p className="mt-2 text-lg text-white">
-              {viewMode === "addons"
-                ? selectedAddon?.label ?? "New add-on draft"
-                : selectedPreset?.label ?? "New preset draft"}
-            </p>
-            <p className="mt-1 text-sm text-slate-300">
-              {viewMode === "addons"
-                ? "Adjust library-owned defaults and engine config."
-                : "Bundle add-ons and define mix-specific overrides."}
-            </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap gap-2 rounded-full border border-white/12 bg-black/20 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode("addons")}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  viewMode === "addons"
+                    ? "bg-brand-500 text-white shadow-[0_0_24px_rgba(52,124,255,0.35)]"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                Add-ons
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("presets")}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  viewMode === "presets"
+                    ? "bg-white/12 text-white"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                Presets
+              </button>
+            </div>
+            <Button variant="secondary" onClick={viewMode === "addons" ? startNewAddon : startNewPreset}>
+              {viewMode === "addons" ? "New add-on" : "New preset"}
+            </Button>
           </div>
         </div>
       </StagePanel>
@@ -343,119 +319,125 @@ export function AddonLibraryClient({
         <StagePanel className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.22em] text-brand-300">
-                {viewMode === "addons" ? "Library browser" : "Preset browser"}
-              </p>
               <h2 className="text-2xl text-white">
-                {viewMode === "addons" ? "Reusable add-ons" : "Reusable preset mixes"}
+                {viewMode === "addons" ? "All add-ons" : "All presets"}
               </h2>
-              <p className="text-sm text-slate-300">
-                {viewMode === "addons"
-                  ? "Select an add-on to edit its defaults, or start a fresh entry."
-                  : "Select a preset to refine its mix, order, and overrides."}
-              </p>
             </div>
-            <Button variant="secondary" onClick={viewMode === "addons" ? startNewAddon : startNewPreset}>
-              {viewMode === "addons" ? "New add-on" : "New preset"}
-            </Button>
+            <StatusPill
+              label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presets.length} presets`}
+              tone="neutral"
+            />
           </div>
 
           {viewMode === "addons" ? (
-            <div className="space-y-3">
-              {addonOptions.map((addon) => {
-                const selected = editingAddonId === addon.id;
-                return (
-                  <button
-                    key={addon.id}
-                    type="button"
-                    onClick={() => {
-                      setEditingAddonId(addon.id);
-                      setAddonForm(addonToForm(addon));
-                    }}
-                    className={`w-full rounded-[24px] border p-4 text-left transition ${
-                      selected
-                        ? "border-brand-300/45 bg-brand-500/12 shadow-[0_18px_50px_rgba(18,31,64,0.35)]"
-                        : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
+            <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left">
+                  <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Add-on</th>
+                      <th className="px-4 py-3 font-medium">Type</th>
+                      <th className="px-4 py-3 font-medium">Time</th>
+                      <th className="px-4 py-3 font-medium">Pass</th>
+                      <th className="px-4 py-3 font-medium">Score</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {addonOptions.map((addon) => {
+                      const selected = editingAddonId === addon.id;
+                      return (
+                        <tr
+                          key={addon.id}
+                          className={`border-t border-white/10 transition ${
+                            selected ? "bg-brand-500/10" : "hover:bg-white/[0.03]"
+                          }`}
+                        >
+                          <td className="px-4 py-3 align-top">
+                            <div className="space-y-1">
+                              <p className="text-sm text-white">{addon.label}</p>
+                              <p className="max-w-[380px] text-xs leading-5 text-slate-400">{addon.description}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 align-top">
                             <StatusPill label={examCatalog[addon.engineType].label} tone={examCatalog[addon.engineType].accentTone} />
-                            <StatusPill label={addon.isActive ? "Active" : "Inactive"} tone={addon.isActive ? "emerald" : "neutral"} />
-                            {selected ? <StatusPill label="Editing" tone="blue" /> : null}
-                          </div>
-                          <p className="text-lg text-white">{addon.label}</p>
-                        </div>
-                        <span className="text-sm text-slate-400">{selected ? "In editor" : "Open"}</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{addon.description}</p>
-                      <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                        <span className="rounded-full border border-white/10 px-3 py-1">
-                          {addon.defaultDurationMinutes} min
-                        </span>
-                        <span className="rounded-full border border-white/10 px-3 py-1">
-                          Min pass {addon.defaultRequiredPercent}%
-                        </span>
-                        <span className="rounded-full border border-white/10 px-3 py-1">
-                          Default score {addon.defaultWeight}/100
-                        </span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+                          </td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultDurationMinutes} min</td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultRequiredPercent}%</td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultWeight}/100</td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">
+                            {addon.isActive ? "Active" : "Inactive"}
+                          </td>
+                          <td className="px-4 py-3 text-right align-top">
+                            <Button
+                              type="button"
+                              variant={selected ? "secondary" : "ghost"}
+                              onClick={() => {
+                                setEditingAddonId(addon.id);
+                                setAddonForm(addonToForm(addon));
+                              }}
+                            >
+                              {selected ? "Editing" : "Open"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              {presets.map((preset) => {
-                const selected = editingPresetId === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    type="button"
-                    onClick={() => {
-                      setEditingPresetId(preset.id);
-                      setPresetForm(presetToForm(preset));
-                    }}
-                    className={`w-full rounded-[24px] border p-4 text-left transition ${
-                      selected
-                        ? "border-white/20 bg-white/[0.07] shadow-[0_18px_50px_rgba(10,18,34,0.35)]"
-                        : "border-white/10 bg-black/20 hover:border-white/20 hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            <StatusPill label="Preset" tone="purple" />
-                            <StatusPill label={`${preset.items.length} add-ons`} tone="neutral" />
-                            <StatusPill
-                              label={preset.isActive ? "Active" : "Inactive"}
-                              tone={preset.isActive ? "emerald" : "neutral"}
-                            />
-                            {selected ? <StatusPill label="Editing" tone="blue" /> : null}
-                          </div>
-                          <p className="text-lg text-white">{preset.label}</p>
-                        </div>
-                        <span className="text-sm text-slate-400">{selected ? "In editor" : "Open"}</span>
-                      </div>
-                      <p className="text-sm text-slate-300">{preset.description}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {preset.items.map((item) => (
-                          <StatusPill
-                            key={item.id}
-                            label={item.addon.label}
-                            tone={examCatalog[item.addon.engineType].accentTone}
-                            className="normal-case tracking-normal"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left">
+                  <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Preset</th>
+                      <th className="px-4 py-3 font-medium">Add-ons</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {presets.map((preset) => {
+                      const selected = editingPresetId === preset.id;
+                      return (
+                        <tr
+                          key={preset.id}
+                          className={`border-t border-white/10 transition ${
+                            selected ? "bg-white/[0.06]" : "hover:bg-white/[0.03]"
+                          }`}
+                        >
+                          <td className="px-4 py-3 align-top">
+                            <div className="space-y-1">
+                              <p className="text-sm text-white">{preset.label}</p>
+                              <p className="max-w-[380px] text-xs leading-5 text-slate-400">{preset.description}</p>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">{preset.items.length}</td>
+                          <td className="px-4 py-3 align-top text-sm text-slate-200">
+                            {preset.isActive ? "Active" : "Inactive"}
+                          </td>
+                          <td className="px-4 py-3 text-right align-top">
+                            <Button
+                              type="button"
+                              variant={selected ? "secondary" : "ghost"}
+                              onClick={() => {
+                                setEditingPresetId(preset.id);
+                                setPresetForm(presetToForm(preset));
+                              }}
+                            >
+                              {selected ? "Editing" : "Open"}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </StagePanel>
@@ -465,14 +447,8 @@ export function AddonLibraryClient({
             <>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.22em] text-brand-300">
-                    {editingAddonId ? "Edit add-on" : "Create add-on"}
-                  </p>
-                  <h2 className="text-2xl text-white">{selectedAddon?.label ?? "Add-on defaults"}</h2>
-                  <p className="text-sm text-slate-300">
-                    Set the defaults the assessment builder starts from. This is where time, minimum
-                    pass, scoring defaults, and engine-specific settings live.
-                  </p>
+                  <h2 className="text-2xl text-white">{selectedAddon?.label ?? "New add-on"}</h2>
+                  <p className="text-sm text-slate-300">Global settings applied across assessments.</p>
                 </div>
                 <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
                   {examCatalog[addonForm.engineType].label}
@@ -481,10 +457,6 @@ export function AddonLibraryClient({
 
               <div className="grid gap-4 lg:grid-cols-[1fr_0.95fr]">
                 <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Basics</p>
-                    <p className="text-sm text-slate-300">Name the add-on and explain when it should be used.</p>
-                  </div>
                   <label className="grid gap-2">
                     <span className="text-sm text-slate-200">Label</span>
                     <input
@@ -523,10 +495,7 @@ export function AddonLibraryClient({
                 </div>
 
                 <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Scoring defaults</p>
-                    <p className="text-sm text-slate-300">These become the starting point for presets and new assessments.</p>
-                  </div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Defaults</p>
                   <div className="grid gap-3">
                     <label className="grid gap-2">
                       <span className="text-sm text-slate-200">Time (minutes)</span>
@@ -583,12 +552,7 @@ export function AddonLibraryClient({
               </div>
 
               <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Default config</p>
-                  <p className="text-sm text-slate-300">
-                    Engine-specific defaults live here so the builder only needs to show assessment-specific overrides.
-                  </p>
-                </div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Default config</p>
                 {examCatalog[addonForm.engineType].configFields.length > 0 ? (
                   <div className="grid gap-4">
                     {examCatalog[addonForm.engineType].configFields.map((field) => (
@@ -636,13 +600,8 @@ export function AddonLibraryClient({
             <>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-xs uppercase tracking-[0.22em] text-brand-300">
-                    {editingPresetId ? "Edit preset" : "Create preset"}
-                  </p>
-                  <h2 className="text-2xl text-white">{selectedPreset?.label ?? "Preset builder"}</h2>
-                  <p className="text-sm text-slate-300">
-                    Bundle the right add-ons together, choose the order, and set any mix-specific overrides builders should inherit.
-                  </p>
+                  <h2 className="text-2xl text-white">{selectedPreset?.label ?? "New preset"}</h2>
+                  <p className="text-sm text-slate-300">A preset is just a reusable add-on mix.</p>
                 </div>
                 <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
                   {presetForm.items.length} selected
@@ -651,10 +610,7 @@ export function AddonLibraryClient({
 
               <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
                 <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Basics</p>
-                    <p className="text-sm text-slate-300">Give the preset a clear label and a short note for builders.</p>
-                  </div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Basics</p>
                   <label className="grid gap-2">
                     <span className="text-sm text-slate-200">Label</span>
                     <input
@@ -679,10 +635,7 @@ export function AddonLibraryClient({
                 </div>
 
                 <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Included add-ons</p>
-                    <p className="text-sm text-slate-300">Choose the library items this preset should load in one step.</p>
-                  </div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Included add-ons</p>
                   <div className="flex flex-wrap gap-2">
                     {addonOptions.filter((addon) => addon.isActive).map((addon) => {
                       const active = presetForm.items.some((item) => item.addonId === addon.id);
@@ -707,12 +660,7 @@ export function AddonLibraryClient({
 
               <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Preset composition</p>
-                    <p className="text-sm text-slate-300">
-                      Refine order and any preset-specific overrides without touching the library defaults.
-                    </p>
-                  </div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Preset composition</p>
                   <label className="flex items-center gap-3 text-sm text-slate-200">
                     <input
                       type="checkbox"

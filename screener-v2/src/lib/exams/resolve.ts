@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import type {
   ExamBlueprint,
   ExamBlueprintDraftItem,
@@ -21,10 +20,7 @@ import {
 import type { SectionId } from "@/lib/sections/types";
 import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
 import { pickPracticalPack } from "@/features/practical/packs";
-
-function cuidLike() {
-  return crypto.randomUUID().replace(/-/g, "");
-}
+import { cuidLike } from "@/lib/tokens/token-service";
 
 function ensureStacks(value: unknown, fallback: StackId[] = ["UiPath"]): StackId[] {
   if (!Array.isArray(value)) return fallback;
