@@ -54,6 +54,12 @@ function clampDuration(value: number) {
   return Math.max(1, Math.round(value));
 }
 
+function compactAddonDescription(value: string) {
+  const trimmed = value.trim();
+  if (trimmed.length <= 72) return trimmed;
+  return `${trimmed.slice(0, 69).trimEnd()}...`;
+}
+
 function examKey(exam: ExamBlueprintDraftItem, index: number) {
   return exam.sourceAddonId ?? `${exam.definitionId}-${index}`;
 }
@@ -240,39 +246,6 @@ function SelectionMetric({
   );
 }
 
-function CollapsedStepPanel({
-  step,
-  title,
-  summary,
-  tone = "neutral",
-  action
-}: {
-  step: string;
-  title: string;
-  summary: string;
-  tone?: "neutral" | "blue" | "purple" | "teal" | "emerald" | "amber" | "red";
-  action?: ReactNode;
-}) {
-  return (
-    <StagePanel className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.22em] text-brand-300">{step}</p>
-          <h2 className="text-xl text-white">{title}</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <StatusPill label="Collapsed" tone="neutral" />
-          {action}
-        </div>
-      </div>
-      <p className="text-sm text-slate-300">{summary}</p>
-      <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
-        <StatusPill label={summary} tone={tone} className="max-w-full normal-case tracking-normal" />
-      </div>
-    </StagePanel>
-  );
-}
-
 export function CreateAssessmentBuilder({
   initialAddons,
   initialPresets,
@@ -354,10 +327,12 @@ export function CreateAssessmentBuilder({
     return configFields.length > 0 || !exam.validity.valid;
   }).length;
   const examsReadyAsIs = Math.max(0, previewExams.length - examsNeedingSetup);
-  const showSelectDetail = step === "select" || previewExams.length === 0;
-  const showCustomizeDetail = previewExams.length > 0 && step === "customize";
-  const showCalibrateDetail = previewExams.length > 0 && step === "calibrate";
-  const showShareDetail = Boolean(invite) || step === "share";
+  const showSelectDetail = step === "select";
+  const showCustomizeDetail = step === "customize";
+  const showCalibrateDetail = step === "calibrate";
+  const showShareDetail = step === "share";
+  const stepIds: WizardStep[] = ["select", "customize", "calibrate", "share"];
+  const visibleStepIds = stepIds.slice(0, Math.max(1, stepIds.indexOf(step) + 1));
 
   function beginAddonConfig(addon: AddonCatalogEntry) {
     const existing = selectedExams.find((exam) => exam.sourceAddonId === addon.id);
@@ -579,40 +554,40 @@ export function CreateAssessmentBuilder({
       <div className="space-y-4">
         <StepRail
           activeId={step}
-          className="md:grid-cols-4"
-          steps={[
-            { id: "select", label: "Select" },
-            { id: "customize", label: "Customize" },
-            { id: "calibrate", label: "Score" },
-            { id: "share", label: "Share" }
-          ]}
+          className={`md:grid-cols-${visibleStepIds.length}`}
+          steps={visibleStepIds.map((id) => ({
+            id,
+            label: id === "select" ? "Select" : id === "customize" ? "Customize" : id === "calibrate" ? "Score" : "Share"
+          }))}
         />
 
-        <div className="xl:hidden">
-          <button
-            type="button"
-            onClick={() => setSummaryOpen((current) => !current)}
-            className="flex w-full items-center justify-between rounded-[20px] border border-white/12 bg-white/[0.05] px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-          >
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Assessment summary</p>
-              <p className="text-sm text-white">
-                {previewExams.length} add-ons / {totalContribution}/100 marks
-              </p>
-            </div>
-            <StatusPill label={summaryOpen ? "Hide" : "Show"} tone="neutral" />
-          </button>
-          {summaryOpen ? <div className="mt-4">{summaryContent}</div> : null}
-        </div>
+        {step !== "select" ? (
+          <div className="xl:hidden">
+            <button
+              type="button"
+              onClick={() => setSummaryOpen((current) => !current)}
+              className="flex w-full items-center justify-between rounded-[20px] border border-white/12 bg-white/[0.05] px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            >
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Assessment summary</p>
+                <p className="text-sm text-white">
+                  {previewExams.length} add-ons / {totalContribution}/100 marks
+                </p>
+              </div>
+              <StatusPill label={summaryOpen ? "Hide" : "Show"} tone="neutral" />
+            </button>
+            {summaryOpen ? <div className="mt-4">{summaryContent}</div> : null}
+          </div>
+        ) : null}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className={step === "select" ? "grid gap-4" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]"}>
           <div className="space-y-4">
             {showSelectDetail ? (
             <StagePanel className="space-y-6">
               <StepHeader
                 step="Step 1"
                 title="Choose the assessment mix"
-                description="Choose a preset or build from the add-on library."
+                description="Choose a preset or add-ons."
                 action={
                   selectedExams.length > 0 ? (
                     <Button
@@ -745,7 +720,12 @@ export function CreateAssessmentBuilder({
                                   <td className="px-4 py-3 align-top">
                                     <div className="space-y-1">
                                       <p className="text-sm text-white">{addon.label}</p>
-                                      <p className="max-w-[460px] text-xs leading-5 text-slate-400">{addon.description}</p>
+                                      <p
+                                        className="max-w-[260px] truncate text-xs text-slate-400"
+                                        title={addon.description}
+                                      >
+                                        {compactAddonDescription(addon.description)}
+                                      </p>
                                     </div>
                                   </td>
                                   <td className="px-4 py-3 align-top">
@@ -842,37 +822,16 @@ export function CreateAssessmentBuilder({
                 <Button onClick={() => setStep("customize")} disabled={selectedExams.length === 0}>
                   Continue to setup
                 </Button>
-                {selectedExams.length > 0 ? (
-                  <Button variant="secondary" onClick={() => setStep("calibrate")}>
-                    Jump to scoring
-                  </Button>
-                ) : null}
               </div>
             </StagePanel>
-            ) : (
-              <CollapsedStepPanel
-                step="Step 1"
-                title="Assessment mix"
-                summary={
-                  selectedExams.length > 0
-                    ? `${previewExams.length} add-ons selected${selectedPresetId ? " from a preset" : ""}.`
-                    : "No add-ons selected yet."
-                }
-                tone={selectedExams.length > 0 ? "blue" : "neutral"}
-                action={
-                  <Button variant="secondary" onClick={() => setStep("select")}>
-                    Edit mix
-                  </Button>
-                }
-              />
-            )}
+            ) : null}
 
             {showCustomizeDetail ? (
             <StagePanel className="space-y-5">
               <StepHeader
                 step="Step 2"
                 title="Review selected add-ons"
-                description="Check the selected mix before moving to scoring."
+                description="Check the selected mix before scoring."
                 action={<StatusPill label={`${previewExams.length} selected`} tone="blue" />}
               />
 
@@ -949,33 +908,21 @@ export function CreateAssessmentBuilder({
                   <p className="text-sm text-slate-300">Select add-ons or a preset to continue.</p>
                 </div>
               )}
+
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={() => setStep("calibrate")} disabled={previewExams.length === 0}>
+                  Continue to scoring
+                </Button>
+              </div>
             </StagePanel>
-            ) : (
-              <CollapsedStepPanel
-                step="Step 2"
-                title="Assessment overrides"
-                summary={
-                  previewExams.length > 0
-                    ? `${examsNeedingSetup} add-ons with assessment setup${examsReadyAsIs > 0 ? `, ${examsReadyAsIs} ready as-is` : ""}.`
-                    : "Select add-ons to unlock assessment-specific setup."
-                }
-                tone={previewExams.length > 0 ? (examsNeedingSetup > 0 ? "amber" : "emerald") : "neutral"}
-                action={
-                  previewExams.length > 0 ? (
-                    <Button variant="secondary" onClick={() => setStep("customize")}>
-                      Open setup
-                    </Button>
-                  ) : null
-                }
-              />
-            )}
+            ) : null}
 
             {showCalibrateDetail ? (
             <StagePanel className="space-y-5">
               <StepHeader
                 step="Step 3"
                 title="Set score contribution"
-                description="Set add-on marks to total 100, then choose integrity controls."
+                description="Set add-on marks to 100 and choose integrity."
                 action={<StatusPill label={`${totalContribution}/100 total`} tone={contributionTone} />}
               />
 
@@ -1095,37 +1042,16 @@ export function CreateAssessmentBuilder({
                 <Button onClick={onGenerateAccess} disabled={loading || !canGenerate}>
                   {loading ? "Generating..." : "Generate access"}
                 </Button>
-                <Button variant="secondary" onClick={() => setStep("share")} disabled={!invite}>
-                  Review share step
-                </Button>
               </div>
             </StagePanel>
-            ) : (
-              <CollapsedStepPanel
-                step="Step 3"
-                title="Scoring and integrity"
-                summary={
-                  previewExams.length > 0
-                    ? `${totalContribution}/100 marks allocated, overall pass ${passTarget}%, ${integrityPresetMeta[integrityPreset].shortLabel.toLowerCase()} integrity.`
-                    : "Select add-ons to unlock scoring and integrity."
-                }
-                tone={previewExams.length > 0 ? contributionTone : "neutral"}
-                action={
-                  previewExams.length > 0 ? (
-                    <Button variant="secondary" onClick={() => setStep("calibrate")}>
-                      Open scoring
-                    </Button>
-                  ) : null
-                }
-              />
-            )}
+            ) : null}
 
             {showShareDetail ? (
             <StagePanel className="space-y-5">
               <StepHeader
                 step="Step 4"
                 title="Share access"
-                description="Generate an access link, copy the details, or jump straight into the test flow."
+                description="Copy the access details and launch the test if needed."
               />
 
               {invite ? (
@@ -1133,7 +1059,6 @@ export function CreateAssessmentBuilder({
                   <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Launch test" startNow />
                   <div className="flex flex-wrap gap-3">
                     <Button
-                      variant="secondary"
                       onClick={() => {
                         setSelectedPresetId(null);
                         setSelectedExams([]);
@@ -1158,32 +1083,14 @@ export function CreateAssessmentBuilder({
                 </div>
               )}
             </StagePanel>
-            ) : (
-              <CollapsedStepPanel
-                step="Step 4"
-                title="Share access"
-                summary={
-                  invite
-                    ? `Access is ready for ${testId}.`
-                    : canGenerate
-                      ? "Ready to generate access from the scoring step."
-                      : "Finish setup and scoring before generating access."
-                }
-                tone={invite ? "emerald" : canGenerate ? "blue" : "neutral"}
-                action={
-                  canGenerate ? (
-                    <Button variant="secondary" onClick={() => setStep("calibrate")}>
-                      Generate in scoring
-                    </Button>
-                  ) : null
-                }
-              />
-            )}
+            ) : null}
           </div>
 
+          {step !== "select" ? (
           <div className="hidden xl:block">
             <div className="sticky top-24">{summaryContent}</div>
           </div>
+          ) : null}
         </div>
       </div>
     </SceneShell>
