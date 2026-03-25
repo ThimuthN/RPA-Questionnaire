@@ -242,7 +242,7 @@ export default async function ResultDetailPage({
         attemptId={attemptId}
         candidateName={row.candidateName || `Attempt ${attemptId.slice(0, 12)}`}
         score={row.finalPercent}
-        resultStatus={row.resultStatus}
+        resultStatus={row.pass ? "pass" : row.borderline ? "review" : "fail"}
         hasLinkedCandidate={!!candidate}
         candidateId={candidate?.id}
         nextUnreviewedId={nextUnreviewedId ?? undefined}

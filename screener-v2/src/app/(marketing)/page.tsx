@@ -72,7 +72,7 @@ export default async function MarketingHomePage() {
                     <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Get started</p>
                     <h2 className="text-xl text-white">Your workspace is empty</h2>
                     <p className="text-sm text-slate-300">
-                      Create an assessment, register a candidate, and send them an invite link — that's all it takes to get your first result.
+                      Create an assessment, register a candidate, and send them an invite link. That&apos;s all it takes to get your first result.
                     </p>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-3">
