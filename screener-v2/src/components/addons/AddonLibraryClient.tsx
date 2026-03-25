@@ -353,10 +353,17 @@ export function AddonLibraryClient({
       <StagePanel className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h2 className="text-2xl text-white">{viewMode === "addons" ? "All add-ons" : "All presets"}</h2>
-          <StatusPill
-            label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presets.length} presets`}
-            tone="neutral"
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusPill
+              label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presets.length} presets`}
+              tone="neutral"
+            />
+            {viewMode === "presets" ? (
+              <Button type="button" onClick={startNewPreset}>
+                New preset
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         {viewMode === "addons" ? (
