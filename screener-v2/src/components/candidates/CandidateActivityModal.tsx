@@ -14,7 +14,7 @@ type ActivityItem = {
 
 export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
   const [open, setOpen] = useState(false);
-  const previewItems = items.slice(0, 3);
+  const latestItem = items[0] ?? null;
 
   return (
     <>
@@ -29,20 +29,20 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
           </Button>
         </div>
 
-        {previewItems.length === 0 ? (
+        {items.length === 0 ? (
           <p className="text-sm text-slate-300">No activity yet.</p>
         ) : (
-          <div className="grid gap-3">
-            {previewItems.map((item) => (
-              <div key={item.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill label={item.kind} tone="neutral" />
-                  <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
-                </div>
-                <p className="mt-3 text-sm text-white">{item.title}</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-slate-300">{item.detail}</p>
-              </div>
-            ))}
+          <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+            <div className="flex flex-wrap gap-2">
+              <StatusPill label={`${items.length} events`} tone="neutral" />
+              {latestItem ? <StatusPill label={new Date(latestItem.at).toLocaleString()} tone="neutral" /> : null}
+            </div>
+            <p className="mt-3 text-sm text-white">
+              {latestItem ? latestItem.title : "Activity feed is ready when you need it."}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-300">
+              Open the popup to review the full timeline without crowding the candidate page.
+            </p>
           </div>
         )}
       </div>

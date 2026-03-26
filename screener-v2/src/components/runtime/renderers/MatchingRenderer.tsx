@@ -42,25 +42,8 @@ export function MatchingRenderer({ question, answer, onChange }: BaseQuestionRen
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Option bank</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {options.map((option) => {
-            const isTaken = Object.values(value).includes(option);
-            return (
-              <span
-                key={`${question.id}-option-${option}`}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                  isTaken
-                    ? "border-brand-400/35 bg-brand-500/12 text-brand-200"
-                    : "border-white/12 bg-white/[0.04] text-slate-300"
-                }`}
-              >
-                {option}
-              </span>
-            );
-          })}
-        </div>
+      <div className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+        <p className="text-xs text-slate-300">Each option can be used once. Used matches become unavailable in the other rows.</p>
       </div>
 
       {left.map((item: string) => (
