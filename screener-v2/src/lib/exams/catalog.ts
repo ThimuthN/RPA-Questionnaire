@@ -194,6 +194,18 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     buildDurationMinutes: () => 30,
     buildConfigSummary: () => "Business analysis assessment",
     buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 68)
+  },
+  rcm_exam: {
+    id: "rcm_exam",
+    label: "RCM Assessment",
+    description: "Advanced revenue cycle management exam focused on denials, remits, controls, and recovery judgment.",
+    accentTone: "amber",
+    configFields: [],
+    defaultWeight: 30,
+    defaultConfig: {},
+    buildDurationMinutes: () => 30,
+    buildConfigSummary: () => "Revenue cycle management assessment",
+    buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 75)
   }
 };
 

@@ -13,6 +13,7 @@ import { getQuestionsByIds, questionBank } from "@/lib/data/question-bank";
 import { businessAnalysisQuestions } from "@/features/business-analysis/questions";
 import { buildCore2Questions } from "@/features/core2/questions";
 import { generalCapabilityQuestions } from "@/features/general-capability/questions";
+import { revenueCycleManagementQuestions } from "@/features/rcm/questions";
 import {
   resolveCoreBasisRoleId,
   defaultDraftForDefinition,
@@ -100,6 +101,13 @@ function resolveBusinessAnalysisItems(): { items: ExamQuestion[]; stacks: StackI
   };
 }
 
+function resolveRevenueCycleManagementItems(): { items: ExamQuestion[]; stacks: StackId[] } {
+  return {
+    items: revenueCycleManagementQuestions,
+    stacks: ["UiPath"]
+  };
+}
+
 export function normalizeExamDrafts(args: {
   exams?: ExamBlueprintDraftItem[];
   roleId?: RoleId;
@@ -167,6 +175,8 @@ export function resolveExamBlueprint(args: {
       items = resolveLogicItems(draft.config ?? {}).items;
     } else if (draft.definitionId === "business_analysis_exam") {
       items = resolveBusinessAnalysisItems().items;
+    } else if (draft.definitionId === "rcm_exam") {
+      items = resolveRevenueCycleManagementItems().items;
     } else {
       items = resolveGeneralCapabilityItems().items;
     }

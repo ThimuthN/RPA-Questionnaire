@@ -91,7 +91,8 @@ export default async function InviteLandingPage({
                           : exam.definitionId === "practical_exam"
                             ? "teal"
                             : exam.definitionId === "general_capability_exam" ||
-                                exam.definitionId === "business_analysis_exam"
+                                exam.definitionId === "business_analysis_exam" ||
+                                exam.definitionId === "rcm_exam"
                               ? "amber"
                               : "purple"
                       }

@@ -29,7 +29,8 @@ export type ExamDefinitionId =
   | "practical_exam"
   | "applied_logic_exam"
   | "general_capability_exam"
-  | "business_analysis_exam";
+  | "business_analysis_exam"
+  | "rcm_exam";
 
 export type QuestionFormatId =
   | "single_select"
