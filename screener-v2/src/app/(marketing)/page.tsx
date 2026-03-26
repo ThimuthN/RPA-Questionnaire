@@ -48,8 +48,8 @@ export default async function MarketingHomePage() {
       <SceneShell
         variant="create"
         eyebrow="Assessment platform"
-        title="Build assessments that hold up."
-        subtitle="Create, run, and review in one system."
+        title="Build assessments without the mess."
+        subtitle="Create, run, and review in one place."
         utility={
           session ? (
             <div className="flex flex-wrap gap-2">
@@ -73,9 +73,9 @@ export default async function MarketingHomePage() {
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
                   <h2 className="max-w-lg font-display text-5xl leading-[0.94] text-white sm:text-6xl">
-                    Clear enough to trust.
+                    Easy to run.
                     <br />
-                    Alive enough to remember.
+                    Clear to review.
                   </h2>
                 </div>
               </StaggerItem>
@@ -97,7 +97,7 @@ export default async function MarketingHomePage() {
               </StaggerItem>
               <StaggerItem>
                 <p className="max-w-lg text-base leading-8 text-slate-300 sm:text-lg">
-                  A sharper way to build assessments, run them smoothly, and review outcomes without the usual clutter.
+                  Build the assessment, send it out, and review the result without fighting the system.
                 </p>
               </StaggerItem>
             </StaggerGroup>
@@ -111,17 +111,17 @@ export default async function MarketingHomePage() {
               <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
-                  <h2 className="text-4xl leading-[0.96] text-white">One flow, not a pile of steps.</h2>
+                  <h2 className="text-4xl leading-[0.96] text-white">One flow, start to finish.</h2>
                   <p className="max-w-md text-sm leading-7 text-slate-300">
-                    The platform should feel like one continuous movement from creation to decision.
+                    From setup to results, it should stay simple and easy to follow.
                   </p>
                 </div>
                 <div className="relative space-y-5">
                   <div className="absolute left-[18px] top-2 bottom-2 w-px bg-[linear-gradient(180deg,rgba(138,184,255,0.55),rgba(18,179,168,0.45),rgba(255,196,87,0.32))]" />
                   {[
-                    ["01", "Build", "Shape the assessment.", "Start clean, mix the right add-ons, and keep the structure intentional.", "text-brand-300"],
-                    ["02", "Run", "Keep the experience clear.", "Calm runtime, autosave, and focused flows that stay out of the way.", "text-teal-300"],
-                    ["03", "Review", "Move faster with better signal.", "See what matters, trust the scoring, and make decisions with less noise.", "text-amber-300"]
+                    ["01", "Build", "Start with the right setup.", "Pick the add-ons you need and keep the structure tidy.", "text-brand-300"],
+                    ["02", "Run", "Keep the test experience calm.", "Autosave, timing, and navigation stay out of the way.", "text-teal-300"],
+                    ["03", "Review", "See the answer faster.", "Scores, flags, and results stay easy to scan.", "text-amber-300"]
                   ].map(([step, label, title, body, tone], index) => (
                     <ViewportReveal key={step} delay={0.08 + index * 0.06}>
                       <div className="relative rounded-[24px] border border-white/10 bg-black/20 p-5 pl-12 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -145,19 +145,19 @@ export default async function MarketingHomePage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Designed to be reliable</p>
-                    <h2 className="text-4xl leading-[0.96] text-white">Trust the system under pressure.</h2>
-                    <p className="max-w-2xl text-sm leading-7 text-slate-300">Scoring, runtime, and review are built to stay clear when the stakes go up.</p>
+                    <h2 className="text-4xl leading-[0.96] text-white">Built to stay steady.</h2>
+                    <p className="max-w-2xl text-sm leading-7 text-slate-300">Scoring, runtime, and review stay clear when things get busy.</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
-                    <StatusPill label="Accurate scoring" tone="blue" />
-                    <StatusPill label="Stable runtime" tone="emerald" />
-                    <StatusPill label="Clean review flow" tone="amber" />
+                    <StatusPill label="Reliable scoring" tone="blue" />
+                    <StatusPill label="Smooth runtime" tone="emerald" />
+                    <StatusPill label="Clear review" tone="amber" />
                   </div>
                 </div>
                 <div className="rounded-[26px] border border-white/10 bg-black/20 p-5">
                   <div className="space-y-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Works across use cases</p>
-                    <h3 className="text-3xl leading-[0.98] text-white">One platform, many contexts.</h3>
+                    <h3 className="text-3xl leading-[0.98] text-white">Works across different teams.</h3>
                     <p className="text-sm leading-7 text-slate-300">Hiring, internal growth, certification, and focused evaluation.</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -181,7 +181,7 @@ export default async function MarketingHomePage() {
             <StagePanel className="space-y-5 text-center">
               <div className="space-y-2">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Start here</p>
-                <h2 className="text-3xl text-white sm:text-4xl">Start with one strong assessment.</h2>
+                <h2 className="text-3xl text-white sm:text-4xl">Start with one good assessment.</h2>
               </div>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href={createHref}>

@@ -55,7 +55,7 @@ export function HeroScene({ className }: { className?: string }) {
       <div className="relative z-10 flex h-full min-h-[520px] flex-col justify-between gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-brand-300">
-            Assessment chamber
+            Inside the flow
           </div>
           <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-200">
             <span className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1">Build</span>
@@ -143,9 +143,9 @@ export function HeroScene({ className }: { className?: string }) {
             animate={{ opacity: 1, y: [0, 6, 0], scale: 1 }}
             transition={{ duration: reduceMotion ? 0 : 0.6, delay: reduceMotion ? 0 : 1.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">Outcome surface</p>
-            <p className="mt-3 text-2xl text-white">Signal stays visible.</p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">Less clutter in the flow. More clarity when it matters.</p>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">Review view</p>
+            <p className="mt-3 text-2xl text-white">The important stuff stays in view.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Less clutter, easier decisions.</p>
           </motion.div>
 
           <motion.div
