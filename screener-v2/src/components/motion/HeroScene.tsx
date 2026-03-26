@@ -17,49 +17,45 @@ export function HeroScene({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative isolate overflow-hidden rounded-[34px] border border-brand-300/20 bg-[radial-gradient(circle_at_20%_18%,rgba(138,184,255,0.22),transparent_22%),radial-gradient(circle_at_80%_22%,rgba(18,179,168,0.16),transparent_18%),radial-gradient(circle_at_68%_72%,rgba(255,196,87,0.12),transparent_18%),linear-gradient(145deg,rgba(16,35,68,0.98),rgba(4,8,18,1))] p-6 shadow-[0_28px_120px_rgba(2,8,23,0.55)]",
+        "relative isolate overflow-hidden rounded-[36px] border border-brand-300/20 bg-[radial-gradient(circle_at_22%_18%,rgba(138,184,255,0.22),transparent_20%),radial-gradient(circle_at_80%_20%,rgba(18,179,168,0.16),transparent_18%),radial-gradient(circle_at_68%_76%,rgba(255,196,87,0.14),transparent_18%),linear-gradient(145deg,rgba(16,35,68,0.98),rgba(4,8,18,1))] p-6 shadow-[0_28px_120px_rgba(2,8,23,0.55)]",
         className
       )}
     >
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:36px_36px] opacity-30" />
 
       <motion.div
-        className="absolute left-[-8%] top-[-10%] h-56 w-56 rounded-full bg-brand-400/18 blur-3xl"
-        animate={{ x: [0, 28], y: [0, 18], scale: [1, 1.08] }}
+        className="absolute left-[-14%] top-[-8%] h-64 w-64 rounded-full bg-brand-400/18 blur-3xl"
+        animate={{ x: [0, 26], y: [0, 18], scale: [1, 1.08] }}
         transition={floatTransition(8)}
       />
       <motion.div
-        className="absolute bottom-[-16%] right-[-8%] h-72 w-72 rounded-full bg-teal-400/12 blur-3xl"
-        animate={{ x: [0, -24], y: [0, -16], scale: [1, 1.12] }}
+        className="absolute bottom-[-14%] right-[-8%] h-72 w-72 rounded-full bg-teal-400/12 blur-3xl"
+        animate={{ x: [0, -24], y: [0, -18], scale: [1, 1.12] }}
         transition={floatTransition(10, 0.2)}
       />
       <motion.div
-        className="absolute right-[8%] top-[8%] h-28 w-28 rounded-full border border-white/10"
-        animate={{ rotate: reduceMotion ? 0 : 360 }}
-        transition={{
-          duration: reduceMotion ? 0 : 30,
-          repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY,
-          ease: "linear"
-        }}
+        className="absolute left-1/2 top-[14%] h-[56%] w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,rgba(138,184,255,0.5),transparent)]"
+        animate={{ opacity: [0.3, 0.8, 0.35] }}
+        transition={floatTransition(4.8)}
       />
 
       <motion.div
-        className="absolute inset-y-0 left-0 w-[48%] bg-[linear-gradient(180deg,rgba(10,16,30,0.96),rgba(4,8,18,0.96))] shadow-[20px_0_60px_rgba(0,0,0,0.35)]"
-        initial={reduceMotion ? { opacity: 0 } : { x: 0 }}
-        animate={reduceMotion ? { opacity: 1 } : { x: "-88%" }}
-        transition={{ duration: reduceMotion ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-y-[-4%] left-[-4%] w-[45%] origin-left rounded-r-[36px] border-r border-white/10 bg-[linear-gradient(180deg,rgba(8,13,24,0.92),rgba(4,8,16,0.94))] shadow-[24px_0_60px_rgba(0,0,0,0.34)] backdrop-blur-sm"
+        initial={reduceMotion ? { opacity: 0 } : { x: 0, rotate: 0 }}
+        animate={reduceMotion ? { opacity: 1 } : { x: "-82%", rotate: -6 }}
+        transition={{ duration: reduceMotion ? 0 : 0.95, ease: [0.22, 1, 0.36, 1] }}
       />
       <motion.div
-        className="absolute inset-y-0 right-0 w-[48%] bg-[linear-gradient(180deg,rgba(10,16,30,0.96),rgba(4,8,18,0.96))] shadow-[-20px_0_60px_rgba(0,0,0,0.35)]"
-        initial={reduceMotion ? { opacity: 0 } : { x: 0 }}
-        animate={reduceMotion ? { opacity: 1 } : { x: "88%" }}
-        transition={{ duration: reduceMotion ? 0 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute inset-y-[-4%] right-[-4%] w-[45%] origin-right rounded-l-[36px] border-l border-white/10 bg-[linear-gradient(180deg,rgba(8,13,24,0.92),rgba(4,8,16,0.94))] shadow-[-24px_0_60px_rgba(0,0,0,0.34)] backdrop-blur-sm"
+        initial={reduceMotion ? { opacity: 0 } : { x: 0, rotate: 0 }}
+        animate={reduceMotion ? { opacity: 1 } : { x: "82%", rotate: 6 }}
+        transition={{ duration: reduceMotion ? 0 : 0.95, ease: [0.22, 1, 0.36, 1] }}
       />
 
-      <div className="relative z-10 flex h-full min-h-[500px] flex-col justify-between gap-6">
+      <div className="relative z-10 flex h-full min-h-[520px] flex-col justify-between gap-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-brand-300">
-            Signal chamber
+            Assessment chamber
           </div>
           <div className="flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.2em] text-slate-200">
             <span className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1">Build</span>
@@ -69,174 +65,99 @@ export function HeroScene({ className }: { className?: string }) {
         </div>
 
         <div className="relative flex-1">
-          {[
-            ["12%", "18%"],
-            ["70%", "16%"],
-            ["28%", "78%"],
-            ["82%", "72%"],
-            ["54%", "42%"]
-          ].map(([left, top], index) => (
+          <motion.div
+            className="absolute left-[18%] top-[16%] h-52 w-52 rounded-full border border-white/12 bg-[radial-gradient(circle_at_35%_35%,rgba(138,184,255,0.18),rgba(10,18,32,0.04)_56%,transparent_72%)] shadow-[0_0_120px_rgba(47,134,255,0.18)]"
+            animate={{ y: [0, -8, 0], scale: [1, 1.03, 1] }}
+            transition={floatTransition(7.6, 0.12)}
+          >
             <motion.div
-              key={`${left}-${top}`}
-              className="absolute h-2 w-2 rounded-full bg-brand-200 shadow-[0_0_18px_rgba(138,184,255,0.65)]"
-              style={{ left, top }}
-              animate={{ opacity: [0.4, 1, 0.5], scale: [1, 1.45, 1] }}
-              transition={{
-                duration: reduceMotion ? 0 : 2.8 + index * 0.4,
-                repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY,
-                ease: "easeInOut",
-                delay: index * 0.16
-              }}
+              className="absolute inset-[16%] rounded-full border border-brand-200/20"
+              animate={{ rotate: reduceMotion ? 0 : 360 }}
+              transition={{ duration: reduceMotion ? 0 : 24, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "linear" }}
             />
+            <motion.div
+              className="absolute inset-[31%] rounded-full border border-teal-300/20"
+              animate={{ rotate: reduceMotion ? 0 : -360 }}
+              transition={{ duration: reduceMotion ? 0 : 18, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "linear" }}
+            />
+            <motion.div
+              className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_26px_rgba(255,255,255,0.7)]"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.85] }}
+              transition={floatTransition(2.8)}
+            />
+          </motion.div>
+
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 700" fill="none">
+            <motion.path
+              d="M112 474 C 204 388, 282 318, 398 308 S 620 328, 818 204"
+              stroke="rgba(138,184,255,0.82)"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0.2 }}
+              animate={{ pathLength: 1, opacity: 0.88 }}
+              transition={{ duration: reduceMotion ? 0 : 1.35, delay: reduceMotion ? 0 : 0.92, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.path
+              d="M192 206 C 310 188, 382 236, 492 264 S 676 352, 858 346"
+              stroke="rgba(18,179,168,0.72)"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0.16 }}
+              animate={{ pathLength: 1, opacity: 0.76 }}
+              transition={{ duration: reduceMotion ? 0 : 1.4, delay: reduceMotion ? 0 : 1.04, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.path
+              d="M382 536 C 496 472, 614 460, 772 520"
+              stroke="rgba(255,196,87,0.48)"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              initial={{ pathLength: 0, opacity: 0.12 }}
+              animate={{ pathLength: 1, opacity: 0.52 }}
+              transition={{ duration: reduceMotion ? 0 : 1.2, delay: reduceMotion ? 0 : 1.12, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </svg>
+
+          {[
+            { left: "16%", top: "64%", label: "Build", tone: "text-brand-100 border-brand-300/25 bg-brand-500/10" },
+            { left: "42%", top: "22%", label: "Run", tone: "text-teal-100 border-teal-300/25 bg-teal-500/10" },
+            { left: "72%", top: "42%", label: "Review", tone: "text-amber-100 border-amber-300/25 bg-amber-500/10" }
+          ].map((chip, index) => (
+            <motion.div
+              key={chip.label}
+              className={cn("absolute rounded-full border px-3 py-2 text-xs uppercase tracking-[0.2em] shadow-[0_10px_26px_rgba(0,0,0,0.24)] backdrop-blur-xl", chip.tone)}
+              style={{ left: chip.left, top: chip.top }}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              animate={{ opacity: 1, y: [0, index % 2 === 0 ? -4 : 4, 0], scale: 1 }}
+              transition={{
+                opacity: { duration: reduceMotion ? 0 : 0.36, delay: reduceMotion ? 0 : 1.14 + index * 0.12 },
+                y: floatTransition(5.8 + index * 0.6, index * 0.08)
+              }}
+            >
+              {chip.label}
+            </motion.div>
           ))}
 
           <motion.div
-            className="absolute left-[14%] top-[12%] w-[58%] rounded-[30px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] p-5 shadow-[0_24px_60px_rgba(2,8,23,0.42)] backdrop-blur-xl"
+            className="absolute right-[10%] top-[20%] max-w-[220px] rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-4 py-4 shadow-[0_18px_50px_rgba(2,8,23,0.34)] backdrop-blur-xl"
             initial={{ opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: [0, -5, 0], scale: 1 }}
-            transition={{
-              duration: reduceMotion ? 0 : 0.65,
-              delay: reduceMotion ? 0 : 0.58,
-              ease: [0.22, 1, 0.36, 1]
-            }}
+            animate={{ opacity: 1, y: [0, 6, 0], scale: 1 }}
+            transition={{ duration: reduceMotion ? 0 : 0.6, delay: reduceMotion ? 0 : 1.22, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Build</p>
-                <p className="mt-2 text-2xl text-white">Assessment structure</p>
-              </div>
-              <span className="rounded-full border border-white/14 bg-white/[0.05] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-200">
-                ready
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              <div className="h-2 rounded-full bg-white/8">
-                <motion.div
-                  className="h-2 rounded-full bg-[linear-gradient(90deg,#8ab8ff,#12b3a8,#ffcf70)]"
-                  initial={{ width: 0 }}
-                  animate={{ width: reduceMotion ? "88%" : ["0%", "52%", "88%"] }}
-                  transition={{
-                    duration: reduceMotion ? 0 : 1.6,
-                    delay: reduceMotion ? 0 : 0.82,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                />
-              </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {["Core", "Practical", "RCM"].map((label, index) => (
-                  <motion.div
-                    key={label}
-                    className="rounded-[18px] border border-white/10 bg-black/20 px-3 py-3"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: [0, index % 2 === 0 ? -3 : 3, 0] }}
-                    transition={{
-                      opacity: {
-                        duration: reduceMotion ? 0 : 0.4,
-                        delay: reduceMotion ? 0 : 0.92 + index * 0.08
-                      },
-                      y: floatTransition(5.8 + index * 0.4, index * 0.08)
-                    }}
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.22em] text-slate-400">{label}</p>
-                    <p className="mt-1 text-sm text-white">active</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-300">Outcome surface</p>
+            <p className="mt-3 text-2xl text-white">Signal stays visible.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">Less clutter in the flow. More clarity when it matters.</p>
           </motion.div>
 
           <motion.div
-            className="absolute right-[10%] top-[24%] w-[34%] rounded-[26px] border border-white/12 bg-[linear-gradient(180deg,rgba(6,12,24,0.94),rgba(12,30,54,0.9))] p-4 shadow-[0_18px_50px_rgba(2,8,23,0.45)] backdrop-blur-xl"
-            initial={{ opacity: 0, x: 18, scale: 0.98 }}
-            animate={{ opacity: 1, x: 0, y: [0, 6, 0], scale: 1 }}
-            transition={{
-              duration: reduceMotion ? 0 : 0.6,
-              delay: reduceMotion ? 0 : 1.02,
-              ease: [0.22, 1, 0.36, 1]
-            }}
-          >
-            <div className="space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.24em] text-amber-200">Review</p>
-              <p className="text-xl text-white">Outcome surface</p>
-            </div>
-            <svg viewBox="0 0 220 120" className="mt-4 h-28 w-full">
-              <motion.path
-                d="M8 92 L54 68 L100 74 L154 40 L210 20"
-                fill="none"
-                stroke="#8ab8ff"
-                strokeWidth="2.6"
-                initial={{ pathLength: 0, opacity: 0.35 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{
-                  duration: reduceMotion ? 0 : 0.9,
-                  delay: reduceMotion ? 0 : 1.16,
-                  ease: "easeOut"
-                }}
-              />
-              <motion.path
-                d="M14 102 L60 88 L104 90 L154 80 L208 58"
-                fill="none"
-                stroke="#12b3a8"
-                strokeWidth="2"
-                initial={{ pathLength: 0, opacity: 0.2 }}
-                animate={{ pathLength: 1, opacity: 0.92 }}
-                transition={{
-                  duration: reduceMotion ? 0 : 1,
-                  delay: reduceMotion ? 0 : 1.22,
-                  ease: "easeOut"
-                }}
-              />
-            </svg>
-            <div className="mt-1 flex items-center justify-between text-sm">
-              <span className="text-slate-300">Review signal</span>
-              <span className="text-white">ready</span>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="absolute bottom-[4%] left-[18%] flex items-center gap-3 rounded-full border border-white/12 bg-black/30 px-4 py-3 shadow-[0_10px_30px_rgba(2,8,23,0.42)] backdrop-blur-xl"
+            className="absolute bottom-[4%] left-[20%] flex items-center gap-3 rounded-full border border-white/12 bg-black/30 px-4 py-3 shadow-[0_10px_30px_rgba(2,8,23,0.42)] backdrop-blur-xl"
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: [0, -4, 0] }}
-            transition={{
-              duration: reduceMotion ? 0 : 0.55,
-              delay: reduceMotion ? 0 : 1.26,
-              ease: [0.22, 1, 0.36, 1]
-            }}
+            transition={{ duration: reduceMotion ? 0 : 0.55, delay: reduceMotion ? 0 : 1.34, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.65)]" />
             <span className="text-sm text-white">System live</span>
-            <span className="text-sm text-slate-400">Build → Run → Review</span>
+            <span className="text-sm text-slate-400">{"Build -> Run -> Review"}</span>
           </motion.div>
-
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 680" fill="none">
-            <motion.path
-              d="M170 150 C 300 130, 420 220, 500 250 S 710 330, 812 282"
-              stroke="rgba(138,184,255,0.75)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0.24 }}
-              animate={{ pathLength: 1, opacity: 0.85 }}
-              transition={{
-                duration: reduceMotion ? 0 : 1.4,
-                delay: reduceMotion ? 0 : 0.92,
-                ease: [0.22, 1, 0.36, 1]
-              }}
-            />
-            <motion.path
-              d="M290 430 C 420 400, 525 365, 655 422 S 776 520, 852 516"
-              stroke="rgba(18,179,168,0.56)"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              initial={{ pathLength: 0, opacity: 0.18 }}
-              animate={{ pathLength: 1, opacity: 0.72 }}
-              transition={{
-                duration: reduceMotion ? 0 : 1.35,
-                delay: reduceMotion ? 0 : 1.08,
-                ease: [0.22, 1, 0.36, 1]
-              }}
-            />
-          </svg>
         </div>
       </div>
     </div>
