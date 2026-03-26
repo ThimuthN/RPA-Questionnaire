@@ -39,8 +39,12 @@ type PresetFormState = {
   items: PresetItemForm[];
 };
 
+function resolveExamEntry(engineType: string) {
+  return examCatalog[engineType as ExamDefinitionId] ?? examCatalog.core_exam;
+}
+
 function baseAddonForm(engineType: ExamDefinitionId = "core_exam"): AddonFormState {
-  const entry = examCatalog[engineType];
+  const entry = resolveExamEntry(engineType);
   return {
     label: "",
     description: "",
@@ -229,7 +233,7 @@ export function AddonLibraryClient({
   }
 
   function setAddonEngine(engineType: ExamDefinitionId) {
-    const entry = examCatalog[engineType];
+    const entry = resolveExamEntry(engineType);
     setAddonForm((current) => ({
       ...current,
       engineType,
@@ -399,7 +403,7 @@ export function AddonLibraryClient({
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <StatusPill label={examCatalog[addon.engineType].label} tone={examCatalog[addon.engineType].accentTone} />
+                        <StatusPill label={resolveExamEntry(addon.engineType).label} tone={resolveExamEntry(addon.engineType).accentTone} />
                       </td>
                       <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultDurationMinutes} min</td>
                       <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultRequiredPercent}%</td>
@@ -476,7 +480,7 @@ export function AddonLibraryClient({
                 <p className="text-sm text-slate-300">Global settings applied across assessments.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <StatusPill label={examCatalog[addonForm.engineType].label} tone={examCatalog[addonForm.engineType].accentTone} />
+                <StatusPill label={resolveExamEntry(addonForm.engineType).label} tone={resolveExamEntry(addonForm.engineType).accentTone} />
                 <Button type="button" variant="secondary" onClick={closeAddonEditor}>
                   Close
                 </Button>
@@ -578,9 +582,9 @@ export function AddonLibraryClient({
 
             <div className="mt-4 space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Default config</p>
-              {examCatalog[addonForm.engineType].configFields.length > 0 ? (
+              {resolveExamEntry(addonForm.engineType).configFields.length > 0 ? (
                 <div className="grid gap-4">
-                  {examCatalog[addonForm.engineType].configFields.map((field) => (
+                  {resolveExamEntry(addonForm.engineType).configFields.map((field) => (
                     <ConfigFieldEditor
                       key={field.key}
                       field={field}
@@ -727,7 +731,7 @@ export function AddonLibraryClient({
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-2">
                               <StatusPill label={`#${index + 1}`} tone="neutral" />
-                              <StatusPill label={addon.label} tone={examCatalog[addon.engineType].accentTone} />
+                              <StatusPill label={addon.label} tone={resolveExamEntry(addon.engineType).accentTone} />
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -796,9 +800,9 @@ export function AddonLibraryClient({
                           />
                         </label>
 
-                        {examCatalog[addon.engineType].configFields.length > 0 ? (
+                        {resolveExamEntry(addon.engineType).configFields.length > 0 ? (
                           <div className="grid gap-4">
-                            {examCatalog[addon.engineType].configFields.map((field) => (
+                            {resolveExamEntry(addon.engineType).configFields.map((field) => (
                               <ConfigFieldEditor
                                 key={`${item.addonId}-${field.key}`}
                                 field={field}
