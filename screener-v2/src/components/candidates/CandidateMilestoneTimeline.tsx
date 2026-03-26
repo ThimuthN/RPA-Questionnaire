@@ -140,6 +140,10 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
     milestone.assessment?.attemptId && typeof milestone.assessment.finalPercent === "number"
       ? (`/results/${milestone.assessment.attemptId}` as Route)
       : null;
+  const shareHref = milestone.assessment?.entryUrl
+    ? (`${milestone.assessment.entryUrl}` as Route)
+    : null;
+  const inviteCode = milestone.assessment?.inviteSlug?.toUpperCase();
 
   if (!milestone.assessment) {
     return null;
@@ -164,13 +168,39 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
             : "Linked to an assessment."}
         </p>
 
-        {resultHref ? (
-          <Link href={resultHref}>
-            <Button type="button" variant="secondary">
-              View result
-            </Button>
-          </Link>
-        ) : null}
+        <div className="grid gap-3 rounded-[16px] border border-white/8 bg-white/[0.04] p-3 md:grid-cols-2">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Invite code</p>
+            <p className="text-sm text-white">{inviteCode || "Not available"}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Created</p>
+            <p className="text-sm text-white">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
+          </div>
+          <div className="space-y-1 md:col-span-2">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Share path</p>
+            <p className="break-all text-sm text-slate-200">
+              {shareHref ? shareHref : "Available after the assessment is created."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {shareHref ? (
+            <a href={shareHref} target="_blank" rel="noreferrer">
+              <Button type="button" variant="secondary">
+                Open share page
+              </Button>
+            </a>
+          ) : null}
+          {resultHref ? (
+            <Link href={resultHref}>
+              <Button type="button" variant="secondary">
+                View result
+              </Button>
+            </Link>
+          ) : null}
+        </div>
       </div>
     </div>
   );

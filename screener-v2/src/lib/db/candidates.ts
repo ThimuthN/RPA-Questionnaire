@@ -79,6 +79,7 @@ export interface CandidateAssessmentRecord {
   id: string;
   inviteId: string;
   inviteSlug: string;
+  entryUrl?: string;
   attemptId?: string;
   createdAt: string;
   createdById?: string;
@@ -261,7 +262,7 @@ function mapAssessment(
     attemptId: string | null;
     createdAt: Date;
     createdById: string | null;
-    invite: { slug: string };
+    invite: { slug: string; mode?: string | null };
     attempt: { status: string; startedAt: Date; submittedAt: Date | null } | null;
   },
   result?: {
@@ -274,6 +275,7 @@ function mapAssessment(
     id: row.id,
     inviteId: row.inviteId,
     inviteSlug: row.invite.slug,
+    entryUrl: `/a/${row.invite.slug}`,
     attemptId: row.attemptId ?? undefined,
     createdAt: row.createdAt.toISOString(),
     createdById: row.createdById ?? undefined,
@@ -1023,7 +1025,8 @@ export async function listCandidates(filters?: {
         include: {
           invite: {
             select: {
-              slug: true
+              slug: true,
+              mode: true
             }
           },
           attempt: {
@@ -1169,7 +1172,8 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
         include: {
           invite: {
             select: {
-              slug: true
+              slug: true,
+              mode: true
             }
           },
           attempt: {
@@ -1188,7 +1192,8 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
             include: {
               invite: {
                 select: {
-                  slug: true
+                  slug: true,
+                  mode: true
                 }
               },
               attempt: {
