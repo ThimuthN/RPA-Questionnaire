@@ -84,16 +84,17 @@ const core2BaseQuestions: Question[] = [
       "Checkpoint state"
     ],
     rightItems: [
-      "Persist messages safely for later delivery",
-      "Isolate poisoned items for review",
-      "Stop hammering an unhealthy dependency",
-      "Resume safely from a known progress boundary"
+      "Persist an intent to publish so delivery can resume without losing committed state",
+      "Quarantine repeatedly failing items so the main flow can continue",
+      "Open after repeated failures so new calls stop hitting the dependency for a period",
+      "Store restart position and item state so work resumes from the last proven boundary",
+      "Guarantee that all downstream systems will commit or roll back as one transaction"
     ],
     correctPairs: {
-      "Outbox pattern": "Persist messages safely for later delivery",
-      "Dead-letter queue": "Isolate poisoned items for review",
-      "Circuit breaker": "Stop hammering an unhealthy dependency",
-      "Checkpoint state": "Resume safely from a known progress boundary"
+      "Outbox pattern": "Persist an intent to publish so delivery can resume without losing committed state",
+      "Dead-letter queue": "Quarantine repeatedly failing items so the main flow can continue",
+      "Circuit breaker": "Open after repeated failures so new calls stop hitting the dependency for a period",
+      "Checkpoint state": "Store restart position and item state so work resumes from the last proven boundary"
     },
     explanation: "These patterns address different failure modes and should not be conflated.",
     rationale: "Tests architecture literacy with operational meaning."

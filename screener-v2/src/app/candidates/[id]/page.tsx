@@ -6,6 +6,7 @@ import {
   CandidateNoteTypePill,
   CandidateUiStatusPill
 } from "@/components/candidates/CandidatePills";
+import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
@@ -282,26 +283,7 @@ export default async function CandidateDetailPage({
             </StagePanel>
 
             <StagePanel className="space-y-4">
-              <div className="space-y-1">
-                <h2 className="text-2xl text-white">Recent activity</h2>
-                <p className="text-sm text-slate-300">Resume, notes, result events, and milestone changes in one feed.</p>
-              </div>
-              {activityFeed.length === 0 ? (
-                <p className="text-sm text-slate-300">No activity yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {activityFeed.map((item) => (
-                    <div key={item.id} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusPill label={item.kind} tone="neutral" />
-                        <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
-                      </div>
-                      <p className="mt-3 text-sm text-white">{item.title}</p>
-                      <p className="mt-1 text-sm leading-6 text-slate-300">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <CandidateActivityModal items={activityFeed} />
             </StagePanel>
           </div>
 

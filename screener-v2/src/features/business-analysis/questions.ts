@@ -83,16 +83,17 @@ export const businessAnalysisQuestions: Question[] = [
       "Data mapping"
     ],
     rightItems: [
-      "Describe how work flows across steps and decisions",
-      "Capture a unit of user value and intent",
-      "Define how to verify the requirement is met",
-      "Map fields between source and target structures"
+      "Describe step flow, decision points, and handoffs across the process",
+      "Capture a user goal plus the slice of value being requested",
+      "Define the observable conditions that determine pass or fail",
+      "Map source, target, transformation, and default behavior for each field",
+      "Rank backlog items by estimated effort and sprint capacity"
     ],
     correctPairs: {
-      "Process map": "Describe how work flows across steps and decisions",
-      "User story": "Capture a unit of user value and intent",
-      "Acceptance criteria": "Define how to verify the requirement is met",
-      "Data mapping": "Map fields between source and target structures"
+      "Process map": "Describe step flow, decision points, and handoffs across the process",
+      "User story": "Capture a user goal plus the slice of value being requested",
+      "Acceptance criteria": "Define the observable conditions that determine pass or fail",
+      "Data mapping": "Map source, target, transformation, and default behavior for each field"
     },
     explanation: "Each artifact solves a different analysis problem and should not be conflated.",
     rationale: "Tests core BA toolkit clarity."

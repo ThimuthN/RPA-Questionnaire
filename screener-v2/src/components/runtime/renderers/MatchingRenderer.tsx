@@ -2,61 +2,120 @@
 
 import type { BaseQuestionRendererProps } from "@/components/runtime/renderers/types";
 
+function stableOptionOrder(seed: string, value: string) {
+  let hash = 0;
+  const source = `${seed}:${value}`;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) % 100000;
+  }
+  return hash;
+}
+
 export function MatchingRenderer({ question, answer, onChange }: BaseQuestionRendererProps) {
   const left = Array.isArray(question.leftItems) ? question.leftItems : [];
   const right = Array.isArray(question.rightItems) ? question.rightItems : [];
+  const options = [...right].sort((a, b) => stableOptionOrder(question.id, a) - stableOptionOrder(question.id, b));
   const value = answer && typeof answer === "object" ? (answer as Record<string, string>) : {};
 
   function pick(item: string, option: string) {
-    const isSelected = value[item] === option;
-    onChange({ ...value, [item]: isSelected ? "" : option });
+    const next = { ...value };
+
+    if (!option) {
+      delete next[item];
+      onChange(next);
+      return;
+    }
+
+    for (const [otherItem, selectedOption] of Object.entries(next)) {
+      if (otherItem !== item && selectedOption === option) {
+        delete next[otherItem];
+      }
+    }
+
+    next[item] = option;
+    onChange(next);
+  }
+
+  function isUsedByAnother(item: string, option: string) {
+    return Object.entries(value).some(([otherItem, selectedOption]) => otherItem !== item && selectedOption === option);
   }
 
   return (
     <div className="space-y-4">
+      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Option bank</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {options.map((option) => {
+            const isTaken = Object.values(value).includes(option);
+            return (
+              <span
+                key={`${question.id}-option-${option}`}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  isTaken
+                    ? "border-brand-400/35 bg-brand-500/12 text-brand-200"
+                    : "border-white/12 bg-white/[0.04] text-slate-300"
+                }`}
+              >
+                {option}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
       {left.map((item: string) => (
         <div
           key={`${question.id}-${item}`}
           className="rounded-xl border border-white/10 bg-white/[0.05] p-4 space-y-3"
         >
-          {/* Left-side prompt */}
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
-            <span className="text-sm font-medium text-slate-100">{item}</span>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
+              <span className="text-sm font-medium text-slate-100">{item}</span>
+            </div>
+            {value[item] ? (
+              <button
+                type="button"
+                onClick={() => pick(item, "")}
+                className="rounded-full border border-white/12 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-300 transition hover:border-white/24 hover:text-white"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
 
-          {/* Right-side options as pills */}
-          <div className="flex flex-wrap gap-2">
-            {right.map((option: string) => {
-              const selected = value[item] === option;
-              return (
-                <button
+          <label className="grid gap-2">
+            <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Choose the best match</span>
+            <select
+              value={value[item] ?? ""}
+              onChange={(event) => pick(item, event.target.value)}
+              className="rounded-[16px] border border-white/14 bg-white/[0.05] px-4 py-3 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            >
+              <option value="" className="bg-ink-950 text-slate-300">
+                Select a purpose
+              </option>
+              {options.map((option) => (
+                <option
                   key={`${item}-${option}`}
-                  type="button"
-                  onClick={() => pick(item, option)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-all duration-150 ${
-                    selected
-                      ? "border-brand-400/70 bg-brand-500/20 text-brand-200 shadow-[0_0_0_1px_rgba(47,134,255,0.3)]"
-                      : "border-white/12 bg-white/[0.04] text-slate-300 hover:border-white/25 hover:bg-white/[0.08] hover:text-slate-100"
-                  }`}
+                  value={option}
+                  disabled={isUsedByAnother(item, option)}
+                  className="bg-ink-950 text-white"
                 >
-                  {selected && (
-                    <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand-400" />
-                  )}
                   {option}
-                </button>
-              );
-            })}
-          </div>
+                </option>
+              ))}
+            </select>
+          </label>
 
-          {/* Selected indicator */}
-          {value[item] ? (
-            <p className="text-xs text-brand-300/80">
-              Matched to: <span className="font-medium text-brand-200">{value[item]}</span>
-            </p>
-          ) : (
-            <p className="text-xs text-slate-500">No match selected</p>
-          )}
+          <p className={`text-xs ${value[item] ? "text-brand-300/90" : "text-slate-500"}`}>
+            {value[item] ? (
+              <>
+                Matched to: <span className="font-medium text-brand-200">{value[item]}</span>
+              </>
+            ) : (
+              "No match selected"
+            )}
+          </p>
         </div>
       ))}
     </div>
