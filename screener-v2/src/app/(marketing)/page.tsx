@@ -18,7 +18,6 @@ import { StagePanel } from "@/components/scene/StagePanel";
 import { getSession } from "@/lib/auth/session";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
-import { copy } from "@/lib/design/copy";
 
 function candidateStatusTone(status: string) {
   if (status === "need_review") return "amber";
@@ -286,63 +285,135 @@ export default async function MarketingHomePage() {
     <SceneTransition>
       <SceneShell
         variant="create"
-        eyebrow="Technical assessments"
-        title="Build sharp assessments. Run them beautifully."
-        subtitle="A premium assessment workspace for creating, sending, and reviewing without the usual clutter."
+        eyebrow="Assessment platform"
+        title="Build assessments that hold up."
+        subtitle="Create, run, and review in one system."
       >
-        <StaggerGroup className="space-y-5">
-          <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <StaggerGroup className="space-y-5" delay={0.04}>
-              <StaggerItem>
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill label="Builder + library" tone="blue" />
-                  <StatusPill label="Live autosave" tone="emerald" />
-                  <StatusPill label="Fast review" tone="amber" />
-                </div>
-              </StaggerItem>
-              <StaggerItem>
-                <p className="max-w-xl text-lg leading-8 text-slate-300">
-                  Create polished assessments, invite anyone, and review results in a flow that feels calm, fast,
-                  and intentional.
-                </p>
-              </StaggerItem>
+        <StaggerGroup className="space-y-8">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
+            <StaggerGroup className="space-y-6" delay={0.04}>
               <StaggerItem>
                 <div className="flex flex-wrap gap-3">
                   <Link href={createHref}>
                     <Button className="gap-2">
-                      {copy.landing.primaryCta}
+                      Create assessment
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/run-test">
                     <Button variant="secondary" className="gap-2">
                       <PlayCircle className="h-4 w-4" />
-                      {copy.landing.secondaryCta}
+                      Explore platform
                     </Button>
                   </Link>
                 </div>
               </StaggerItem>
               <StaggerItem>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Compose</p>
-                    <p className="mt-2 text-sm text-slate-200">Mix core, practical, and role-specific add-ons.</p>
-                  </div>
-                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-teal-300">Operate</p>
-                    <p className="mt-2 text-sm text-slate-200">Run sessions with graceful autosave and lighter review stress.</p>
-                  </div>
-                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-amber-300">Decide</p>
-                    <p className="mt-2 text-sm text-slate-200">See strong signals quickly instead of digging through noise.</p>
-                  </div>
-                </div>
+                <p className="max-w-lg text-base leading-8 text-slate-300 sm:text-lg">
+                  A sharper way to build assessments, run them smoothly, and review outcomes without the usual clutter.
+                </p>
               </StaggerItem>
             </StaggerGroup>
             <StaggerItem>
-              <HeroScene className="min-h-[520px]" />
+              <HeroScene className="min-h-[560px]" />
             </StaggerItem>
           </div>
+
+          <StaggerGroup className="space-y-4" delay={0.08}>
+            <StaggerItem>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
+            </StaggerItem>
+            <div className="grid gap-4 md:grid-cols-3">
+              <StaggerItem hover>
+                <StagePanel className="min-h-[170px] space-y-3">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Build</p>
+                  <h2 className="text-2xl text-white">Shape the assessment.</h2>
+                  <p className="max-w-xs text-sm leading-7 text-slate-300">Start clean, mix the right add-ons, and keep the structure intentional.</p>
+                </StagePanel>
+              </StaggerItem>
+              <StaggerItem hover>
+                <StagePanel className="min-h-[170px] space-y-3">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-teal-300">Run</p>
+                  <h2 className="text-2xl text-white">Keep the experience clear.</h2>
+                  <p className="max-w-xs text-sm leading-7 text-slate-300">Calm runtime, autosave, and focused flows that stay out of the way.</p>
+                </StagePanel>
+              </StaggerItem>
+              <StaggerItem hover>
+                <StagePanel className="min-h-[170px] space-y-3">
+                  <p className="text-[11px] uppercase tracking-[0.24em] text-amber-300">Review</p>
+                  <h2 className="text-2xl text-white">Move faster with better signal.</h2>
+                  <p className="max-w-xs text-sm leading-7 text-slate-300">See what matters, trust the scoring, and make decisions with less noise.</p>
+                </StagePanel>
+              </StaggerItem>
+            </div>
+          </StaggerGroup>
+
+          <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+            <StaggerItem>
+              <StagePanel className="space-y-5">
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Designed to be reliable</p>
+                  <h2 className="text-3xl text-white">Trust the system under pressure.</h2>
+                  <p className="max-w-2xl text-sm leading-7 text-slate-300">Scoring, runtime, and review are built to stay clear when the stakes go up.</p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Scoring</p>
+                    <p className="mt-2 text-lg text-white">Accurate scoring</p>
+                  </div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Runtime</p>
+                    <p className="mt-2 text-lg text-white">Stable runtime</p>
+                  </div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4">
+                    <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Review</p>
+                    <p className="mt-2 text-lg text-white">Clean review flow</p>
+                  </div>
+                </div>
+              </StagePanel>
+            </StaggerItem>
+            <StaggerItem>
+              <StagePanel className="space-y-5">
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Works across assessment use cases</p>
+                  <h2 className="text-3xl text-white">One platform, many contexts.</h2>
+                  <p className="max-w-xl text-sm leading-7 text-slate-300">Hiring, internal growth, certification, and focused evaluation.</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill label="Hiring" tone="blue" />
+                  <StatusPill label="Internal growth" tone="emerald" />
+                  <StatusPill label="Certification" tone="amber" />
+                  <StatusPill label="Evaluation" tone="purple" />
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4"><p className="text-sm text-white">Screen with confidence.</p></div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4"><p className="text-sm text-white">Measure progression clearly.</p></div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4"><p className="text-sm text-white">Set a higher standard.</p></div>
+                  <div className="rounded-[20px] border border-white/10 bg-black/20 px-4 py-4"><p className="text-sm text-white">Test for real judgment.</p></div>
+                </div>
+              </StagePanel>
+            </StaggerItem>
+          </div>
+
+          <StaggerItem>
+            <StagePanel className="space-y-5 text-center">
+              <div className="space-y-2">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Start here</p>
+                <h2 className="text-3xl text-white sm:text-4xl">Start with one strong assessment.</h2>
+              </div>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link href={createHref}>
+                  <Button className="gap-2">
+                    Create assessment
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/run-test">
+                  <Button variant="secondary">View demo</Button>
+                </Link>
+              </div>
+            </StagePanel>
+          </StaggerItem>
         </StaggerGroup>
       </SceneShell>
     </SceneTransition>
