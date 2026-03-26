@@ -57,6 +57,11 @@ function resultTone(status: ReturnType<typeof currentAssessmentStatus>) {
   return status === "passed" ? "emerald" : status === "review" ? "amber" : status === "failed" ? "red" : "neutral";
 }
 
+function compactDate(value?: string | Date | null) {
+  if (!value) return null;
+  return new Date(value).toLocaleDateString();
+}
+
 function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
   return (
     <>
@@ -171,45 +176,53 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
-            <div className="space-y-4">
+          <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="min-w-0 space-y-4">
               {outcomeBadges}
 
               <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate details</p>
-                  <p className="text-sm text-slate-200">{candidate.email}</p>
-                  <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
-                  <p className="text-sm text-slate-400">
-                    {candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}
-                  </p>
-                  <p className="text-sm text-brand-100">{nextPrompt(candidate)}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Email</p>
+                      <p className="break-all text-sm text-slate-200">{candidate.email}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Role</p>
+                      <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Owner</p>
+                      <p className="text-sm text-slate-300">{candidate.hrOwner || "No owner assigned"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current stage</p>
+                      <p className="text-sm text-brand-100">{candidate.currentFocus || "No active stage yet"}</p>
+                    </div>
+                  </div>
+                  <div className="rounded-[16px] border border-white/8 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Next prompt</p>
+                    <p className="mt-1 text-sm text-slate-200">{nextPrompt(candidate)}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Assessment score</p>
                   <p className="mt-2 text-xl text-white">
                     {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
-                    {latest?.submittedAt
-                      ? `Submitted ${new Date(latest.submittedAt).toLocaleDateString()}`
-                      : "No assessment submitted yet"}
+                    {latest?.submittedAt ? `Submitted ${compactDate(latest.submittedAt)}` : "No assessment submitted yet"}
                   </p>
                 </div>
                 <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Resume</p>
                   <p className="mt-2 text-xl text-white">{currentResume ? "Attached" : "Missing"}</p>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 break-all text-xs leading-5 text-slate-400">
                     {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
-                  </p>
-                </div>
-                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Summary</p>
-                  <p className="mt-2 text-sm text-slate-200">
-                    {candidate.notesSummary || "No summary added yet."}
                   </p>
                 </div>
               </div>
@@ -218,12 +231,13 @@ export default async function CandidateDetailPage({
             <form
               action={`/api/candidates/${candidate.id}`}
               method="post"
-              className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5"
+              className="min-w-0 space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5"
             >
               <HiddenCandidateFields candidate={candidate} />
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Decision status</p>
                 <h3 className="text-xl text-white">Set the candidate decision</h3>
+                <p className="text-sm text-slate-300">Choose the status and keep one short reason with the next step.</p>
               </div>
               <ChoicePills
                 name="uiStatus"
@@ -238,7 +252,7 @@ export default async function CandidateDetailPage({
                 <span className="text-sm text-slate-200">Decision summary</span>
                 <textarea
                   name="notesSummary"
-                  rows={5}
+                  rows={4}
                   defaultValue={candidate.notesSummary || ""}
                   placeholder="Summarize the main reason, current decision, and exact next step."
                   className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
