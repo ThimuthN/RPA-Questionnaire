@@ -1,10 +1,21 @@
 import { redirect } from "next/navigation";
-import { AddonLibraryClient } from "@/components/addons/AddonLibraryClient";
+import dynamic from "next/dynamic";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { getSession } from "@/lib/auth/session";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
+
+const AddonLibraryClient = dynamic(
+  () => import("@/components/addons/AddonLibraryClient").then((mod) => mod.AddonLibraryClient),
+  {
+    loading: () => (
+      <div className="rounded-[24px] border border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+        Loading add-on library...
+      </div>
+    )
+  }
+);
 
 export default async function AddonsPage() {
   const session = await getSession();

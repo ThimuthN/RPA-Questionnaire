@@ -1,6 +1,17 @@
-import { CreateAssessmentBuilder } from "@/components/assessments/CreateAssessmentBuilder";
+import dynamic from "next/dynamic";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
+
+const CreateAssessmentBuilder = dynamic(
+  () => import("@/components/assessments/CreateAssessmentBuilder").then((mod) => mod.CreateAssessmentBuilder),
+  {
+    loading: () => (
+      <div className="rounded-[24px] border border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+        Loading assessment builder...
+      </div>
+    )
+  }
+);
 
 export default async function CreateTestPage({
   searchParams

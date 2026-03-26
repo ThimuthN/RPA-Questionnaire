@@ -1,0 +1,279 @@
+DAY 2 - HOW RPA WORKS
+10-SLIDE HIGH-VALUE CONTENT
+For Business Analysts
+
+SLIDE 1 — HOW RPA ACTUALLY WORKS
+Title:
+How RPA Actually Works
+
+Content:
+RPA is not just screen-clicking.
+A production automation solution usually contains:
+- trigger handling
+- execution orchestration
+- transaction acquisition
+- system interaction
+- rule evaluation
+- exception handling
+- result persistence
+- reporting and audit evidence
+
+Key line:
+A bot is a controlled runtime workflow, not a macro with branding.
+
+----------------------------------------------------------------
+
+SLIDE 2 — CONTROL MODEL: TRIGGER -> INPUT -> RULES -> OUTPUT
+Title:
+The Core Automation Control Model
+
+Content:
+Every serious automation should be understood through four control points:
+
+Trigger
+- scheduler
+- queue availability
+- inbound file
+- user action
+- API/webhook event
+
+Input
+- structured records
+- Excel/report extracts
+- UI state
+- database rows
+- API payloads
+
+Rules
+- validations
+- routing logic
+- transformations
+- matching logic
+- exception thresholds
+
+Output
+- updated records
+- notes/statuses
+- reports
+- database state changes
+- exception logs
+
+Key line:
+If any of these are vague, the process is not automation-ready.
+
+----------------------------------------------------------------
+
+SLIDE 3 — ORCHESTRATION
+Title:
+Orchestration Is the Control Layer
+
+Content:
+Orchestration is not just scheduling.
+It is the layer that:
+- sequences workflow steps
+- manages state transitions
+- coordinates components
+- acquires and releases work
+- routes success/failure paths
+- applies retry logic
+- guarantees cleanup
+- improves observability and governance
+
+Practical definition:
+Orchestration is what turns isolated automation steps into a reliable operating flow.
+
+----------------------------------------------------------------
+
+SLIDE 4 — TRANSACTION-BASED PROCESSING
+Title:
+Why Transaction-Based Processing Matters
+
+Content:
+In mature RPA, the bot should process work as individual transaction items rather than one large undifferentiated batch.
+
+A transaction item should have:
+- unique identifier
+- business context
+- status
+- retry count
+- timestamps
+- result fields
+- error state
+
+Why it matters:
+- failure becomes item-level, not file-level
+- retry is granular
+- monitoring is precise
+- outputs are traceable
+- concurrency and locking become manageable
+
+Key line:
+Transactionization is what makes automation scalable, measurable, and recoverable.
+
+----------------------------------------------------------------
+
+SLIDE 5 — EXCEPTIONS: THE MOST IMPORTANT RUNTIME DISTINCTION
+Title:
+Business Exceptions vs System Exceptions
+
+Content:
+Business Exception
+- expected rule-based outcome
+- process ran correctly, but the case cannot proceed normally
+- examples: claim not found, subscriber mismatch, data mismatch
+- normal behavior: no retry, mark and route appropriately
+
+System Exception
+- technical/runtime failure
+- process could not complete because execution broke
+- examples: timeout, browser crash, missing element, session expiry
+- normal behavior: retry with recovery up to a defined threshold
+
+Key line:
+If you treat business and system exceptions the same way, your bot will either retry nonsense or fail too early.
+
+----------------------------------------------------------------
+
+SLIDE 6 — RETRY, RECOVERY, AND STATE
+Title:
+Retry Is a Control Strategy, Not a Reflex
+
+Content:
+A proper retry model defines:
+- what is retriable
+- how many attempts are allowed
+- what recovery happens between attempts
+- when the item becomes terminal failure
+- what evidence is logged
+
+Typical retry path:
+1. system exception occurs
+2. retry counter increments
+3. browser/session recovery runs
+4. transaction is reattempted
+5. threshold exhaustion moves item to failure state
+
+Key line:
+Retry without classification is noise. Retry with recovery is resilience.
+
+----------------------------------------------------------------
+
+SLIDE 7 — RPA ARCHITECTURE PATTERN
+Title:
+A Better RPA Architecture Pattern
+
+Content:
+A stronger automation design separates responsibilities:
+
+Dispatcher / Intake Layer
+- acquires source data
+- normalizes input
+- creates transaction-ready records
+
+Performer / Processing Layer
+- reads work item by work item
+- applies business logic
+- extracts/updates data
+- classifies outcomes
+
+Write-Back / Finalization Layer
+- updates target systems
+- finalizes records
+- produces summary outputs
+
+Reporting / Audit Layer
+- logs outcomes
+- exposes exceptions
+- produces reviewable business outputs
+
+Key line:
+One monolithic bot is easy to demo and hard to support.
+
+----------------------------------------------------------------
+
+SLIDE 8 — APIS IN AUTOMATION
+Title:
+Where APIs Fit Into RPA
+
+Content:
+Not all automation should happen through the UI.
+If a system exposes the right API, the API is often the better integration path.
+
+API advantages:
+- faster than UI automation
+- more reliable
+- background-friendly
+- structured request/response model
+- clearer error handling
+- easier to scale and maintain
+
+Common API uses in an automation stack:
+- retrieve records directly
+- create/update records
+- fetch statuses or metadata
+- push results to downstream systems
+- trigger workflows
+
+Key line:
+The best solution is not UI-first. The best solution is control-first.
+
+----------------------------------------------------------------
+
+SLIDE 9 — HOW APIS WORK
+Title:
+API Basics Business Analysts Should Understand
+
+Content:
+An API allows one system to send a structured request to another and receive a structured response.
+
+Request elements:
+- endpoint / URL
+- HTTP method: GET, POST, PUT, PATCH, DELETE
+- headers
+- authentication token
+- parameters
+- request body / payload
+
+Response elements:
+- status code
+- response body, usually JSON or XML
+- error details
+
+Why BAs should care:
+- APIs define what data can move directly between systems
+- API errors are usually more explicit than UI failures
+- process design changes when direct system integration is available
+
+Key line:
+API automation exchanges structured data with the system instead of reading screens and imitating a user.
+
+----------------------------------------------------------------
+
+SLIDE 10 — WHAT THE BA MUST ACTUALLY DEFINE
+Title:
+The BA’s Real Job in Automation Design
+
+Content:
+A BA should be able to define:
+- trigger model
+- unit of work / transaction
+- inputs and source systems
+- rules and decision points
+- exception scenarios
+- retry boundaries
+- outputs and target systems
+- review/reporting expectations
+- manual fallback path
+- success criteria
+
+High-value BA questions:
+- What is the unit of work?
+- What counts as success?
+- What should be retried?
+- What should be routed to human review?
+- What must be persisted for auditability?
+- What is the source of truth for status?
+
+Final line:
+Good automation analysis is not just process mapping.
+It is process control, exception logic, and outcome design.

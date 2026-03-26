@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
@@ -30,10 +30,13 @@ export const metadata: Metadata = {
     template: "%s | Assessment Hub"
   },
   description: "A polished workspace for creating, running, and reviewing technical assessments.",
-  themeColor: "#07111f",
   icons: {
     icon: "/icon.svg"
   }
+};
+
+export const viewport: Viewport = {
+  themeColor: "#07111f"
 };
 
 export default async function RootLayout({

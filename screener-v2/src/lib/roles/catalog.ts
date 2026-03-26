@@ -46,7 +46,7 @@ export async function listRoleCatalog(includeInactive = false): Promise<RoleCata
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
 
-  return rows.map(mapRole);
+  return rows.map((row) => mapRole(row));
 }
 
 export async function getRoleCatalogEntry(roleId: string) {
