@@ -35,21 +35,22 @@ function resultStatusTone(status: string) {
 export default async function MarketingHomePage() {
   const session = await getSession();
   const createHref = session ? "/create-test" : "/login?next=/create-test";
+  const [candidateWorkspace, resultWorkspace] = session
+    ? await Promise.all([
+        listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),
+        listResultWorkspacePage({ pageSize: 5 })
+      ])
+    : [null, null];
 
-  if (session) {
-    const [candidateWorkspace, resultWorkspace] = await Promise.all([
-      listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),
-      listResultWorkspacePage({ pageSize: 5 })
-    ]);
-
-    return (
-      <SceneTransition>
-        <SceneShell
-          variant="results"
-          eyebrow="Workspace"
-          title="Hiring workspace"
-          subtitle="Review candidates, check recent results, and keep the next hiring decision moving."
-          utility={
+  return (
+    <SceneTransition>
+      <SceneShell
+        variant="create"
+        eyebrow="Assessment platform"
+        title="Build assessments that hold up."
+        subtitle="Create, run, and review in one system."
+        utility={
+          session ? (
             <div className="flex flex-wrap gap-2">
               <Link href="/candidates">
                 <Button>Candidates</Button>
@@ -61,233 +62,8 @@ export default async function MarketingHomePage() {
                 <Button variant="secondary">Assessments</Button>
               </Link>
             </div>
-          }
-        >
-          <StaggerGroup className="space-y-5">
-            {candidateWorkspace.total === 0 && resultWorkspace.total === 0 && (
-              <StaggerItem>
-                <StagePanel className="space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Get started</p>
-                    <h2 className="text-xl text-white">Your workspace is empty</h2>
-                    <p className="text-sm text-slate-300">
-                      Create an assessment, register a candidate, and send them an invite link. That&apos;s all it takes to get your first result.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-brand-300">Step 1</p>
-                      <p className="mt-2 text-sm font-medium text-white">Create an assessment</p>
-                      <p className="mt-1 text-xs text-slate-400">Pick a role, choose exams, and set a pass target.</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-teal-300">Step 2</p>
-                      <p className="mt-2 text-sm font-medium text-white">Register a candidate</p>
-                      <p className="mt-1 text-xs text-slate-400">Add their name, email, and role to your pipeline.</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-amber-300">Step 3</p>
-                      <p className="mt-2 text-sm font-medium text-white">Send the invite</p>
-                      <p className="mt-1 text-xs text-slate-400">Share the link and review results when they submit.</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Link href="/create-test">
-                      <Button>Create assessment</Button>
-                    </Link>
-                    <Link href="/candidates/new">
-                      <Button variant="secondary">Register candidate</Button>
-                    </Link>
-                  </div>
-                </StagePanel>
-              </StaggerItem>
-            )}
-            <StaggerItem>
-              <StagePanel tone="summary" className="py-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Today</p>
-                    <p className="text-sm text-slate-200">
-                      {candidateWorkspace.summary.needsResume} candidates need setup,{" "}
-                      {candidateWorkspace.summary.readyForReview} are ready for review, and{" "}
-                      {candidateWorkspace.summary.stalled} have been inactive.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <StatusPill label={`${candidateWorkspace.rows.length} inbox items`} tone="blue" />
-                    <StatusPill label={`${resultWorkspace.rows.length} recent results`} tone="neutral" />
-                    <StatusPill
-                      label={`${resultWorkspace.rows.filter((row) => row.resultStatus === "review").length} needs review`}
-                      tone="amber"
-                    />
-                  </div>
-                </div>
-              </StagePanel>
-            </StaggerItem>
-
-            <StaggerGroup className="grid gap-4 md:grid-cols-2 xl:grid-cols-3" delay={0.06}>
-              <StaggerItem hover>
-                <StagePanel className="space-y-3 transition-transform">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <BriefcaseBusiness className="h-4 w-4 text-amber-300" />
-                      <p className="text-sm text-slate-300">Needs resume</p>
-                    </div>
-                    <StatusPill label={String(candidateWorkspace.summary.needsResume)} tone="amber" />
-                  </div>
-                  <CountUpValue
-                    value={candidateWorkspace.summary.needsResume}
-                    className="font-display text-3xl text-white"
-                  />
-                  <p className="text-sm text-slate-400">Candidates blocked before screening can start.</p>
-                </StagePanel>
-              </StaggerItem>
-
-              <StaggerItem hover>
-                <StagePanel className="space-y-3 transition-transform">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-brand-300" />
-                      <p className="text-sm text-slate-300">Ready for review</p>
-                    </div>
-                    <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
-                  </div>
-                  <CountUpValue
-                    value={candidateWorkspace.summary.readyForReview}
-                    className="font-display text-3xl text-white"
-                  />
-                  <p className="text-sm text-slate-400">Candidates with submitted screeners that need a decision.</p>
-                </StagePanel>
-              </StaggerItem>
-
-              <StaggerItem hover>
-                <StagePanel className="space-y-3 transition-transform">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <Clock3 className="h-4 w-4 text-rose-300" />
-                      <p className="text-sm text-slate-300">Stalled</p>
-                    </div>
-                    <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
-                  </div>
-                  <CountUpValue
-                    value={candidateWorkspace.summary.stalled}
-                    className="font-display text-3xl text-white"
-                  />
-                  <p className="text-sm text-slate-400">Candidates untouched for 7+ days.</p>
-                </StagePanel>
-              </StaggerItem>
-            </StaggerGroup>
-
-            <StaggerGroup className="grid gap-4 xl:grid-cols-2" delay={0.1}>
-              <StaggerItem>
-                <StagePanel className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <h2 className="text-2xl text-white">Open work</h2>
-                      <p className="text-sm text-slate-300">Inbox-sorted candidates that need attention first.</p>
-                    </div>
-                    <Link href="/candidates?sort=inbox">
-                      <Button variant="secondary">Open inbox</Button>
-                    </Link>
-                  </div>
-                  {candidateWorkspace.rows.length > 0 ? (
-                    <StaggerGroup className="space-y-3" delay={0.16}>
-                      {candidateWorkspace.rows.map((candidate) => (
-                        <StaggerItem key={candidate.id} hover>
-                          <Link
-                            href={`/candidates/${candidate.id}`}
-                            className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="space-y-1">
-                                <p className="text-base text-white">{candidate.fullName}</p>
-                                <p className="text-sm text-slate-300">
-                                  {candidate.roleLabel || "Role not set"}
-                                  {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                <StatusPill
-                                  label={candidate.uiStatus.replace(/_/g, " ")}
-                                  tone={candidateStatusTone(candidate.uiStatus)}
-                                />
-                                <StatusPill
-                                  label={`${candidate.staleDays}d stale`}
-                                  tone={candidate.staleDays >= 7 ? "red" : "neutral"}
-                                />
-                              </div>
-                            </div>
-                          </Link>
-                        </StaggerItem>
-                      ))}
-                    </StaggerGroup>
-                  ) : (
-                    <WorkspaceEmptyState
-                      title="No candidates need attention right now."
-                      description="New candidates or review work will show up here when something needs attention."
-                    />
-                  )}
-                </StagePanel>
-              </StaggerItem>
-
-              <StaggerItem>
-                <StagePanel className="space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="space-y-1">
-                      <h2 className="text-2xl text-white">Latest results</h2>
-                      <p className="text-sm text-slate-300">Recent submissions with candidate context attached.</p>
-                    </div>
-                    <Link href="/results">
-                      <Button variant="secondary">Open results</Button>
-                    </Link>
-                  </div>
-                  {resultWorkspace.rows.length > 0 ? (
-                    <StaggerGroup className="space-y-3" delay={0.18}>
-                      {resultWorkspace.rows.map((row) => (
-                        <StaggerItem key={row.attemptId} hover>
-                          <Link
-                            href={`/results/${row.attemptId}`}
-                            className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="space-y-1">
-                                <p className="text-base text-white">{row.candidateName || "Unnamed candidate"}</p>
-                                <p className="text-sm text-slate-300">
-                                  {row.candidateOwner || "No owner"}
-                                  {row.candidateStage ? ` | ${row.candidateStage}` : ""}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                <StatusPill label={row.resultStatus} tone={resultStatusTone(row.resultStatus)} />
-                                <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
-                              </div>
-                            </div>
-                          </Link>
-                        </StaggerItem>
-                      ))}
-                    </StaggerGroup>
-                  ) : (
-                    <WorkspaceEmptyState
-                      title="No results yet."
-                      description="Completed assessments will show up here with scores and review status."
-                    />
-                  )}
-                </StagePanel>
-              </StaggerItem>
-            </StaggerGroup>
-          </StaggerGroup>
-        </SceneShell>
-      </SceneTransition>
-    );
-  }
-
-  return (
-    <SceneTransition>
-      <SceneShell
-        variant="create"
-        eyebrow="Assessment platform"
-        title="Build assessments that hold up."
-        subtitle="Create, run, and review in one system."
+          ) : null
+        }
       >
         <StaggerGroup className="space-y-8">
           <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
@@ -414,6 +190,176 @@ export default async function MarketingHomePage() {
               </div>
             </StagePanel>
           </StaggerItem>
+
+          {session && candidateWorkspace && resultWorkspace ? (
+            <StaggerGroup className="space-y-5" delay={0.12}>
+              <StaggerItem>
+                <StagePanel tone="summary" className="py-4">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Workspace overview</p>
+                      <p className="text-sm text-slate-200">
+                        {candidateWorkspace.summary.needsResume} need setup, {candidateWorkspace.summary.readyForReview} are ready for review, and {candidateWorkspace.summary.stalled} are stalled.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <StatusPill label={`${candidateWorkspace.rows.length} active candidates`} tone="blue" />
+                      <StatusPill label={`${resultWorkspace.rows.length} recent results`} tone="neutral" />
+                      <StatusPill
+                        label={`${resultWorkspace.rows.filter((row) => row.resultStatus === "review").length} review needed`}
+                        tone="amber"
+                      />
+                    </div>
+                  </div>
+                </StagePanel>
+              </StaggerItem>
+
+              {candidateWorkspace.total === 0 && resultWorkspace.total === 0 ? (
+                <StaggerItem>
+                  <WorkspaceEmptyState
+                    title="Your workspace is ready."
+                    description="Create an assessment, add a candidate, and send the first invite when you’re ready to begin."
+                  />
+                </StaggerItem>
+              ) : null}
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <StaggerItem hover>
+                  <StagePanel className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <BriefcaseBusiness className="h-4 w-4 text-amber-300" />
+                        <p className="text-sm text-slate-300">Needs setup</p>
+                      </div>
+                      <StatusPill label={String(candidateWorkspace.summary.needsResume)} tone="amber" />
+                    </div>
+                    <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-3xl text-white" />
+                    <p className="text-sm text-slate-400">Candidates blocked before the first assessment can start.</p>
+                  </StagePanel>
+                </StaggerItem>
+
+                <StaggerItem hover>
+                  <StagePanel className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-brand-300" />
+                        <p className="text-sm text-slate-300">Ready for review</p>
+                      </div>
+                      <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
+                    </div>
+                    <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-3xl text-white" />
+                    <p className="text-sm text-slate-400">Submitted assessments waiting for a decision.</p>
+                  </StagePanel>
+                </StaggerItem>
+
+                <StaggerItem hover>
+                  <StagePanel className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Clock3 className="h-4 w-4 text-rose-300" />
+                        <p className="text-sm text-slate-300">Stalled</p>
+                      </div>
+                      <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
+                    </div>
+                    <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-3xl text-white" />
+                    <p className="text-sm text-slate-400">Work that has been inactive and needs attention.</p>
+                  </StagePanel>
+                </StaggerItem>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <StaggerItem>
+                  <StagePanel className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <h2 className="text-2xl text-white">Open work</h2>
+                        <p className="text-sm text-slate-300">What needs attention first.</p>
+                      </div>
+                      <Link href="/candidates?sort=inbox">
+                        <Button variant="secondary">Open inbox</Button>
+                      </Link>
+                    </div>
+                    {candidateWorkspace.rows.length > 0 ? (
+                      <StaggerGroup className="space-y-3" delay={0.16}>
+                        {candidateWorkspace.rows.map((candidate) => (
+                          <StaggerItem key={candidate.id} hover>
+                            <Link
+                              href={`/candidates/${candidate.id}`}
+                              className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                  <p className="text-base text-white">{candidate.fullName}</p>
+                                  <p className="text-sm text-slate-300">
+                                    {candidate.roleLabel || "Role not set"}
+                                    {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <StatusPill label={candidate.uiStatus.replace(/_/g, " ")} tone={candidateStatusTone(candidate.uiStatus)} />
+                                  <StatusPill label={`${candidate.staleDays}d stale`} tone={candidate.staleDays >= 7 ? "red" : "neutral"} />
+                                </div>
+                              </div>
+                            </Link>
+                          </StaggerItem>
+                        ))}
+                      </StaggerGroup>
+                    ) : (
+                      <WorkspaceEmptyState
+                        title="No candidates need attention."
+                        description="New candidates or review work will show up here when something needs action."
+                      />
+                    )}
+                  </StagePanel>
+                </StaggerItem>
+
+                <StaggerItem>
+                  <StagePanel className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <h2 className="text-2xl text-white">Recent results</h2>
+                        <p className="text-sm text-slate-300">Latest outcomes at a glance.</p>
+                      </div>
+                      <Link href="/results">
+                        <Button variant="secondary">Open results</Button>
+                      </Link>
+                    </div>
+                    {resultWorkspace.rows.length > 0 ? (
+                      <StaggerGroup className="space-y-3" delay={0.18}>
+                        {resultWorkspace.rows.map((row) => (
+                          <StaggerItem key={row.attemptId} hover>
+                            <Link
+                              href={`/results/${row.attemptId}`}
+                              className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <div className="space-y-1">
+                                  <p className="text-base text-white">{row.candidateName || "Unnamed candidate"}</p>
+                                  <p className="text-sm text-slate-300">
+                                    {row.candidateOwner || "No owner"}
+                                    {row.candidateStage ? ` | ${row.candidateStage}` : ""}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <StatusPill label={row.resultStatus} tone={resultStatusTone(row.resultStatus)} />
+                                  <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
+                                </div>
+                              </div>
+                            </Link>
+                          </StaggerItem>
+                        ))}
+                      </StaggerGroup>
+                    ) : (
+                      <WorkspaceEmptyState
+                        title="No results yet."
+                        description="Completed assessments will show up here with score and review status."
+                      />
+                    )}
+                  </StagePanel>
+                </StaggerItem>
+              </div>
+            </StaggerGroup>
+          ) : null}
         </StaggerGroup>
       </SceneShell>
     </SceneTransition>
