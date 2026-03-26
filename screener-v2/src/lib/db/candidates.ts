@@ -146,6 +146,19 @@ export interface CandidateWorkspacePage {
   summary: CandidateOpenWorkSummary;
 }
 
+async function findCandidateByEmail(email: string) {
+  return prisma.candidate.findFirst({
+    where: {
+      email: email.trim().toLowerCase()
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true
+    }
+  });
+}
+
 function mapCandidate(row: {
   id: string;
   fullName: string;
@@ -414,6 +427,12 @@ export async function createCandidate(input: {
   candidateFolderUrl?: string;
   notesSummary?: string;
 }) {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const existingByEmail = await findCandidateByEmail(normalizedEmail);
+  if (existingByEmail) {
+    throw new Error(`A candidate with ${normalizedEmail} already exists.`);
+  }
+
   const resolvedRole = await resolveOrCreateRoleCatalogEntry({
     roleId: input.roleId,
     legacyRoleLabel: input.positionAppliedFor,
@@ -426,7 +445,7 @@ export async function createCandidate(input: {
       data: {
         id: cuidLike(),
         fullName: input.fullName.trim(),
-        email: input.email.trim().toLowerCase(),
+        email: normalizedEmail,
         phone: input.phone?.trim() || null,
         roleId: resolvedRole?.id ?? null,
         positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
@@ -487,6 +506,12 @@ export async function updateCandidate(
     notesSummary?: string;
   }
 ) {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const existingByEmail = await findCandidateByEmail(normalizedEmail);
+  if (existingByEmail && existingByEmail.id !== candidateId) {
+    throw new Error(`A candidate with ${normalizedEmail} already exists.`);
+  }
+
   const resolvedRole = await resolveOrCreateRoleCatalogEntry({
     roleId: input.roleId,
     legacyRoleLabel: input.positionAppliedFor,
@@ -498,7 +523,7 @@ export async function updateCandidate(
     where: { id: candidateId },
     data: {
       fullName: input.fullName.trim(),
-      email: input.email.trim().toLowerCase(),
+      email: normalizedEmail,
       phone: input.phone?.trim() || null,
       roleId: resolvedRole?.id ?? null,
       positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
@@ -1003,6 +1028,17 @@ export async function candidateExists(candidateId: string) {
   });
 
   return Boolean(row);
+}
+
+export async function findExistingCandidateByEmail(email: string) {
+  const row = await findCandidateByEmail(email);
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    email: row.email
+  };
 }
 
 export async function listCandidates(filters?: {

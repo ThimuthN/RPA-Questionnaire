@@ -10,7 +10,7 @@ import { resumeSourceOptions } from "@/lib/candidates/types";
 export default async function NewCandidatePage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; existingId?: string; existingName?: string; existingEmail?: string }>;
 }) {
   const params = await searchParams;
 
@@ -28,6 +28,32 @@ export default async function NewCandidatePage({
     >
       <div className="max-w-2xl">
         <StagePanel className="space-y-5">
+          {params.existingId ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/72 p-4 backdrop-blur-sm">
+              <div className="w-full max-w-lg rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(22,27,40,0.98),rgba(14,19,30,0.98))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.22em] text-amber-300">Email already used</p>
+                  <h2 className="text-2xl text-white">This candidate already exists</h2>
+                  <p className="text-sm leading-6 text-slate-300">
+                    {params.existingName || "An existing candidate"} is already registered with{" "}
+                    <span className="text-white">{params.existingEmail || "this email"}</span>.
+                  </p>
+                  <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
+                    Use the existing record instead of creating a duplicate entry.
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Link href={`/candidates/${params.existingId}` as Route}>
+                      <Button>Open existing candidate</Button>
+                    </Link>
+                    <Link href={"/candidates" as Route}>
+                      <Button variant="secondary">Back to candidates</Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <form action="/api/candidates" method="post" className="space-y-4">
             <label className="grid gap-1">
               <span className="text-sm text-slate-200">Full name</span>
@@ -78,7 +104,7 @@ export default async function NewCandidatePage({
               />
             </label>
 
-            {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
+            {params.error && !params.existingId ? <p className="text-sm text-red-200">{params.error}</p> : null}
 
             <p className="text-sm text-slate-300">You can upload the resume and send the screener after this.</p>
 
