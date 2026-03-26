@@ -20,6 +20,7 @@ export function EditCandidateInfoModal({
       ? {
           id: candidate.roleId,
           label: candidate.roleLabel,
+          department: undefined,
           coreBasisRoleId: (candidate.coreBasisRoleId ?? "Associate")
         }
       : null
@@ -79,6 +80,7 @@ export function EditCandidateInfoModal({
                   value={selectedRole}
                   onChange={setSelectedRole}
                   placeholder="Optional"
+                  helperText="Choose from the managed role catalog. Use Manage roles to update titles or departments."
                   className="grid gap-1"
                 />
 

@@ -53,7 +53,7 @@ export default async function NewCandidatePage({
               label="Role"
               defaultValue={null}
               placeholder="Optional"
-              helperText="Roles come from the shared role catalog and can be extended inline."
+              helperText="Choose from the managed role catalog. Use Manage roles to add titles or departments."
             />
 
             <div className="grid gap-2">

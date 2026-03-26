@@ -115,6 +115,7 @@ model RoleCatalog {
   id              String   @id @default(cuid())
   slug            String   @unique
   label           String   @unique
+  department      String?
   sortOrder       Int      @default(0)
   isActive        Boolean  @default(true)
   coreBasisRoleId String

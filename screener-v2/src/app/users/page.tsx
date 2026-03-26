@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
+import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getSession } from "@/lib/auth/session";
@@ -28,7 +29,24 @@ export default async function UsersPage({
       title="User access"
       subtitle="Create and review internal accounts for assessment management."
     >
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="space-y-4">
+        <StagePanel className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-2xl text-white">Roles and departments</h2>
+            <p className="text-sm text-slate-300">
+              Manage role names the way your company uses them, then map each one to the right assessment basis.
+            </p>
+          </div>
+          <div className="max-w-xl">
+            <RolePicker
+              label="Role catalog"
+              placeholder="Select a role"
+              helperText="Use Manage roles to create, rename, assign departments, or deactivate roles."
+            />
+          </div>
+        </StagePanel>
+
+        <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
         <StagePanel className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-white">Create user</h2>
@@ -122,6 +140,7 @@ export default async function UsersPage({
             )}
           </div>
         </StagePanel>
+        </div>
       </div>
     </SceneShell>
   );
