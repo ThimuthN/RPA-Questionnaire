@@ -9,6 +9,7 @@ import {
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
+import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
@@ -361,11 +362,13 @@ export default async function CandidateDetailPage({
                           Download PDF
                         </Button>
                       </a>
-                      <a href="#resume-preview">
-                        <Button type="button" variant="secondary">
-                          View preview
-                        </Button>
-                      </a>
+                      {resumePreviewUrl ? (
+                        <ResumePreviewModal
+                          fileName={currentResume.fileName}
+                          previewUrl={resumePreviewUrl}
+                          downloadUrl={resumeDownloadUrl}
+                        />
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -432,33 +435,6 @@ export default async function CandidateDetailPage({
           </div>
         </div>
 
-        {currentResume ? (
-          <StagePanel id="resume-preview" className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-2xl text-white">Preview</h2>
-              <p className="text-sm text-slate-300">Preview the resume here when needed.</p>
-            </div>
-
-            <div className="overflow-hidden rounded-[22px] border border-white/10 bg-white">
-              <object
-                data={resumePreviewUrl ?? undefined}
-                type="application/pdf"
-                className="h-[920px] w-full"
-              >
-                <div className="flex h-[360px] items-center justify-center bg-slate-50 px-6 text-center">
-                  <div className="space-y-3">
-                    <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
-                    <a href={resumePreviewUrl ?? "#"} target="_blank" rel="noreferrer">
-                      <Button type="button" variant="secondary">
-                        Open PDF
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              </object>
-            </div>
-          </StagePanel>
-        ) : null}
       </div>
     </SceneShell>
   );
