@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { getSession } from "@/lib/auth/session";
 import { createRoleCatalogEntry, listRoleCatalog } from "@/lib/roles/catalog";
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
-  department: z.string().trim().max(80).optional().or(z.literal("")),
-  coreBasisRoleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).default("Associate")
+  department: z.string().trim().max(80).optional().or(z.literal(""))
 });
 
 export async function GET() {
@@ -34,8 +32,7 @@ export async function POST(request: Request) {
     const body = createRoleSchema.parse(await request.json());
     const role = await createRoleCatalogEntry({
       label: body.label,
-      department: body.department || undefined,
-      coreBasisRoleId: body.coreBasisRoleId as RoleId
+      department: body.department || undefined
     });
 
     return NextResponse.json({

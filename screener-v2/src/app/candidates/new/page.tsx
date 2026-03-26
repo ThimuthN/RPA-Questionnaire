@@ -79,7 +79,7 @@ export default async function NewCandidatePage({
               label="Role"
               defaultValue={null}
               placeholder="Optional"
-              helperText="Choose from the managed role catalog. Use Manage roles to add titles or departments."
+              helperText="Choose a saved role, or add one from Manage roles."
             />
 
             <div className="grid gap-2">

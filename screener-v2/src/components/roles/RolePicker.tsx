@@ -5,14 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 
-const basisLabels: Record<RoleId, string> = {
-  Intern: "Intern",
-  Associate: "Associate",
-  SE: "Software Engineer",
-  SeniorSE: "Senior Software Engineer",
-  TechLead: "Tech Lead"
-};
-
 export interface RolePickerOption {
   id: string;
   label: string;
@@ -173,7 +165,7 @@ export function RolePicker({
                 <div>
                   <h3 className="text-xl text-white">Manage roles</h3>
                   <p className="text-sm text-slate-300">
-                    Create titles, group them by department, and choose the assessment basis behind each one.
+                    Add the role names and departments you want to use when registering candidates.
                   </p>
                 </div>
                 <Button type="button" variant="ghost" onClick={() => setManagerOpen(false)}>
@@ -203,12 +195,12 @@ export function RolePicker({
                         }`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <p className="text-sm text-white">{role.label}</p>
-                            <p className="text-xs text-slate-400">
-                              {role.department || "No department"} - {basisLabels[role.coreBasisRoleId]}
-                            </p>
-                          </div>
+                            <div className="space-y-1">
+                              <p className="text-sm text-white">{role.label}</p>
+                              <p className="text-xs text-slate-400">
+                                {role.department || "No department"}
+                              </p>
+                            </div>
                           <span className="text-xs text-slate-400">{role.isActive === false ? "Inactive" : "Active"}</span>
                         </div>
                       </button>
@@ -247,23 +239,6 @@ export function RolePicker({
                       />
                     </label>
 
-                    <label className="grid gap-1">
-                      <span className="text-sm text-slate-200">Assessment basis</span>
-                      <select
-                        value={editor.coreBasisRoleId}
-                        onChange={(event) =>
-                          setEditor((current) => ({ ...current, coreBasisRoleId: event.target.value as RoleId }))
-                        }
-                        className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      >
-                        {Object.entries(basisLabels).map(([basisValue, basisLabel]) => (
-                          <option key={basisValue} value={basisValue}>
-                            {basisLabel}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
                     <label className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-slate-200">
                       <input
                         type="checkbox"
@@ -297,35 +272,28 @@ export function RolePicker({
       {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
 
       <div className="mt-1 space-y-3">
-        <select
-          value={selectedValue}
-          onChange={(event) => {
-            const next = options.find((option) => option.id === event.target.value) ?? null;
-            commit(next);
-          }}
-          className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-          disabled={loading}
-        >
-          <option value="">{loading ? "Loading roles..." : placeholder}</option>
-          {selectableOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.department ? `${option.label} - ${option.department}` : option.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col gap-3 md:flex-row md:items-start">
+          <select
+            value={selectedValue}
+            onChange={(event) => {
+              const next = options.find((option) => option.id === event.target.value) ?? null;
+              commit(next);
+            }}
+            className="min-w-0 flex-1 rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            disabled={loading}
+          >
+            <option value="">{loading ? "Loading roles..." : placeholder}</option>
+            {selectableOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.department ? `${option.label} - ${option.department}` : option.label}
+              </option>
+            ))}
+          </select>
 
-        {selectedRole ? (
-          <div className="rounded-[16px] border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300">
-            {selectedRole.department ? `${selectedRole.department} - ` : ""}
-            Assessment basis: {basisLabels[selectedRole.coreBasisRoleId]}
-          </div>
-        ) : null}
-
-        <div className="flex flex-wrap items-center gap-3">
-          {helperText ? <p className="text-xs text-slate-400">{helperText}</p> : null}
           <Button
             type="button"
-            variant="ghost"
+            variant="secondary"
+            className="md:shrink-0"
             onClick={() => {
               setManagerOpen(true);
               beginCreate();
@@ -333,6 +301,16 @@ export function RolePicker({
           >
             Manage roles
           </Button>
+        </div>
+
+        {selectedRole ? (
+          <div className="rounded-[16px] border border-white/10 bg-black/20 px-3 py-2 text-xs text-slate-300">
+            {selectedRole.department ? `${selectedRole.label} - ${selectedRole.department}` : selectedRole.label}
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {helperText ? <p className="text-xs text-slate-400">{helperText}</p> : null}
         </div>
 
         {error ? <p className="text-sm text-red-200">{error}</p> : null}

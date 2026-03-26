@@ -32,16 +32,16 @@ export default async function UsersPage({
       <div className="space-y-4">
         <StagePanel className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-2xl text-white">Roles and departments</h2>
+            <h2 className="text-2xl text-white">Roles</h2>
             <p className="text-sm text-slate-300">
-              Manage role names the way your company uses them, then map each one to the right assessment basis.
+              Add and manage the roles you want to use when registering candidates.
             </p>
           </div>
           <div className="max-w-xl">
             <RolePicker
               label="Role catalog"
               placeholder="Select a role"
-              helperText="Use Manage roles to create, rename, assign departments, or deactivate roles."
+              helperText="Create, rename, group by department, or deactivate roles."
             />
           </div>
         </StagePanel>

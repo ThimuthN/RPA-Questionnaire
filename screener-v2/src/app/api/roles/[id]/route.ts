@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { getSession } from "@/lib/auth/session";
 import { updateRoleCatalogEntry } from "@/lib/roles/catalog";
 
 const updateRoleSchema = z.object({
   label: z.string().min(2),
   department: z.string().trim().max(80).optional().or(z.literal("")),
-  coreBasisRoleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).default("Associate"),
   isActive: z.boolean().default(true)
 });
 
@@ -26,7 +24,6 @@ export async function PUT(
     const role = await updateRoleCatalogEntry(id, {
       label: body.label,
       department: body.department || undefined,
-      coreBasisRoleId: body.coreBasisRoleId as RoleId,
       isActive: body.isActive
     });
 

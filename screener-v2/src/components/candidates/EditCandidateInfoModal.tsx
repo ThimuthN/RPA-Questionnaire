@@ -80,7 +80,7 @@ export function EditCandidateInfoModal({
                   value={selectedRole}
                   onChange={setSelectedRole}
                   placeholder="Optional"
-                  helperText="Choose from the managed role catalog. Use Manage roles to update titles or departments."
+                  helperText="Choose a saved role, or update the catalog from Manage roles."
                   className="grid gap-1"
                 />
 
