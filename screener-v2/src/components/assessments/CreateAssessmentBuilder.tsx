@@ -530,7 +530,14 @@ export function CreateAssessmentBuilder({
       ) : null}
 
       {invite ? (
-        <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Launch test" startNow />
+        <InviteCredentialsPanel
+          invite={invite}
+          testId={testId}
+          openLabel="Launch test"
+          startNow
+          variant="compact"
+          showCopyAll={false}
+        />
       ) : null}
     </StagePanel>
   );
