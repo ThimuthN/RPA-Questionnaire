@@ -6,11 +6,11 @@ type SceneVariant = "create" | "run" | "results";
 
 const sceneClasses: Record<SceneVariant, string> = {
   create:
-    "bg-[radial-gradient(circle_at_top_left,rgba(47,134,255,0.16),transparent_30%),linear-gradient(180deg,rgba(16,39,73,0.86),rgba(5,11,22,0.96))]",
+    "bg-[radial-gradient(circle_at_top_left,rgba(47,134,255,0.18),transparent_30%),radial-gradient(circle_at_78%_14%,rgba(157,140,255,0.10),transparent_22%),linear-gradient(180deg,rgba(16,39,73,0.84),rgba(5,11,22,0.96))]",
   run:
-    "bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.14),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(18,179,168,0.12),transparent_24%),linear-gradient(180deg,rgba(10,24,48,0.94),rgba(5,11,22,0.98))]",
+    "bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.16),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(18,179,168,0.14),transparent_24%),linear-gradient(180deg,rgba(10,24,48,0.94),rgba(5,11,22,0.98))]",
   results:
-    "bg-[radial-gradient(circle_at_top_right,rgba(47,134,255,0.12),transparent_24%),radial-gradient(circle_at_left,rgba(230,160,25,0.08),transparent_22%),linear-gradient(180deg,rgba(11,18,31,0.94),rgba(5,11,22,0.99))]"
+    "bg-[radial-gradient(circle_at_top_right,rgba(47,134,255,0.14),transparent_24%),radial-gradient(circle_at_left,rgba(230,160,25,0.10),transparent_22%),radial-gradient(circle_at_78%_24%,rgba(111,215,255,0.07),transparent_18%),linear-gradient(180deg,rgba(11,18,31,0.94),rgba(5,11,22,0.99))]"
 };
 
 export function SceneShell({
@@ -32,13 +32,14 @@ export function SceneShell({
   return (
     <section
       className={cn(
-        "relative isolate overflow-hidden rounded-[28px] border border-white/10 px-5 py-6 shadow-strong md:px-8 md:py-8",
+        "relative isolate overflow-hidden rounded-[32px] border border-white/8 px-6 py-7 shadow-[0_28px_90px_rgba(3,9,22,0.34)] md:px-9 md:py-9",
         sceneClasses[variant],
         className
       )}
     >
       <AmbientCanvasLayer variant={variant} className="opacity-55" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_38%,transparent_60%,rgba(255,255,255,0.03))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.02)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/12" />
 
       <header className="relative z-10 mb-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end">

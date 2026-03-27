@@ -11,6 +11,7 @@ import { CountUpValue } from "@/components/motion/CountUpValue";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { HeroScene } from "@/components/motion/HeroScene";
+import { TypedWordCycle } from "@/components/motion/TypedWordCycle";
 import { ViewportReveal } from "@/components/motion/ViewportReveal";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -72,11 +73,16 @@ export default async function MarketingHomePage() {
               <StaggerItem>
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
-                  <h2 className="max-w-lg font-display text-5xl leading-[0.94] text-white sm:text-6xl">
-                    Easy to run.
-                    <br />
-                    Clear to review.
-                  </h2>
+                  <div className="max-w-lg space-y-3">
+                    <h2 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl">Build a better</h2>
+                    <div className="font-display text-5xl leading-[0.94] sm:text-6xl">
+                      <TypedWordCycle
+                        prefix=""
+                        words={["assessment.", "screener.", "test."]}
+                        className="text-white"
+                      />
+                    </div>
+                  </div>
                 </div>
               </StaggerItem>
               <StaggerItem>

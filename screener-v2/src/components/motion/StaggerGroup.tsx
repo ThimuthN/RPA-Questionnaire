@@ -28,7 +28,7 @@ export function StaggerGroup({
                 opacity: 1,
                 transition: {
                   delayChildren: delay,
-                  staggerChildren: 0.08
+                  staggerChildren: 0.11
                 }
               }
             }
@@ -56,22 +56,22 @@ export function StaggerItem({
               visible: { opacity: 1 }
             }
           : {
-              hidden: { opacity: 0, y: 20, scale: 0.988, filter: "blur(8px)" },
+              hidden: { opacity: 0, y: 26, scale: 0.986, filter: "blur(10px)" },
               visible: {
                 opacity: 1,
                 y: 0,
                 scale: 1,
                 filter: "blur(0px)",
-                transition: { duration: 0.48, ease: [0.22, 1, 0.36, 1] }
+                transition: { duration: 0.62, ease: [0.22, 1, 0.36, 1] }
               }
             }
       }
       whileHover={
         hover && !reduceMotion
           ? {
-              y: -5,
-              scale: 1.012,
-              transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] }
+              y: -6,
+              scale: 1.014,
+              transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
             }
           : undefined
       }
