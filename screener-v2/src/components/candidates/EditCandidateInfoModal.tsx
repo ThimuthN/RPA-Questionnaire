@@ -81,6 +81,7 @@ export function EditCandidateInfoModal({
                   onChange={setSelectedRole}
                   placeholder="Optional"
                   helperText="Choose a saved role, or update the catalog from Manage roles."
+                  layout="stacked"
                   className="grid gap-1"
                 />
 

@@ -36,7 +36,8 @@ export function RolePicker({
   placeholder = "Select role",
   helperText,
   onChange,
-  className
+  className,
+  layout = "inline"
 }: {
   name?: string;
   label?: string;
@@ -46,6 +47,7 @@ export function RolePicker({
   helperText?: string;
   onChange?: (next: RolePickerOption | null) => void;
   className?: string;
+  layout?: "inline" | "stacked";
 }) {
   const [options, setOptions] = useState<RolePickerOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,14 +274,16 @@ export function RolePicker({
       {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
 
       <div className="mt-1 space-y-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start">
+        <div className={layout === "stacked" ? "space-y-3" : "flex flex-col gap-3 md:flex-row md:items-start"}>
           <select
             value={selectedValue}
             onChange={(event) => {
               const next = options.find((option) => option.id === event.target.value) ?? null;
               commit(next);
             }}
-            className="min-w-0 flex-1 rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            className={`min-w-0 rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
+              layout === "stacked" ? "w-full" : "flex-1"
+            }`}
             disabled={loading}
           >
             <option value="">{loading ? "Loading roles..." : placeholder}</option>
@@ -293,7 +297,7 @@ export function RolePicker({
           <Button
             type="button"
             variant="secondary"
-            className="md:shrink-0"
+            className={layout === "stacked" ? "w-full justify-center" : "md:shrink-0"}
             onClick={() => {
               setManagerOpen(true);
               beginCreate();
