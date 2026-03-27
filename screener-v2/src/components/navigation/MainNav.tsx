@@ -18,7 +18,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
   const [mobileOpen, setMobileOpen] = useState(false);
   const items: NavItem[] = viewer
     ? [
-        { href: "/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
+        { href: "/people/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
         { href: "/addons" as Route, label: copy.nav.addons, icon: Blocks },
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
         { href: "/results", label: copy.nav.results, icon: Activity },
@@ -38,7 +38,8 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           const active =
             pathname === href ||
             (href === "/results" && pathname.startsWith("/results/")) ||
-            (href === "/candidates" && pathname.startsWith("/candidates")) ||
+            (href === "/people/candidates" &&
+              (pathname.startsWith("/people") || pathname.startsWith("/candidates"))) ||
             (href === "/addons" && pathname.startsWith("/addons")) ||
             (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
             (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
