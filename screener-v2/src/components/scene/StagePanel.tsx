@@ -13,7 +13,7 @@ export function StagePanel({
     <section
       {...props}
       className={cn(
-        "relative overflow-hidden rounded-[28px] p-6 backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform,filter] duration-[var(--scene-interaction)] ease-out hover:-translate-y-[2px] hover:border-white/14 hover:shadow-[0_28px_68px_rgba(4,12,28,0.30)]",
+        "group relative overflow-hidden rounded-[28px] p-6 backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform,filter] duration-[var(--scene-interaction)] ease-out hover:-translate-y-[4px] hover:border-white/14 hover:shadow-[var(--glow-panel-strong)]",
         tone === "workspace" &&
           "border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04))] shadow-[var(--glow-panel-soft)]",
         tone === "summary" &&
@@ -22,6 +22,10 @@ export function StagePanel({
         className
       )}
     >
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-[var(--scene-interaction)] group-hover:opacity-100">
+        <div className="absolute inset-x-[18%] top-[-16%] h-24 rounded-full bg-brand-300/10 blur-3xl" />
+        <div className="absolute bottom-[-20%] right-[10%] h-28 w-40 rounded-full bg-cyan-300/8 blur-3xl" />
+      </div>
       <div className="relative z-10">{children}</div>
     </section>
   );

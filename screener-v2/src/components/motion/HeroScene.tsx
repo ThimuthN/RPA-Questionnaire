@@ -1,10 +1,12 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function HeroScene({ className }: { className?: string }) {
   const reduceMotion = useReducedMotion();
+  const [pointer, setPointer] = useState({ x: 52, y: 42 });
 
   const floatTransition = (duration: number, delay = 0) => ({
     duration: reduceMotion ? 0 : duration,
@@ -20,8 +22,25 @@ export function HeroScene({ className }: { className?: string }) {
         "relative isolate overflow-hidden rounded-[36px] border border-brand-300/20 bg-[radial-gradient(circle_at_22%_18%,rgba(138,184,255,0.22),transparent_20%),radial-gradient(circle_at_80%_20%,rgba(18,179,168,0.16),transparent_18%),radial-gradient(circle_at_68%_76%,rgba(255,196,87,0.14),transparent_18%),linear-gradient(145deg,rgba(16,35,68,0.98),rgba(4,8,18,1))] p-6 shadow-[0_28px_120px_rgba(2,8,23,0.55)]",
         className
       )}
+      onMouseMove={(event) => {
+        if (reduceMotion) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPointer({
+          x: ((event.clientX - rect.left) / rect.width) * 100,
+          y: ((event.clientY - rect.top) / rect.height) * 100
+        });
+      }}
     >
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:36px_36px] opacity-30" />
+      <motion.div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        animate={
+          reduceMotion
+            ? { background: "radial-gradient(circle at 52% 42%, rgba(138,184,255,0.12), transparent 24%)" }
+            : { background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(138,184,255,0.16), transparent 24%)` }
+        }
+        transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] }}
+      />
 
       <motion.div
         className="absolute left-[-14%] top-[-8%] h-64 w-64 rounded-full bg-brand-400/18 blur-3xl"
@@ -118,6 +137,22 @@ export function HeroScene({ className }: { className?: string }) {
           </svg>
 
           {[
+            { left: "33%", top: "36%", tone: "bg-brand-200/80 shadow-[0_0_18px_rgba(138,184,255,0.72)]", delay: 0 },
+            { left: "61%", top: "48%", tone: "bg-teal-300/80 shadow-[0_0_18px_rgba(45,212,191,0.68)]", delay: 0.25 },
+            { left: "77%", top: "29%", tone: "bg-cyan-200/85 shadow-[0_0_18px_rgba(111,215,255,0.7)]", delay: 0.42 }
+          ].map((node) => (
+            <motion.div
+              key={`${node.left}-${node.top}`}
+              className={cn("absolute h-3 w-3 rounded-full", node.tone)}
+              style={{ left: node.left, top: node.top }}
+              animate={{ scale: [1, 1.45, 1], opacity: [0.7, 1, 0.76] }}
+              transition={floatTransition(2.4 + node.delay, node.delay)}
+            >
+              <span className="absolute inset-[-9px] rounded-full border border-white/10" />
+            </motion.div>
+          ))}
+
+          {[
             { left: "16%", top: "64%", label: "Build", tone: "text-brand-100 border-brand-300/25 bg-brand-500/10" },
             { left: "42%", top: "22%", label: "Run", tone: "text-teal-100 border-teal-300/25 bg-teal-500/10" },
             { left: "72%", top: "42%", label: "Review", tone: "text-amber-100 border-amber-300/25 bg-amber-500/10" }
@@ -154,7 +189,7 @@ export function HeroScene({ className }: { className?: string }) {
             animate={{ opacity: 1, y: [0, -4, 0] }}
             transition={{ duration: reduceMotion ? 0 : 0.55, delay: reduceMotion ? 0 : 1.34, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.65)]" />
+            <div className="system-online-dot h-2.5 w-2.5 rounded-full bg-emerald-300 shadow-[0_0_16px_rgba(110,231,183,0.65)]" />
             <span className="text-sm text-white">System live</span>
             <span className="text-sm text-slate-400">{"Build -> Run -> Review"}</span>
           </motion.div>

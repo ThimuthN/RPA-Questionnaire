@@ -9,6 +9,8 @@ import {
 import { WorkspaceEmptyState } from "@/components/brand/WorkspaceEmptyState";
 import { CountUpValue } from "@/components/motion/CountUpValue";
 import { SceneTransition } from "@/components/motion/SceneTransition";
+import { ScrambleReveal } from "@/components/motion/ScrambleReveal";
+import { SignalMarquee } from "@/components/motion/SignalMarquee";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { HeroScene } from "@/components/motion/HeroScene";
 import { TypedWordCycle } from "@/components/motion/TypedWordCycle";
@@ -106,6 +108,12 @@ export default async function MarketingHomePage() {
                   Build the assessment, send it out, and review the result without fighting the system.
                 </p>
               </StaggerItem>
+              <StaggerItem>
+                <SignalMarquee
+                  items={["Hiring", "Internal growth", "Certification", "Evaluation", "Live review", "Autosave"]}
+                  className="max-w-[36rem]"
+                />
+              </StaggerItem>
             </StaggerGroup>
             <StaggerItem>
               <HeroScene className="min-h-[560px]" />
@@ -117,7 +125,9 @@ export default async function MarketingHomePage() {
               <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
-                  <h2 className="text-4xl leading-[0.96] text-white">One flow, start to finish.</h2>
+                  <h2 className="text-4xl leading-[0.96] text-white">
+                    <ScrambleReveal text="One flow, start to finish." className="text-scramble-glow" />
+                  </h2>
                   <p className="max-w-md text-sm leading-7 text-slate-300">
                     From setup to results, it should stay simple and easy to follow.
                   </p>
@@ -151,7 +161,9 @@ export default async function MarketingHomePage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Designed to be reliable</p>
-                    <h2 className="text-4xl leading-[0.96] text-white">Built to stay steady.</h2>
+                    <h2 className="text-4xl leading-[0.96] text-white">
+                      <ScrambleReveal text="Built to stay steady." className="text-scramble-glow" />
+                    </h2>
                     <p className="max-w-2xl text-sm leading-7 text-slate-300">Scoring, runtime, and review stay clear when things get busy.</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
@@ -187,7 +199,9 @@ export default async function MarketingHomePage() {
             <StagePanel className="space-y-5 text-center">
               <div className="space-y-2">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Start here</p>
-                <h2 className="text-3xl text-white sm:text-4xl">Start with one good assessment.</h2>
+                <h2 className="text-3xl text-white sm:text-4xl">
+                  <ScrambleReveal text="Start with one good assessment." className="text-scramble-glow" />
+                </h2>
               </div>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href={createHref}>

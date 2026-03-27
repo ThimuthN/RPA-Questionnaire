@@ -11,7 +11,7 @@ export function Button({ className, variant = "primary", ...props }: ButtonProps
   return (
     <button
       className={cn(
-        "relative inline-flex items-center justify-center overflow-hidden rounded-full border px-4 py-2 text-sm font-medium transition-[transform,box-shadow,border-color,background-color,filter] duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 hover:-translate-y-[2px] active:translate-y-[1px] active:scale-[0.985] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,rgba(255,255,255,0.18),transparent_34%,transparent_68%,rgba(255,255,255,0.08))] before:opacity-80 before:transition-opacity before:duration-200 before:content-[''] hover:before:opacity-100",
+        "group relative inline-flex items-center justify-center overflow-hidden rounded-full border px-4 py-2 text-sm font-medium transition-[transform,box-shadow,border-color,background-color,filter] duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 hover:-translate-y-[2px] active:translate-y-[1px] active:scale-[0.982] before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(120deg,rgba(255,255,255,0.18),transparent_34%,transparent_68%,rgba(255,255,255,0.08))] before:opacity-80 before:transition-opacity before:duration-200 before:content-[''] hover:before:opacity-100",
         variant === "primary" &&
           "border-brand-300/26 bg-[linear-gradient(135deg,rgba(31,111,255,1),rgba(47,134,255,0.92))] text-white shadow-[0_14px_30px_rgba(31,111,255,0.26),inset_0_1px_0_rgba(255,255,255,0.18)] hover:brightness-110 hover:shadow-[0_22px_42px_rgba(31,111,255,0.34),0_0_28px_rgba(47,134,255,0.16),inset_0_1px_0_rgba(255,255,255,0.22)]",
         variant === "secondary" &&
@@ -23,6 +23,9 @@ export function Button({ className, variant = "primary", ...props }: ButtonProps
         className
       )}
       {...props}
-    />
+    >
+      <span className="pointer-events-none absolute inset-x-4 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.28),transparent)] opacity-60 transition duration-200 group-hover:opacity-100" />
+      <span className="relative z-10 inline-flex items-center justify-center gap-2">{props.children}</span>
+    </button>
   );
 }
