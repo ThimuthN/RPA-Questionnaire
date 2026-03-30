@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
@@ -14,6 +16,8 @@ export function EditCandidateInfoModal({
   candidate: CandidateDetail;
   uiStatus: CandidateUiStatus;
 }) {
+  const reduceMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<RolePickerOption | null>(
     candidate.roleId && candidate.roleLabel
@@ -26,108 +30,152 @@ export function EditCandidateInfoModal({
       : null
   );
 
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
     <>
       <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
         Edit info
       </Button>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(22,27,40,0.98),rgba(14,19,30,0.98))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl text-white">Edit info</h3>
-                <p className="text-sm text-slate-300">Keep the basics up to date.</p>
-              </div>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Close
-              </Button>
-            </div>
+      {mounted
+        ? createPortal(
+            <AnimatePresence>
+              {open ? (
+                <motion.div
+                  className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.16),transparent_24%),rgba(2,6,16,0.88)] p-4 md:p-6"
+                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+                  animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(10px)" }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
+                  transition={{ duration: reduceMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={() => setOpen(false)}
+                >
+                  <motion.div
+                    className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-[32px] border border-white/12 bg-[linear-gradient(180deg,rgba(20,30,48,0.98),rgba(8,12,22,0.985))] shadow-[0_28px_90px_rgba(0,0,0,0.52)]"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985, filter: "blur(10px)" }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.992, filter: "blur(8px)" }}
+                    transition={{ duration: reduceMotion ? 0.14 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] px-5 py-4 md:px-6 md:py-5">
+                      <div>
+                        <h3 className="text-xl text-white">Edit info</h3>
+                        <p className="text-sm text-slate-300">Keep the basics up to date.</p>
+                      </div>
+                      <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                        Close
+                      </Button>
+                    </div>
 
-            <form action={`/api/candidates/${candidate.id}`} method="post" className="mt-5 space-y-4">
-              <input type="hidden" name="uiStatus" value={uiStatus} />
-              <input type="hidden" name="phone" value={candidate.phone || ""} />
-              <input type="hidden" name="batchId" value={candidate.batchId || ""} />
-              <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
-              <input type="hidden" name="positionAppliedFor" value={selectedRole?.label || ""} />
+                    <form action={`/api/candidates/${candidate.id}`} method="post" className="flex min-h-0 flex-1 flex-col">
+                      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 md:px-6">
+                        <input type="hidden" name="uiStatus" value={uiStatus} />
+                        <input type="hidden" name="phone" value={candidate.phone || ""} />
+                        <input type="hidden" name="batchId" value={candidate.batchId || ""} />
+                        <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
+                        <input type="hidden" name="positionAppliedFor" value={selectedRole?.label || ""} />
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-200">Full name</span>
-                  <input
-                    name="fullName"
-                    defaultValue={candidate.fullName}
-                    required
-                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <label className="grid gap-1">
+                            <span className="text-sm text-slate-200">Full name</span>
+                            <input
+                              name="fullName"
+                              defaultValue={candidate.fullName}
+                              required
+                              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            />
+                          </label>
 
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-200">Email</span>
-                  <input
-                    name="email"
-                    type="email"
-                    defaultValue={candidate.email}
-                    required
-                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
+                          <label className="grid gap-1">
+                            <span className="text-sm text-slate-200">Email</span>
+                            <input
+                              name="email"
+                              type="email"
+                              defaultValue={candidate.email}
+                              required
+                              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            />
+                          </label>
 
-                <RolePicker
-                  name="roleId"
-                  label="Role"
-                  value={selectedRole}
-                  onChange={setSelectedRole}
-                  placeholder="Optional"
-                  helperText="Choose a saved role, or update the catalog from Manage roles."
-                  layout="stacked"
-                  className="grid gap-1"
-                />
+                          <RolePicker
+                            name="roleId"
+                            label="Role"
+                            value={selectedRole}
+                            onChange={setSelectedRole}
+                            placeholder="Optional"
+                            helperText="Choose a saved role, or update the catalog from Manage roles."
+                            layout="stacked"
+                            className="grid gap-1"
+                          />
 
-                <label className="grid gap-1">
-                  <span className="text-sm text-slate-200">Owner</span>
-                  <input
-                    name="hrOwner"
-                    defaultValue={candidate.hrOwner || ""}
-                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
-              </div>
+                          <label className="grid gap-1">
+                            <span className="text-sm text-slate-200">Owner</span>
+                            <input
+                              name="hrOwner"
+                              defaultValue={candidate.hrOwner || ""}
+                              className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            />
+                          </label>
+                        </div>
 
-              <div className="grid gap-2">
-                <span className="text-sm text-slate-200">Source</span>
-                <ChoicePills
-                  name="resumeSource"
-                  idPrefix={`candidate-source-${candidate.id}`}
-                  defaultValue={candidate.resumeSource || ""}
-                  options={[
-                    { value: "", label: "None" },
-                    ...resumeSourceOptions.map((option) => ({ value: option, label: option }))
-                  ]}
-                />
-              </div>
+                        <div className="grid gap-2">
+                          <span className="text-sm text-slate-200">Source</span>
+                          <ChoicePills
+                            name="resumeSource"
+                            idPrefix={`candidate-source-${candidate.id}`}
+                            defaultValue={candidate.resumeSource || ""}
+                            options={[
+                              { value: "", label: "None" },
+                              ...resumeSourceOptions.map((option) => ({ value: option, label: option }))
+                            ]}
+                          />
+                        </div>
 
-              <label className="grid gap-1">
-                <span className="text-sm text-slate-200">Folder link</span>
-                <input
-                  name="candidateFolderUrl"
-                  defaultValue={candidate.candidateFolderUrl || ""}
-                  placeholder="https://..."
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
+                        <label className="grid gap-1">
+                          <span className="text-sm text-slate-200">Folder link</span>
+                          <input
+                            name="candidateFolderUrl"
+                            defaultValue={candidate.candidateFolderUrl || ""}
+                            placeholder="https://..."
+                            className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                          />
+                        </label>
+                      </div>
 
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Save</Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      ) : null}
+                      <div className="flex flex-wrap justify-end gap-2 border-t border-white/10 bg-black/20 px-5 py-4 md:px-6">
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit">Save</Button>
+                      </div>
+                    </form>
+                  </motion.div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
+            document.body
+          )
+        : null}
     </>
   );
 }
