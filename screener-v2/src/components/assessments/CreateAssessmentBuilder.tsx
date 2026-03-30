@@ -199,8 +199,8 @@ function StepHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div className="space-y-1.5">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
+      <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.22em] text-brand-300">{step}</p>
         <h2 className="text-2xl text-white">{title}</h2>
         <p className="max-w-2xl text-sm text-slate-300">{description}</p>
@@ -220,13 +220,51 @@ function SelectionMetric({
   tone?: "neutral" | "blue" | "purple" | "teal";
 }) {
   return (
-    <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
+    <div className="rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
       <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
       <div className="mt-2 flex items-center gap-2">
         <p className="text-lg text-white">{value}</p>
         <StatusPill label={label} tone={tone} className="normal-case tracking-normal" />
       </div>
     </div>
+  );
+}
+
+function BuilderMetaBand({
+  children,
+  className
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2 rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className ?? ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function BuilderStage({
+  children,
+  className,
+  emphasis = "secondary"
+}: {
+  children: ReactNode;
+  className?: string;
+  emphasis?: "primary" | "secondary";
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden rounded-[28px] ${
+        emphasis === "primary"
+          ? "bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_22px_56px_rgba(4,12,28,0.18)]"
+          : "bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      } ${className ?? ""}`}
+    >
+      {children}
+    </section>
   );
 }
 
@@ -435,7 +473,7 @@ export function CreateAssessmentBuilder({
   }
 
   const summaryContent = (
-    <StagePanel className="space-y-5">
+    <div className="space-y-5 rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_22px_56px_rgba(4,12,28,0.16)]">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Live build</p>
@@ -445,7 +483,7 @@ export function CreateAssessmentBuilder({
       </div>
 
       {selectedPresetId ? (
-        <div className="rounded-[18px] border border-purple-400/25 bg-purple-500/10 px-4 py-3">
+        <div className="rounded-[18px] bg-purple-500/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-purple-200">Preset source</p>
           <p className="mt-2 text-sm text-white">
             {activePresets.find((preset) => preset.id === selectedPresetId)?.label ?? "Preset applied"}
@@ -454,30 +492,30 @@ export function CreateAssessmentBuilder({
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Test ID</p>
           <p className="mt-2 font-mono text-lg text-white">{testId}</p>
         </div>
-        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Summary</p>
           <p className="mt-2 text-lg text-white">
             {previewExams.length} add-ons / {totalTimeMinutes} min
           </p>
           <p className="mt-1 text-sm text-slate-300">Score contribution should total 100 marks.</p>
         </div>
-        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Overall pass</p>
           <p className="mt-2 text-lg text-white">{passTarget}%</p>
           <p className="mt-1 text-sm text-slate-300">Final weighted score needed across the full assessment.</p>
         </div>
-        <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Integrity</p>
           <p className="mt-2 text-lg text-white">{integrityPresetMeta[integrityPreset].shortLabel}</p>
           <p className="mt-1 text-sm text-slate-300">{integrityPresetMeta[integrityPreset].description}</p>
         </div>
       </div>
 
-      <div className="space-y-3 rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+      <div className="space-y-3 rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-slate-100">Score mix</p>
           <StatusPill label={`${totalContribution}/100`} tone={contributionTone} />
@@ -499,7 +537,7 @@ export function CreateAssessmentBuilder({
       {previewExams.length > 0 ? (
         <div className="space-y-3">
           {previewExams.map((exam) => (
-            <div key={exam.key} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+            <div key={exam.key} className="rounded-[18px] bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
                 <StatusPill label={`${exam.weight}/100`} tone="neutral" />
@@ -523,7 +561,7 @@ export function CreateAssessmentBuilder({
           showCopyAll={false}
         />
       ) : null}
-    </StagePanel>
+    </div>
   );
 
   return (
@@ -532,15 +570,6 @@ export function CreateAssessmentBuilder({
       eyebrow="Assessments"
       title="Assemble an assessment"
       subtitle="Select add-ons or a preset, adjust only assessment-specific config, then calibrate score contribution, integrity, and sharing."
-      utility={
-        <div className="flex flex-wrap gap-2">
-          {linkedCandidateId ? <StatusPill label="Candidate-linked" tone="teal" /> : null}
-          {selectedPresetId ? <StatusPill label="Preset applied" tone="purple" /> : null}
-          <StatusPill label={`${previewExams.length} add-ons`} tone="blue" />
-          <StatusPill label={`${totalTimeMinutes}m total`} tone="neutral" />
-          <StatusPill label={`${totalContribution}/100 marks`} tone={contributionTone} />
-        </div>
-      }
     >
       <div className="space-y-4">
         <StepRail
@@ -551,6 +580,14 @@ export function CreateAssessmentBuilder({
             label: id === "select" ? "Select" : id === "customize" ? "Customize" : id === "calibrate" ? "Score" : "Share"
           }))}
         />
+
+        <BuilderMetaBand>
+          {linkedCandidateId ? <StatusPill label="Candidate-linked" tone="teal" /> : null}
+          {selectedPresetId ? <StatusPill label="Preset applied" tone="purple" /> : null}
+          <StatusPill label={`${previewExams.length} add-ons`} tone="blue" />
+          <StatusPill label={`${totalTimeMinutes}m total`} tone="neutral" />
+          <StatusPill label={`${totalContribution}/100 marks`} tone={contributionTone} />
+        </BuilderMetaBand>
 
         {step !== "select" ? (
           <div className="xl:hidden">
@@ -574,7 +611,7 @@ export function CreateAssessmentBuilder({
         <div className={step === "select" ? "grid gap-4" : "grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]"}>
           <div className="space-y-4">
             {showSelectDetail ? (
-            <StagePanel className="space-y-6">
+            <BuilderStage className="space-y-6" emphasis="primary">
               <StepHeader
                 step="Step 1"
                 title="Choose the assessment mix"
@@ -599,7 +636,7 @@ export function CreateAssessmentBuilder({
                 }
               />
 
-              <div className="flex flex-wrap gap-2 rounded-full border border-white/12 bg-black/20 p-1">
+              <div className="flex flex-wrap gap-2 rounded-full bg-black/20 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                 {activePresets.length > 0 ? (
                   <button
                     type="button"
@@ -680,10 +717,9 @@ export function CreateAssessmentBuilder({
                     <p className="text-sm text-slate-100">Build from the add-on library</p>
                     <p className="text-xs text-slate-400">Choose individual building blocks when you want a custom mix.</p>
                   </div>
-                  <div className="overflow-hidden rounded-[22px] border border-white/12 bg-black/20">
-                    <div className="overflow-x-auto">
+                  <div className="overflow-x-auto border-t border-white/10 pt-2">
                       <table className="min-w-full text-left">
-                        <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <thead className="border-b border-white/10 text-xs uppercase tracking-[0.18em] text-slate-400">
                           <tr>
                             <th className="px-4 py-3 font-medium">Add-on</th>
                             <th className="px-4 py-3 font-medium">Type</th>
@@ -704,7 +740,7 @@ export function CreateAssessmentBuilder({
                               <>
                                 <tr
                                   key={addon.id}
-                                  className={`border-t border-white/10 transition ${
+                                  className={`border-t border-white/8 transition ${
                                     active ? "bg-brand-500/10" : "hover:bg-white/[0.03]"
                                   }`}
                                 >
@@ -746,10 +782,10 @@ export function CreateAssessmentBuilder({
                                   </td>
                                 </tr>
                                 {isConfiguring ? (
-                                  <tr className="border-t border-white/10 bg-white/[0.03]">
+                                  <tr className="border-t border-white/8 bg-white/[0.03]">
                                     <td colSpan={6} className="px-4 py-4">
                                       {configFields.length > 0 && draftExam ? (
-                                        <div className="space-y-4 rounded-[18px] border border-white/10 bg-black/20 p-4">
+                                        <div className="space-y-4 rounded-[18px] bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                                           <div className="space-y-1">
                                             <p className="text-sm text-white">Assessment-specific configuration</p>
                                             <p className="text-xs text-slate-400">
@@ -777,7 +813,7 @@ export function CreateAssessmentBuilder({
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-sm text-slate-300">
+                                        <div className="rounded-[18px] bg-black/20 p-4 text-sm text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                                           No extra configuration needed for this add-on.
                                         </div>
                                       )}
@@ -804,7 +840,6 @@ export function CreateAssessmentBuilder({
                           })}
                         </tbody>
                       </table>
-                    </div>
                   </div>
                 </div>
               ) : null}
@@ -814,11 +849,11 @@ export function CreateAssessmentBuilder({
                   Continue to setup
                 </Button>
               </div>
-            </StagePanel>
+            </BuilderStage>
             ) : null}
 
             {showCustomizeDetail ? (
-            <StagePanel className="space-y-5">
+            <BuilderStage className="space-y-5">
               <StepHeader
                 step="Step 2"
                 title="Review selected add-ons"
@@ -852,7 +887,7 @@ export function CreateAssessmentBuilder({
                     return (
                       <div
                         key={exam.key}
-                        className={`rounded-[24px] border p-5 ${examPanelClass(exam.definitionId)}`}
+                        className={`rounded-[24px] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${examPanelClass(exam.definitionId)}`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div className="space-y-3">
@@ -895,7 +930,7 @@ export function CreateAssessmentBuilder({
                   })}
                 </div>
               ) : (
-                <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <p className="text-sm text-slate-300">Select add-ons or a preset to continue.</p>
                 </div>
               )}
@@ -905,11 +940,11 @@ export function CreateAssessmentBuilder({
                   Continue to scoring
                 </Button>
               </div>
-            </StagePanel>
+            </BuilderStage>
             ) : null}
 
             {showCalibrateDetail ? (
-            <StagePanel className="space-y-5">
+            <BuilderStage className="space-y-5">
               <StepHeader
                 step="Step 3"
                 title="Set score contribution"
@@ -918,12 +953,12 @@ export function CreateAssessmentBuilder({
               />
 
               <div
-                className={`rounded-[18px] border px-4 py-3 text-sm ${
+                className={`rounded-[18px] px-4 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
                   contributionTone === "emerald"
-                    ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-100"
+                    ? "bg-emerald-500/10 text-emerald-100"
                     : contributionTone === "red"
-                      ? "border-red-400/30 bg-red-500/10 text-red-100"
-                      : "border-amber-400/30 bg-amber-500/10 text-amber-100"
+                      ? "bg-red-500/10 text-red-100"
+                      : "bg-amber-500/10 text-amber-100"
                 }`}
               >
                 {contributionMessage}
@@ -936,7 +971,7 @@ export function CreateAssessmentBuilder({
                       key={exam.key}
                       layout={!reduceMotion}
                       transition={transition}
-                      className={`rounded-[22px] border p-4 ${examPanelClass(exam.definitionId)}`}
+                      className={`rounded-[22px] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${examPanelClass(exam.definitionId)}`}
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div className="space-y-2">
@@ -991,12 +1026,12 @@ export function CreateAssessmentBuilder({
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <p className="text-sm text-slate-300">Select at least one add-on before allocating marks.</p>
                 </div>
               )}
 
-              <div className="rounded-[22px] border border-white/12 bg-black/15 p-4">
+              <div className="rounded-[22px] bg-black/15 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <IntegrityPresetPicker
                   value={integrityPreset}
                   onChange={setIntegrityPreset}
@@ -1007,10 +1042,7 @@ export function CreateAssessmentBuilder({
               {validExamMessages.length > 0 ? (
                 <div className="space-y-2">
                   {validExamMessages.map((message) => (
-                    <p
-                      key={message}
-                      className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
-                    >
+                    <p key={message} className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
                       {message}
                     </p>
                   ))}
@@ -1018,13 +1050,13 @@ export function CreateAssessmentBuilder({
               ) : null}
 
               {hasZeroContributionExams ? (
-                <p className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                <p className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
                   Every selected add-on needs at least 1 mark of score contribution.
                 </p>
               ) : null}
 
               {error ? (
-                <p className="rounded-[16px] border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                <p className="rounded-[16px] bg-red-500/10 px-4 py-3 text-sm text-red-100">
                   {error}
                 </p>
               ) : null}
@@ -1034,11 +1066,11 @@ export function CreateAssessmentBuilder({
                   {loading ? "Generating..." : "Generate access"}
                 </Button>
               </div>
-            </StagePanel>
+            </BuilderStage>
             ) : null}
 
             {showShareDetail ? (
-            <StagePanel className="space-y-5">
+            <BuilderStage className="space-y-5">
               <StepHeader
                 step="Step 4"
                 title="Share access"
@@ -1066,14 +1098,14 @@ export function CreateAssessmentBuilder({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4">
+                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <p className="text-sm text-slate-300">
                     Access details will appear here after the assessment has a full 100-mark allocation
                     and all required settings are complete.
                   </p>
                 </div>
               )}
-            </StagePanel>
+            </BuilderStage>
             ) : null}
           </div>
 
