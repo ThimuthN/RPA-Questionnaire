@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { createRoleCatalogEntry, listRoleCatalog } from "@/lib/roles/catalog";
 
 const createRoleSchema = z.object({
@@ -9,6 +9,11 @@ const createRoleSchema = z.object({
 });
 
 export async function GET() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  }
+
   const roles = await listRoleCatalog(true);
   return NextResponse.json({
     ok: true,

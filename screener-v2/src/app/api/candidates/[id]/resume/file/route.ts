@@ -1,6 +1,6 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import {
   candidateExists,
   getLatestCandidateResume

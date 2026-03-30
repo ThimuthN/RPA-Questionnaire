@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import {
+  getRuntimeSession,
+  runtimeSessionMatchesAttempt
+} from "@/lib/auth/runtime-session";
 import { patchAttempt } from "@/lib/db/repositories";
 import {
   createRequestLogContext,
@@ -28,6 +32,10 @@ export async function PATCH(
 
   try {
     const { attemptId } = await context.params;
+    const runtimeSession = await getRuntimeSession();
+    if (!runtimeSessionMatchesAttempt(runtimeSession, { attemptId })) {
+      return NextResponse.json({ ok: false, message: "Runtime session required." }, { status: 403 });
+    }
     const body = autosaveSchema.parse(await request.json());
     const updated = await patchAttempt(attemptId, body);
     if (!updated) {

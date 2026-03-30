@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StatusPill } from "@/components/primitives/StatusPill";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
 
 const AddonLibraryClient = dynamic(

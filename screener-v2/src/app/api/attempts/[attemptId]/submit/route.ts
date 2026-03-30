@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  getRuntimeSession,
+  runtimeSessionMatchesAttempt
+} from "@/lib/auth/runtime-session";
 import { submitAttempt } from "@/lib/db/repositories";
 import {
   createRequestLogContext,
@@ -14,6 +18,10 @@ export async function POST(
 
   try {
     const { attemptId } = await context.params;
+    const runtimeSession = await getRuntimeSession();
+    if (!runtimeSessionMatchesAttempt(runtimeSession, { attemptId })) {
+      return NextResponse.json({ ok: false, message: "Runtime session required." }, { status: 403 });
+    }
     await request.json().catch(() => ({}));
     const result = await submitAttempt({
       attemptId

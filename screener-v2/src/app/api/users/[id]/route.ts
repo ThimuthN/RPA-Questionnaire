@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { updateAppUserRole } from "@/lib/auth/app-auth";
 
 const updateUserRoleSchema = z.object({

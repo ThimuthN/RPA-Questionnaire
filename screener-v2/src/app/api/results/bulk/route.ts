@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resultReviewStateValues } from "@/lib/assessment-engine/types";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateResults } from "@/lib/db/repositories";
 import {

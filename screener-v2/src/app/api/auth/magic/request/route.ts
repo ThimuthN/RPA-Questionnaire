@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { issueMagicToken } from "@/lib/auth/magic-link";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { getAppUrl } from "@/lib/server/app-url";
 
 const requestSchema = z.object({

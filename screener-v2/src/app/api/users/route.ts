@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAppUser } from "@/lib/auth/app-auth";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 
 const userSchema = z.object({
   name: z.string().optional(),

@@ -5,7 +5,7 @@ import {
   handleUpload,
   type HandleUploadBody
 } from "@vercel/blob/client";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { getAppUrl } from "@/lib/server/app-url";
 import {
   addCandidateResume,

@@ -128,6 +128,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
         stackLocked: true,
         roleId: "Associate",
         stacks: ["UiPath"],
+        sections: ["core", "practical"],
         withPasscode: true,
         maxAttempts: 1
       })

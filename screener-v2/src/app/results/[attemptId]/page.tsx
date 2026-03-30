@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { getDetailedResult, getNextUnreviewedAttemptId, getScoreContextForAttempt } from "@/lib/db/repositories";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
@@ -14,6 +15,7 @@ import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { confidenceBand } from "@/lib/assessment-engine/thresholds";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { candidateStageLabels, candidateUiStatusLabels } from "@/lib/candidates/types";
+import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { getCandidateDetail } from "@/lib/db/candidates";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +52,9 @@ export default async function ResultDetailPage({
   searchParams: Promise<{ updated?: string; error?: string }>;
 }) {
   const { attemptId } = await params;
+  if (!(await getAppSession())) {
+    redirect(buildLoginHref(`/results/${attemptId}`));
+  }
   const pageState = await searchParams;
   const result = await getDetailedResult(attemptId);
   if (!result) {

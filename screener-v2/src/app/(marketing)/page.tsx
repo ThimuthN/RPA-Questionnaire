@@ -19,7 +19,7 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   CandidateAssessmentPill,
   CandidateNoteTypePill,
@@ -25,6 +25,7 @@ import {
   candidateUiStatusValues
 } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
+import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { getCandidateDetail } from "@/lib/db/candidates";
 
 export const dynamic = "force-dynamic";
@@ -94,6 +95,9 @@ export default async function CandidateDetailPage({
   }>;
 }) {
   const { id } = await params;
+  if (!(await getAppSession())) {
+    redirect(buildLoginHref(`/candidates/${id}`));
+  }
   const candidate = await getCandidateDetail(id);
   if (!candidate) {
     notFound();

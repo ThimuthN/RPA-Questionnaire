@@ -14,6 +14,10 @@ import {
   validateInvite
 } from "@/lib/db/repositories";
 import {
+  createRuntimeSessionToken,
+  setRuntimeSessionCookie
+} from "@/lib/auth/runtime-session";
+import {
   createRequestLogContext,
   logRouteError,
   messageFromError
@@ -30,6 +34,7 @@ const startSchema = z.object({
     email: z.string().email(),
     phone: z.string().optional()
   }),
+  runtimeSlug: z.string().min(1).optional(),
   roleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional(),
   stacks: z.array(z.enum(["UiPath", "AutomationAnywhere", "Python", "PowerAutomate"])).min(1).optional()
 });
@@ -48,6 +53,7 @@ export async function POST(request: Request) {
     let effectivePassTarget: number | undefined;
     let effectiveBlueprint;
     let effectiveContextType = (body.contextType as AssessmentContextType | undefined) ?? "general";
+    let runtimeSlug = body.runtimeSlug?.trim();
 
     if (body.inviteToken) {
       const inviteCheck = await validateInvite({
@@ -68,6 +74,7 @@ export async function POST(request: Request) {
       effectiveSections = inviteCheck.invite.sections;
       effectiveBlueprint = inviteCheck.invite.blueprint;
       effectiveContextType = inviteCheck.invite.contextType;
+      runtimeSlug = inviteCheck.invite.slug;
     } else if (body.inviteSlug) {
       const inviteCheck = await validateInvite({
         slug: body.inviteSlug,
@@ -87,6 +94,7 @@ export async function POST(request: Request) {
       effectiveSections = inviteCheck.invite.sections;
       effectiveBlueprint = inviteCheck.invite.blueprint;
       effectiveContextType = inviteCheck.invite.contextType;
+      runtimeSlug = inviteCheck.invite.slug;
     }
 
     if (!effectiveBlueprint && (!effectiveRoleId || !effectiveStacks?.length)) {
@@ -114,10 +122,18 @@ export async function POST(request: Request) {
       sections: effectiveSections,
       blueprint: effectiveBlueprint
     });
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       attemptId: started.attempt.id
     });
+    if (runtimeSlug) {
+      const runtimeToken = await createRuntimeSessionToken({
+        attemptId: started.attempt.id,
+        slug: runtimeSlug
+      });
+      setRuntimeSessionCookie(response, runtimeToken);
+    }
+    return response;
   } catch (error) {
     logRouteError("attempt_start_failed", logContext, error);
 

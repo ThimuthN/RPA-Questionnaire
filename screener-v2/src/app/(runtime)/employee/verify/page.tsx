@@ -34,6 +34,7 @@ function EmployeeVerifyContent() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        runtimeSlug: "internal",
         participant: {
           kind: "employee",
           fullName: fullName || "Employee",

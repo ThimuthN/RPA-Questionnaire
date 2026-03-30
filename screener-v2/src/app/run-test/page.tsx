@@ -1,5 +1,5 @@
 import { RunTestClient } from "@/features/run/RunTestClient";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 
 export default async function RunTestPage() {
   const session = await getSession();

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import "./globals.css";
 
 const fontDisplay = Sora({

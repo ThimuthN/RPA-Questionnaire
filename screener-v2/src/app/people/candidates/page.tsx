@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
@@ -10,6 +11,7 @@ import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
+import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
@@ -93,6 +95,10 @@ export default async function PeopleCandidatesPage({
       .filter(([, value]) => typeof value === "string" && value.length > 0)
       .map(([key, value]) => [key, value as string])
   );
+  const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
+  if (!(await getAppSession())) {
+    redirect(buildLoginHref(nextPath));
+  }
   const page = await listCandidateWorkspacePage({
     q: params.q?.trim() || undefined,
     roleId: params.roleId?.trim() || undefined,
@@ -110,7 +116,7 @@ export default async function PeopleCandidatesPage({
     page: Number(params.page ?? 1),
     pageSize: Number(params.pageSize ?? 12)
   });
-  const currentPathAndQuery = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
+  const currentPathAndQuery = nextPath;
 
   return (
     <SceneTransition>

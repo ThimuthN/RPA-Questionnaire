@@ -1,10 +1,12 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { resumeSourceOptions } from "@/lib/candidates/types";
 
 export default async function NewCandidatePage({
@@ -12,6 +14,10 @@ export default async function NewCandidatePage({
 }: {
   searchParams: Promise<{ error?: string; existingId?: string; existingName?: string; existingEmail?: string }>;
 }) {
+  if (!(await getAppSession())) {
+    redirect(buildLoginHref("/candidates/new"));
+  }
+
   const params = await searchParams;
 
   return (

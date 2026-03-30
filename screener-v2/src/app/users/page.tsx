@@ -3,7 +3,7 @@ import { Button } from "@/components/primitives/Button";
 import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { listAppUsers } from "@/lib/auth/app-auth";
 
 export default async function UsersPage({

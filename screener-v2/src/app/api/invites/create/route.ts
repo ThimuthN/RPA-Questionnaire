@@ -10,7 +10,7 @@ import type { SectionId } from "@/lib/sections/types";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getAppUrl } from "@/lib/server/app-url";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { examDefinitionIdSchema } from "@/lib/exams/definitions";
 import {
   createRequestLogContext,
@@ -61,6 +61,9 @@ export async function POST(request: Request) {
 
   try {
     const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+    }
     const body = createInviteSchema.parse(await request.json());
     const requestedExamCount = body.blueprint?.exams?.length ?? body.sections?.length ?? 0;
     if (requestedExamCount === 0) {
@@ -94,7 +97,7 @@ export async function POST(request: Request) {
       contextType: body.contextType as AssessmentContextType,
       candidateId: body.candidateId,
       candidateMilestoneId: body.candidateMilestoneId,
-      createdById: session?.userId ?? undefined,
+      createdById: session.userId ?? undefined,
       integrityPreset: body.integrityPreset as IntegrityPresetId,
       roleLocked: body.roleLocked,
       stackLocked: body.stackLocked,

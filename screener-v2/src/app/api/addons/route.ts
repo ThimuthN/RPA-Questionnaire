@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import type { ExamDefinitionId } from "@/lib/assessment-engine/types";
-import { getSession } from "@/lib/auth/session";
+import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { createAddonCatalogEntry, listAddonCatalog } from "@/lib/addons/catalog";
 import { examDefinitionIdSchema } from "@/lib/exams/definitions";
 
