@@ -57,6 +57,7 @@ export default async function AttemptRuntimePage({
       blueprint={sanitizeBlueprintForClient(attempt.blueprint)}
       initialExamState={attempt.examState ?? {}}
       initialIntegrity={attempt.integrity}
+      initialStateVersion={attempt.stateVersion}
       watermarkLabel={attempt.candidateEmail || attempt.candidateName || `Attempt ${attempt.id.slice(0, 12)}`}
     />
   );

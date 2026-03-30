@@ -24,6 +24,8 @@ import { copy } from "@/lib/design/copy";
 import { answeredItemCount, examProgressValue, isExamItemAnswered } from "@/lib/exams/runtime";
 import { getIntegrityPolicy } from "@/lib/integrity/policy";
 
+type IntegritySnapshot = { tabHiddenCount: number; copyCount: number; pasteCount: number };
+
 interface RuntimeClientProps {
   slug: string;
   attemptId: string;
@@ -32,9 +34,32 @@ interface RuntimeClientProps {
   stacks: StackId[];
   blueprint: ExamBlueprint;
   initialExamState: Partial<Record<string, ExamState>>;
-  initialIntegrity: { tabHiddenCount: number; copyCount: number; pasteCount: number };
+  initialIntegrity: IntegritySnapshot;
+  initialStateVersion: number;
   watermarkLabel: string;
 }
+
+type AttemptSyncPayload = {
+  ok: boolean;
+  code?: string;
+  message?: string;
+  savedAt?: string;
+  stage?: string | "submitted";
+  timers?: Record<string, number>;
+  integrity?: IntegritySnapshot;
+  stateVersion?: number;
+};
+
+type SubmitResponse = {
+  ok: boolean;
+  code?: string;
+  message?: string;
+  result?: ResultSummary;
+  stage?: string | "submitted";
+  timers?: Record<string, number>;
+  integrity?: IntegritySnapshot;
+  stateVersion?: number;
+};
 
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
   switch (status) {
@@ -112,6 +137,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   const [pendingTransition, setPendingTransition] = useState<{ from: string; to: string } | null>(null);
   const [autoSubmitNote, setAutoSubmitNote] = useState("");
   const [integrity, setIntegrity] = useState(props.initialIntegrity);
+  const [stateVersion, setStateVersion] = useState(props.initialStateVersion);
   const [integrityNotice, setIntegrityNotice] = useState("");
   const [saveIssue, setSaveIssue] = useState("");
   const [lastSyncedAt, setLastSyncedAt] = useState(() => new Date().toISOString());
@@ -169,6 +195,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   const stageRef = useRef<string | "submitted">(stage);
   const remainingRef = useRef<number>(currentRemaining);
+  const stateVersionRef = useRef<number>(props.initialStateVersion);
   const integrityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -190,14 +217,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
   }
 
   function applyAutosaveResponse(
-    data: {
-      ok: boolean;
-      message?: string;
-      savedAt?: string;
-      stage?: string | "submitted";
-      timers?: Record<string, number>;
-      integrity?: typeof integrity;
-    },
+    data: AttemptSyncPayload,
     options?: { updateStage?: boolean; updateTimers?: boolean }
   ) {
     if (options?.updateTimers !== false && data.timers) {
@@ -219,7 +239,13 @@ export function RuntimeClient(props: RuntimeClientProps) {
     if (data.integrity) {
       setIntegrity(data.integrity);
     }
-    setLastSyncedAt(data.savedAt ?? new Date().toISOString());
+    if (typeof data.stateVersion === "number") {
+      stateVersionRef.current = data.stateVersion;
+      setStateVersion(data.stateVersion);
+    }
+    if (data.savedAt) {
+      setLastSyncedAt(data.savedAt);
+    }
     setSaveIssue("");
   }
 
@@ -230,6 +256,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
   useEffect(() => {
     remainingRef.current = currentRemaining;
   }, [currentRemaining]);
+
+  useEffect(() => {
+    stateVersionRef.current = stateVersion;
+  }, [stateVersion]);
 
   useEffect(() => {
     return () => {
@@ -283,10 +313,37 @@ export function RuntimeClient(props: RuntimeClientProps) {
     }
   }
 
+  async function sendAutosaveRequest(
+    body: {
+      stage?: string | "submitted";
+      examState?: Partial<Record<string, Partial<ExamState>>>;
+      integrity?: IntegritySnapshot;
+    },
+    options?: { updateStage?: boolean; updateTimers?: boolean },
+    retryCount = 0
+  ): Promise<AttemptSyncPayload> {
+    const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...body,
+        expectedStateVersion: stateVersionRef.current
+      })
+    });
+    const data = (await response.json()) as AttemptSyncPayload;
+
+    if (response.status === 409 && data.code === "version_conflict" && retryCount < 2) {
+      applyAutosaveResponse(data, options);
+      return sendAutosaveRequest(body, options, retryCount + 1);
+    }
+
+    return data;
+  }
+
   async function persistAutosave(payload?: {
     stage?: string | "submitted";
     examState?: Partial<Record<string, Partial<ExamState>>>;
-    integrity?: typeof integrity;
+    integrity?: IntegritySnapshot;
   }) {
     const body = {
       stage: payload?.stage ?? stage,
@@ -296,20 +353,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
     scheduleSyncIndicator();
     try {
-      const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = (await response.json()) as {
-        ok: boolean;
-        message?: string;
-        savedAt?: string;
-        stage?: string | "submitted";
-        timers?: Record<string, number>;
-        integrity?: typeof integrity;
-      };
-      if (!response.ok || !data.ok) {
+      const data = await sendAutosaveRequest(body);
+      if (!data.ok) {
         throw new Error(data.message ?? "Autosave could not be confirmed.");
       }
       clearSyncIndicator();
@@ -327,27 +372,18 @@ export function RuntimeClient(props: RuntimeClientProps) {
   async function persistHeartbeat(activeStage: string) {
     scheduleSyncIndicator();
     try {
-      const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await sendAutosaveRequest(
+        {
           stage: activeStage,
           examState: {
             [activeStage]: {
               remainingSeconds: Math.max(0, remainingRef.current)
             }
           }
-        })
-      });
-      const data = (await response.json()) as {
-        ok: boolean;
-        message?: string;
-        savedAt?: string;
-        stage?: string | "submitted";
-        timers?: Record<string, number>;
-        integrity?: typeof integrity;
-      };
-      if (!response.ok || !data.ok) {
+        },
+        { updateStage: false, updateTimers: false }
+      );
+      if (!data.ok) {
         throw new Error(data.message ?? "Background sync could not be confirmed.");
       }
       clearSyncIndicator();
@@ -405,23 +441,14 @@ export function RuntimeClient(props: RuntimeClientProps) {
       const next = { ...prev, [type]: prev[type] + 1 };
       void (async () => {
         try {
-          const response = await fetch(`/api/attempts/${props.attemptId}/autosave`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
+          const data = await sendAutosaveRequest(
+            {
               stage: stageRef.current,
               integrity: next
-            })
-          });
-          const data = (await response.json()) as {
-            ok: boolean;
-            message?: string;
-            savedAt?: string;
-            stage?: string | "submitted";
-            timers?: Record<string, number>;
-            integrity?: typeof integrity;
-          };
-          if (!response.ok || !data.ok) {
+            },
+            { updateStage: false, updateTimers: false }
+          );
+          if (!data.ok) {
             throw new Error(data.message ?? "Integrity event could not be confirmed.");
           }
           applyAutosaveResponse(data, { updateStage: false, updateTimers: false });
@@ -705,23 +732,50 @@ export function RuntimeClient(props: RuntimeClientProps) {
     });
   }
 
-  async function onSubmitFinal(auto = false) {
-    if (submitting) return;
+  async function flushAttemptState() {
+    return persistAutosave({
+      stage: stageRef.current,
+      examState,
+      integrity
+    });
+  }
+
+  async function onSubmitFinal(auto = false, retryCount = 0) {
+    if (submitting && retryCount === 0) return;
     setSubmitting(true);
     setUiStatus(RuntimeUiStatus.Submitting);
     if (auto) setShowSubmitReview(false);
 
+    const flushed = await flushAttemptState();
+    if (!flushed) {
+      setSaveIssue("We could not confirm the final save. Please keep this tab open and try again.");
+      setUiStatus(RuntimeUiStatus.Attention);
+      setSubmitting(false);
+      return;
+    }
+
     const response = await fetch(`/api/attempts/${props.attemptId}/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
+      body: JSON.stringify({
+        expectedStateVersion: stateVersionRef.current
+      })
     });
-    const data = (await response.json()) as { ok: boolean; result: ResultSummary };
+    const data = (await response.json()) as SubmitResponse;
     if (data.ok) {
-      setResult(data.result);
+      if (typeof data.stateVersion === "number") {
+        stateVersionRef.current = data.stateVersion;
+        setStateVersion(data.stateVersion);
+      }
+      setResult(data.result ?? null);
       setStage("submitted");
       setSaveIssue("");
       setUiStatus(RuntimeUiStatus.Saved);
+    } else if (response.status === 409 && data.code === "version_conflict" && retryCount < 2) {
+      applyAutosaveResponse(data);
+      setSubmitting(false);
+      await onSubmitFinal(auto, retryCount + 1);
+      return;
     } else {
       setSaveIssue("We could not submit just yet. Your answers remain in the attempt, so please try again.");
       setUiStatus(RuntimeUiStatus.Attention);

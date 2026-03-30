@@ -165,10 +165,12 @@ model Attempt {
   remainingCoreSeconds   Int
   remainingPracticalSeconds Int
   remainingLogicReasoningSeconds Int?
+  stateVersion           Int      @default(0)
   integrityJson          Json
   startedAt              DateTime @default(now())
   submittedAt            DateTime?
   candidateAssessment    CandidateAssessment?
+  candidateAssessmentAttempts CandidateAssessmentAttempt[]
 
   @@index([inviteId])
   @@index([participantId])
@@ -254,9 +256,22 @@ model CandidateAssessment {
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   invite      Invite    @relation(fields: [inviteId], references: [id], onDelete: Cascade)
   attempt     Attempt?  @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+  attemptHistory CandidateAssessmentAttempt[]
   milestones  CandidateMilestone[]
 
   @@index([candidateId, createdAt])
+}
+
+model CandidateAssessmentAttempt {
+  id                  String   @id @default(cuid())
+  candidateAssessmentId String
+  attemptId           String   @unique
+  linkedAt            DateTime @default(now())
+  candidateAssessment CandidateAssessment @relation(fields: [candidateAssessmentId], references: [id], onDelete: Cascade)
+  attempt             Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateAssessmentId, attemptId])
+  @@index([candidateAssessmentId, linkedAt])
 }
 
 model CandidateNote {

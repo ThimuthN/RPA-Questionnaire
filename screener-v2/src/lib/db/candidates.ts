@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import {
@@ -558,7 +559,12 @@ export async function deleteCandidate(candidateId: string) {
       assessments: {
         select: {
           inviteId: true,
-          attemptId: true
+          attemptId: true,
+          attemptHistory: {
+            select: {
+              attemptId: true
+            }
+          }
         }
       }
     }
@@ -571,9 +577,10 @@ export async function deleteCandidate(candidateId: string) {
   const inviteIds = [...new Set(candidate.assessments.map((assessment) => assessment.inviteId))];
   const attemptIds = [
     ...new Set(
-      candidate.assessments
-        .map((assessment) => assessment.attemptId)
-        .filter((value): value is string => Boolean(value))
+      candidate.assessments.flatMap((assessment) => [
+        ...(assessment.attemptId ? [assessment.attemptId] : []),
+        ...assessment.attemptHistory.map((history) => history.attemptId)
+      ])
     )
   ];
 
@@ -923,6 +930,33 @@ export async function linkCandidateAssessmentToMilestone(input: {
   });
 }
 
+async function linkCandidateAssessmentAttemptInTx(args: {
+  tx: Prisma.TransactionClient;
+  candidateAssessmentId: string;
+  attemptId: string;
+}) {
+  await args.tx.candidateAssessmentAttempt.upsert({
+    where: {
+      attemptId: args.attemptId
+    },
+    update: {
+      candidateAssessmentId: args.candidateAssessmentId
+    },
+    create: {
+      id: cuidLike(),
+      candidateAssessmentId: args.candidateAssessmentId,
+      attemptId: args.attemptId
+    }
+  });
+
+  await args.tx.candidateAssessment.update({
+    where: { id: args.candidateAssessmentId },
+    data: {
+      attemptId: args.attemptId
+    }
+  });
+}
+
 export async function attachExistingAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;
@@ -977,7 +1011,18 @@ export async function attachExistingAssessmentToMilestone(input: {
     where: {
       OR: [
         { inviteId: invite.id },
-        ...(resolved?.id ? [{ attemptId: resolved.id }] : [])
+        ...(resolved?.id
+          ? [
+              { attemptId: resolved.id },
+              {
+                attemptHistory: {
+                  some: {
+                    attemptId: resolved.id
+                  }
+                }
+              }
+            ]
+          : [])
       ]
     }
   });
@@ -989,27 +1034,29 @@ export async function attachExistingAssessmentToMilestone(input: {
       throw new Error("That screener is already linked to another candidate.");
     }
 
-    const updated = resolved?.id && !existing.attemptId
-      ? await prisma.candidateAssessment.update({
-          where: { id: existing.id },
-          data: {
-            attemptId: resolved.id
-          }
-        })
-      : existing;
-
-    candidateAssessmentId = updated.id;
+    candidateAssessmentId = existing.id;
   } else {
-    const created = await prisma.candidateAssessment.create({
-      data: {
-        id: cuidLike(),
-        candidateId: input.candidateId,
-        inviteId: invite.id,
-        attemptId: resolved?.id ?? null,
-        createdById: input.createdById ?? null
-      }
+    candidateAssessmentId = (
+      await prisma.candidateAssessment.create({
+        data: {
+          id: cuidLike(),
+          candidateId: input.candidateId,
+          inviteId: invite.id,
+          attemptId: resolved?.id ?? null,
+          createdById: input.createdById ?? null
+        }
+      })
+    ).id;
+  }
+
+  if (resolved?.id) {
+    await prisma.$transaction(async (tx) => {
+      await linkCandidateAssessmentAttemptInTx({
+        tx,
+        candidateAssessmentId,
+        attemptId: resolved.id
+      });
     });
-    candidateAssessmentId = created.id;
   }
 
   await linkCandidateAssessmentToMilestone({

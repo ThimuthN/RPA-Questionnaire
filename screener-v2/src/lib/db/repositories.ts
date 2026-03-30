@@ -109,6 +109,7 @@ interface AttemptRecord {
   practicalPossible: number;
   logicReasoningEarned: number;
   logicReasoningPossible: number;
+  stateVersion: number;
   remainingCoreSeconds: number;
   remainingPracticalSeconds: number;
   remainingLogicReasoningSeconds?: number;
@@ -121,8 +122,26 @@ interface ExamStateEnvelope {
   examState: Partial<Record<string, ExamState>>;
   activeExamInstanceId?: string;
   activeExamStartedAt?: string;
+  integrity?: AttemptRecord["integrity"];
   legacySectionState: Partial<Record<SectionId, SectionState>>;
 }
+
+const DEFAULT_ATTEMPT_INTEGRITY: AttemptRecord["integrity"] = {
+  tabHiddenCount: 0,
+  copyCount: 0,
+  pasteCount: 0
+};
+
+type AttemptMutationResult =
+  | { status: "updated"; attempt: AttemptRecord }
+  | { status: "conflict"; attempt: AttemptRecord }
+  | { status: "submitted"; attempt: AttemptRecord }
+  | { status: "missing" };
+
+type SubmitAttemptResult =
+  | { status: "submitted"; attempt: AttemptRecord; result: ResultSummary }
+  | { status: "conflict"; attempt: AttemptRecord }
+  | { status: "missing" };
 
 export interface ResultWorkspacePage {
   rows: WorkspaceResultRow[];
@@ -223,6 +242,32 @@ function normalizeStage(stage: string, blueprint: ExamBlueprint, status: string)
   return blueprint.exams[0]?.instanceId ?? "submitted";
 }
 
+function resolveProgressStage(
+  currentStage: string | "submitted",
+  requestedStage: string | undefined,
+  blueprint: ExamBlueprint
+) {
+  if (currentStage === "submitted" || requestedStage === "submitted") {
+    return "submitted" as const;
+  }
+  if (!requestedStage) {
+    return currentStage;
+  }
+
+  const orderByStage = new Map(blueprint.exams.map((exam) => [exam.instanceId, exam.order]));
+  const currentOrder = orderByStage.get(currentStage);
+  const requestedOrder = orderByStage.get(requestedStage);
+
+  if (typeof requestedOrder !== "number") {
+    return currentStage;
+  }
+  if (typeof currentOrder !== "number") {
+    return requestedStage;
+  }
+
+  return requestedOrder >= currentOrder ? requestedStage : currentStage;
+}
+
 function createExamState(blueprint: ExamBlueprint) {
   return Object.fromEntries(
     blueprint.exams.map((exam) => [
@@ -245,6 +290,10 @@ function parseExamStateEnvelope(value: Prisma.JsonValue | null | undefined): Exa
           typeof record.activeExamInstanceId === "string" ? record.activeExamInstanceId : undefined,
         activeExamStartedAt:
           typeof record.activeExamStartedAt === "string" ? record.activeExamStartedAt : undefined,
+        integrity:
+          record.integrity && typeof record.integrity === "object" && !Array.isArray(record.integrity)
+            ? toObject<AttemptRecord["integrity"]>(record.integrity, DEFAULT_ATTEMPT_INTEGRITY)
+            : undefined,
         legacySectionState: {}
       };
     }
@@ -341,11 +390,13 @@ function buildExamStateEnvelopeJson(args: {
   examState: Partial<Record<string, ExamState>>;
   activeExamInstanceId?: string;
   activeExamStartedAt?: string;
+  integrity?: AttemptRecord["integrity"];
 }) {
   return {
     examState: args.examState,
     activeExamInstanceId: args.activeExamInstanceId ?? null,
-    activeExamStartedAt: args.activeExamStartedAt ?? null
+    activeExamStartedAt: args.activeExamStartedAt ?? null,
+    integrity: args.integrity ?? null
   };
 }
 
@@ -600,6 +651,7 @@ function mapAttempt(row: {
   logicReasoningAnswerJson: Prisma.JsonValue | null;
   logicReasoningEarned: number;
   logicReasoningPossible: number;
+  stateVersion: number;
   remainingCoreSeconds: number;
   remainingPracticalSeconds: number;
   remainingLogicReasoningSeconds: number | null;
@@ -686,14 +738,17 @@ function mapAttempt(row: {
     practicalPossible: split.practicalPossible,
     logicReasoningEarned: split.logicReasoningEarned,
     logicReasoningPossible: split.logicReasoningPossible,
+    stateVersion: row.stateVersion,
     remainingCoreSeconds: split.remainingCoreSeconds,
     remainingPracticalSeconds: split.remainingPracticalSeconds,
     remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds ?? undefined,
-    integrity: toObject<AttemptRecord["integrity"]>(row.integrityJson, {
-      tabHiddenCount: 0,
-      copyCount: 0,
-      pasteCount: 0
-    }),
+    integrity:
+      parsedExamState.integrity ??
+      toObject<AttemptRecord["integrity"]>(row.integrityJson, {
+        tabHiddenCount: 0,
+        copyCount: 0,
+        pasteCount: 0
+      }),
     startedAt: row.startedAt.toISOString(),
     submittedAt: row.submittedAt?.toISOString()
   };
@@ -889,6 +944,36 @@ export async function createOrGetParticipant(input: {
   return mapParticipant(created);
 }
 
+async function linkCandidateAssessmentAttemptInTx(args: {
+  tx: Prisma.TransactionClient;
+  candidateAssessmentId: string;
+  attemptId: string;
+  linkedAt: Date;
+}) {
+  await args.tx.candidateAssessmentAttempt.upsert({
+    where: {
+      attemptId: args.attemptId
+    },
+    update: {
+      candidateAssessmentId: args.candidateAssessmentId,
+      linkedAt: args.linkedAt
+    },
+    create: {
+      id: cuidLike(),
+      candidateAssessmentId: args.candidateAssessmentId,
+      attemptId: args.attemptId,
+      linkedAt: args.linkedAt
+    }
+  });
+
+  await args.tx.candidateAssessment.update({
+    where: { id: args.candidateAssessmentId },
+    data: {
+      attemptId: args.attemptId
+    }
+  });
+}
+
 export async function startAttempt(input: {
   inviteId?: string;
   assessmentVersionId?: string;
@@ -929,12 +1014,57 @@ export async function startAttempt(input: {
   const split = splitSectionState(sectionState);
   const attemptId = cuidLike();
   const startedAt = new Date();
+  const initialIntegrity = DEFAULT_ATTEMPT_INTEGRITY;
   const coreQuestionIds =
     blueprint.exams
       .find((exam) => carriesRoleContext(exam.definitionId))
       ?.contentSnapshot.items.map((item) => item.id) ?? [];
 
   const attempt = await prisma.$transaction(async (tx) => {
+    let linkedCandidateAssessmentId: string | null = null;
+
+    if (input.inviteId) {
+      const invite = await tx.invite.findUnique({
+        where: { id: input.inviteId },
+        select: {
+          id: true,
+          maxAttempts: true,
+          usedAttempts: true
+        }
+      });
+
+      if (!invite) {
+        throw new Error("Invite not found.");
+      }
+      if (invite.usedAttempts >= invite.maxAttempts) {
+        throw new Error("Invite attempt limit reached.");
+      }
+
+      const reserved = await tx.invite.updateMany({
+        where: {
+          id: invite.id,
+          usedAttempts: invite.usedAttempts
+        },
+        data: {
+          usedAttempts: {
+            increment: 1
+          }
+        }
+      });
+
+      if (reserved.count !== 1) {
+        throw new Error("Invite attempt reservation failed. Please retry.");
+      }
+
+      linkedCandidateAssessmentId =
+        (
+          await tx.candidateAssessment.findFirst({
+            where: { inviteId: invite.id },
+            select: { id: true }
+          })
+        )?.id ?? null;
+    }
+
     const created = await tx.attempt.create({
       data: {
         id: attemptId,
@@ -952,7 +1082,8 @@ export async function startAttempt(input: {
           buildExamStateEnvelopeJson({
             examState,
             activeExamInstanceId: blueprint.exams[0]?.instanceId,
-            activeExamStartedAt: startedAt.toISOString()
+            activeExamStartedAt: startedAt.toISOString(),
+            integrity: initialIntegrity
           })
         ),
         seed: 0,
@@ -968,28 +1099,26 @@ export async function startAttempt(input: {
           : Prisma.JsonNull,
         logicReasoningEarned: 0,
         logicReasoningPossible: 0,
+        stateVersion: 0,
         remainingCoreSeconds: split.remainingCoreSeconds,
         remainingPracticalSeconds: split.remainingPracticalSeconds,
         remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
-        integrityJson: toJsonValue({ tabHiddenCount: 0, copyCount: 0, pasteCount: 0 }),
+        integrityJson: toJsonValue(initialIntegrity),
         startedAt
       }
     });
 
-    if (input.inviteId) {
-      await tx.invite.update({
-        where: { id: input.inviteId },
-        data: { usedAttempts: { increment: 1 } }
-      });
-
-      await tx.candidateAssessment.updateMany({
-        where: { inviteId: input.inviteId },
-        data: { attemptId: created.id }
+    if (linkedCandidateAssessmentId) {
+      await linkCandidateAssessmentAttemptInTx({
+        tx,
+        candidateAssessmentId: linkedCandidateAssessmentId,
+        attemptId: created.id,
+        linkedAt: startedAt
       });
     }
 
     return created;
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   return { attempt: mapAttempt(attempt), blueprint };
 }
@@ -998,17 +1127,26 @@ export async function patchAttempt(
   attemptId: string,
   patch: Partial<
     Pick<AttemptRecord, "stage"> & {
+      expectedStateVersion: number;
       integrity: Partial<AttemptRecord["integrity"]>;
       examState: Partial<Record<string, ExamState>>;
       sectionState: Partial<Record<SectionId, SectionState>>;
     }
   >
-) {
+) : Promise<AttemptMutationResult> {
   const currentRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
-  if (!currentRow) return null;
+  if (!currentRow) return { status: "missing" };
 
   const current = mapAttempt(currentRow);
-  if (current.status === "submitted") return null;
+  if (current.status === "submitted") {
+    return { status: "submitted", attempt: current };
+  }
+  if (
+    typeof patch.expectedStateVersion === "number" &&
+    patch.expectedStateVersion !== current.stateVersion
+  ) {
+    return { status: "conflict", attempt: current };
+  }
   const now = new Date();
   const currentEnvelope = checkpointActiveExamState({
     envelope: parseExamStateEnvelope(currentRow.sectionStateJson),
@@ -1060,21 +1198,36 @@ export async function patchAttempt(
 
   const mergedSectionState = legacySectionStateFromBlueprint(current.blueprint, mergedExamState);
   const split = splitSectionState(mergedSectionState);
-  const nextStage =
-    patch.stage &&
-    (patch.stage === "submitted" || current.blueprint.exams.some((exam) => exam.instanceId === patch.stage))
-      ? patch.stage
-      : current.stage;
+  const nextIntegrity = patch.integrity
+    ? {
+        tabHiddenCount: Number(patch.integrity.tabHiddenCount ?? current.integrity.tabHiddenCount),
+        copyCount: Number(patch.integrity.copyCount ?? current.integrity.copyCount),
+        pasteCount: Number(patch.integrity.pasteCount ?? current.integrity.pasteCount)
+      }
+    : current.integrity;
+  const nextStage = resolveProgressStage(
+    current.stage,
+    typeof patch.stage === "string" ? patch.stage : undefined,
+    current.blueprint
+  );
 
-  const updated = await prisma.attempt.update({
-    where: { id: attemptId },
+  const updated = await prisma.attempt.updateMany({
+    where: {
+      id: attemptId,
+      status: "in_progress",
+      stateVersion: current.stateVersion
+    },
     data: {
       stage: nextStage,
+      stateVersion: {
+        increment: 1
+      },
       sectionStateJson: toJsonValue(
         buildExamStateEnvelopeJson({
           examState: mergedExamState,
           activeExamInstanceId: nextStage === "submitted" ? undefined : nextStage,
-          activeExamStartedAt: nextStage === "submitted" ? undefined : now.toISOString()
+          activeExamStartedAt: nextStage === "submitted" ? undefined : now.toISOString(),
+          integrity: nextIntegrity
         })
       ),
       coreAnswersJson: toJsonValue(split.coreAnswers),
@@ -1085,25 +1238,48 @@ export async function patchAttempt(
       remainingCoreSeconds: split.remainingCoreSeconds,
       remainingPracticalSeconds: split.remainingPracticalSeconds,
       remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
-      integrityJson: patch.integrity
-        ? toJsonValue({
-            tabHiddenCount: Number(patch.integrity.tabHiddenCount ?? current.integrity.tabHiddenCount),
-            copyCount: Number(patch.integrity.copyCount ?? current.integrity.copyCount),
-            pasteCount: Number(patch.integrity.pasteCount ?? current.integrity.pasteCount)
-          })
-        : toJsonValue(current.integrity)
+      integrityJson: toJsonValue(nextIntegrity)
     }
   });
 
-  return mapAttempt(updated);
+  if (updated.count !== 1) {
+    const latestRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
+    if (!latestRow) return { status: "missing" };
+    const latest = mapAttempt(latestRow);
+    return latest.status === "submitted"
+      ? { status: "submitted", attempt: latest }
+      : { status: "conflict", attempt: latest };
+  }
+
+  const updatedRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
+  if (!updatedRow) {
+    return { status: "missing" };
+  }
+
+  return { status: "updated", attempt: mapAttempt(updatedRow) };
 }
 
-export async function submitAttempt(input: { attemptId: string }) {
+export async function submitAttempt(input: {
+  attemptId: string;
+  expectedStateVersion?: number;
+}): Promise<SubmitAttemptResult> {
   const currentRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
-  if (!currentRow) return null;
+  if (!currentRow) return { status: "missing" };
 
   const current = mapAttempt(currentRow);
-  if (current.status === "submitted") return null;
+  if (current.status === "submitted") {
+    const existingResult = await getResult(input.attemptId);
+    if (!existingResult) {
+      return { status: "missing" };
+    }
+    return { status: "submitted", attempt: current, result: existingResult };
+  }
+  if (
+    typeof input.expectedStateVersion === "number" &&
+    input.expectedStateVersion !== current.stateVersion
+  ) {
+    return { status: "conflict", attempt: current };
+  }
 
   const result = buildResultSummary({
     attemptId: current.id,
@@ -1135,25 +1311,39 @@ export async function submitAttempt(input: { attemptId: string }) {
 
   const submittedSectionState = legacySectionStateFromBlueprint(current.blueprint, submittedExamState);
   const split = splitSectionState(submittedSectionState);
+  const submittedAt = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    await tx.attempt.update({
-      where: { id: input.attemptId },
+  const submitted = await prisma.$transaction(async (tx) => {
+    const updated = await tx.attempt.updateMany({
+      where: {
+        id: input.attemptId,
+        status: "in_progress",
+        stateVersion: current.stateVersion
+      },
       data: {
         status: "submitted",
         stage: "submitted",
+        stateVersion: {
+          increment: 1
+        },
         sectionStateJson: toJsonValue(
           buildExamStateEnvelopeJson({
-            examState: submittedExamState
+            examState: submittedExamState,
+            integrity: current.integrity
           })
         ),
         practicalEarned: split.practicalEarned,
         practicalPossible: split.practicalPossible,
         logicReasoningEarned: split.logicReasoningEarned,
         logicReasoningPossible: split.logicReasoningPossible,
-        submittedAt: new Date()
+        integrityJson: toJsonValue(current.integrity),
+        submittedAt
       }
     });
+
+    if (updated.count !== 1) {
+      return false;
+    }
 
     await tx.result.upsert({
       where: { attemptId: input.attemptId },
@@ -1195,9 +1385,33 @@ export async function submitAttempt(input: { attemptId: string }) {
         })
       }
     });
-  });
+    return true;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-  return result;
+  if (!submitted) {
+    const latestRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
+    if (!latestRow) return { status: "missing" };
+    const latest = mapAttempt(latestRow);
+    if (latest.status === "submitted") {
+      const existingResult = await getResult(input.attemptId);
+      if (!existingResult) {
+        return { status: "missing" };
+      }
+      return { status: "submitted", attempt: latest, result: existingResult };
+    }
+    return { status: "conflict", attempt: latest };
+  }
+
+  const updatedRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
+  if (!updatedRow) {
+    return { status: "missing" };
+  }
+
+  return {
+    status: "submitted",
+    attempt: mapAttempt(updatedRow),
+    result
+  };
 }
 
 export async function listResults() {
@@ -1260,39 +1474,45 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         })
       : [];
   const participantsById = new Map(participantRows.map((row) => [row.id, mapParticipant(row)]));
-  const candidateAssessmentRows = await prisma.candidateAssessment.findMany({
+  const candidateAssessmentRows = await prisma.candidateAssessmentAttempt.findMany({
     where: {
       attemptId: {
         in: attemptIds
       }
     },
     include: {
-        candidate: {
-          select: {
-            id: true,
-            roleId: true,
-            positionAppliedFor: true,
-            hrOwner: true,
-            stage: true,
-            nextAction: true,
-            finalDecision: true,
-            screeningStatus: true,
-            notesSummary: true,
-            updatedAt: true,
-            role: {
-              select: {
-                label: true
+      candidateAssessment: {
+        include: {
+          candidate: {
+            select: {
+              id: true,
+              roleId: true,
+              positionAppliedFor: true,
+              hrOwner: true,
+              stage: true,
+              nextAction: true,
+              finalDecision: true,
+              screeningStatus: true,
+              notesSummary: true,
+              updatedAt: true,
+              role: {
+                select: {
+                  label: true
+                }
               }
             }
           }
         }
       }
+    },
+    orderBy: [{ linkedAt: "desc" }, { id: "desc" }]
   });
-  const candidateByAttemptId = new Map(
-    candidateAssessmentRows
-      .filter((row): row is typeof row & { attemptId: string } => Boolean(row.attemptId))
-      .map((row) => [row.attemptId, row.candidate])
-  );
+  const candidateByAttemptId = new Map<string, (typeof candidateAssessmentRows)[number]["candidateAssessment"]["candidate"]>();
+  for (const row of candidateAssessmentRows) {
+    if (!candidateByAttemptId.has(row.attemptId)) {
+      candidateByAttemptId.set(row.attemptId, row.candidateAssessment.candidate);
+    }
+  }
 
   return resultRows
       .map((row) => {
@@ -1400,17 +1620,22 @@ export async function bulkUpdateResults(input: {
     return { updatedCount: updated.count };
   }
 
-  const rows = await prisma.candidateAssessment.findMany({
+  const rows = await prisma.candidateAssessmentAttempt.findMany({
     where: {
       attemptId: {
         in: attemptIds
       }
     },
     select: {
-      candidateId: true
-    }
+      candidateAssessment: {
+        select: {
+          candidateId: true
+        }
+      }
+    },
+    orderBy: [{ linkedAt: "desc" }, { id: "desc" }]
   });
-  const candidateIds = [...new Set(rows.map((row) => row.candidateId))];
+  const candidateIds = [...new Set(rows.map((row) => row.candidateAssessment.candidateId))];
 
   if (candidateIds.length === 0) {
     throw new Error("Selected results do not have linked workflow records yet.");
@@ -1464,31 +1689,35 @@ export async function getDetailedResult(attemptId: string): Promise<DetailedResu
     where: { id: attemptRow.participantId }
   });
   const attempt = mapAttempt(attemptRow);
-  const link = await prisma.candidateAssessment.findFirst({
+  const link = await prisma.candidateAssessmentAttempt.findUnique({
     where: { attemptId },
     include: {
-        candidate: {
-          select: {
-            id: true,
-            roleId: true,
-            positionAppliedFor: true,
-            hrOwner: true,
-            stage: true,
-            nextAction: true,
-            finalDecision: true,
-            screeningStatus: true,
-            notesSummary: true,
-            updatedAt: true,
-            role: {
-              select: {
-                label: true
+      candidateAssessment: {
+        include: {
+          candidate: {
+            select: {
+              id: true,
+              roleId: true,
+              positionAppliedFor: true,
+              hrOwner: true,
+              stage: true,
+              nextAction: true,
+              finalDecision: true,
+              screeningStatus: true,
+              notesSummary: true,
+              updatedAt: true,
+              role: {
+                select: {
+                  label: true
+                }
               }
             }
           }
         }
       }
-    });
-    const candidate = link?.candidate;
+    }
+  });
+  const candidate = link?.candidateAssessment.candidate;
   const resultStatus: CandidateAssessmentStatus = resultRow.pass ? "passed" : resultRow.borderline ? "review" : "failed";
   const baseWithCandidate = toResultSummary(resultRow, attempt, participantRow ? mapParticipant(participantRow) : null, candidate ?? null);
   if (!baseWithCandidate) return null;
@@ -1622,12 +1851,35 @@ export async function deleteResultAttempt(attemptId: string) {
     }
 
     if (attempt.inviteId) {
-      await tx.candidateAssessment.updateMany({
+      const linkedAssessments = await tx.candidateAssessmentAttempt.findMany({
         where: { attemptId },
-        data: {
-          attemptId: null
+        select: {
+          candidateAssessmentId: true
         }
       });
+
+      await tx.candidateAssessmentAttempt.deleteMany({
+        where: { attemptId }
+      });
+
+      for (const link of linkedAssessments) {
+        const previousLatest = await tx.candidateAssessmentAttempt.findFirst({
+          where: {
+            candidateAssessmentId: link.candidateAssessmentId
+          },
+          orderBy: [{ linkedAt: "desc" }, { id: "desc" }],
+          select: {
+            attemptId: true
+          }
+        });
+
+        await tx.candidateAssessment.update({
+          where: { id: link.candidateAssessmentId },
+          data: {
+            attemptId: previousLatest?.attemptId ?? null
+          }
+        });
+      }
 
       const invite = await tx.invite.findUnique({
         where: { id: attempt.inviteId },
