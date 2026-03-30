@@ -11,6 +11,7 @@ import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getAppUrl } from "@/lib/server/app-url";
 import { getSession } from "@/lib/auth/session";
+import { examDefinitionIdSchema } from "@/lib/exams/definitions";
 import {
   createRequestLogContext,
   logRouteError,
@@ -34,15 +35,7 @@ const createInviteSchema = z.object({
       exams: z
         .array(
           z.object({
-            definitionId: z.enum([
-              "core_exam",
-              "core_2_exam",
-              "practical_exam",
-              "applied_logic_exam",
-              "general_capability_exam",
-              "business_analysis_exam",
-              "rcm_exam"
-            ]),
+            definitionId: examDefinitionIdSchema,
             sourceAddonId: z.string().optional(),
             sourcePresetId: z.string().optional(),
             label: z.string().optional(),

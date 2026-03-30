@@ -20,7 +20,12 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { StepRail } from "@/components/primitives/StepRail";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { deriveExamSelectionMetadata, examCatalog } from "@/lib/exams/catalog";
+import {
+  deriveExamSelectionMetadata,
+  examCatalog,
+  examPanelClass,
+  examScoreBarClass
+} from "@/lib/exams/catalog";
 import { integrityPresetMeta } from "@/lib/integrity/policy";
 
 interface CreateInviteSuccess extends InviteCredentials {
@@ -159,15 +164,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
           {exams.map((exam) => (
             <div
               key={exam.key}
-              className={
-                exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
-                  ? "bg-[linear-gradient(90deg,rgba(47,134,255,0.95),rgba(93,167,255,0.92))]"
-                  : exam.definitionId === "practical_exam"
-                    ? "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]"
-                    : exam.definitionId === "applied_logic_exam"
-                      ? "bg-[linear-gradient(90deg,rgba(148,93,255,0.95),rgba(188,148,255,0.88))]"
-                      : "bg-[linear-gradient(90deg,rgba(245,158,11,0.95),rgba(251,191,36,0.88))]"
-              }
+              className={examScoreBarClass(exam.definitionId)}
               style={{ width: `${Math.max(0, exam.weight ?? 0)}%` }}
             />
           ))}
@@ -188,19 +185,6 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
       </div>
     </div>
   );
-}
-
-function examPanelClass(definitionId: PreviewExam["definitionId"]) {
-  if (definitionId === "core_exam" || definitionId === "core_2_exam") {
-    return "border-brand-300/20 bg-[linear-gradient(180deg,rgba(31,111,255,0.12),rgba(7,12,24,0.54))]";
-  }
-  if (definitionId === "practical_exam") {
-    return "border-teal-400/20 bg-[linear-gradient(180deg,rgba(18,179,168,0.12),rgba(7,12,24,0.54))]";
-  }
-  if (definitionId === "applied_logic_exam") {
-    return "border-purple-400/20 bg-[linear-gradient(180deg,rgba(148,93,255,0.12),rgba(7,12,24,0.54))]";
-  }
-  return "border-amber-400/20 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(7,12,24,0.54))]";
 }
 
 function StepHeader({

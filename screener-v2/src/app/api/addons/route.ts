@@ -3,19 +3,12 @@ import { z } from "zod";
 import type { ExamDefinitionId } from "@/lib/assessment-engine/types";
 import { getSession } from "@/lib/auth/session";
 import { createAddonCatalogEntry, listAddonCatalog } from "@/lib/addons/catalog";
+import { examDefinitionIdSchema } from "@/lib/exams/definitions";
 
 const addonSchema = z.object({
   label: z.string().min(2),
   description: z.string().default(""),
-  engineType: z.enum([
-    "core_exam",
-    "core_2_exam",
-    "practical_exam",
-    "applied_logic_exam",
-    "general_capability_exam",
-    "business_analysis_exam",
-    "rcm_exam"
-  ]),
+  engineType: examDefinitionIdSchema,
   defaultConfig: z.record(z.string(), z.unknown()).default({}),
   defaultDurationMinutes: z.number().int().positive(),
   defaultRequiredPercent: z.number().int().min(0).max(100),

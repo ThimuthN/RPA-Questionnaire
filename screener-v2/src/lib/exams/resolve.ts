@@ -1,111 +1,26 @@
 import type {
   ExamBlueprint,
   ExamBlueprintDraftItem,
-  ExamQuestion,
   FrozenExamInstance,
-  LogicReasoningQuestion,
-  PracticalTaskQuestion,
   RoleId,
   StackId
 } from "@/lib/assessment-engine/types";
-import { buildSelection } from "@/lib/assessment-engine/selection";
-import { getQuestionsByIds, questionBank } from "@/lib/data/question-bank";
-import { businessAnalysisQuestions } from "@/features/business-analysis/questions";
-import { buildCore2Questions } from "@/features/core2/questions";
-import { generalCapabilityQuestions } from "@/features/general-capability/questions";
-import { revenueCycleManagementQuestions } from "@/features/rcm/questions";
 import {
+  carriesRoleContext,
   resolveCoreBasisRoleId,
   defaultDraftForDefinition,
   definitionIdFromLegacySection,
-  deriveExamSelectionMetadata
+  deriveExamSelectionMetadata,
+  isPracticalExamDefinition
 } from "@/lib/exams/catalog";
 import type { SectionId } from "@/lib/sections/types";
-import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
-import { pickPracticalPack } from "@/features/practical/packs";
+import { resolveExamItems } from "@/lib/exams/server-registry";
 import { cuidLike } from "@/lib/tokens/token-service";
 
 function ensureStacks(value: unknown, fallback: StackId[] = ["UiPath"]): StackId[] {
   if (!Array.isArray(value)) return fallback;
   const stacks = value.map((item) => String(item) as StackId).filter(Boolean);
   return stacks.length > 0 ? stacks : fallback;
-}
-
-function resolveCoreItems(config: Record<string, unknown>): { items: ExamQuestion[]; roleId: RoleId; stacks: StackId[] } {
-  const roleId = resolveCoreBasisRoleId(config);
-  const stacks = ensureStacks(config.stacks);
-  const selectionSeed = Math.floor(Math.random() * 0x7fffffff);
-  const selection = buildSelection(roleId, stacks, selectionSeed, questionBank);
-  return {
-    items: getQuestionsByIds(selection.selectedIds),
-    roleId,
-    stacks
-  };
-}
-
-function resolvePracticalItems(config: Record<string, unknown>): { items: ExamQuestion[]; stacks: StackId[] } {
-  const stack = String(config.stack || "UiPath") as StackId;
-  const pack = pickPracticalPack("Associate", [stack]);
-  const question: PracticalTaskQuestion = {
-    id: `${pack.id}_practical`,
-    format: "practical_task",
-    title: pack.title,
-    prompt: pack.prompt,
-    points: pack.subtasks.reduce((sum, task) => sum + Number(task.points || 0), 0),
-    subtasks: pack.subtasks
-  };
-  return {
-    items: [question],
-    stacks: [stack]
-  };
-}
-
-function resolveCore2Items(config: Record<string, unknown>): { items: ExamQuestion[]; roleId: RoleId; stacks: StackId[] } {
-  const roleId = resolveCoreBasisRoleId(config, "SE");
-  const stacks = ensureStacks(config.stacks);
-  return {
-    items: buildCore2Questions(stacks),
-    roleId,
-    stacks
-  };
-}
-
-function resolveLogicItems(config: Record<string, unknown>): { items: ExamQuestion[]; stacks: StackId[] } {
-  const stack = String(config.stack || "UiPath") as StackId;
-  const pack = pickLogicReasoningPack("Associate", [stack]);
-  const question: LogicReasoningQuestion = {
-    id: `${pack.id}_logic_reasoning`,
-    format: "logic_reasoning",
-    title: pack.title,
-    prompt: pack.prompt,
-    points: pack.subtasks.reduce((sum, task) => sum + Number(task.points || 0), 0),
-    subtasks: pack.subtasks
-  };
-  return {
-    items: [question],
-    stacks: [stack]
-  };
-}
-
-function resolveGeneralCapabilityItems(): { items: ExamQuestion[]; stacks: StackId[] } {
-  return {
-    items: generalCapabilityQuestions,
-    stacks: ["UiPath"]
-  };
-}
-
-function resolveBusinessAnalysisItems(): { items: ExamQuestion[]; stacks: StackId[] } {
-  return {
-    items: businessAnalysisQuestions,
-    stacks: ["UiPath"]
-  };
-}
-
-function resolveRevenueCycleManagementItems(): { items: ExamQuestion[]; stacks: StackId[] } {
-  return {
-    items: revenueCycleManagementQuestions,
-    stacks: ["UiPath"]
-  };
 }
 
 export function normalizeExamDrafts(args: {
@@ -162,24 +77,7 @@ export function resolveExamBlueprint(args: {
 }): ExamBlueprint {
   const exams: FrozenExamInstance[] = args.drafts.map((draft, index) => {
     const metadata = deriveExamSelectionMetadata(draft.definitionId, draft.config ?? {}, args.passPercent);
-    let items: ExamQuestion[] = [];
-
-    if (draft.definitionId === "core_exam" || draft.definitionId === "core_2_exam") {
-      items = resolveCoreItems(draft.config ?? {}).items;
-      if (draft.definitionId === "core_2_exam") {
-        items = resolveCore2Items(draft.config ?? {}).items;
-      }
-    } else if (draft.definitionId === "practical_exam") {
-      items = resolvePracticalItems(draft.config ?? {}).items;
-    } else if (draft.definitionId === "applied_logic_exam") {
-      items = resolveLogicItems(draft.config ?? {}).items;
-    } else if (draft.definitionId === "business_analysis_exam") {
-      items = resolveBusinessAnalysisItems().items;
-    } else if (draft.definitionId === "rcm_exam") {
-      items = resolveRevenueCycleManagementItems().items;
-    } else {
-      items = resolveGeneralCapabilityItems().items;
-    }
+    const items = resolveExamItems(draft.definitionId, draft.config ?? {});
 
     return {
       instanceId: cuidLike(),
@@ -210,18 +108,14 @@ export function resolveExamBlueprint(args: {
 }
 
 export function blueprintRoleId(blueprint: ExamBlueprint, fallback: RoleId = "Associate"): RoleId {
-  const core = blueprint.exams.find(
-    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
-  );
+  const core = blueprint.exams.find((exam) => carriesRoleContext(exam.definitionId));
   return resolveCoreBasisRoleId(core?.config ?? {}, fallback);
 }
 
 export function blueprintStacks(blueprint: ExamBlueprint, fallback: StackId[] = ["UiPath"]): StackId[] {
-  const core = blueprint.exams.find(
-    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
-  );
+  const core = blueprint.exams.find((exam) => carriesRoleContext(exam.definitionId));
   if (core) return ensureStacks(core.config?.stacks, fallback);
-  const practical = blueprint.exams.find((exam) => exam.definitionId === "practical_exam");
+  const practical = blueprint.exams.find((exam) => isPracticalExamDefinition(exam.definitionId));
   if (practical) return [String(practical.config?.stack || fallback[0]) as StackId];
   return fallback;
 }

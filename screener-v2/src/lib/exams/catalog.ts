@@ -28,6 +28,10 @@ export interface ExamDefinitionCatalogEntry {
   label: string;
   description: string;
   accentTone: "blue" | "teal" | "purple" | "amber";
+  scoreBarClass: string;
+  panelClass: string;
+  scoreSummaryBucket?: "core" | "practical";
+  carriesRoleContext?: boolean;
   configFields: ExamConfigFieldDefinition[];
   defaultWeight: number;
   defaultConfig: Record<string, unknown>;
@@ -59,6 +63,10 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "Core",
     description: "Foundational multiple-choice exam driven by role and selected stacks.",
     accentTone: "blue",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(47,134,255,0.95),rgba(93,167,255,0.92))]",
+    panelClass: "border-brand-300/20 bg-[linear-gradient(180deg,rgba(31,111,255,0.12),rgba(7,12,24,0.54))]",
+    scoreSummaryBucket: "core",
+    carriesRoleContext: true,
     configFields: [
       {
         key: "roleId",
@@ -99,6 +107,10 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "Core 2.0",
     description: "Hard-mode core exam focused on deeper debugging, architecture, and reliability judgment.",
     accentTone: "blue",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(47,134,255,0.95),rgba(93,167,255,0.92))]",
+    panelClass: "border-brand-300/20 bg-[linear-gradient(180deg,rgba(31,111,255,0.12),rgba(7,12,24,0.54))]",
+    scoreSummaryBucket: "core",
+    carriesRoleContext: true,
     configFields: [
       {
         key: "roleId",
@@ -137,6 +149,9 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "Practical",
     description: "Hands-on scenario exam tuned to a single primary stack.",
     accentTone: "teal",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]",
+    panelClass: "border-teal-400/20 bg-[linear-gradient(180deg,rgba(18,179,168,0.12),rgba(7,12,24,0.54))]",
+    scoreSummaryBucket: "practical",
     configFields: [
       {
         key: "stack",
@@ -164,6 +179,8 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "Applied Logic & Reasoning",
     description: "Short logic and reasoning exam with no extra configuration.",
     accentTone: "purple",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(148,93,255,0.95),rgba(188,148,255,0.88))]",
+    panelClass: "border-purple-400/20 bg-[linear-gradient(180deg,rgba(148,93,255,0.12),rgba(7,12,24,0.54))]",
     configFields: [],
     defaultWeight: 20,
     defaultConfig: {},
@@ -176,6 +193,8 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "General Capability Assessment (GCA)",
     description: "Universal hiring screener focused on logic, judgment, prioritization, and communication.",
     accentTone: "amber",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(245,158,11,0.95),rgba(251,191,36,0.88))]",
+    panelClass: "border-amber-400/20 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(7,12,24,0.54))]",
     configFields: [],
     defaultWeight: 30,
     defaultConfig: {},
@@ -188,6 +207,8 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "Business Analysis Assessment",
     description: "Requirements, process, and decision-quality assessment for BA-style work.",
     accentTone: "amber",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(245,158,11,0.95),rgba(251,191,36,0.88))]",
+    panelClass: "border-amber-400/20 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(7,12,24,0.54))]",
     configFields: [],
     defaultWeight: 30,
     defaultConfig: {},
@@ -200,6 +221,8 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
     label: "RCM Assessment",
     description: "Advanced revenue cycle management exam focused on denials, remits, controls, and recovery judgment.",
     accentTone: "amber",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(245,158,11,0.95),rgba(251,191,36,0.88))]",
+    panelClass: "border-amber-400/20 bg-[linear-gradient(180deg,rgba(245,158,11,0.12),rgba(7,12,24,0.54))]",
     configFields: [],
     defaultWeight: 30,
     defaultConfig: {},
@@ -258,4 +281,24 @@ export function deriveExamSelectionMetadata(
     configSummary: entry.buildConfigSummary(config),
     requiredPercent: entry.buildRequiredPercent(config, passPercent)
   };
+}
+
+export function isCoreExamDefinition(definitionId: ExamDefinitionId) {
+  return examCatalog[definitionId].scoreSummaryBucket === "core";
+}
+
+export function isPracticalExamDefinition(definitionId: ExamDefinitionId) {
+  return examCatalog[definitionId].scoreSummaryBucket === "practical";
+}
+
+export function carriesRoleContext(definitionId: ExamDefinitionId) {
+  return examCatalog[definitionId].carriesRoleContext === true;
+}
+
+export function examPanelClass(definitionId: ExamDefinitionId) {
+  return examCatalog[definitionId].panelClass;
+}
+
+export function examScoreBarClass(definitionId: ExamDefinitionId) {
+  return examCatalog[definitionId].scoreBarClass;
 }

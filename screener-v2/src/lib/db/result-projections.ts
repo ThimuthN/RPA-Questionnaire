@@ -11,7 +11,10 @@ import type {
   StackId
 } from "@/lib/assessment-engine/types";
 import { scoreQuestion } from "@/lib/assessment-engine/scoring";
-import { summarizeExamInstance } from "@/lib/exams/catalog";
+import {
+  carriesRoleContext,
+  summarizeExamInstance
+} from "@/lib/exams/catalog";
 import type { LogicReasoningSubtask } from "@/features/logic-reasoning/packs";
 import type { PracticalSubtask } from "@/features/practical/packs";
 import { getDefaultSelectedSections, normalizeSelectedSections, orderedSections } from "@/lib/sections/registry";
@@ -139,9 +142,7 @@ export function toResultSummary(
   const practicalPercent = breakdown.sectionBreakdown.practical?.percent ?? resultRow.practicalPercent;
   const exams =
     breakdown.exams.length > 0 ? breakdown.exams : attempt.blueprint.exams.map(summarizeExamInstance);
-  const coreExam = attempt.blueprint.exams.find(
-    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
-  );
+  const coreExam = attempt.blueprint.exams.find((exam) => carriesRoleContext(exam.definitionId));
   const coreExamRoleId =
     typeof coreExam?.config?.roleId === "string" && coreExam.config.roleId.trim().length > 0
       ? coreExam.config.roleId.trim()

@@ -28,6 +28,7 @@ import {
   normalizeExamDrafts,
   resolveExamBlueprint
 } from "@/lib/exams/resolve";
+import { carriesRoleContext, isCoreExamDefinition } from "@/lib/exams/catalog";
 import { buildReviewSections, toResultSummary } from "@/lib/db/result-projections";
 import { normalizeIntegrityPreset } from "@/lib/integrity/policy";
 import {
@@ -186,7 +187,7 @@ function buildAttemptBlueprintFromLegacy(args: {
 
   return {
     exams: base.exams.map((exam) => {
-      if (exam.definitionId !== "core_exam") return exam;
+      if (!isCoreExamDefinition(exam.definitionId)) return exam;
       return {
         ...exam,
         contentSnapshot: {
@@ -675,7 +676,7 @@ function mapAttempt(row: {
     status: row.status as AttemptRecord["status"],
     coreQuestionIds:
       blueprint.exams
-        .find((exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam")
+        .find((exam) => carriesRoleContext(exam.definitionId))
         ?.contentSnapshot.items.map((item) => item.id) ??
       toStringArray(row.coreQuestionIdsJson),
     coreAnswers: split.coreAnswers,
@@ -917,7 +918,7 @@ export async function startAttempt(input: {
         passPercent: passTargetPercent
       });
   const effectiveRoleId = blueprint.exams.some(
-    (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
+    (exam) => carriesRoleContext(exam.definitionId)
   )
     ? blueprintRoleId(blueprint, "Associate")
     : input.roleId;
@@ -930,7 +931,7 @@ export async function startAttempt(input: {
   const startedAt = new Date();
   const coreQuestionIds =
     blueprint.exams
-      .find((exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam")
+      .find((exam) => carriesRoleContext(exam.definitionId))
       ?.contentSnapshot.items.map((item) => item.id) ?? [];
 
   const attempt = await prisma.$transaction(async (tx) => {

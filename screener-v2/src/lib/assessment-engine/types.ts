@@ -1,5 +1,6 @@
 import type { SectionId } from "@/lib/sections/types";
 import type { CandidateAssessmentStatus, CandidateNextAction, CandidateStage, CandidateUiStatus } from "@/lib/candidates/types";
+import type { ExamDefinitionId as RegistryExamDefinitionId } from "@/lib/exams/definitions";
 
 export type RoleId = "Intern" | "Associate" | "SE" | "SeniorSE" | "TechLead";
 
@@ -23,14 +24,7 @@ export const resultReviewStateValues = ["unreviewed", "reviewed", "flagged"] as 
 
 export type ResultReviewState = (typeof resultReviewStateValues)[number];
 
-export type ExamDefinitionId =
-  | "core_exam"
-  | "core_2_exam"
-  | "practical_exam"
-  | "applied_logic_exam"
-  | "general_capability_exam"
-  | "business_analysis_exam"
-  | "rcm_exam";
+export type ExamDefinitionId = RegistryExamDefinitionId;
 
 export type QuestionFormatId =
   | "single_select"

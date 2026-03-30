@@ -97,3 +97,22 @@ export async function createAppUser(input: {
     }
   });
 }
+
+export async function updateAppUserRole(input: {
+  userId: string;
+  role: AppRole;
+}) {
+  return prisma.user.update({
+    where: { id: input.userId },
+    data: {
+      role: input.role
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      createdAt: true
+    }
+  });
+}

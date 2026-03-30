@@ -9,7 +9,7 @@ import { listAppUsers } from "@/lib/auth/app-auth";
 export default async function UsersPage({
   searchParams
 }: {
-  searchParams: Promise<{ created?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; updated?: string; error?: string }>;
 }) {
   const session = await getSession();
   if (!session) {
@@ -104,8 +104,9 @@ export default async function UsersPage({
                 <option value="admin">Admin</option>
               </select>
             </div>
-            {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
             {params.created ? <p className="text-sm text-emerald-200">Created {params.created}.</p> : null}
+            {params.updated ? <p className="text-sm text-emerald-200">Updated {params.updated}.</p> : null}
+            {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
             <Button type="submit">Create user</Button>
           </form>
         </StagePanel>
@@ -125,14 +126,27 @@ export default async function UsersPage({
                   key={user.id}
                   className="rounded-[18px] border border-white/10 bg-black/20 p-4"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-1">
                       <p className="text-base text-white">{user.name || "Unnamed user"}</p>
                       <p className="text-sm text-slate-300">{user.email}</p>
                     </div>
-                    <div className="text-right text-sm text-slate-300">
-                      <p className="capitalize text-white">{user.role}</p>
-                      <p>{new Date(user.createdAt).toLocaleString()}</p>
+                    <div className="flex flex-col gap-3 lg:items-end">
+                      <div className="text-sm text-slate-300 lg:text-right">
+                        <p className="capitalize text-white">{user.role}</p>
+                        <p>{new Date(user.createdAt).toLocaleString()}</p>
+                      </div>
+                      <form action={`/api/users/${user.id}`} method="post" className="flex flex-wrap items-center gap-2">
+                        <select
+                          name="role"
+                          defaultValue={user.role}
+                          className="rounded-[16px] border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                        >
+                          <option value="member">Member</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                        <Button type="submit" variant="secondary">Save role</Button>
+                      </form>
                     </div>
                   </div>
                 </div>

@@ -8,7 +8,11 @@ import type {
   StackId
 } from "@/lib/assessment-engine/types";
 import { configV2 } from "@/lib/data/question-bank";
-import { summarizeExamInstance } from "@/lib/exams/catalog";
+import {
+  isCoreExamDefinition,
+  isPracticalExamDefinition,
+  summarizeExamInstance
+} from "@/lib/exams/catalog";
 import { questionRegistry } from "@/lib/question-types";
 import { scoreQuestion } from "@/lib/question-types/scoring";
 import { toInt } from "@/lib/assessment-engine/utils";
@@ -144,12 +148,12 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
     .map((exam) => exam.legacySectionId)
     .filter((sectionId): sectionId is NonNullable<typeof sectionId> => Boolean(sectionId));
   const corePercent =
-    Object.values(examBreakdown).find(
-      (item) => item.definitionId === "core_exam" || item.definitionId === "core_2_exam"
-    )?.percent ??
+    Object.values(examBreakdown).find((item) => isCoreExamDefinition(item.definitionId))?.percent ??
     sectionBreakdown.core?.percent ??
     0;
-  const practicalBreakdown = Object.values(examBreakdown).find((item) => item.definitionId === "practical_exam");
+  const practicalBreakdown = Object.values(examBreakdown).find((item) =>
+    isPracticalExamDefinition(item.definitionId)
+  );
   const practicalPercent = practicalBreakdown?.percent ?? sectionBreakdown.practical?.percent ?? 0;
   const practicalMinPercent = practicalBreakdown?.requiredPercent ?? 0;
   const sectionGatesOk = Object.values(examBreakdown).every((item) => item.pass);

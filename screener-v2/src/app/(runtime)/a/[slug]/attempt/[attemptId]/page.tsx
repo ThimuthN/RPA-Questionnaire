@@ -2,6 +2,7 @@ import Link from "next/link";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
 import { getAttempt } from "@/lib/db/repositories";
 import { sanitizeBlueprintForClient } from "@/lib/exams/client-blueprint";
+import { carriesRoleContext } from "@/lib/exams/catalog";
 import { StagePanel } from "@/components/scene/StagePanel";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export default async function AttemptRuntimePage({
       integrityPreset={attempt.integrityPreset}
       roleId={
         (attempt.blueprint.exams.find(
-          (exam) => exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
+          (exam) => carriesRoleContext(exam.definitionId)
         )?.config?.roleLabel as string | undefined) ?? attempt.roleId
       }
       stacks={attempt.stacks}

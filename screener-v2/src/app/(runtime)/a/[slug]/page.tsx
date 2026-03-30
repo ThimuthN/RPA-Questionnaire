@@ -7,6 +7,7 @@ import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { validateInvite } from "@/lib/db/repositories";
+import { examCatalog } from "@/lib/exams/catalog";
 import {
   integrityPresetMeta,
   normalizeIntegrityPreset
@@ -85,17 +86,7 @@ export default async function InviteLandingPage({
                     <StatusPill
                       key={exam.instanceId}
                       label={`${exam.label} ${exam.durationMinutes}m`}
-                      tone={
-                        exam.definitionId === "core_exam" || exam.definitionId === "core_2_exam"
-                          ? "blue"
-                          : exam.definitionId === "practical_exam"
-                            ? "teal"
-                            : exam.definitionId === "general_capability_exam" ||
-                                exam.definitionId === "business_analysis_exam" ||
-                                exam.definitionId === "rcm_exam"
-                              ? "amber"
-                              : "purple"
-                      }
+                      tone={examCatalog[exam.definitionId].accentTone}
                     />
                   ))}
                   {preset ? (
