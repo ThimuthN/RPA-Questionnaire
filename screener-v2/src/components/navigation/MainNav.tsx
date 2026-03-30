@@ -48,6 +48,8 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
             <Link
               key={item.href}
               href={item.href}
+              data-guide-id={`nav-${href.replace(/\//g, "-") || "home"}`}
+              data-guide-hint={item.label}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950",
                 active

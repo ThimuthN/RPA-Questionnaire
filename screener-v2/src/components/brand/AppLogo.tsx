@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { OrbitMascot } from "@/components/brand/OrbitMascot";
+import { RiveMascot } from "@/components/brand/RiveMascot";
 
 export function AppLogo({
   className,
@@ -12,7 +12,7 @@ export function AppLogo({
     <div className={cn("flex items-center gap-3", className)}>
       <div className="relative">
         <div className="absolute inset-0 rounded-full bg-brand-500/20 blur-md" />
-        <OrbitMascot size={compact ? "sm" : "md"} spark={!compact} className="relative" />
+        <RiveMascot size={compact ? "sm" : "md"} glow={!compact} className="relative" />
       </div>
       {!compact ? (
         <div className="space-y-0.5">
