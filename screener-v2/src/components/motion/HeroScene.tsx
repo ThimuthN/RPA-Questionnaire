@@ -100,10 +100,31 @@ export function HeroScene({ className }: { className?: string }) {
               transition={{ duration: reduceMotion ? 0 : 18, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "linear" }}
             />
             <motion.div
-              className="absolute left-1/2 top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_26px_rgba(255,255,255,0.7)]"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.8, 1, 0.85] }}
-              transition={floatTransition(2.8)}
+              className="absolute inset-[34%] rounded-full bg-[radial-gradient(circle_at_35%_35%,rgba(255,255,255,0.94),rgba(138,184,255,0.72)_38%,rgba(9,17,33,0.96)_100%)] shadow-[0_0_42px_rgba(138,184,255,0.42)]"
+              initial={reduceMotion ? false : { scale: 0.7, opacity: 0 }}
+              animate={
+                reduceMotion
+                  ? { scale: 1, opacity: 1 }
+                  : { scale: [0.78, 1.06, 1], opacity: [0, 1, 0.92] }
+              }
+              transition={{ duration: reduceMotion ? 0 : 0.7, delay: reduceMotion ? 0 : 1.14, ease: [0.22, 1, 0.36, 1] }}
             />
+            <motion.div
+              className="absolute inset-[30%]"
+              initial={reduceMotion ? false : { scale: 0.76, opacity: 0 }}
+              animate={
+                reduceMotion
+                  ? { scale: 1, opacity: 1 }
+                  : { scale: 1, opacity: 1 }
+              }
+              transition={{ duration: reduceMotion ? 0 : 0.55, delay: reduceMotion ? 0 : 1.22, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="brand-face relative h-full w-full rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(7,14,28,0.82))] backdrop-blur-md">
+                <div className="brand-eye absolute left-[28%] top-[36%] h-[12%] w-[12%] rounded-full bg-slate-950 shadow-[0_0_0_4px_rgba(255,255,255,0.16)]" />
+                <div className="brand-eye absolute right-[28%] top-[36%] h-[12%] w-[12%] rounded-full bg-slate-950 shadow-[0_0_0_4px_rgba(255,255,255,0.16)] [animation-delay:100ms]" />
+                <div className="brand-mouth absolute left-1/2 top-[60%] h-[10%] w-[30%] -translate-x-1/2 rounded-full border-b-2 border-white/70" />
+              </div>
+            </motion.div>
           </motion.div>
 
           <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 700" fill="none">
@@ -135,6 +156,40 @@ export function HeroScene({ className }: { className?: string }) {
               transition={{ duration: reduceMotion ? 0 : 1.2, delay: reduceMotion ? 0 : 1.12, ease: [0.22, 1, 0.36, 1] }}
             />
           </svg>
+
+          <motion.div
+            className="absolute h-3 w-3 rounded-full bg-white shadow-[0_0_18px_rgba(255,255,255,0.82)]"
+            initial={reduceMotion ? false : { left: "12%", top: "70%", opacity: 0, scale: 0.4 }}
+            animate={
+              reduceMotion
+                ? { left: "28%", top: "34%", opacity: 0, scale: 0.8 }
+                : {
+                    left: ["12%", "17%", "23%", "28%"],
+                    top: ["70%", "57%", "44%", "34%"],
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.4, 1.05, 1.2, 0.7]
+                  }
+            }
+            transition={{ duration: reduceMotion ? 0 : 1.15, delay: reduceMotion ? 0 : 0.84, ease: [0.22, 1, 0.36, 1] }}
+          />
+
+          <motion.div
+            className="absolute left-[34%] top-[21%] z-20 max-w-[210px] rounded-full border border-brand-300/20 bg-[linear-gradient(180deg,rgba(12,25,48,0.92),rgba(8,16,31,0.86))] px-4 py-3 shadow-[0_18px_38px_rgba(2,8,23,0.28)] backdrop-blur-xl"
+            initial={reduceMotion ? false : { opacity: 0, x: -12, y: 8, scale: 0.96 }}
+            animate={
+              reduceMotion
+                ? { opacity: 1, x: 0, y: 0, scale: 1 }
+                : { opacity: 1, x: 0, y: [0, -4, 0], scale: 1 }
+            }
+            transition={{ duration: reduceMotion ? 0 : 0.55, delay: reduceMotion ? 0 : 1.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <div className="absolute left-[-18px] top-1/2 h-px w-6 -translate-y-1/2 bg-[linear-gradient(90deg,rgba(138,184,255,0),rgba(138,184,255,0.65))]" />
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.24em] text-brand-200">
+              <span className="h-2 w-2 rounded-full bg-brand-200 shadow-[0_0_16px_rgba(138,184,255,0.72)]" />
+              Orbit online
+            </div>
+            <p className="mt-2 text-sm leading-6 text-white">Hi, let&apos;s build something clear.</p>
+          </motion.div>
 
           {[
             { left: "33%", top: "36%", tone: "bg-brand-200/80 shadow-[0_0_18px_rgba(138,184,255,0.72)]", delay: 0 },

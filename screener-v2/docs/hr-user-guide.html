@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Innobot HR User Guide</title>
+    <link rel="stylesheet" href="./hr-user-guide.css" />
+  </head>
+  <body>
+    <div class="document">
+      <section class="page cover">
+        <div class="cover-band">
+          <div>
+            <span class="eyebrow">Internal Handbook</span>
+            <h1>Innobot HR User Guide</h1>
+            <p class="subtitle">
+              Business-user guide for registering candidates, sending assessments, reviewing results,
+              and managing internal access in Assessment Hub.
+            </p>
+          </div>
+          <div class="meta-card tight">
+            <h2>Document Details</h2>
+            <ul class="meta-list">
+              <li><strong>Product name:</strong> Assessment Hub / Innobot Premium Screener</li>
+              <li><strong>Primary audience:</strong> HR admins, recruiters, coordinators, hiring managers, reviewers</li>
+              <li><strong>Prepared from:</strong> local repository inspection of <code>screener-v2</code></li>
+              <li><strong>Version date:</strong> March 30, 2026</li>
+              <li><strong>Format:</strong> print-ready PDF without screenshots in this edition</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="cover-footer">
+          <div class="summary-card tight">
+            <h3>What This Guide Covers</h3>
+            <p>
+              Candidate registration, CSV imports, resume handling, notes, assessment setup, candidate
+              test experience, results review, exports, and internal user/role administration.
+            </p>
+          </div>
+          <div>
+            <p class="cover-note">
+              This version intentionally excludes screenshots so your team can insert final approved
+              visuals later. A screenshot checklist with exact pages and caption recommendations is
+              included in the appendix.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">Table of Contents</div>
+        <h2>Guide Map</h2>
+        <div class="toc">
+          <div class="toc-box">
+            <ol class="toc-list">
+              <li>Document purpose</li>
+              <li>Who should use this guide</li>
+              <li>At-a-glance quick start</li>
+              <li>Main areas of the system and when to use each one</li>
+              <li>End-to-end workflow from registration to decision</li>
+              <li>Registering a candidate</li>
+              <li>Importing candidates from CSV</li>
+              <li>Managing resumes</li>
+              <li>Adding and using notes</li>
+              <li>Tracking stages and statuses</li>
+              <li>Creating and sending an assessment</li>
+              <li>How the assessment builder works</li>
+            </ol>
+          </div>
+          <div class="toc-box">
+            <ol class="toc-list" start="13">
+              <li>How assessment sharing works</li>
+              <li>What candidates see before and during the test</li>
+              <li>Integrity/security modes explained</li>
+              <li>How to review results</li>
+              <li>How to interpret Pass / Review / Fail</li>
+              <li>Filters, comparison, and exports</li>
+              <li>Managing internal users and roles</li>
+              <li>Troubleshooting / FAQ</li>
+              <li>Best practices</li>
+              <li>Quick-reference appendix</li>
+              <li>Recommended screenshots to add later</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="callout note">
+          <strong>How to use this handbook</strong>
+          <p>
+            Read Sections 1-5 once to understand the overall model, then use the workflow sections as
+            day-to-day reference. HR admins will likely use the administration and governance sections
+            more often; recruiters and hiring managers will spend most of their time in the candidate,
+            assessment, and results sections.
+          </p>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">1. Purpose</div>
+        <h2>Document Purpose</h2>
+        <p class="lede">
+          Assessment Hub combines candidate tracking, assessment delivery, results review, and
+          lightweight internal administration in one workspace. This guide explains how internal
+          teams should use the system consistently and confidently.
+        </p>
+
+        <div class="two-col">
+          <div class="info-box tight">
+            <h3>What the System Is For</h3>
+            <ul class="inline-list">
+              <li>Register and track candidates in a structured hiring workspace.</li>
+              <li>Upload and manage resumes and review notes.</li>
+              <li>Build assessments from reusable presets and add-ons.</li>
+              <li>Issue share links, Test IDs, and passcodes for candidates.</li>
+              <li>Review results, compare candidates, and export filtered views.</li>
+              <li>Manage internal users and role catalogs.</li>
+            </ul>
+          </div>
+          <div class="info-box tight">
+            <h3>Who Should Use This Guide</h3>
+            <ul class="inline-list">
+              <li><strong>HR admins:</strong> user access, role catalog, workflow standards, governance.</li>
+              <li><strong>Recruiters / coordinators:</strong> candidate creation, imports, ownership, notes.</li>
+              <li><strong>Hiring managers / reviewers:</strong> assessment review, candidate decisions, comparisons.</li>
+              <li><strong>Internal business users:</strong> understanding statuses, exports, and candidate experience.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout assumption">
+          <strong>Assumption</strong>
+          <p>
+            This guide describes the built-in product flow visible in the repository. Exact add-on
+            names, preset combinations, and role catalog entries may vary by environment because those
+            are stored in the application database and can be configured by admins.
+          </p>
+        </div>
+
+        <h3>At-a-Glance Quick Start</h3>
+        <div class="four-col">
+          <div class="glance-card">
+            <strong>1. Open People</strong>
+            <p>Use the Candidates workspace to search, register, import, and update hiring records.</p>
+          </div>
+          <div class="glance-card">
+            <strong>2. Prepare the candidate</strong>
+            <p>Add the role, owner, resume, stage, and notes so the record is review-ready.</p>
+          </div>
+          <div class="glance-card">
+            <strong>3. Build and send</strong>
+            <p>Create an assessment, confirm the score mix totals 100, then share the link and passcode.</p>
+          </div>
+          <div class="glance-card">
+            <strong>4. Review and decide</strong>
+            <p>Use Results to review the score, integrity signals, linked workflow status, and next action.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">2. Navigation</div>
+        <h2>Main Areas of the System</h2>
+        <div class="three-col">
+          <div class="area-card">
+            <strong>People</strong>
+            <p>Primary hiring workspace for candidates. Use it for search, filters, registration, notes, resumes, owners, milestones, and decisions.</p>
+          </div>
+          <div class="area-card">
+            <strong>Add-ons</strong>
+            <p>Admin/configuration workspace for global assessment add-ons and reusable presets. Use it when standard assessment parts need to be maintained.</p>
+          </div>
+          <div class="area-card">
+            <strong>Assessments</strong>
+            <p>Operational builder for creating a new candidate or general assessment and generating share credentials.</p>
+          </div>
+          <div class="area-card">
+            <strong>Results</strong>
+            <p>Review workspace for completed assessments. Use it for filtering, comparison, exports, and linked candidate actions.</p>
+          </div>
+          <div class="area-card">
+            <strong>Live Sessions</strong>
+            <p>Alternative entry path for launching or joining assessments outside the standard hiring link flow.</p>
+          </div>
+          <div class="area-card">
+            <strong>Users</strong>
+            <p>Admin-only workspace for internal user creation, role assignment, and role catalog maintenance.</p>
+          </div>
+        </div>
+
+        <div class="callout tip">
+          <strong>Best navigation model</strong>
+          <p>
+            Think of <strong>People</strong> as the hiring record, <strong>Assessments</strong> as the send/setup
+            action, and <strong>Results</strong> as the evaluation workspace. Teams move back and forth across those
+            three areas most often.
+          </p>
+        </div>
+
+        <h3>Typical End-to-End Workflow</h3>
+        <div class="workflow">
+          <div class="step-card no-break" data-step="1">
+            <h4>Register the candidate</h4>
+            <p>Create the candidate record with name, email, role, source, and HR owner.</p>
+          </div>
+          <div class="step-card no-break" data-step="2">
+            <h4>Complete the profile</h4>
+            <p>Upload the resume, add notes, confirm stage, and assign the owner responsible for follow-up.</p>
+          </div>
+          <div class="step-card no-break" data-step="3">
+            <h4>Send a screener</h4>
+            <p>Open the assessment builder, choose a preset or add-ons, calibrate score contribution, and generate access.</p>
+          </div>
+          <div class="step-card no-break" data-step="4">
+            <h4>Candidate completes the assessment</h4>
+            <p>The candidate sees the briefing, completes check-in, then works through the timed autosaving runtime.</p>
+          </div>
+          <div class="step-card no-break" data-step="5">
+            <h4>Review the result</h4>
+            <p>Use the Results workspace and detailed review screen to understand score, integrity, and linked candidate context.</p>
+          </div>
+          <div class="step-card no-break" data-step="6">
+            <h4>Update the hiring decision</h4>
+            <p>Move the candidate forward, keep the record in review, or reject/close the profile with a short decision summary.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">3. Candidate Operations</div>
+        <h2>How to Register and Manage Candidates</h2>
+        <div class="page-grid">
+          <div>
+            <h3>How to Register a Candidate</h3>
+            <div class="checklist">
+              <ul>
+                <li>Go to <strong>People &gt; Candidates</strong>.</li>
+                <li>Select <strong>Register candidate</strong>.</li>
+                <li>Enter <strong>Full name</strong> and <strong>Email</strong>. Both are required.</li>
+                <li>Choose a saved <strong>Role</strong> if available.</li>
+                <li>Select a <strong>Source</strong> such as LinkedIn, Referral, Job Portal, Company Website, Agency, or Other.</li>
+                <li>Set the <strong>Owner</strong> if an HR or recruiting owner is already known.</li>
+                <li>Save the candidate, then upload the resume and send the screener afterwards.</li>
+              </ul>
+            </div>
+
+            <div class="callout warning">
+              <strong>Duplicate protection</strong>
+              <p>
+                Candidate email addresses must be unique. If the email already exists, the system sends the
+                user back to the existing candidate record instead of creating a duplicate.
+              </p>
+            </div>
+
+            <h3>How to Import Candidates from CSV</h3>
+            <p>
+              CSV import is available directly in the Candidates workspace. This is the fastest option for
+              high-volume intake or recruiter handoff lists.
+            </p>
+            <div class="table-wrap no-break">
+              <h3>CSV Field Rules</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Column</th>
+                    <th>Required</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>fullName</code></td>
+                    <td>Yes</td>
+                    <td>Candidate display name.</td>
+                  </tr>
+                  <tr>
+                    <td><code>email</code></td>
+                    <td>Yes</td>
+                    <td>Used as the unique candidate key.</td>
+                  </tr>
+                  <tr>
+                    <td><code>phone</code></td>
+                    <td>No</td>
+                    <td>Optional contact number.</td>
+                  </tr>
+                  <tr>
+                    <td><code>positionAppliedFor</code> or <code>role</code></td>
+                    <td>No</td>
+                    <td>Maps the role/position text during import.</td>
+                  </tr>
+                  <tr>
+                    <td><code>hrOwner</code> or <code>owner</code></td>
+                    <td>No</td>
+                    <td>Assigns the candidate owner.</td>
+                  </tr>
+                  <tr>
+                    <td><code>batchId</code></td>
+                    <td>No</td>
+                    <td>Useful for campaign or intake grouping.</td>
+                  </tr>
+                  <tr>
+                    <td><code>resumeSource</code></td>
+                    <td>No</td>
+                    <td>Optional source labeling.</td>
+                  </tr>
+                  <tr>
+                    <td><code>notesSummary</code></td>
+                    <td>No</td>
+                    <td>Optional short recruiter summary.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <aside class="side-panel tight">
+            <h3>Import Behavior</h3>
+            <ul class="inline-list">
+              <li>The system requires a header row and at least one candidate row.</li>
+              <li>Existing emails are skipped rather than overwritten.</li>
+              <li>Success messaging tells users how many were imported and how many duplicates were skipped.</li>
+              <li>The workspace also supports bulk updates for owner assignment, inbox state changes, and shared notes.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">4. Candidate Detail</div>
+        <h2>Resumes, Notes, Stages, and Statuses</h2>
+        <div class="two-col">
+          <div>
+            <h3>How to Manage Resumes</h3>
+            <div class="checklist">
+              <ul>
+                <li>Open the candidate record.</li>
+                <li>Use the <strong>Resume</strong> section to upload or replace the PDF.</li>
+                <li>Use preview/download when reviewers need the file during evaluation.</li>
+                <li>If no resume is attached, the candidate detail view clearly shows it as missing.</li>
+              </ul>
+            </div>
+
+            <div class="callout assumption">
+              <strong>Assumption</strong>
+              <p>
+                Resume upload depends on configured blob/file storage. If storage is unavailable in a
+                given environment, the hiring process can still continue, but reviewers will lose resume
+                preview/download from within the profile.
+              </p>
+            </div>
+
+            <h3>How to Add and Use Notes</h3>
+            <p>The candidate detail page supports structured note types so review comments stay searchable and readable.</p>
+            <div class="pill-row">
+              <span class="pill blue">Screening</span>
+              <span class="pill blue">Interview</span>
+              <span class="pill blue">Technical</span>
+              <span class="pill blue">Decision</span>
+              <span class="pill blue">General</span>
+            </div>
+            <div class="checklist">
+              <ul>
+                <li>Select the note type before writing.</li>
+                <li>Use notes for factual observations, interview outcomes, and clear next steps.</li>
+                <li>Use the short <strong>Decision summary</strong> field for the single best summary of current state.</li>
+                <li>Remember that recent notes also feed into the candidate activity view.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <h3>How to Track Candidate Stages and Statuses</h3>
+            <p>
+              The product separates several concepts so teams can understand where the person is in the
+              hiring process versus what happened in the assessment.
+            </p>
+            <div class="table-wrap no-break">
+              <h3>Status Layers</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Layer</th>
+                    <th>What it means</th>
+                    <th>Where it is most visible</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Candidate stage</td>
+                    <td>Broad workflow position such as screening or offer.</td>
+                    <td>Candidate record, results-linked workflow, reference tables.</td>
+                  </tr>
+                  <tr>
+                    <td>Inbox / UI status</td>
+                    <td>Operational queue signal such as In progress or Need review.</td>
+                    <td>Candidates workspace and linked result actions.</td>
+                  </tr>
+                  <tr>
+                    <td>Assessment status</td>
+                    <td>Whether a screener has not been sent, is in progress, or has a result.</td>
+                    <td>Candidates workspace and candidate result summary.</td>
+                  </tr>
+                  <tr>
+                    <td>Result status</td>
+                    <td>Outcome of a submitted assessment.</td>
+                    <td>Results workspace and detailed review page.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <h3>Hiring Milestones</h3>
+        <p>
+          Each candidate record is created with a default milestone path: <strong>Registered</strong>,
+          <strong>Screener</strong>, <strong>Interview</strong>, <strong>Advanced test</strong>, and
+          <strong>Offer / decision</strong>. Milestones can be manual or platform-driven, and their
+          status progresses through Not started, In progress, Done, or Skipped.
+        </p>
+
+        <div class="callout tip">
+          <strong>Practical guidance</strong>
+          <p>
+            Keep the candidate stage, inbox status, milestone state, and decision summary aligned. If
+            those four items tell different stories, the pipeline becomes hard to trust.
+          </p>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">5. Assessments</div>
+        <h2>Creating and Sending an Assessment</h2>
+        <h3>How to Create and Send an Assessment</h3>
+        <div class="workflow">
+          <div class="step-card no-break" data-step="1">
+            <h4>Start from Candidates or Assessments</h4>
+            <p>Use <strong>Send assessment</strong> from a candidate record when the assessment should stay linked to that candidate.</p>
+          </div>
+          <div class="step-card no-break" data-step="2">
+            <h4>Select a preset or add-on mix</h4>
+            <p>Choose an active preset for speed or add individual assessment components from the library.</p>
+          </div>
+          <div class="step-card no-break" data-step="3">
+            <h4>Review configuration</h4>
+            <p>Confirm role/stack settings where required and check duration, weight, and required pass values.</p>
+          </div>
+          <div class="step-card no-break" data-step="4">
+            <h4>Calibrate the score model</h4>
+            <p>All selected components must add up to exactly 100 marks, and every selected component needs a positive contribution.</p>
+          </div>
+          <div class="step-card no-break" data-step="5">
+            <h4>Choose integrity controls</h4>
+            <p>Select Strict, Standard, or Relaxed depending on how controlled the candidate experience should be.</p>
+          </div>
+          <div class="step-card no-break" data-step="6">
+            <h4>Generate and share access</h4>
+            <p>The system generates an assessment link, Test ID, and passcode. Share those details with the candidate.</p>
+          </div>
+        </div>
+
+        <h3>How the Assessment Builder Works</h3>
+        <div class="table-wrap no-break">
+          <h3>Builder Steps</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Builder step</th>
+                <th>What users do</th>
+                <th>What to check before moving on</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Select</td>
+                <td>Choose a preset or configure individual add-ons from the library.</td>
+                <td>Make sure the correct assessment types are selected for the role and purpose.</td>
+              </tr>
+              <tr>
+                <td>Customize</td>
+                <td>Review selected exams and complete required config such as role or stack.</td>
+                <td>Resolve all “needs setup” items before continuing.</td>
+              </tr>
+              <tr>
+                <td>Calibrate</td>
+                <td>Set score contribution, pass target, and integrity mode.</td>
+                <td>Total marks must equal 100; no selected exam should be zero-weight.</td>
+              </tr>
+              <tr>
+                <td>Share</td>
+                <td>Copy the final access details or launch the assessment immediately.</td>
+                <td>Confirm the right candidate, link, Test ID, passcode, and expected timing.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Assessment Building Blocks</h3>
+        <p>The repo shows the following built-in assessment types in the exam catalog:</p>
+        <div class="pill-row">
+          <span class="pill blue">Core</span>
+          <span class="pill blue">Core 2.0</span>
+          <span class="pill green">Practical</span>
+          <span class="pill amber">General Capability</span>
+          <span class="pill amber">Business Analysis</span>
+          <span class="pill amber">RCM</span>
+          <span class="pill red">Applied Logic &amp; Reasoning</span>
+        </div>
+
+        <div class="callout note">
+          <strong>When to use Add-ons</strong>
+          <p>
+            The Add-on Library is the admin/configuration space for maintaining global add-on defaults
+            and simple presets. Recruiters and reviewers usually do not need to work there daily; they
+            use the builder output rather than editing the library itself.
+          </p>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">6. Candidate Test Experience</div>
+        <h2>Sharing, Candidate Experience, and Integrity</h2>
+        <h3>How Assessment Sharing Works</h3>
+        <div class="two-col">
+          <div class="info-box tight">
+            <h3>What is generated</h3>
+            <ul class="inline-list">
+              <li>Assessment link</li>
+              <li>Test ID</li>
+              <li>Passcode</li>
+              <li>Launch/open action for immediate start</li>
+            </ul>
+          </div>
+          <div class="info-box tight">
+            <h3>Operational defaults visible in code</h3>
+            <ul class="inline-list">
+              <li>Builder-generated candidate assessments use a passcode.</li>
+              <li>Default maximum attempts is one.</li>
+              <li>Linked candidate assessments use the <strong>hiring</strong> context.</li>
+              <li>Overall pass target defaults to 60% unless changed.</li>
+            </ul>
+          </div>
+        </div>
+
+        <h3>What Candidates See Before the Test</h3>
+        <div class="workflow">
+          <div class="step-card no-break" data-step="1">
+            <h4>Assessment briefing page</h4>
+            <p>The candidate sees estimated duration, exam mix, pass target, autosave status, and integrity mode.</p>
+          </div>
+          <div class="step-card no-break" data-step="2">
+            <h4>Check-in page</h4>
+            <p>The candidate confirms full name, email, phone (optional), and passcode when one is required.</p>
+          </div>
+          <div class="step-card no-break" data-step="3">
+            <h4>Availability validation</h4>
+            <p>The product shows candidate-safe messages if the link is expired, already used, or otherwise unavailable.</p>
+          </div>
+        </div>
+
+        <h3>What Candidates See During the Test</h3>
+        <div class="checklist">
+          <ul>
+            <li>A timed runtime with autosave and visible progress.</li>
+            <li>A trust banner showing the integrity preset and latest sync message.</li>
+            <li>A navigator for jumping between questions.</li>
+            <li>Flagging, next/back movement, and section handoff between selected exams.</li>
+            <li>A submit review step that summarizes answered, unanswered, and flagged items before final submission.</li>
+            <li>A recovery modal if the session loses focus or requires a full-screen return.</li>
+          </ul>
+        </div>
+
+        <h3>Integrity / Security Modes Explained in Plain Language</h3>
+        <div class="table-wrap no-break">
+          <h3>Integrity Levels</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>What the candidate experiences</th>
+                <th>Best use case</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Strict Protected Mode</td>
+                <td>Requires full-screen, blocks copy/paste and context menu, and monitors tab switches.</td>
+                <td>High-control assessments where integrity matters most.</td>
+              </tr>
+              <tr>
+                <td>Standard Guardrails</td>
+                <td>Monitors activity and blocks clipboard/context menu, but does not force full-screen.</td>
+                <td>Default hiring screeners where control is important but not overly rigid.</td>
+              </tr>
+              <tr>
+                <td>Relaxed Monitoring</td>
+                <td>Allows normal browser behavior and keeps lightweight activity monitoring only.</td>
+                <td>Low-risk or practice-style assessments.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout tip">
+          <strong>How integrity is summarized later</strong>
+          <p>
+            Integrity review is driven by tab-hidden, copy/cut, and paste counts. In the results workspace,
+            the risk label becomes <strong>Clean</strong>, <strong>Watch</strong>, or <strong>Review</strong>.
+          </p>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">7. Results</div>
+        <h2>How to Review Results</h2>
+        <div class="page-grid">
+          <div>
+            <h3>Results Workspace</h3>
+            <div class="checklist">
+              <ul>
+                <li>Open <strong>Results</strong> to review submitted assessments across hiring and other contexts.</li>
+                <li>Use search and filters for result, review state, context, integrity, role, owner, stage, and score band.</li>
+                <li>Select up to four results for side-by-side comparison.</li>
+                <li>Use bulk actions to update review state or linked candidate status, owner, or notes.</li>
+                <li>Export the filtered view to CSV or JSON.</li>
+              </ul>
+            </div>
+
+            <h3>Detailed Result Review</h3>
+            <p>The detailed result page combines scoring, interpretation, and candidate workflow context.</p>
+            <div class="pill-row">
+              <span class="pill green">Top strength</span>
+              <span class="pill amber">Main concern</span>
+              <span class="pill blue">Confidence</span>
+              <span class="pill red">Integrity summary</span>
+            </div>
+            <p>
+              Reviewers can also see category breakdowns, question/section review details, recent candidate
+              activity, and quick actions to move the candidate forward, keep them in review, or reject them.
+            </p>
+          </div>
+
+          <aside class="side-panel tight">
+            <h3>Review States</h3>
+            <ul class="inline-list">
+              <li><strong>Unreviewed:</strong> no reviewer disposition applied yet.</li>
+              <li><strong>Reviewed:</strong> evaluated and considered complete.</li>
+              <li><strong>Flagged:</strong> requires additional attention or escalation.</li>
+            </ul>
+
+            <h3>Score Bands</h3>
+            <ul class="inline-list">
+              <li><strong>High:</strong> 75 and above</li>
+              <li><strong>Mid:</strong> 50 to 74.9</li>
+              <li><strong>Low:</strong> below 50</li>
+            </ul>
+          </aside>
+        </div>
+
+        <h3>How to Interpret Pass / Review / Fail</h3>
+        <div class="table-wrap no-break">
+          <h3>Outcome Interpretation</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Outcome</th>
+                <th>Plain-language meaning</th>
+                <th>Recommended HR action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Pass</td>
+                <td>The candidate met the assessment threshold and is not in the borderline band.</td>
+                <td>Move forward if role fit, resume, and interview feedback also support progression.</td>
+              </tr>
+              <tr>
+                <td>Review</td>
+                <td>The result is borderline or has enough integrity concern to deserve human review.</td>
+                <td>Open the detailed result, inspect weak areas and integrity notes, then decide manually.</td>
+              </tr>
+              <tr>
+                <td>Fail</td>
+                <td>The candidate did not meet the required threshold.</td>
+                <td>Usually reject or hold, unless a manager wants a manual exception based on broader evidence.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout note">
+          <strong>Important nuance</strong>
+          <p>
+            A strong raw score is not the only signal. Confidence decreases when integrity activity is high
+            or when a result is close to the pass boundary, so reviewers should read the detailed result
+            page before making final decisions.
+          </p>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">8. Analysis Tools</div>
+        <h2>Filters, Comparison, Exports, and Admin Access</h2>
+        <div class="two-col">
+          <div>
+            <h3>How to Use Filters, Comparison, and Exports</h3>
+            <div class="checklist">
+              <ul>
+                <li>Filter the results list first, then export. Exports follow the current view.</li>
+                <li>Use <strong>Review needed</strong> as a fast saved action when triaging borderline or flagged items.</li>
+                <li>Use compare for shortlists or calibration discussions; the UI allows up to four items at once.</li>
+                <li>Use linked owner and stage filters when you want to isolate results tied to a specific recruiter pipeline.</li>
+              </ul>
+            </div>
+
+            <h3>How to Manage Internal Users and Roles</h3>
+            <p>
+              The <strong>Users</strong> page is admin-only. It combines two different administration tasks:
+              managing internal application users and maintaining the role catalog used during candidate registration.
+            </p>
+            <div class="table-wrap no-break">
+              <h3>User Administration</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Task</th>
+                    <th>How it works</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Create internal user</td>
+                    <td>Admins enter name, email, password, and role (<code>member</code> or <code>admin</code>).</td>
+                  </tr>
+                  <tr>
+                    <td>Change app role</td>
+                    <td>Existing database-backed users can be updated from member to admin or vice versa.</td>
+                  </tr>
+                  <tr>
+                    <td>Bootstrap admin</td>
+                    <td>The environment-based bootstrap admin exists outside the database-backed user list.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <div class="table-wrap no-break">
+              <h3>Role Catalog Administration</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Role catalog capability</th>
+                    <th>Why it matters</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Create new role</td>
+                    <td>Lets HR keep hiring roles current without code changes.</td>
+                  </tr>
+                  <tr>
+                    <td>Assign department</td>
+                    <td>Keeps role selections cleaner and easier to scan.</td>
+                  </tr>
+                  <tr>
+                    <td>Deactivate role</td>
+                    <td>Retires old roles while preserving historical records.</td>
+                  </tr>
+                  <tr>
+                    <td>Select core basis role</td>
+                    <td>Helps align role definitions with assessment logic.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="callout assumption">
+              <strong>Assumption</strong>
+              <p>
+                Role names and departments are intentionally environment-specific. Use your approved HR naming
+                standards rather than relying on example role names from test or demo data.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">9. Support</div>
+        <h2>Troubleshooting / FAQ</h2>
+        <div class="faq-list">
+          <p><strong>“The user cannot log in.”</strong> Confirm the email/password combination and whether the user is a database-backed user or bootstrap admin. Only admins can open the Users workspace.</p>
+          <p><strong>“The candidate already exists.”</strong> The system blocks duplicate emails. Open the existing candidate instead of creating another record.</p>
+          <p><strong>“My CSV import failed.”</strong> Make sure the file has a header row and includes <code>fullName</code> and <code>email</code>. Duplicate emails are skipped, not overwritten.</p>
+          <p><strong>“The candidate says the test link is unavailable.”</strong> Common causes are expired access, a used single-attempt link, or a missing/incorrect passcode.</p>
+          <p><strong>“The candidate cannot continue after switching tabs.”</strong> Depending on integrity mode, the runtime may require resuming focus or re-entering full-screen before continuing.</p>
+          <p><strong>“We see a save warning during the test.”</strong> The runtime is designed to autosave regularly. Ask the candidate to keep the tab open and let the connection re-stabilize before closing the session.</p>
+          <p><strong>“No result appears in the hiring workflow.”</strong> Confirm the assessment was linked to a candidate at send time; otherwise the result may exist as an assessment-only record.</p>
+          <p><strong>“Why is the candidate marked Need review?”</strong> That status is used when a submitted assessment result needs human decisioning, especially around borderline or reviewed outcomes.</p>
+          <p><strong>“Why is a role missing from registration?”</strong> It may be inactive in the role catalog. An admin can reactivate or recreate it from Users.</p>
+        </div>
+
+        <h3>Best Practices</h3>
+        <ul class="best-practice-list">
+          <li>Use one consistent owner naming format so filters and reporting stay clean.</li>
+          <li>Complete the resume and short decision summary before escalating a candidate to a hiring manager.</li>
+          <li>Prefer linked candidate assessments over general assessments when the result should drive a hiring workflow.</li>
+          <li>Review integrity signals together with score, not in isolation.</li>
+          <li>Use note types deliberately so screening, technical, and decision comments remain easy to scan.</li>
+          <li>Deactivate old roles instead of deleting them, so historical records stay understandable.</li>
+          <li>Export filtered result sets for meetings instead of exporting everything and sorting externally.</li>
+          <li>Use compare view for final shortlist calibration instead of relying on memory or disconnected spreadsheets.</li>
+        </ul>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">10. Quick Reference</div>
+        <h2>Appendix: Statuses, Terms, and Tables</h2>
+        <div class="appendix-grid">
+          <div class="table-wrap no-break">
+            <h3>Candidate Stages</h3>
+            <table>
+              <thead>
+                <tr><th>Stage</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>New</td><td>Candidate created but not yet fully progressed.</td></tr>
+                <tr><td>Screening</td><td>Initial review and screener preparation stage.</td></tr>
+                <tr><td>Interview</td><td>Moved forward into interview workflow.</td></tr>
+                <tr><td>Testing</td><td>Additional testing activity is in motion.</td></tr>
+                <tr><td>Decision</td><td>Waiting for reviewer or hiring decision.</td></tr>
+                <tr><td>Offer</td><td>Offer preparation or offer-stage management.</td></tr>
+                <tr><td>Closed</td><td>Record closed, usually rejected or otherwise complete.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap no-break">
+            <h3>Candidate Inbox / UI Statuses</h3>
+            <table>
+              <thead>
+                <tr><th>Status</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>In progress</td><td>The candidate is still moving through active workflow steps.</td></tr>
+                <tr><td>Need review</td><td>The record needs decisioning, usually after an assessment result arrives.</td></tr>
+                <tr><td>Moved forward</td><td>The candidate has advanced to the next stage.</td></tr>
+                <tr><td>Rejected</td><td>The record is closed as unsuccessful.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap no-break">
+            <h3>Assessment Statuses</h3>
+            <table>
+              <thead>
+                <tr><th>Status</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Not sent</td><td>No assessment has been issued yet.</td></tr>
+                <tr><td>Sent</td><td>Assessment access has been generated and shared.</td></tr>
+                <tr><td>In progress</td><td>Candidate has started but not yet submitted.</td></tr>
+                <tr><td>Passed</td><td>Submitted and passed threshold.</td></tr>
+                <tr><td>Review</td><td>Submitted and needs reviewer judgment.</td></tr>
+                <tr><td>Failed</td><td>Submitted but did not meet threshold.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap no-break">
+            <h3>Result Statuses</h3>
+            <table>
+              <thead>
+                <tr><th>Status</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Pass</td><td>Candidate met the required score threshold.</td></tr>
+                <tr><td>Review</td><td>Borderline result or integrity-driven review needed.</td></tr>
+                <tr><td>Fail</td><td>Candidate scored below the required threshold.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap no-break">
+            <h3>Review States</h3>
+            <table>
+              <thead>
+                <tr><th>State</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Unreviewed</td><td>No formal reviewer action yet.</td></tr>
+                <tr><td>Reviewed</td><td>Outcome has been checked and processed.</td></tr>
+                <tr><td>Flagged</td><td>Needs extra reviewer attention or escalation.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap no-break">
+            <h3>Integrity Risk Levels</h3>
+            <table>
+              <thead>
+                <tr><th>Level</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Clean</td><td>No meaningful concern from activity counts.</td></tr>
+                <tr><td>Watch</td><td>Some activity was recorded and should be considered.</td></tr>
+                <tr><td>Review</td><td>Higher-risk integrity activity requiring closer inspection.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <h3>Common Terms Used in the App</h3>
+        <div class="term-grid">
+          <div class="term-card"><strong>Candidate workspace</strong><p>The People area that lists and filters candidate records.</p></div>
+          <div class="term-card"><strong>Owner</strong><p>The internal person currently responsible for the candidate or linked workflow.</p></div>
+          <div class="term-card"><strong>Preset</strong><p>A reusable assessment bundle made from one or more add-ons.</p></div>
+          <div class="term-card"><strong>Add-on</strong><p>A configurable building block used inside the assessment builder.</p></div>
+          <div class="term-card"><strong>Pass target</strong><p>The overall weighted percentage needed to pass the assessment.</p></div>
+          <div class="term-card"><strong>Score contribution</strong><p>The mark allocation each selected exam contributes toward the total 100.</p></div>
+          <div class="term-card"><strong>Linked workflow</strong><p>A result that is attached to a tracked candidate profile, owner, and stage.</p></div>
+          <div class="term-card"><strong>Assessment-only result</strong><p>A result stored without a tracked candidate profile attached.</p></div>
+        </div>
+      </section>
+
+      <section class="page page-break">
+        <div class="section-tag">11. Screenshot Plan</div>
+        <h2>Recommended Screenshots to Add Later</h2>
+        <p class="lede">
+          Use this checklist when you attach screenshots to a later edition of the handbook. Each image
+          should be clear, moderately cropped, and focused on the page elements being explained.
+        </p>
+
+        <div class="screenshot-card no-break">
+          <h4>1. Login page</h4>
+          <p><strong>What to show:</strong> email/password sign-in form and page title.</p>
+          <p><strong>Recommended caption:</strong> “Internal users sign in here to manage candidates, assessments, results, and user access.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>2. Candidates workspace</h4>
+          <p><strong>What to show:</strong> search and filters, candidate cards or rows, bulk actions, and CSV import area.</p>
+          <p><strong>Recommended caption:</strong> “The Candidates workspace is the main hiring dashboard for intake, filtering, and actioning records.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>3. Register candidate page</h4>
+          <p><strong>What to show:</strong> required fields, role picker, source choices, and owner field.</p>
+          <p><strong>Recommended caption:</strong> “Register a candidate with the core identity, role, source, and owner details first.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>4. Candidate detail page</h4>
+          <p><strong>What to show:</strong> decision panel, milestone timeline, resume section, notes section, and latest result panel.</p>
+          <p><strong>Recommended caption:</strong> “The candidate record combines decisioning, milestones, notes, resume management, and screener status.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>5. Assessment builder</h4>
+          <p><strong>What to show:</strong> step rail and the select/customize/calibrate panels, including score contribution totals.</p>
+          <p><strong>Recommended caption:</strong> “Build a screener from presets or individual add-ons, then calibrate score contribution to 100.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>6. Assessment share/access panel</h4>
+          <p><strong>What to show:</strong> generated link, Test ID, passcode, and copy/open actions.</p>
+          <p><strong>Recommended caption:</strong> “After generation, the share panel provides the link, Test ID, and passcode to send to the candidate.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>7. Candidate assessment start / check-in page</h4>
+          <p><strong>What to show:</strong> candidate full name/email/passcode fields plus the side panel with time, integrity, attempts left, and exams.</p>
+          <p><strong>Recommended caption:</strong> “Before the assessment starts, the candidate confirms identity and sees timing, integrity, and exam details.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>8. Results workspace</h4>
+          <p><strong>What to show:</strong> filters, result rows, compare action, export buttons, and bulk review controls.</p>
+          <p><strong>Recommended caption:</strong> “The Results workspace supports review triage, comparison, exports, and linked workflow updates.”</p>
+        </div>
+        <div class="screenshot-card no-break">
+          <h4>9. User access / admin page</h4>
+          <p><strong>What to show:</strong> create user form, existing users, and role catalog management entry point.</p>
+          <p><strong>Recommended caption:</strong> “Admins use the User access area to create internal accounts and maintain role catalog options.”</p>
+        </div>
+
+        <p class="footer-note">
+          Suggested screenshot rule: use real production-safe or staging-safe captures with personal data
+          removed or anonymized. Keep the same browser width across all images so the handbook looks consistent.
+        </p>
+      </section>
+    </div>
+  </body>
+</html>
