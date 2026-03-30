@@ -439,7 +439,8 @@ export function CandidateMilestoneTimeline({
   hasResume: boolean;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-0">
+      <div className="absolute bottom-6 left-4 top-4 hidden w-px bg-gradient-to-b from-brand-300/30 via-white/10 to-transparent sm:block" />
       {milestones.map((milestone, index) => {
         const result = derivedResult(milestone);
         const hasActivity = Boolean(
@@ -460,12 +461,12 @@ export function CandidateMilestoneTimeline({
           <details
             key={milestone.id}
             open={!compactByDefault}
-            className="group rounded-[22px] border border-white/10 bg-black/20 p-3.5 transition duration-200 hover:border-white/20 hover:bg-white/[0.03]"
+            className="group relative ml-0 border-t border-white/10 py-4 first:border-t-0 sm:pl-14"
           >
             <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
               <div className="flex items-start gap-3">
                 <div className="hidden sm:block">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-white/[0.05] text-sm text-slate-200">
+                  <div className="absolute left-0 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-[linear-gradient(180deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))] text-sm text-slate-200 shadow-[0_0_0_6px_rgba(5,10,20,0.9)]">
                     {index + 1}
                   </div>
                 </div>
@@ -498,7 +499,7 @@ export function CandidateMilestoneTimeline({
               </div>
             </summary>
 
-            <div className="mt-3 border-t border-white/10 pt-3">
+            <div className="mt-4 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8">
               {milestone.type === "registration" ? (
                 hasResume ? (
                   <p className="text-sm text-slate-300">Resume attached.</p>

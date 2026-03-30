@@ -182,7 +182,7 @@ export default async function CandidateDetailPage({
             <div className="min-w-0 space-y-4">
               {outcomeBadges}
 
-              <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+              <div className="space-y-4 rounded-[22px] border border-white/10 bg-black/20 p-4">
                 <div className="space-y-3">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate details</p>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -203,29 +203,28 @@ export default async function CandidateDetailPage({
                       <p className="text-sm text-brand-100">{candidate.currentFocus || "No active stage yet"}</p>
                     </div>
                   </div>
-                  <div className="rounded-[16px] border border-white/8 bg-white/[0.04] px-3 py-2">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Next prompt</p>
-                    <p className="mt-1 text-sm text-slate-200">{nextPrompt(candidate)}</p>
+                </div>
+                <div className="grid gap-3 border-t border-white/8 pt-4 sm:grid-cols-[0.9fr_1fr_1.1fr]">
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Latest result</p>
+                    <p className="text-lg text-white">
+                      {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {latest?.submittedAt ? `Submitted ${compactDate(latest.submittedAt)}` : "No assessment submitted yet"}
+                    </p>
                   </div>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Assessment score</p>
-                  <p className="mt-2 text-xl text-white">
-                    {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400">
-                    {latest?.submittedAt ? `Submitted ${compactDate(latest.submittedAt)}` : "No assessment submitted yet"}
-                  </p>
-                </div>
-                <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Resume</p>
-                  <p className="mt-2 text-xl text-white">{currentResume ? "Attached" : "Missing"}</p>
-                  <p className="mt-1 break-all text-xs leading-5 text-slate-400">
-                    {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Resume</p>
+                    <p className="text-sm text-white">{currentResume ? "Attached" : "Missing"}</p>
+                    <p className="break-all text-xs leading-5 text-slate-400">
+                      {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Next prompt</p>
+                    <p className="text-sm text-slate-200">{nextPrompt(candidate)}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -267,9 +266,9 @@ export default async function CandidateDetailPage({
           </div>
         </StagePanel>
 
-        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-7 xl:grid-cols-[1.25fr_0.75fr]">
           <div className="space-y-5">
-            <StagePanel className="space-y-4">
+            <div className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Hiring stages</h2>
                 <p className="text-sm text-slate-300">
@@ -281,21 +280,21 @@ export default async function CandidateDetailPage({
                 milestones={candidate.milestones}
                 hasResume={Boolean(currentResume)}
               />
-            </StagePanel>
+            </div>
 
-            <StagePanel className="space-y-4">
+            <div className="border-t border-white/10 pt-5">
               <CandidateActivityModal items={activityFeed} />
-            </StagePanel>
+            </div>
           </div>
 
-          <div className="space-y-5">
-            <StagePanel className="space-y-4">
+          <div className="space-y-6 xl:pt-1">
+            <section className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Assessment result</h2>
                 <p className="text-sm text-slate-300">View the latest assessment result and next action.</p>
               </div>
               {latest?.attemptId ? (
-                <div className="space-y-4 rounded-[20px] border border-white/10 bg-black/20 p-4">
+                <div className="space-y-4 rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
                   <div className="flex flex-wrap gap-2">
                     <CandidateAssessmentPill status={screener} />
                     <StatusPill
@@ -323,7 +322,7 @@ export default async function CandidateDetailPage({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
                   <p className="text-sm text-slate-300">No assessment result yet.</p>
                   {canSendScreener && screenerMilestone ? (
                     <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
@@ -332,9 +331,9 @@ export default async function CandidateDetailPage({
                   ) : null}
                 </div>
               )}
-            </StagePanel>
+            </section>
 
-            <StagePanel id="resume" className="space-y-4">
+            <section id="resume" className="space-y-4 border-t border-white/10 pt-5">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Resume</h2>
                 <p className="text-sm text-slate-300">Upload, replace, or download the candidate&apos;s resume here.</p>
@@ -343,7 +342,7 @@ export default async function CandidateDetailPage({
               <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
 
               {currentResume ? (
-                <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
                       <StatusPill label="Current" tone="blue" />
@@ -373,9 +372,9 @@ export default async function CandidateDetailPage({
                   </div>
                 </div>
               ) : null}
-            </StagePanel>
+            </section>
 
-            <StagePanel className="space-y-5">
+            <section className="space-y-5 border-t border-white/10 pt-5">
               <div className="space-y-1">
                 <h2 className="text-2xl text-white">Notes</h2>
                 <p className="text-sm text-slate-300">Add interview and review notes here.</p>
@@ -417,7 +416,7 @@ export default async function CandidateDetailPage({
                     const author = note.createdByName || note.createdByEmail;
 
                     return (
-                      <div key={note.id} className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+                      <div key={note.id} className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
                         <div className="flex flex-wrap gap-2">
                           <CandidateNoteTypePill type={note.type} />
                           <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
@@ -431,7 +430,7 @@ export default async function CandidateDetailPage({
                   })}
                 </div>
               )}
-            </StagePanel>
+            </section>
           </div>
         </div>
 
