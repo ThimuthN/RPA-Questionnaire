@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 
 export default async function AssessmentsPage() {
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref("/assessments"));
-  }
+  await requirePageSession("/assessments");
 
   redirect("/create-test");
 }

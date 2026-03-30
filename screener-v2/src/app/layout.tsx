@@ -3,7 +3,7 @@ import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { getAppSession } from "@/lib/auth/app-session";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -44,7 +44,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getSession();
+  const session = await getAppSession();
 
   return (
     <html lang="en">

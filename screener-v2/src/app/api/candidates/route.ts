@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import {
   candidateFinalDecisionValues,
   candidateNextActionValues,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/candidates/types";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
+import { isFormRequest } from "@/lib/http/request";
 import {
   createRequestLogContext,
   logRouteError,
@@ -34,20 +35,13 @@ const candidateSchema = z.object({
   notesSummary: z.string().optional()
 });
 
-function isFormRequest(request: Request) {
-  const contentType = request.headers.get("content-type") || "";
-  return (
-    contentType.includes("application/x-www-form-urlencoded") ||
-    contentType.includes("multipart/form-data")
-  );
-}
-
 export async function POST(request: Request) {
   const logContext = createRequestLogContext(request, "api.candidates.create");
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const { session } = auth;
 
   const formRequest = isFormRequest(request);
   const rawBody = formRequest ? Object.fromEntries((await request.formData()).entries()) : await request.json();

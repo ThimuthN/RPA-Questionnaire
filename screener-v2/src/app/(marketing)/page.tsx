@@ -19,7 +19,7 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 
@@ -37,8 +37,8 @@ function resultStatusTone(status: string) {
 }
 
 export default async function MarketingHomePage() {
-  const session = await getSession();
-  const createHref = session ? "/create-test" : "/login?next=/create-test";
+  const session = await getAppSession();
+  const createHref = session ? "/create-test" : buildLoginHref("/create-test");
   const [candidateWorkspace, resultWorkspace] = session
     ? await Promise.all([
         listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),

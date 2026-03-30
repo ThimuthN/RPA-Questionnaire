@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAppUser } from "@/lib/auth/app-auth";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireAdminApiSession } from "@/lib/auth/guards";
+import { isFormRequest } from "@/lib/http/request";
 
 const userSchema = z.object({
   name: z.string().optional(),
@@ -10,19 +11,12 @@ const userSchema = z.object({
   role: z.enum(["admin", "member"]).default("member")
 });
 
-function isFormRequest(request: Request) {
-  const contentType = request.headers.get("content-type") || "";
-  return (
-    contentType.includes("application/x-www-form-urlencoded") ||
-    contentType.includes("multipart/form-data")
-  );
-}
-
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session || session.role !== "admin") {
-    return NextResponse.json({ ok: false, message: "Admin access required." }, { status: 403 });
+  const auth = await requireAdminApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const { session } = auth;
 
   try {
     const rawBody = isFormRequest(request)

@@ -5,7 +5,7 @@ import {
   handleUpload,
   type HandleUploadBody
 } from "@vercel/blob/client";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import { getAppUrl } from "@/lib/server/app-url";
 import {
   addCandidateResume,
@@ -26,6 +26,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+async function ensureLoggedIn() {
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    throw new Error("Login required.");
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -40,10 +47,7 @@ export async function POST(
     const contentType = request.headers.get("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
-      const session = await getSession();
-      if (!session) {
-        throw new Error("Login required.");
-      }
+      await ensureLoggedIn();
 
       const exists = await candidateExists(id);
       if (!exists) {
@@ -96,10 +100,7 @@ export async function POST(
     const body = (await request.json()) as unknown;
 
     if (isRecord(body) && body.action === "token") {
-      const session = await getSession();
-      if (!session) {
-        throw new Error("Login required.");
-      }
+      await ensureLoggedIn();
 
       const exists = await candidateExists(id);
       if (!exists) {
@@ -122,10 +123,7 @@ export async function POST(
     }
 
     if (isRecord(body) && body.action === "complete") {
-      const session = await getSession();
-      if (!session) {
-        throw new Error("Login required.");
-      }
+      await ensureLoggedIn();
 
       const exists = await candidateExists(id);
       if (!exists) {
@@ -168,10 +166,7 @@ export async function POST(
       body: uploadBody,
       request,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const session = await getSession();
-        if (!session) {
-          throw new Error("Login required.");
-        }
+        await ensureLoggedIn();
 
         const exists = await candidateExists(id);
         if (!exists) {
@@ -242,9 +237,9 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id } = await params;

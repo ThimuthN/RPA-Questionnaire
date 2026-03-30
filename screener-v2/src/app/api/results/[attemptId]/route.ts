@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getAppSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import { getResult } from "@/lib/db/repositories";
 
 export async function GET(
   _request: Request,
   context: { params: Promise<{ attemptId: string }> }
 ) {
-  if (!(await getAppSession())) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { attemptId } = await context.params;

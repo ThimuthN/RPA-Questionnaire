@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StatusPill } from "@/components/primitives/StatusPill";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
 
 const AddonLibraryClient = dynamic(
@@ -18,10 +17,7 @@ const AddonLibraryClient = dynamic(
 );
 
 export default async function AddonsPage() {
-  const session = await getSession();
-  if (!session) {
-    redirect("/login?next=/addons");
-  }
+  await requirePageSession("/addons");
 
   const [addons, presets] = await Promise.all([
     listAddonCatalog(true),

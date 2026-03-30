@@ -1,6 +1,6 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import {
   candidateExists,
   getLatestCandidateResume
@@ -15,9 +15,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { id } = await params;

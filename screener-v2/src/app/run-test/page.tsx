@@ -1,7 +1,7 @@
 import { RunTestClient } from "@/features/run/RunTestClient";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { getAppSession } from "@/lib/auth/app-session";
 
 export default async function RunTestPage() {
-  const session = await getSession();
+  const session = await getAppSession();
   return <RunTestClient canManageAccess={Boolean(session)} />;
 }

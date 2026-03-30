@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import { redirect } from "next/navigation";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 
 export default async function CandidatesPage({
   searchParams
@@ -13,8 +13,6 @@ export default async function CandidatesPage({
     if (typeof value === "string" && value.length > 0) query.set(key, value);
   }
   const nextPath = `/candidates${query.toString() ? `?${query.toString()}` : ""}`;
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref(nextPath));
-  }
+  await requirePageSession(nextPath);
   redirect((`/people/candidates${query.toString() ? `?${query.toString()}` : ""}`) as Route);
 }

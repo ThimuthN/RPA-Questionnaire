@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
@@ -11,7 +10,7 @@ import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
@@ -96,9 +95,7 @@ export default async function PeopleCandidatesPage({
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref(nextPath));
-  }
+  await requirePageSession(nextPath);
   const page = await listCandidateWorkspacePage({
     q: params.q?.trim() || undefined,
     roleId: params.roleId?.trim() || undefined,

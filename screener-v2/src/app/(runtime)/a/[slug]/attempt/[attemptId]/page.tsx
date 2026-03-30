@@ -1,11 +1,6 @@
 import Link from "next/link";
-import type { Route } from "next";
-import { redirect } from "next/navigation";
 import { RuntimeClient } from "@/features/runtime/RuntimeClient";
-import {
-  getRuntimeSession,
-  runtimeSessionMatchesAttempt
-} from "@/lib/auth/runtime-session";
+import { requireRuntimeAttemptPageAccess } from "@/lib/auth/guards";
 import { getAttempt } from "@/lib/db/repositories";
 import { sanitizeBlueprintForClient } from "@/lib/exams/client-blueprint";
 import { carriesRoleContext } from "@/lib/exams/catalog";
@@ -13,20 +8,13 @@ import { StagePanel } from "@/components/scene/StagePanel";
 
 export const dynamic = "force-dynamic";
 
-function runtimeEntryHref(slug: string): Route {
-  return (slug === "internal" ? "/employee/verify" : `/a/${slug}`) as Route;
-}
-
 export default async function AttemptRuntimePage({
   params
 }: {
   params: Promise<{ slug: string; attemptId: string }>;
 }) {
   const { attemptId, slug } = await params;
-  const runtimeSession = await getRuntimeSession();
-  if (!runtimeSessionMatchesAttempt(runtimeSession, { attemptId, slug })) {
-    redirect(runtimeEntryHref(slug));
-  }
+  await requireRuntimeAttemptPageAccess({ attemptId, slug });
   const attempt = await getAttempt(attemptId);
   if (!attempt) {
     return (

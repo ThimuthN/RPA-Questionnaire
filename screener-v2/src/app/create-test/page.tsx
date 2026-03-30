@@ -1,8 +1,7 @@
-import { redirect } from "next/navigation";
 import dynamic from "next/dynamic";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 
 const CreateAssessmentBuilder = dynamic(
   () => import("@/components/assessments/CreateAssessmentBuilder").then((mod) => mod.CreateAssessmentBuilder),
@@ -20,9 +19,7 @@ export default async function CreateTestPage({
 }: {
   searchParams: Promise<{ candidateId?: string; milestoneId?: string }>;
 }) {
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref("/create-test"));
-  }
+  await requirePageSession("/create-test");
 
   const params = await searchParams;
   const [addons, presets] = await Promise.all([listAddonCatalog(), listAssessmentPresets()]);

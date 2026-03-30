@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAppSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import { resultsToCsv } from "@/lib/exports/results-export";
 
 export async function GET(request: Request) {
-  if (!(await getAppSession())) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   const { searchParams } = new URL(request.url);

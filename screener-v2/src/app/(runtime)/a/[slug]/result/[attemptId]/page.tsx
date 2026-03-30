@@ -1,11 +1,6 @@
 import Link from "next/link";
-import type { Route } from "next";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
-import {
-  getRuntimeSession,
-  runtimeSessionMatchesAttempt
-} from "@/lib/auth/runtime-session";
+import { requireRuntimeAttemptPageAccess } from "@/lib/auth/guards";
 import { getResult } from "@/lib/db/repositories";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
 import { SignalCard } from "@/components/primitives/SignalCard";
@@ -16,10 +11,6 @@ import { copy } from "@/lib/design/copy";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
 
 export const dynamic = "force-dynamic";
-
-function runtimeEntryHref(slug: string): Route {
-  return (slug === "internal" ? "/employee/verify" : `/a/${slug}`) as Route;
-}
 
 function buildSignals(row: ResultSummary) {
   const entries = Object.entries(row.breakdownByCategory).sort((a, b) => b[1].percent - a[1].percent);
@@ -38,10 +29,7 @@ export default async function RuntimeResultPage({
   params: Promise<{ slug: string; attemptId: string }>;
 }) {
   const { attemptId, slug } = await params;
-  const runtimeSession = await getRuntimeSession();
-  if (!runtimeSessionMatchesAttempt(runtimeSession, { attemptId, slug })) {
-    redirect(runtimeEntryHref(slug));
-  }
+  await requireRuntimeAttemptPageAccess({ attemptId, slug });
   const result = await getResult(attemptId);
   if (!result) {
     return (

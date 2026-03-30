@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import { parseCandidateCsv } from "@/lib/candidates/csv";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateCandidates, createCandidate } from "@/lib/db/candidates";
@@ -23,10 +23,11 @@ function redirectUrl(request: Request, returnTo?: string) {
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
+  const { session } = auth;
 
   const formData = await request.formData();
   try {

@@ -7,10 +7,10 @@ import {
   type StackId
 } from "@/lib/assessment-engine/types";
 import type { SectionId } from "@/lib/sections/types";
+import { requireApiSession } from "@/lib/auth/guards";
 import { createInvite } from "@/lib/db/repositories";
 import { normalizeSelectedSections } from "@/lib/sections/registry";
 import { getAppUrl } from "@/lib/server/app-url";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
 import { examDefinitionIdSchema } from "@/lib/exams/definitions";
 import {
   createRequestLogContext,
@@ -60,10 +60,11 @@ export async function POST(request: Request) {
   const logContext = createRequestLogContext(request, "api.invites.create");
 
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+    const auth = await requireApiSession();
+    if (!auth.ok) {
+      return auth.response;
     }
+    const { session } = auth;
     const body = createInviteSchema.parse(await request.json());
     const requestedExamCount = body.blueprint?.exams?.length ?? body.sections?.length ?? 0;
     if (requestedExamCount === 0) {

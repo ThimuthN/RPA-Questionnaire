@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
@@ -9,7 +8,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 import { listEmployeeWorkspacePage } from "@/lib/db/employee-workspace";
 
 export const dynamic = "force-dynamic";
@@ -62,9 +61,7 @@ export default async function PeopleEmployeesPage({
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/people/employees${query.toString() ? `?${query.toString()}` : ""}`;
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref(nextPath));
-  }
+  await requirePageSession(nextPath);
   const page = await listEmployeeWorkspacePage({
     q: params.q?.trim() || undefined,
     contextType: params.contextType?.trim() || undefined,

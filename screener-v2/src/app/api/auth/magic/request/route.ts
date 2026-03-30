@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { issueMagicToken } from "@/lib/auth/magic-link";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireApiSession } from "@/lib/auth/guards";
 import { getAppUrl } from "@/lib/server/app-url";
 
 const requestSchema = z.object({
@@ -10,9 +10,9 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ ok: false, message: "Login required." }, { status: 401 });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
   }
 
   try {

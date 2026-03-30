@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
 import type { ReactNode } from "react";
-import { redirect } from "next/navigation";
 import {
   assessmentContextTypeValues,
   type AssessmentContextType,
@@ -17,7 +16,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { requirePageSession } from "@/lib/auth/guards";
 import { candidateStageLabels, candidateStageValues, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
@@ -166,9 +165,7 @@ export default async function ResultsPage({
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/results${query.toString() ? `?${query.toString()}` : ""}`;
-  if (!(await getAppSession())) {
-    redirect(buildLoginHref(nextPath));
-  }
+  await requirePageSession(nextPath);
   const page = await listResultWorkspacePage({
     q: pageState.q?.trim() || undefined,
     status: statusOptions.includes(pageState.status as ResultStatusFilter)

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticateAppUser } from "@/lib/auth/app-auth";
 import { createSessionToken, sanitizeNextPath, setSessionCookie } from "@/lib/auth/session";
+import { isFormRequest } from "@/lib/http/request";
 import {
   createRequestLogContext,
   logRouteError,
@@ -13,14 +14,6 @@ const loginSchema = z.object({
   password: z.string().min(8),
   next: z.string().optional()
 });
-
-function isFormRequest(request: Request) {
-  const contentType = request.headers.get("content-type") || "";
-  return (
-    contentType.includes("application/x-www-form-urlencoded") ||
-    contentType.includes("multipart/form-data")
-  );
-}
 
 export async function POST(request: Request) {
   const logContext = createRequestLogContext(request, "api.auth.login");

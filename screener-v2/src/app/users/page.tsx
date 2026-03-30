@@ -1,9 +1,8 @@
-import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { getAppSession as getSession } from "@/lib/auth/app-session";
+import { requireAdminPageSession } from "@/lib/auth/guards";
 import { listAppUsers } from "@/lib/auth/app-auth";
 
 export default async function UsersPage({
@@ -11,13 +10,7 @@ export default async function UsersPage({
 }: {
   searchParams: Promise<{ created?: string; updated?: string; error?: string }>;
 }) {
-  const session = await getSession();
-  if (!session) {
-    redirect("/login?next=/users");
-  }
-  if (session.role !== "admin") {
-    redirect("/create-test");
-  }
+  await requireAdminPageSession("/users");
 
   const users = await listAppUsers();
   const params = await searchParams;
