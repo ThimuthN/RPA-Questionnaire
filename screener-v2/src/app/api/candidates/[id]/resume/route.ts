@@ -1,224 +1,76 @@
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import {
-  generateClientTokenFromReadWriteToken,
-  handleUpload,
-  type HandleUploadBody
-} from "@vercel/blob/client";
 import { requireApiSession } from "@/lib/auth/guards";
-import { getAppUrl } from "@/lib/server/app-url";
 import {
-  addCandidateResume,
-  candidateExists,
   getLatestCandidateResume
 } from "@/lib/db/candidates";
 import {
-  candidateResumeMaxSizeBytes,
-  candidateResumeMimeTypes
-} from "@/lib/candidates/resume-config";
+  assertCandidateResumeCandidateExists,
+  assertCandidateResumeMimeType,
+  assertCandidateResumeSize,
+  assertCandidateResumeStorageKey,
+  persistCandidateResumeUpload
+} from "@/lib/candidates/resume-storage";
 import {
   createRequestLogContext,
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-async function ensureLoggedIn() {
-  const auth = await requireApiSession();
-  if (!auth.ok) {
-    throw new Error("Login required.");
-  }
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const callbackUrl = `${getAppUrl(request)}/api/candidates/${id}/resume`;
   const logContext = createRequestLogContext(request, "api.candidates.resume", {
     candidateId: id
   });
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
 
   try {
     const contentType = request.headers.get("content-type") || "";
-
-    if (contentType.includes("multipart/form-data")) {
-      await ensureLoggedIn();
-
-      const exists = await candidateExists(id);
-      if (!exists) {
-        throw new Error("Candidate not found.");
-      }
-
-      const formData = await request.formData();
-      const action = formData.get("action");
-      const pathname = typeof formData.get("pathname") === "string" ? String(formData.get("pathname")) : "";
-      const file = formData.get("file");
-
-      if (action !== "upload") {
-        throw new Error("Invalid upload action.");
-      }
-
-      if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
-        throw new Error("Invalid resume upload path.");
-      }
-
-      if (!(file instanceof File)) {
-        throw new Error("Choose a resume file first.");
-      }
-
-      if (!candidateResumeMimeTypes.includes(file.type as (typeof candidateResumeMimeTypes)[number])) {
-        throw new Error("Unsupported resume file type.");
-      }
-
-      if (!Number.isFinite(file.size) || file.size <= 0 || file.size > candidateResumeMaxSizeBytes) {
-        throw new Error("Resume size is invalid.");
-      }
-
-      const blob = await put(pathname, file, {
-        access: "private",
-        addRandomSuffix: false,
-        contentType: file.type
-      });
-
-      const resume = await addCandidateResume({
-        candidateId: id,
-        fileName: file.name.trim() || pathname.split("/").pop() || "resume",
-        mimeType: file.type,
-        sizeBytes: Math.round(file.size),
-        storageKey: blob.pathname,
-        storageUrl: blob.url
-      });
-
-      return NextResponse.json({ ok: true, resume });
+    if (!contentType.includes("multipart/form-data")) {
+      throw new Error("Resume upload must use multipart form data.");
     }
 
-    const body = (await request.json()) as unknown;
+    await assertCandidateResumeCandidateExists(id);
 
-    if (isRecord(body) && body.action === "token") {
-      await ensureLoggedIn();
+    const formData = await request.formData();
+    const action = formData.get("action");
+    const pathname = typeof formData.get("pathname") === "string" ? String(formData.get("pathname")) : "";
+    const file = formData.get("file");
 
-      const exists = await candidateExists(id);
-      if (!exists) {
-        throw new Error("Candidate not found.");
-      }
-
-      const pathname = typeof body.pathname === "string" ? body.pathname : "";
-      if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
-        throw new Error("Invalid resume upload path.");
-      }
-
-      const clientToken = await generateClientTokenFromReadWriteToken({
-        pathname,
-        allowedContentTypes: [...candidateResumeMimeTypes],
-        maximumSizeInBytes: candidateResumeMaxSizeBytes,
-        addRandomSuffix: false
-      });
-
-      return NextResponse.json({ ok: true, clientToken });
+    if (action !== "upload") {
+      throw new Error("Invalid upload action.");
     }
 
-    if (isRecord(body) && body.action === "complete") {
-      await ensureLoggedIn();
-
-      const exists = await candidateExists(id);
-      if (!exists) {
-        throw new Error("Candidate not found.");
-      }
-
-      const storageKey = typeof body.storageKey === "string" ? body.storageKey : "";
-      const storageUrl = typeof body.storageUrl === "string" ? body.storageUrl : "";
-      const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
-      const mimeType = typeof body.mimeType === "string" ? body.mimeType : "";
-      const sizeBytes = typeof body.sizeBytes === "number" ? body.sizeBytes : Number(body.sizeBytes);
-
-      if (!storageKey.startsWith(`candidate-resumes/${id}/`)) {
-        throw new Error("Invalid resume upload path.");
-      }
-      if (!storageUrl) {
-        throw new Error("Resume upload did not return a file URL.");
-      }
-      if (!candidateResumeMimeTypes.includes(mimeType as (typeof candidateResumeMimeTypes)[number])) {
-        throw new Error("Unsupported resume file type.");
-      }
-      if (!Number.isFinite(sizeBytes) || sizeBytes <= 0 || sizeBytes > candidateResumeMaxSizeBytes) {
-        throw new Error("Resume size is invalid.");
-      }
-
-      await addCandidateResume({
-        candidateId: id,
-        fileName: fileName || storageKey.split("/").pop() || "resume",
-        mimeType,
-        sizeBytes: Math.round(sizeBytes),
-        storageKey,
-        storageUrl
-      });
-
-      return NextResponse.json({ ok: true });
+    if (!(file instanceof File)) {
+      throw new Error("Choose a resume file first.");
     }
 
-    const uploadBody = body as HandleUploadBody;
-    const json = await handleUpload({
-      body: uploadBody,
-      request,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
-        await ensureLoggedIn();
+    assertCandidateResumeStorageKey(id, pathname);
+    assertCandidateResumeMimeType(file.type);
+    assertCandidateResumeSize(file.size);
 
-        const exists = await candidateExists(id);
-        if (!exists) {
-          throw new Error("Candidate not found.");
-        }
-
-        if (!pathname.startsWith(`candidate-resumes/${id}/`)) {
-          throw new Error("Invalid resume upload path.");
-        }
-
-        return {
-          allowedContentTypes: [...candidateResumeMimeTypes],
-          maximumSizeInBytes: candidateResumeMaxSizeBytes,
-          addRandomSuffix: false,
-          callbackUrl,
-          tokenPayload: clientPayload
-        };
-      },
-      onUploadCompleted: async ({ blob, tokenPayload }) => {
-        let fileName = blob.pathname.split("/").pop() || "resume";
-        let sizeBytes = 0;
-        try {
-          const parsed = JSON.parse(tokenPayload ?? "{}") as { fileName?: string; sizeBytes?: number };
-          if (parsed.fileName?.trim()) {
-            fileName = parsed.fileName.trim();
-          }
-          if (typeof parsed.sizeBytes === "number" && Number.isFinite(parsed.sizeBytes)) {
-            sizeBytes = Math.max(0, Math.round(parsed.sizeBytes));
-          }
-        } catch {
-          // Keep the blob pathname fallback when client payload is absent or malformed.
-        }
-
-        try {
-          await addCandidateResume({
-            candidateId: id,
-            fileName,
-            mimeType: blob.contentType || "application/octet-stream",
-            sizeBytes,
-            storageKey: blob.pathname,
-            storageUrl: blob.url
-          });
-        } catch (error) {
-          logRouteError("resume_upload_completion_failed", logContext, error, {
-            storageKey: blob.pathname
-          });
-          throw error;
-        }
-      }
+    const blob = await put(pathname, file, {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: file.type
     });
 
-    return NextResponse.json(json);
+    const resume = await persistCandidateResumeUpload({
+      candidateId: id,
+      fileName: file.name,
+      mimeType: file.type,
+      sizeBytes: file.size,
+      storageKey: blob.pathname,
+      storageUrl: blob.url
+    });
+
+    return NextResponse.json({ ok: true, resume });
   } catch (error) {
     logRouteError("candidate_resume_failed", logContext, error);
 
@@ -243,8 +95,9 @@ export async function GET(
   }
 
   const { id } = await params;
-  const exists = await candidateExists(id);
-  if (!exists) {
+  try {
+    await assertCandidateResumeCandidateExists(id);
+  } catch {
     return NextResponse.json({ ok: false, message: "Candidate not found." }, { status: 404 });
   }
 

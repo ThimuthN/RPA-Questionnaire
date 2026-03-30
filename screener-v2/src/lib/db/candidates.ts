@@ -29,6 +29,7 @@ import type {
   CandidateUiStatus
 } from "@/lib/candidates/types";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
+import { linkCandidateAssessmentAttemptInTx } from "@/lib/db/candidate-assessment-links";
 import { cuidLike } from "@/lib/tokens/token-service";
 
 
@@ -655,43 +656,61 @@ export async function addCandidateResume(input: {
   storageKey: string;
   storageUrl: string;
 }) {
-  const existing = await prisma.candidateResume.findFirst({
-    where: {
-      candidateId: input.candidateId,
-      storageKey: input.storageKey
-    }
+  const resume = await prisma.$transaction(async (tx) => {
+    const stored = await tx.candidateResume.upsert({
+      where: {
+        candidateId_storageKey: {
+          candidateId: input.candidateId,
+          storageKey: input.storageKey
+        }
+      },
+      update: {
+        fileName: input.fileName,
+        mimeType: input.mimeType,
+        sizeBytes: input.sizeBytes,
+        storageUrl: input.storageUrl
+      },
+      create: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        fileName: input.fileName,
+        mimeType: input.mimeType,
+        sizeBytes: input.sizeBytes,
+        storageKey: input.storageKey,
+        storageUrl: input.storageUrl
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    return stored;
   });
 
-  if (existing) {
-    return mapResume(existing);
-  }
-
-  const created = await prisma.candidateResume.create({
-    data: {
-      id: cuidLike(),
-      candidateId: input.candidateId,
-      fileName: input.fileName,
-      mimeType: input.mimeType,
-      sizeBytes: input.sizeBytes,
-      storageKey: input.storageKey,
-      storageUrl: input.storageUrl
-    }
-  });
-
-  await prisma.candidate.update({
-    where: { id: input.candidateId },
-    data: {
-      updatedAt: new Date()
-    }
-  });
-
-  return mapResume(created);
+  return mapResume(resume);
 }
 
 export async function getLatestCandidateResume(candidateId: string) {
   const row = await prisma.candidateResume.findFirst({
     where: { candidateId },
     orderBy: { uploadedAt: "desc" }
+  });
+
+  return row ? mapResume(row) : null;
+}
+
+export async function getCandidateResumeByStorageKey(candidateId: string, storageKey: string) {
+  const row = await prisma.candidateResume.findUnique({
+    where: {
+      candidateId_storageKey: {
+        candidateId,
+        storageKey
+      }
+    }
   });
 
   return row ? mapResume(row) : null;
@@ -927,33 +946,6 @@ export async function linkCandidateAssessmentToMilestone(input: {
         updatedAt: new Date()
       }
     });
-  });
-}
-
-async function linkCandidateAssessmentAttemptInTx(args: {
-  tx: Prisma.TransactionClient;
-  candidateAssessmentId: string;
-  attemptId: string;
-}) {
-  await args.tx.candidateAssessmentAttempt.upsert({
-    where: {
-      attemptId: args.attemptId
-    },
-    update: {
-      candidateAssessmentId: args.candidateAssessmentId
-    },
-    create: {
-      id: cuidLike(),
-      candidateAssessmentId: args.candidateAssessmentId,
-      attemptId: args.attemptId
-    }
-  });
-
-  await args.tx.candidateAssessment.update({
-    where: { id: args.candidateAssessmentId },
-    data: {
-      attemptId: args.attemptId
-    }
   });
 }
 

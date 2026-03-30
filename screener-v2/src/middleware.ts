@@ -1,31 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import {
+  isAdminOnlyPath,
+  isAuthRequiredPath
+} from "@/lib/auth/policy";
 import { SESSION_COOKIE_NAME, sanitizeNextPath, verifySessionToken } from "@/lib/auth/session";
-
-const authRequiredPrefixes = [
-  "/assessments",
-  "/candidates",
-  "/addons",
-  "/create-test",
-  "/people",
-  "/results",
-  "/studio",
-  "/users",
-  "/api/candidates",
-  "/api/results",
-  "/api/invites/create",
-  "/api/auth/magic/request",
-  "/api/users",
-  "/api/roles",
-  "/api/addons",
-  "/api/addon-presets"
-];
-
-const adminOnlyPrefixes = ["/users", "/api/users"];
-
-function matchesPrefix(pathname: string, prefixes: string[]) {
-  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-}
 
 function unauthorizedApi(message: string, status = 401) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -53,12 +32,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (matchesPrefix(pathname, authRequiredPrefixes)) {
+  if (isAuthRequiredPath(pathname)) {
     if (!session) {
       return isApi ? unauthorizedApi("Login required.") : redirectToLogin(request);
     }
 
-    if (matchesPrefix(pathname, adminOnlyPrefixes) && session.role !== "admin") {
+    if (isAdminOnlyPath(pathname) && session.role !== "admin") {
       return isApi
         ? unauthorizedApi("Admin access required.", 403)
         : NextResponse.redirect(new URL("/create-test", request.url));

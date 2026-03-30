@@ -2,9 +2,9 @@ import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
 import {
-  candidateExists,
-  getLatestCandidateResume
-} from "@/lib/db/candidates";
+  assertCandidateResumeCandidateExists,
+  resolveCandidateResumeRecord
+} from "@/lib/candidates/resume-storage";
 
 function contentDisposition(fileName: string, download: boolean) {
   const safeName = fileName.replace(/["\r\n]/g, "_");
@@ -21,8 +21,9 @@ export async function GET(
   }
 
   const { id } = await params;
-  const exists = await candidateExists(id);
-  if (!exists) {
+  try {
+    await assertCandidateResumeCandidateExists(id);
+  } catch {
     return NextResponse.json({ ok: false, message: "Candidate not found." }, { status: 404 });
   }
 
@@ -30,17 +31,15 @@ export async function GET(
   const requestedStorageKey = url.searchParams.get("storageKey")?.trim() || "";
   const download = url.searchParams.get("download") === "1";
 
-  const latestResume = await getLatestCandidateResume(id);
-  if (!latestResume) {
+  const resume = await resolveCandidateResumeRecord({
+    candidateId: id,
+    storageKey: requestedStorageKey || undefined
+  });
+  if (!resume) {
     return NextResponse.json({ ok: false, message: "Resume not found." }, { status: 404 });
   }
 
-  const storageKey = requestedStorageKey || latestResume.storageKey;
-  if (!storageKey.startsWith(`candidate-resumes/${id}/`)) {
-    return NextResponse.json({ ok: false, message: "Invalid resume path." }, { status: 400 });
-  }
-
-  const blob = await get(storageKey, {
+  const blob = await get(resume.storageKey, {
     access: "private",
     useCache: false
   });
@@ -51,9 +50,9 @@ export async function GET(
 
   return new Response(blob.stream, {
     headers: {
-      "content-type": blob.blob.contentType || latestResume.mimeType || "application/pdf",
+      "content-type": blob.blob.contentType || resume.mimeType || "application/pdf",
       "content-length": String(blob.blob.size),
-      "content-disposition": contentDisposition(latestResume.fileName, download),
+      "content-disposition": contentDisposition(resume.fileName, download),
       "cache-control": "private, no-store"
     }
   });

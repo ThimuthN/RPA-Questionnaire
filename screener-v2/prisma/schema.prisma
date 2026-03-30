@@ -106,6 +106,7 @@ model Invite {
   usedAttempts        Int      @default(0)
   expiresAt           DateTime?
   createdAt           DateTime @default(now())
+  attempts            Attempt[]
   candidateAssessments CandidateAssessment[]
 
   @@index([assessmentVersionId])
@@ -134,6 +135,7 @@ model Participant {
   phone      String?
   employeeId String?
   createdAt  DateTime @default(now())
+  attempts   Attempt[]
 
   @@unique([kind, email])
 }
@@ -169,6 +171,9 @@ model Attempt {
   integrityJson          Json
   startedAt              DateTime @default(now())
   submittedAt            DateTime?
+  invite                 Invite?  @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+  participant            Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  result                 Result?
   candidateAssessment    CandidateAssessment?
   candidateAssessmentAttempts CandidateAssessmentAttempt[]
 
@@ -190,6 +195,7 @@ model Result {
   breakdownJson    Json
   exportedAt       DateTime?
   createdAt        DateTime @default(now())
+  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@index([finalPercent])
   @@index([reviewState, createdAt])
@@ -243,6 +249,7 @@ model CandidateResume {
   uploadedAt DateTime @default(now())
   candidate  Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
+  @@unique([candidateId, storageKey])
   @@index([candidateId, uploadedAt])
 }
 

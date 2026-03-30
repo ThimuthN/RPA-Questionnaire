@@ -36,6 +36,10 @@ import {
   type InviteValidationState
 } from "@/lib/invites/validation";
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
+import {
+  linkCandidateAssessmentAttemptInTx,
+  syncCandidateAssessmentLatestAttemptInTx
+} from "@/lib/db/candidate-assessment-links";
 import { toObject } from "@/lib/db/db-utils";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import type {
@@ -944,36 +948,6 @@ export async function createOrGetParticipant(input: {
   return mapParticipant(created);
 }
 
-async function linkCandidateAssessmentAttemptInTx(args: {
-  tx: Prisma.TransactionClient;
-  candidateAssessmentId: string;
-  attemptId: string;
-  linkedAt: Date;
-}) {
-  await args.tx.candidateAssessmentAttempt.upsert({
-    where: {
-      attemptId: args.attemptId
-    },
-    update: {
-      candidateAssessmentId: args.candidateAssessmentId,
-      linkedAt: args.linkedAt
-    },
-    create: {
-      id: cuidLike(),
-      candidateAssessmentId: args.candidateAssessmentId,
-      attemptId: args.attemptId,
-      linkedAt: args.linkedAt
-    }
-  });
-
-  await args.tx.candidateAssessment.update({
-    where: { id: args.candidateAssessmentId },
-    data: {
-      attemptId: args.attemptId
-    }
-  });
-}
-
 export async function startAttempt(input: {
   inviteId?: string;
   assessmentVersionId?: string;
@@ -1863,21 +1837,9 @@ export async function deleteResultAttempt(attemptId: string) {
       });
 
       for (const link of linkedAssessments) {
-        const previousLatest = await tx.candidateAssessmentAttempt.findFirst({
-          where: {
-            candidateAssessmentId: link.candidateAssessmentId
-          },
-          orderBy: [{ linkedAt: "desc" }, { id: "desc" }],
-          select: {
-            attemptId: true
-          }
-        });
-
-        await tx.candidateAssessment.update({
-          where: { id: link.candidateAssessmentId },
-          data: {
-            attemptId: previousLatest?.attemptId ?? null
-          }
+        await syncCandidateAssessmentLatestAttemptInTx({
+          tx,
+          candidateAssessmentId: link.candidateAssessmentId
         });
       }
 
