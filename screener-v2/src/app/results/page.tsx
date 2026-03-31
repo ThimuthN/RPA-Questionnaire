@@ -422,7 +422,7 @@ export default async function ResultsPage({
 
             <StagePanel tone="open" className="overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-[1180px] w-full table-fixed text-left text-sm">
+                <table className="min-w-[1040px] w-full table-fixed text-left text-sm">
                   <thead
                     className="border-b text-[color:var(--app-muted)]"
                     style={{
@@ -432,13 +432,13 @@ export default async function ResultsPage({
                   >
                     <tr>
                       <th className="w-12 px-4 py-3">Select</th>
-                      <th className="w-[22%] px-4 py-3">Participant</th>
-                      <th className="w-[17%] px-4 py-3">Assessment</th>
-                      <th className="w-[12%] px-4 py-3">Score</th>
-                      <th className="w-[12%] px-4 py-3">Review</th>
-                      <th className="w-[15%] px-4 py-3">Linked record</th>
-                      <th className="w-[12%] px-4 py-3">Submitted</th>
-                      <th className="w-[16%] px-4 py-3 text-right">Actions</th>
+                      <th className="w-[20%] px-4 py-3">Participant</th>
+                      <th className="w-[16%] px-4 py-3">Assessment</th>
+                      <th className="w-[11%] px-4 py-3">Score</th>
+                      <th className="w-[11%] px-4 py-3">Review</th>
+                      <th className="w-[14%] px-4 py-3">Linked record</th>
+                      <th className="w-[10%] px-4 py-3">Submitted</th>
+                      <th className="w-[12%] px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -461,13 +461,17 @@ export default async function ResultsPage({
                         <td className={resultsTableCellClassName}>
                           <div className="space-y-1">
                             <p className="font-medium text-[color:var(--app-heading)]">{row.candidateName || "Unnamed participant"}</p>
-                            <p className="text-[color:var(--app-muted)]">{row.candidateEmail || "No email"}</p>
+                            <p className="truncate text-[color:var(--app-muted)]" title={row.candidateEmail || "No email"}>
+                              {row.candidateEmail || "No email"}
+                            </p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="space-y-1">
                             <p className="text-[color:var(--app-heading)]">{row.candidateRoleLabel || row.coreExamRoleLabel || "General assessment"}</p>
-                            <p className="text-xs text-[color:var(--app-muted)]">{stackSummary(row)}</p>
+                            <p className="truncate text-xs text-[color:var(--app-muted)]" title={stackSummary(row)}>
+                              {stackSummary(row)}
+                            </p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
@@ -494,20 +498,25 @@ export default async function ResultsPage({
                           )}
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <p className="whitespace-nowrap text-[color:var(--app-text)]">{new Date(row.submittedAt).toLocaleString()}</p>
+                          <p
+                            className="whitespace-nowrap text-[color:var(--app-text)]"
+                            title={new Date(row.submittedAt).toLocaleString()}
+                          >
+                            {new Date(row.submittedAt).toLocaleDateString()}
+                          </p>
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="flex justify-end gap-2 whitespace-nowrap">
                             <Link href={`/results/${row.attemptId}`}>
-                              <Button variant="secondary" className="px-3 py-2 text-xs">View</Button>
+                              <Button variant="secondary" className="px-2.5 py-2 text-xs">View</Button>
                             </Link>
                             {row.candidateId ? (
                               <Link href={`/candidates/${row.candidateId}`}>
-                                <Button variant="secondary" className="px-3 py-2 text-xs">Profile</Button>
+                                <Button variant="secondary" className="px-2.5 py-2 text-xs">Profile</Button>
                               </Link>
                             ) : null}
                             <Link href={toggleCompare(query, row.attemptId)}>
-                              <Button variant="ghost" className="px-3 py-2 text-xs">
+                              <Button variant="ghost" className="px-2 py-2 text-xs">
                                 {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
                               </Button>
                             </Link>
