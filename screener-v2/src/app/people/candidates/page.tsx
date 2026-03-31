@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
+import { PersistedTableState } from "@/components/workspace/PersistedTableState";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
 import { SceneShell } from "@/components/scene/SceneShell";
@@ -148,6 +149,7 @@ export default async function PeopleCandidatesPage({
           </div>
         }
       >
+        <PersistedTableState storageKey="people-candidates-table-view" />
         <StaggerGroup className="space-y-5" delay={0.04}>
           {params.deleted ? <StaggerItem><div className={messageTone("success")}>Candidate deleted.</div></StaggerItem> : null}
           {params.updated ? <StaggerItem><div className={messageTone("success")}>Updated {params.updated} candidate(s).</div></StaggerItem> : null}
@@ -239,7 +241,7 @@ export default async function PeopleCandidatesPage({
                   <option value="name_asc">Name A-Z</option>
                 </select>
                 <Button>Apply</Button>
-                <Link href="/people/candidates">
+                <Link href="/people/candidates?clearView=1">
                   <Button type="button" variant="secondary">
                     Reset
                   </Button>
@@ -289,9 +291,9 @@ export default async function PeopleCandidatesPage({
                   <Link href="/candidates/new">
                     <Button>Add candidate</Button>
                   </Link>
-                  <Link href="/people/candidates">
-                    <Button variant="secondary">Reset filters</Button>
-                  </Link>
+                <Link href="/people/candidates?clearView=1">
+                  <Button variant="secondary">Reset filters</Button>
+                </Link>
                 </div>
               </StagePanel>
             </StaggerItem>
@@ -419,7 +421,22 @@ export default async function PeopleCandidatesPage({
                                     </Link>
                                   ) : null;
                                 })()}
-                                {contextualAction(candidate) ? <span className="text-[color:var(--app-muted)]">|</span> : null}
+                                {candidate.hasResume && candidate.latestResumeStorageKey ? (
+                                  <>
+                                    {contextualAction(candidate) ? <span className="text-[color:var(--app-muted)]">|</span> : null}
+                                    <a
+                                      href={`/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={inlineActionClassName}
+                                    >
+                                      CV
+                                    </a>
+                                  </>
+                                ) : null}
+                                {(contextualAction(candidate) || (candidate.hasResume && candidate.latestResumeStorageKey))
+                                  ? <span className="text-[color:var(--app-muted)]">|</span>
+                                  : null}
                                 <Link href={`/candidates/${candidate.id}`} className={inlineActionClassName}>
                                   View profile
                                 </Link>

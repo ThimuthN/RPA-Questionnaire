@@ -13,6 +13,7 @@ import { SceneTransition } from "@/components/motion/SceneTransition";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
+import { PersistedTableState } from "@/components/workspace/PersistedTableState";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -237,6 +238,7 @@ export default async function ResultsPage({
           </div>
         }
       >
+        <PersistedTableState storageKey="results-table-view" />
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
             <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
@@ -408,7 +410,7 @@ export default async function ResultsPage({
                   <Link href="/assessments">
                     <Button>Open assessments</Button>
                   </Link>
-                  <Link href="/results">
+                  <Link href="/results?clearView=1">
                     <Button variant="secondary">Reset filters</Button>
                   </Link>
                 </div>

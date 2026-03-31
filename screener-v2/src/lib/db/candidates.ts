@@ -114,6 +114,7 @@ export interface CandidateMilestoneRecord {
 
 export interface CandidateListItem extends CandidateRecord {
   hasResume: boolean;
+  latestResumeStorageKey?: string;
   currentFocus?: string;
   latestAssessment: CandidateAssessmentRecord | null;
 }
@@ -1094,6 +1095,13 @@ export async function listCandidates(filters?: {
           resumes: true
         }
       },
+      resumes: {
+        orderBy: { uploadedAt: "desc" },
+        take: 1,
+        select: {
+          storageKey: true
+        }
+      },
       assessments: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -1154,6 +1162,7 @@ export async function listCandidates(filters?: {
     return {
       ...base,
       hasResume: row._count.resumes > 0,
+      latestResumeStorageKey: row.resumes[0]?.storageKey ?? undefined,
       currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
       latestAssessment: latest
         ? mapAssessment(

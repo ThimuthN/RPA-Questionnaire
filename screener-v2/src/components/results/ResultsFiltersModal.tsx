@@ -197,7 +197,7 @@ export function ResultsFiltersModal({
 
                       <div className="flex flex-wrap justify-between gap-3 border-t border-[color:var(--app-border)] pt-4">
                         <Link
-                          href="/results"
+                          href="/results?clearView=1"
                           className="inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-sm font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]"
                         >
                           Reset all

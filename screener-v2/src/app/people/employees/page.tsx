@@ -5,6 +5,7 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
+import { PersistedTableState } from "@/components/workspace/PersistedTableState";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
@@ -103,6 +104,7 @@ export default async function PeopleEmployeesPage({
           </div>
         }
       >
+        <PersistedTableState storageKey="people-employees-table-view" />
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
             <div className="space-y-4">
@@ -147,7 +149,7 @@ export default async function PeopleEmployeesPage({
                   ))}
                 </select>
                 <Button>Apply</Button>
-                <Link href="/people/employees">
+                <Link href="/people/employees?clearView=1">
                   <Button type="button" variant="secondary">
                     Reset
                   </Button>
@@ -165,7 +167,7 @@ export default async function PeopleEmployeesPage({
                   <Link href="/employee">
                     <Button>Open internal access</Button>
                   </Link>
-                  <Link href="/people/employees">
+                  <Link href="/people/employees?clearView=1">
                     <Button variant="secondary">Reset filters</Button>
                   </Link>
                 </div>
