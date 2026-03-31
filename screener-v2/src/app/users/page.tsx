@@ -40,7 +40,7 @@ export default async function UsersPage({
           </div>
         </StagePanel>
 
-        <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
         <StagePanel tone="summary" className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-[color:var(--app-heading)]">Add user</h2>
@@ -115,40 +115,48 @@ export default async function UsersPage({
             {users.length === 0 ? (
               <p className="p-4 text-sm text-[color:var(--app-muted)]">No database-backed users yet.</p>
             ) : (
-              <table className="min-w-full text-left">
+              <div className="overflow-x-auto">
+              <table className="min-w-[760px] w-full table-fixed text-left">
                 <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                   <tr>
-                    <th className="px-4 py-3 font-medium">Name</th>
-                    <th className="px-4 py-3 font-medium">Email</th>
-                    <th className="px-4 py-3 font-medium">Role</th>
-                    <th className="px-4 py-3 font-medium">Created</th>
-                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                    <th className="w-[22%] px-4 py-3 font-medium">Name</th>
+                    <th className="w-[28%] px-4 py-3 font-medium">Email</th>
+                    <th className="w-[14%] px-4 py-3 font-medium">Role</th>
+                    <th className="w-[16%] px-4 py-3 font-medium">Created</th>
+                    <th className="w-[20%] px-4 py-3 font-medium text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
                     <tr key={user.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]">
                       <td className="px-4 py-3 text-[color:var(--app-heading)]">{user.name || "Unnamed user"}</td>
-                      <td className="px-4 py-3 text-[color:var(--app-text)]">{user.email}</td>
+                      <td className="px-4 py-3 text-[color:var(--app-text)]">
+                        <span className="block truncate" title={user.email}>{user.email}</span>
+                      </td>
                       <td className="px-4 py-3 text-[color:var(--app-text)] capitalize">{user.role}</td>
-                      <td className="px-4 py-3 text-[color:var(--app-muted)]">{new Date(user.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-[color:var(--app-muted)]">
+                        <span className="whitespace-nowrap" title={new Date(user.createdAt).toLocaleString()}>
+                          {new Date(user.createdAt).toLocaleDateString()}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
-                        <form action={`/api/users/${user.id}`} method="post" className="flex flex-wrap items-center justify-end gap-2">
+                        <form action={`/api/users/${user.id}`} method="post" className="flex items-center justify-end gap-2 whitespace-nowrap">
                           <select
                             name="role"
                             defaultValue={user.role}
-                            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            className="min-w-[110px] rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                           >
                             <option value="member">Member</option>
                             <option value="admin">Admin</option>
                           </select>
-                          <Button type="submit" variant="secondary">Save</Button>
+                          <Button type="submit" variant="secondary" className="px-3 py-2 text-xs">Save</Button>
                         </form>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </StagePanel>
