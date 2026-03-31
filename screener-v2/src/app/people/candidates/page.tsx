@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { FileText } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
@@ -79,8 +80,14 @@ const tableHeadClassName =
 const tableCellClassName =
   "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
 
-const inlineActionClassName =
-  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
+const actionPillPrimaryClassName =
+  "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-3 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_28%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
+
+const actionPillSecondaryClassName =
+  "inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
+
+const actionIconPillClassName =
+  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-brand-strong)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-brand)]";
 
 function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
   if (candidate.latestAssessment?.attemptId) {
@@ -347,18 +354,18 @@ export default async function PeopleCandidatesPage({
 
                 <div className={tableShellClassName}>
                   <div className="overflow-x-auto">
-                    <table className="min-w-[1120px] w-full table-fixed text-left">
+                    <table className="min-w-[1220px] w-full table-fixed text-left">
                       <thead className={tableHeadClassName}>
                         <tr>
                           <th className="w-12 px-4 py-3 font-medium">Select</th>
-                          <th className="w-[18%] px-4 py-3 font-medium">Name</th>
-                          <th className="w-[12%] px-4 py-3 font-medium">Role</th>
-                          <th className="w-[11%] px-4 py-3 font-medium">Owner</th>
-                          <th className="w-[17%] px-4 py-3 font-medium">Status</th>
-                          <th className="w-[10%] px-4 py-3 font-medium">Stage</th>
-                          <th className="w-[15%] px-4 py-3 font-medium">Latest assessment</th>
-                          <th className="w-[9%] px-4 py-3 font-medium">Updated</th>
-                          <th className="w-[16%] px-4 py-3 font-medium text-right">Actions</th>
+                          <th className="w-[220px] px-4 py-3 font-medium">Name</th>
+                          <th className="w-[140px] px-4 py-3 font-medium">Role</th>
+                          <th className="w-[130px] px-4 py-3 font-medium">Owner</th>
+                          <th className="w-[180px] px-4 py-3 font-medium">Status</th>
+                          <th className="w-[120px] px-4 py-3 font-medium">Stage</th>
+                          <th className="w-[170px] px-4 py-3 font-medium">Latest assessment</th>
+                          <th className="w-[90px] px-4 py-3 font-medium">Updated</th>
+                          <th className="w-[220px] px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -416,28 +423,24 @@ export default async function PeopleCandidatesPage({
                                 {(() => {
                                   const action = contextualAction(candidate);
                                   return action ? (
-                                    <Link href={action.href} className={inlineActionClassName}>
+                                    <Link href={action.href} className={actionPillPrimaryClassName}>
                                       {action.label}
                                     </Link>
                                   ) : null;
                                 })()}
                                 {candidate.hasResume && candidate.latestResumeStorageKey ? (
-                                  <>
-                                    {contextualAction(candidate) ? <span className="text-[color:var(--app-muted)]">|</span> : null}
-                                    <a
-                                      href={`/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className={inlineActionClassName}
-                                    >
-                                      CV
-                                    </a>
-                                  </>
+                                  <a
+                                    href={`/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={actionIconPillClassName}
+                                    title="Open CV"
+                                    aria-label="Open CV"
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </a>
                                 ) : null}
-                                {(contextualAction(candidate) || (candidate.hasResume && candidate.latestResumeStorageKey))
-                                  ? <span className="text-[color:var(--app-muted)]">|</span>
-                                  : null}
-                                <Link href={`/candidates/${candidate.id}`} className={inlineActionClassName}>
+                                <Link href={`/candidates/${candidate.id}`} className={actionPillSecondaryClassName}>
                                   View profile
                                 </Link>
                               </div>

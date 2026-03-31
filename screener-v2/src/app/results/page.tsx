@@ -139,8 +139,11 @@ const filterInputClass =
   "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60";
 
 const resultsTableCellClassName = "px-4 py-4 align-middle text-sm";
-const inlineActionClassName =
-  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
+const actionPillPrimaryClassName =
+  "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-3 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_28%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
+
+const actionPillSecondaryClassName =
+  "inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
 
 function FilterField({
   label,
@@ -426,7 +429,7 @@ export default async function ResultsPage({
 
             <StagePanel tone="open" className="overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-[1040px] w-full table-fixed text-left text-sm">
+                <table className="min-w-[1140px] w-full table-fixed text-left text-sm">
                   <thead
                     className="border-b text-[color:var(--app-muted)]"
                     style={{
@@ -436,13 +439,13 @@ export default async function ResultsPage({
                   >
                     <tr>
                       <th className="w-12 px-4 py-3">Select</th>
-                      <th className="w-[20%] px-4 py-3">Participant</th>
-                      <th className="w-[16%] px-4 py-3">Assessment</th>
+                      <th className="w-[21%] px-4 py-3">Participant</th>
+                      <th className="w-[17%] px-4 py-3">Assessment</th>
                       <th className="w-[11%] px-4 py-3">Score</th>
                       <th className="w-[11%] px-4 py-3">Review</th>
                       <th className="w-[14%] px-4 py-3">Linked record</th>
                       <th className="w-[10%] px-4 py-3">Submitted</th>
-                      <th className="w-[12%] px-4 py-3 text-right">Actions</th>
+                      <th className="w-[16%] px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -511,19 +514,15 @@ export default async function ResultsPage({
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                            <Link href={`/results/${row.attemptId}`} className={inlineActionClassName}>
+                            <Link href={`/results/${row.attemptId}`} className={actionPillPrimaryClassName}>
                               View
                             </Link>
                             {row.candidateId ? (
-                              <>
-                                <span className="text-[color:var(--app-muted)]">|</span>
-                                <Link href={`/candidates/${row.candidateId}`} className={inlineActionClassName}>
-                                  Profile
-                                </Link>
-                              </>
+                              <Link href={`/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
+                                Profile
+                              </Link>
                             ) : null}
-                            <span className="text-[color:var(--app-muted)]">|</span>
-                            <Link href={toggleCompare(query, row.attemptId)} className={inlineActionClassName}>
+                            <Link href={toggleCompare(query, row.attemptId)} className={actionPillSecondaryClassName}>
                               {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
                             </Link>
                           </div>
