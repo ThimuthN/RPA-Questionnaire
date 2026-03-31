@@ -16,6 +16,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { ResultsFiltersModal } from "@/components/results/ResultsFiltersModal";
 import { requirePageSession } from "@/lib/auth/guards";
 import { candidateStageLabels, candidateStageValues, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
@@ -155,6 +156,18 @@ function FilterField({
   );
 }
 
+function countAdvancedFilters(state: PageState) {
+  return [
+    state.reviewState,
+    state.contextType,
+    state.integrity,
+    state.role,
+    state.owner,
+    state.stage,
+    state.scoreBand
+  ].filter((value) => typeof value === "string" && value.length > 0).length;
+}
+
 export default async function ResultsPage({
   searchParams
 }: {
@@ -204,6 +217,7 @@ export default async function ResultsPage({
           pageSize: compareIds.length
         })
       : null;
+  const advancedFilterCount = countAdvancedFilters(pageState);
 
   return (
     <SceneTransition>
@@ -293,11 +307,11 @@ export default async function ResultsPage({
             <StagePanel tone="summary" className="space-y-4">
           <div className="space-y-1">
             <h2 className="text-2xl text-[color:var(--app-heading)]">Filters</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Filter the results you want to review.</p>
+            <p className="text-sm text-[color:var(--app-muted)]">Search, sort, and narrow the results you want to review.</p>
           </div>
           <form className="space-y-4">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
-              <FilterField label="Search">
+            <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto_auto_auto]">
+              <FilterField label="Search" className="xl:col-span-1">
                 <input
                   name="q"
                   defaultValue={pageState.q ?? ""}
@@ -305,7 +319,7 @@ export default async function ResultsPage({
                   className={filterInputClass}
                 />
               </FilterField>
-              <FilterField label="Sort by">
+              <FilterField label="Sort">
                 <select name="sort" defaultValue={pageState.sort ?? "newest"} className={filterControlClass}>
                   <option value="newest">Newest</option>
                   <option value="score_desc">Score high to low</option>
@@ -314,9 +328,6 @@ export default async function ResultsPage({
                   <option value="stale_desc">Most stale linked workflow</option>
                 </select>
               </FilterField>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <FilterField label="Result">
                 <select name="status" defaultValue={pageState.status ?? ""} className={filterControlClass}>
                   <option value="">All results</option>
@@ -325,85 +336,49 @@ export default async function ResultsPage({
                   <option value="fail">Fail</option>
                 </select>
               </FilterField>
-              <FilterField label="Review state">
-                <select name="reviewState" defaultValue={pageState.reviewState ?? ""} className={filterControlClass}>
-                  <option value="">All review states</option>
-                  {reviewStateOptions.map((state) => (
-                    <option key={state} value={state}>
-                      {reviewStateLabel(state)}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Assessment context">
-                <select name="contextType" defaultValue={pageState.contextType ?? ""} className={filterControlClass}>
-                  <option value="">All contexts</option>
-                  {contextTypeOptions.map((type) => (
-                    <option key={type} value={type}>
-                      {contextTypeLabel(type)}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Integrity">
-                <select name="integrity" defaultValue={pageState.integrity ?? ""} className={filterControlClass}>
-                  <option value="">All integrity levels</option>
-                  <option value="clean">Clean</option>
-                  <option value="watch">Watch</option>
-                  <option value="review">Review</option>
-                </select>
-              </FilterField>
-              <FilterField label="Candidate role">
-                <select name="role" defaultValue={pageState.role ?? ""} className={filterControlClass}>
-                  <option value="">All roles</option>
-                  {page.roleOptions.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Linked owner">
-                <select name="owner" defaultValue={pageState.owner ?? ""} className={filterControlClass}>
-                  <option value="">All linked owners</option>
-                  {page.ownerOptions.map((owner) => (
-                    <option key={owner} value={owner}>
-                      {owner}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Linked workflow stage">
-                <select name="stage" defaultValue={pageState.stage ?? ""} className={filterControlClass}>
-                  <option value="">All linked stages</option>
-                  {candidateStageValues.map((stage) => (
-                    <option key={stage} value={stage}>
-                      {candidateStageLabels[stage]}
-                    </option>
-                  ))}
-                </select>
-              </FilterField>
-              <FilterField label="Score band">
-                <select name="scoreBand" defaultValue={pageState.scoreBand ?? ""} className={filterControlClass}>
-                  <option value="">All score bands</option>
-                  <option value="high">High</option>
-                  <option value="mid">Mid</option>
-                  <option value="low">Low</option>
-                </select>
-              </FilterField>
-              <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Linked details</p>
-                <p className="mt-2">
-                  Owner and stage only apply when the result is linked to a tracked person.
-                </p>
+              <input type="hidden" name="reviewState" value={pageState.reviewState ?? ""} />
+              <input type="hidden" name="contextType" value={pageState.contextType ?? ""} />
+              <input type="hidden" name="integrity" value={pageState.integrity ?? ""} />
+              <input type="hidden" name="role" value={pageState.role ?? ""} />
+              <input type="hidden" name="owner" value={pageState.owner ?? ""} />
+              <input type="hidden" name="stage" value={pageState.stage ?? ""} />
+              <input type="hidden" name="scoreBand" value={pageState.scoreBand ?? ""} />
+              <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
+              <div className="flex items-end">
+                <Button>Apply</Button>
+              </div>
+              <div className="flex items-end">
+                <ResultsFiltersModal
+                  advancedCount={advancedFilterCount}
+                  current={{
+                    q: pageState.q,
+                    sort: pageState.sort,
+                    status: pageState.status,
+                    reviewState: pageState.reviewState,
+                    contextType: pageState.contextType,
+                    integrity: pageState.integrity,
+                    role: pageState.role,
+                    owner: pageState.owner,
+                    stage: pageState.stage,
+                    scoreBand: pageState.scoreBand,
+                    pageSize: pageState.pageSize ?? String(page.pageSize)
+                  }}
+                  roleOptions={page.roleOptions.map((role) => ({ value: role.id, label: role.label }))}
+                  ownerOptions={page.ownerOptions.map((owner) => ({ value: owner, label: owner }))}
+                  stageOptions={candidateStageValues.map((stage) => ({ value: stage, label: candidateStageLabels[stage] }))}
+                  reviewStateOptions={reviewStateOptions.map((state) => ({ value: state, label: reviewStateLabel(state) }))}
+                  contextTypeOptions={contextTypeOptions.map((type) => ({ value: type, label: contextTypeLabel(type) }))}
+                  integrityOptions={integrityOptions.map((level) => ({ value: level, label: level === "clean" ? "Clean" : level === "watch" ? "Watch" : "Review" }))}
+                  scoreBandOptions={scoreBandOptions.map((band) => ({ value: band, label: band === "high" ? "High" : band === "mid" ? "Mid" : "Low" }))}
+                />
+              </div>
+              <div className="flex items-end">
+                <Link href="/results">
+                  <Button type="button" variant="secondary">Reset</Button>
+                </Link>
               </div>
             </div>
-            <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
             <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-1">
-              <Button>Apply</Button>
-              <Link href="/results">
-                <Button type="button" variant="secondary">Reset</Button>
-              </Link>
               <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
                 <Button type="button" variant="ghost">Review needed</Button>
               </Link>
