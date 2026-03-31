@@ -27,6 +27,7 @@ import {
   examScoreBarClass
 } from "@/lib/exams/catalog";
 import { integrityPresetMeta } from "@/lib/integrity/policy";
+import { cn } from "@/lib/utils";
 
 interface CreateInviteSuccess extends InviteCredentials {
   ok: true;
@@ -693,8 +694,22 @@ export function CreateAssessmentBuilder({
                             <StatusPill label="Preset" tone="purple" />
                             <StatusPill label={`${preset.items.length} add-ons`} tone="neutral" />
                           </div>
-                          <p className="mt-3 text-xl text-[color:var(--app-heading)]">{preset.label}</p>
-                          <p className="mt-2 text-sm text-[color:var(--app-muted)]">{preset.description}</p>
+                          <p
+                            className={cn(
+                              "mt-3 text-xl",
+                              active ? "text-white" : "text-[color:var(--app-heading)]",
+                            )}
+                          >
+                            {preset.label}
+                          </p>
+                          <p
+                            className={cn(
+                              "mt-2 text-sm",
+                              active ? "text-slate-200" : "text-[color:var(--app-muted)]",
+                            )}
+                          >
+                            {preset.description}
+                          </p>
                           <div className="mt-4 flex flex-wrap gap-2">
                             {preset.items.map((item) => (
                               <StatusPill
@@ -901,8 +916,8 @@ export function CreateAssessmentBuilder({
                               />
                             </div>
                             <div className="space-y-1">
-                              <p className="text-base text-[color:var(--app-heading)]">{exam.configSummary}</p>
-                              <p className="text-xs text-[color:var(--app-muted)]">
+                              <p className="text-base text-white">{exam.configSummary}</p>
+                              <p className="text-xs text-slate-200">
                                 {sourceAddon ? `Source add-on: ${sourceAddon.label}` : "Custom selection"}
                               </p>
                             </div>
@@ -919,7 +934,7 @@ export function CreateAssessmentBuilder({
                             {exam.validity.messages.map((message) => (
                               <p
                                 key={`${exam.key}-${message}`}
-                                className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100"
+                                className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-100"
                               >
                                 {message}
                               </p>
@@ -956,10 +971,10 @@ export function CreateAssessmentBuilder({
               <div
                 className={`rounded-[18px] px-4 py-3 text-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] ${
                   contributionTone === "emerald"
-                    ? "bg-emerald-500/10 text-emerald-100"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-100"
                     : contributionTone === "red"
-                      ? "bg-red-500/10 text-red-100"
-                      : "bg-amber-500/10 text-amber-100"
+                      ? "bg-red-500/10 text-red-700 dark:text-red-100"
+                      : "bg-amber-500/10 text-amber-700 dark:text-amber-100"
                 }`}
               >
                 {contributionMessage}
@@ -980,7 +995,7 @@ export function CreateAssessmentBuilder({
                             <StatusPill label={`#${index + 1}`} tone="neutral" />
                             <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
                           </div>
-                          <p className="text-xs text-[color:var(--app-muted)]">{exam.durationMinutes} min</p>
+                          <p className="text-xs text-slate-200">{exam.durationMinutes} min</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Button
@@ -1007,7 +1022,7 @@ export function CreateAssessmentBuilder({
                       </div>
 
                       <label className="mt-4 grid gap-2">
-                        <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Score contribution</span>
+                        <span className="text-xs uppercase tracking-[0.18em] text-slate-200">Score contribution</span>
                         <input
                           type="number"
                           min={0}
@@ -1043,7 +1058,10 @@ export function CreateAssessmentBuilder({
               {validExamMessages.length > 0 ? (
                 <div className="space-y-2">
                   {validExamMessages.map((message) => (
-                    <p key={message} className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                    <p
+                      key={message}
+                      className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-100"
+                    >
                       {message}
                     </p>
                   ))}
@@ -1051,13 +1069,13 @@ export function CreateAssessmentBuilder({
               ) : null}
 
               {hasZeroContributionExams ? (
-                <p className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                <p className="rounded-[16px] bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-100">
                   Every selected add-on needs at least 1 mark of score contribution.
                 </p>
               ) : null}
 
               {error ? (
-                <p className="rounded-[16px] bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                <p className="rounded-[16px] bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-100">
                   {error}
                 </p>
               ) : null}

@@ -57,13 +57,13 @@ export default async function MarketingHomePage() {
           session ? (
             <div className="flex flex-wrap gap-2">
               <Link href="/candidates">
-                <Button data-guide-id="utility-candidates" data-guide-hint="see people">Candidates</Button>
+                <Button>Candidates</Button>
               </Link>
               <Link href="/results">
-                <Button variant="secondary" data-guide-id="utility-results" data-guide-hint="peek results">Results</Button>
+                <Button variant="secondary">Results</Button>
               </Link>
               <Link href="/assessments">
-                <Button variant="secondary" data-guide-id="utility-assessments" data-guide-hint="build here">Assessments</Button>
+                <Button variant="secondary">Assessments</Button>
               </Link>
             </div>
           ) : null
@@ -90,13 +90,13 @@ export default async function MarketingHomePage() {
               <StaggerItem>
                 <div className="flex flex-wrap gap-3">
                   <Link href={createHref}>
-                    <Button className="gap-2" data-guide-id="hero-create" data-guide-hint="start here">
+                    <Button className="gap-2">
                       Create assessment
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/run-test">
-                    <Button variant="secondary" className="gap-2" data-guide-id="hero-explore" data-guide-hint="play around">
+                    <Button variant="secondary" className="gap-2">
                       <PlayCircle className="h-4 w-4" />
                       Explore platform
                     </Button>
@@ -104,7 +104,7 @@ export default async function MarketingHomePage() {
                 </div>
               </StaggerItem>
               <StaggerItem>
-                <p className="max-w-lg text-base leading-8 text-slate-300 sm:text-lg">
+                <p className="max-w-lg text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
                   Build the assessment, send it out, and review the result without fighting the system.
                 </p>
               </StaggerItem>
@@ -125,10 +125,10 @@ export default async function MarketingHomePage() {
               <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Build. Run. Review.</p>
-                  <h2 className="text-4xl leading-[0.96] text-white">
+                  <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
                     <ScrambleReveal text="One flow, start to finish." className="text-scramble-glow" />
                   </h2>
-                  <p className="max-w-md text-sm leading-7 text-slate-300">
+                  <p className="max-w-md text-sm leading-7 text-[color:var(--app-muted)]">
                     From setup to results, it should stay simple and easy to follow.
                   </p>
                 </div>
@@ -140,13 +140,13 @@ export default async function MarketingHomePage() {
                     ["03", "Review", "See the answer faster.", "Scores, flags, and results stay easy to scan.", "text-amber-300"]
                   ].map(([step, label, title, body, tone], index) => (
                     <ViewportReveal key={step} delay={0.08 + index * 0.06}>
-                      <div className="relative rounded-[24px] border border-white/10 bg-black/20 p-5 pl-12 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                        <div className="absolute left-[6px] top-6 grid h-7 w-7 place-items-center rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-[10px] text-white">
+                      <div className="relative rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-5 pl-12 shadow-[var(--app-shadow-soft)]">
+                        <div className="absolute left-[6px] top-6 grid h-7 w-7 place-items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[10px] text-[color:var(--app-heading)]">
                           {step}
                         </div>
                         <p className={`text-[11px] uppercase tracking-[0.24em] ${tone}`}>{label}</p>
-                        <h3 className="mt-2 text-2xl text-white">{title}</h3>
-                        <p className="mt-2 max-w-xl text-sm leading-7 text-slate-300">{body}</p>
+                        <h3 className="mt-2 text-2xl text-[color:var(--app-heading)]">{title}</h3>
+                        <p className="mt-2 max-w-xl text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
                       </div>
                     </ViewportReveal>
                   ))}
@@ -161,10 +161,10 @@ export default async function MarketingHomePage() {
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Designed to be reliable</p>
-                    <h2 className="text-4xl leading-[0.96] text-white">
+                    <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
                       <ScrambleReveal text="Built to stay steady." className="text-scramble-glow" />
                     </h2>
-                    <p className="max-w-2xl text-sm leading-7 text-slate-300">Scoring, runtime, and review stay clear when things get busy.</p>
+                    <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">Scoring, runtime, and review stay clear when things get busy.</p>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     <StatusPill label="Reliable scoring" tone="blue" />
@@ -172,11 +172,11 @@ export default async function MarketingHomePage() {
                     <StatusPill label="Clear review" tone="amber" />
                   </div>
                 </div>
-                <div className="rounded-[26px] border border-white/10 bg-black/20 p-5">
+                <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5 shadow-[var(--app-shadow-soft)]">
                   <div className="space-y-2">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Works across use cases</p>
-                    <h3 className="text-3xl leading-[0.98] text-white">Works across different teams.</h3>
-                    <p className="text-sm leading-7 text-slate-300">Hiring, internal growth, certification, and focused evaluation.</p>
+                    <h3 className="text-3xl leading-[0.98] text-[color:var(--app-heading)]">Works across different teams.</h3>
+                    <p className="text-sm leading-7 text-[color:var(--app-muted)]">Hiring, internal growth, certification, and focused evaluation.</p>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <StatusPill label="Hiring" tone="blue" />
@@ -185,10 +185,10 @@ export default async function MarketingHomePage() {
                     <StatusPill label="Evaluation" tone="purple" />
                   </div>
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4"><p className="text-sm text-white">Screen with confidence.</p></div>
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4"><p className="text-sm text-white">Measure progression clearly.</p></div>
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4"><p className="text-sm text-white">Set a higher standard.</p></div>
-                    <div className="rounded-[20px] border border-white/10 bg-white/[0.03] px-4 py-4"><p className="text-sm text-white">Test for real judgment.</p></div>
+                    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-4"><p className="text-sm text-[color:var(--app-heading)]">Screen with confidence.</p></div>
+                    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-4"><p className="text-sm text-[color:var(--app-heading)]">Measure progression clearly.</p></div>
+                    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-4"><p className="text-sm text-[color:var(--app-heading)]">Set a higher standard.</p></div>
+                    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-4"><p className="text-sm text-[color:var(--app-heading)]">Test for real judgment.</p></div>
                   </div>
                 </div>
               </div>
@@ -199,19 +199,19 @@ export default async function MarketingHomePage() {
             <StagePanel className="space-y-5 text-center">
               <div className="space-y-2">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Start here</p>
-                <h2 className="text-3xl text-white sm:text-4xl">
+                <h2 className="text-3xl text-[color:var(--app-heading)] sm:text-4xl">
                   <ScrambleReveal text="Start with one good assessment." className="text-scramble-glow" />
                 </h2>
               </div>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href={createHref}>
-                  <Button className="gap-2" data-guide-id="start-create" data-guide-hint="make one">
+                  <Button className="gap-2">
                     Create assessment
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/run-test">
-                  <Button variant="secondary" data-guide-id="start-demo" data-guide-hint="watch demo">View demo</Button>
+                  <Button variant="secondary">View demo</Button>
                 </Link>
               </div>
             </StagePanel>
@@ -224,7 +224,7 @@ export default async function MarketingHomePage() {
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="space-y-1">
                       <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Workspace overview</p>
-                      <p className="text-sm text-slate-200">
+                      <p className="text-sm text-[color:var(--app-text)]">
                         {candidateWorkspace.summary.needsResume} need setup, {candidateWorkspace.summary.readyForReview} are ready for review, and {candidateWorkspace.summary.stalled} are stalled.
                       </p>
                     </div>
@@ -255,12 +255,12 @@ export default async function MarketingHomePage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <BriefcaseBusiness className="h-4 w-4 text-amber-300" />
-                        <p className="text-sm text-slate-300">Needs setup</p>
+                        <p className="text-sm text-[color:var(--app-text)]">Needs setup</p>
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.needsResume)} tone="amber" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-3xl text-white" />
-                    <p className="text-sm text-slate-400">Candidates blocked before the first assessment can start.</p>
+                    <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-3xl text-[color:var(--app-heading)]" />
+                    <p className="text-sm text-[color:var(--app-muted)]">Candidates blocked before the first assessment can start.</p>
                   </StagePanel>
                 </StaggerItem>
 
@@ -269,12 +269,12 @@ export default async function MarketingHomePage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-brand-300" />
-                        <p className="text-sm text-slate-300">Ready for review</p>
+                        <p className="text-sm text-[color:var(--app-text)]">Ready for review</p>
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-3xl text-white" />
-                    <p className="text-sm text-slate-400">Submitted assessments waiting for a decision.</p>
+                    <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-3xl text-[color:var(--app-heading)]" />
+                    <p className="text-sm text-[color:var(--app-muted)]">Submitted assessments waiting for a decision.</p>
                   </StagePanel>
                 </StaggerItem>
 
@@ -283,12 +283,12 @@ export default async function MarketingHomePage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Clock3 className="h-4 w-4 text-rose-300" />
-                        <p className="text-sm text-slate-300">Stalled</p>
+                        <p className="text-sm text-[color:var(--app-text)]">Stalled</p>
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-3xl text-white" />
-                    <p className="text-sm text-slate-400">Work that has been inactive and needs attention.</p>
+                    <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-3xl text-[color:var(--app-heading)]" />
+                    <p className="text-sm text-[color:var(--app-muted)]">Work that has been inactive and needs attention.</p>
                   </StagePanel>
                 </StaggerItem>
               </div>
@@ -298,8 +298,8 @@ export default async function MarketingHomePage() {
                   <StagePanel className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1">
-                        <h2 className="text-2xl text-white">Open work</h2>
-                        <p className="text-sm text-slate-300">What needs attention first.</p>
+                        <h2 className="text-2xl text-[color:var(--app-heading)]">Open work</h2>
+                        <p className="text-sm text-[color:var(--app-muted)]">What needs attention first.</p>
                       </div>
                       <Link href="/candidates?sort=inbox">
                         <Button variant="secondary">Open inbox</Button>
@@ -311,12 +311,12 @@ export default async function MarketingHomePage() {
                           <StaggerItem key={candidate.id} hover>
                             <Link
                               href={`/candidates/${candidate.id}`}
-                              className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
+                              className="block rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-muted)]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="space-y-1">
-                                  <p className="text-base text-white">{candidate.fullName}</p>
-                                  <p className="text-sm text-slate-300">
+                                  <p className="text-base text-[color:var(--app-heading)]">{candidate.fullName}</p>
+                                  <p className="text-sm text-[color:var(--app-muted)]">
                                     {candidate.roleLabel || "Role not set"}
                                     {candidate.hrOwner ? ` | Owner: ${candidate.hrOwner}` : ""}
                                   </p>
@@ -343,8 +343,8 @@ export default async function MarketingHomePage() {
                   <StagePanel className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1">
-                        <h2 className="text-2xl text-white">Recent results</h2>
-                        <p className="text-sm text-slate-300">Latest outcomes at a glance.</p>
+                        <h2 className="text-2xl text-[color:var(--app-heading)]">Recent results</h2>
+                        <p className="text-sm text-[color:var(--app-muted)]">Latest outcomes at a glance.</p>
                       </div>
                       <Link href="/results">
                         <Button variant="secondary">Open results</Button>
@@ -356,12 +356,12 @@ export default async function MarketingHomePage() {
                           <StaggerItem key={row.attemptId} hover>
                             <Link
                               href={`/results/${row.attemptId}`}
-                              className="block rounded-[20px] border border-white/10 bg-black/20 p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
+                              className="block rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-muted)]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="space-y-1">
-                                  <p className="text-base text-white">{row.candidateName || "Unnamed candidate"}</p>
-                                  <p className="text-sm text-slate-300">
+                                  <p className="text-base text-[color:var(--app-heading)]">{row.candidateName || "Unnamed candidate"}</p>
+                                  <p className="text-sm text-[color:var(--app-muted)]">
                                     {row.candidateOwner || "No owner"}
                                     {row.candidateStage ? ` | ${row.candidateStage}` : ""}
                                   </p>
