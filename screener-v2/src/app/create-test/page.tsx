@@ -7,7 +7,7 @@ const CreateAssessmentBuilder = dynamic(
   () => import("@/components/assessments/CreateAssessmentBuilder").then((mod) => mod.CreateAssessmentBuilder),
   {
     loading: () => (
-      <div className="rounded-[24px] border border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+      <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-sm text-[color:var(--app-muted)] shadow-[var(--app-shadow-soft)]">
         Loading assessment builder...
       </div>
     )

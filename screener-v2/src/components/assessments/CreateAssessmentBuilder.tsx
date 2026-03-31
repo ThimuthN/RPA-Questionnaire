@@ -159,7 +159,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
 
   return (
     <div className="space-y-2">
-      <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
+      <div className="h-3 overflow-hidden rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)]">
         <div className="flex h-full">
           {exams.map((exam) => (
             <div
@@ -169,7 +169,7 @@ function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) 
             />
           ))}
           {remaining > 0 ? (
-            <div className="h-full bg-white/[0.08]" style={{ width: `${remaining}%` }} />
+            <div className="h-full bg-[color:var(--app-border)]" style={{ width: `${remaining}%` }} />
           ) : null}
         </div>
       </div>
@@ -199,11 +199,11 @@ function StepHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/8 pb-4">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--app-border)] pb-4">
       <div className="space-y-2">
         <p className="text-xs uppercase tracking-[0.22em] text-brand-300">{step}</p>
-        <h2 className="text-2xl text-white">{title}</h2>
-        <p className="max-w-2xl text-sm text-slate-300">{description}</p>
+        <h2 className="text-2xl text-[color:var(--app-heading)]">{title}</h2>
+        <p className="max-w-2xl text-sm text-[color:var(--app-muted)]">{description}</p>
       </div>
       {action ? <div className="flex flex-wrap gap-2">{action}</div> : null}
     </div>
@@ -220,10 +220,10 @@ function SelectionMetric({
   tone?: "neutral" | "blue" | "purple" | "teal";
 }) {
   return (
-    <div className="rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-      <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{label}</p>
+    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 shadow-[var(--app-shadow-soft)]">
+      <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{label}</p>
       <div className="mt-2 flex items-center gap-2">
-        <p className="text-lg text-white">{value}</p>
+        <p className="text-lg text-[color:var(--app-heading)]">{value}</p>
         <StatusPill label={label} tone={tone} className="normal-case tracking-normal" />
       </div>
     </div>
@@ -239,7 +239,7 @@ function BuilderMetaBand({
 }) {
   return (
     <div
-      className={`flex flex-wrap items-center gap-2 rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className ?? ""}`}
+      className={`flex flex-wrap items-center gap-2 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3 shadow-[var(--app-shadow-soft)] ${className ?? ""}`}
     >
       {children}
     </div>
@@ -259,8 +259,8 @@ function BuilderStage({
     <section
       className={`relative overflow-hidden rounded-[28px] ${
         emphasis === "primary"
-          ? "bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_22px_56px_rgba(4,12,28,0.18)]"
-          : "bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          ? "border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] px-5 py-5 shadow-[var(--app-shadow)]"
+          : "border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-5 py-5 shadow-[var(--app-shadow-soft)]"
       } ${className ?? ""}`}
     >
       {children}
@@ -473,11 +473,11 @@ export function CreateAssessmentBuilder({
   }
 
   const summaryContent = (
-    <div className="space-y-5 rounded-[28px] bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_22px_56px_rgba(4,12,28,0.16)]">
+    <div className="space-y-5 rounded-[28px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-5 shadow-[var(--app-shadow)]">
       <div className="flex items-center justify-between gap-3">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Live build</p>
-          <h2 className="text-2xl text-white">Assessment blueprint</h2>
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Assessment summary</h2>
         </div>
         <StatusPill label={`${previewExams.length} add-ons`} tone="blue" />
       </div>
@@ -485,49 +485,49 @@ export function CreateAssessmentBuilder({
       {selectedPresetId ? (
         <div className="rounded-[18px] bg-purple-500/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
           <p className="text-[11px] uppercase tracking-[0.18em] text-purple-200">Preset source</p>
-          <p className="mt-2 text-sm text-white">
+          <p className="mt-2 text-sm text-[color:var(--app-heading)]">
             {activePresets.find((preset) => preset.id === selectedPresetId)?.label ?? "Preset applied"}
           </p>
         </div>
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Test ID</p>
-          <p className="mt-2 font-mono text-lg text-white">{testId}</p>
+        <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Test ID</p>
+          <p className="mt-2 font-mono text-lg text-[color:var(--app-heading)]">{testId}</p>
         </div>
-        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Summary</p>
-          <p className="mt-2 text-lg text-white">
+        <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Summary</p>
+          <p className="mt-2 text-lg text-[color:var(--app-heading)]">
             {previewExams.length} add-ons / {totalTimeMinutes} min
           </p>
-          <p className="mt-1 text-sm text-slate-300">Score contribution should total 100 marks.</p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">Score contribution should total 100 marks.</p>
         </div>
-        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Overall pass</p>
-          <p className="mt-2 text-lg text-white">{passTarget}%</p>
-          <p className="mt-1 text-sm text-slate-300">Final weighted score needed across the full assessment.</p>
+        <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Overall pass</p>
+          <p className="mt-2 text-lg text-[color:var(--app-heading)]">{passTarget}%</p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">Final weighted score needed across the full assessment.</p>
         </div>
-        <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Integrity</p>
-          <p className="mt-2 text-lg text-white">{integrityPresetMeta[integrityPreset].shortLabel}</p>
-          <p className="mt-1 text-sm text-slate-300">{integrityPresetMeta[integrityPreset].description}</p>
+        <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Integrity</p>
+          <p className="mt-2 text-lg text-[color:var(--app-heading)]">{integrityPresetMeta[integrityPreset].shortLabel}</p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">{integrityPresetMeta[integrityPreset].description}</p>
         </div>
       </div>
 
-      <div className="space-y-3 rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="space-y-3 rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-slate-100">Score mix</p>
+          <p className="text-sm text-[color:var(--app-heading)]">Score mix</p>
           <StatusPill label={`${totalContribution}/100`} tone={contributionTone} />
         </div>
         <ScoreMixBar exams={previewExams} total={totalContribution} />
         <p
           className={`text-sm ${
             contributionTone === "emerald"
-              ? "text-emerald-200"
+              ? "text-[color:var(--app-success)]"
               : contributionTone === "red"
-                ? "text-red-200"
-                : "text-amber-200"
+                ? "text-[color:var(--app-danger)]"
+                : "text-[color:var(--app-warning)]"
           }`}
         >
           {contributionMessage}
@@ -537,13 +537,13 @@ export function CreateAssessmentBuilder({
       {previewExams.length > 0 ? (
         <div className="space-y-3">
           {previewExams.map((exam) => (
-            <div key={exam.key} className="rounded-[18px] bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+            <div key={exam.key} className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 shadow-[var(--app-shadow-soft)]">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
                 <StatusPill label={`${exam.weight}/100`} tone="neutral" />
               </div>
-              <p className="mt-3 text-sm text-slate-100">{exam.configSummary}</p>
-              <p className="mt-2 text-xs text-slate-400">
+              <p className="mt-3 text-sm text-[color:var(--app-text)]">{exam.configSummary}</p>
+              <p className="mt-2 text-xs text-[color:var(--app-muted)]">
                 {exam.durationMinutes}m | Min pass {exam.requiredPercent}%
               </p>
             </div>
@@ -567,9 +567,10 @@ export function CreateAssessmentBuilder({
   return (
     <SceneShell
       variant="create"
+      tone="page"
       eyebrow="Assessments"
       title="Assemble an assessment"
-      subtitle="Select add-ons or a preset, adjust only assessment-specific config, then calibrate score contribution, integrity, and sharing."
+      subtitle="Choose the mix, set the details, then share it."
     >
       <div className="space-y-4">
         <StepRail
@@ -594,11 +595,11 @@ export function CreateAssessmentBuilder({
             <button
               type="button"
               onClick={() => setSummaryOpen((current) => !current)}
-              className="flex w-full items-center justify-between rounded-[20px] border border-white/12 bg-white/[0.05] px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+              className="flex w-full items-center justify-between rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
             >
               <div>
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Assessment summary</p>
-                <p className="text-sm text-white">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Assessment summary</p>
+                <p className="text-sm text-[color:var(--app-heading)]">
                   {previewExams.length} add-ons / {totalContribution}/100 marks
                 </p>
               </div>
@@ -636,15 +637,15 @@ export function CreateAssessmentBuilder({
                 }
               />
 
-              <div className="flex flex-wrap gap-2 rounded-full bg-black/20 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+              <div className="flex flex-wrap gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-1 shadow-[var(--app-shadow-soft)]">
                 {activePresets.length > 0 ? (
                   <button
                     type="button"
                     onClick={() => setSelectionSource("presets")}
                     className={`rounded-full px-4 py-2 text-sm transition ${
                       selectionSource === "presets"
-                        ? "bg-brand-500 text-white shadow-[0_0_20px_rgba(52,124,255,0.28)]"
-                        : "text-slate-300 hover:text-white"
+                    ? "bg-brand-500 text-white shadow-[0_0_20px_rgba(52,124,255,0.28)]"
+                    : "text-[color:var(--app-muted)] hover:text-[color:var(--app-heading)]"
                     }`}
                   >
                     Presets
@@ -656,7 +657,7 @@ export function CreateAssessmentBuilder({
                   className={`rounded-full px-4 py-2 text-sm transition ${
                     selectionSource === "library"
                       ? "bg-brand-500 text-white shadow-[0_0_20px_rgba(52,124,255,0.28)]"
-                      : "text-slate-300 hover:text-white"
+                      : "text-[color:var(--app-muted)] hover:text-[color:var(--app-heading)]"
                   }`}
                 >
                   Add-on library
@@ -667,8 +668,8 @@ export function CreateAssessmentBuilder({
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="text-sm text-slate-100">Start from a preset</p>
-                      <p className="text-xs text-slate-400">Best for common screening flows and repeatable setups.</p>
+                      <p className="text-sm text-[color:var(--app-heading)]">Start from a preset</p>
+                      <p className="text-xs text-[color:var(--app-muted)]">Best for repeatable setups.</p>
                     </div>
                     <Button variant="ghost" onClick={() => setSelectedPresetId(null)} disabled={!selectedPresetId}>
                       Clear preset
@@ -685,15 +686,15 @@ export function CreateAssessmentBuilder({
                           className={`min-w-[280px] snap-start rounded-[22px] border p-4 text-left transition ${
                             active
                               ? "border-brand-300/60 bg-[linear-gradient(135deg,rgba(31,111,255,0.18),rgba(14,23,40,0.92))] shadow-[0_18px_40px_rgba(31,111,255,0.16)]"
-                              : "border-white/12 bg-black/20 hover:border-brand-300/40 hover:bg-white/[0.06]"
+                              : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
                           }`}
                         >
                           <div className="flex flex-wrap items-center gap-2">
                             <StatusPill label="Preset" tone="purple" />
                             <StatusPill label={`${preset.items.length} add-ons`} tone="neutral" />
                           </div>
-                          <p className="mt-3 text-xl text-white">{preset.label}</p>
-                          <p className="mt-2 text-sm text-slate-300">{preset.description}</p>
+                          <p className="mt-3 text-xl text-[color:var(--app-heading)]">{preset.label}</p>
+                          <p className="mt-2 text-sm text-[color:var(--app-muted)]">{preset.description}</p>
                           <div className="mt-4 flex flex-wrap gap-2">
                             {preset.items.map((item) => (
                               <StatusPill
@@ -714,12 +715,12 @@ export function CreateAssessmentBuilder({
               {selectionSource === "library" ? (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <p className="text-sm text-slate-100">Build from the add-on library</p>
-                    <p className="text-xs text-slate-400">Choose individual building blocks when you want a custom mix.</p>
+                    <p className="text-sm text-[color:var(--app-heading)]">Build from the add-on library</p>
+                    <p className="text-xs text-[color:var(--app-muted)]">Choose add-ons for a custom mix.</p>
                   </div>
-                  <div className="overflow-x-auto border-t border-white/10 pt-2">
+                  <div className="overflow-x-auto border-t border-[color:var(--app-border)] pt-2">
                       <table className="min-w-full text-left">
-                        <thead className="border-b border-white/10 text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <thead className="border-b border-[color:var(--app-border)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                           <tr>
                             <th className="px-4 py-3 font-medium">Add-on</th>
                             <th className="px-4 py-3 font-medium">Type</th>
@@ -740,15 +741,15 @@ export function CreateAssessmentBuilder({
                               <>
                                 <tr
                                   key={addon.id}
-                                  className={`border-t border-white/8 transition ${
-                                    active ? "bg-brand-500/10" : "hover:bg-white/[0.03]"
+                                  className={`border-t border-[color:var(--app-border)] transition ${
+                                    active ? "bg-brand-500/10" : "hover:bg-[color:var(--app-table-row-hover)]"
                                   }`}
                                 >
                                   <td className="px-4 py-3 align-top">
                                     <div className="space-y-1">
-                                      <p className="text-sm text-white">{addon.label}</p>
+                                      <p className="text-sm text-[color:var(--app-heading)]">{addon.label}</p>
                                       <p
-                                        className="max-w-[260px] truncate text-xs text-slate-400"
+                                        className="max-w-[260px] truncate text-xs text-[color:var(--app-muted)]"
                                         title={addon.description}
                                       >
                                         {compactAddonDescription(addon.description)}
@@ -761,9 +762,9 @@ export function CreateAssessmentBuilder({
                                       tone={examCatalog[addon.engineType].accentTone}
                                     />
                                   </td>
-                                  <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultDurationMinutes} min</td>
-                                  <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultRequiredPercent}%</td>
-                                  <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultWeight}/100</td>
+                                  <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultDurationMinutes} min</td>
+                                  <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultRequiredPercent}%</td>
+                                  <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultWeight}/100</td>
                                   <td className="px-4 py-3 text-right align-top">
                                     <div className="flex justify-end gap-2">
                                       <Button
@@ -782,13 +783,13 @@ export function CreateAssessmentBuilder({
                                   </td>
                                 </tr>
                                 {isConfiguring ? (
-                                  <tr className="border-t border-white/8 bg-white/[0.03]">
+                                  <tr className="border-t border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)]">
                                     <td colSpan={6} className="px-4 py-4">
                                       {configFields.length > 0 && draftExam ? (
-                                        <div className="space-y-4 rounded-[18px] bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                                        <div className="space-y-4 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
                                           <div className="space-y-1">
-                                            <p className="text-sm text-white">Assessment-specific configuration</p>
-                                            <p className="text-xs text-slate-400">
+                                            <p className="text-sm text-[color:var(--app-heading)]">Assessment settings</p>
+                                            <p className="text-xs text-[color:var(--app-muted)]">
                                               These settings apply only to this assessment and do not change the add-on library defaults.
                                             </p>
                                           </div>
@@ -813,7 +814,7 @@ export function CreateAssessmentBuilder({
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="rounded-[18px] bg-black/20 p-4 text-sm text-slate-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                                        <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 text-sm text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)]">
                                           No extra configuration needed for this add-on.
                                         </div>
                                       )}
@@ -900,8 +901,8 @@ export function CreateAssessmentBuilder({
                               />
                             </div>
                             <div className="space-y-1">
-                              <p className="text-base text-white">{exam.configSummary}</p>
-                              <p className="text-xs text-slate-400">
+                              <p className="text-base text-[color:var(--app-heading)]">{exam.configSummary}</p>
+                              <p className="text-xs text-[color:var(--app-muted)]">
                                 {sourceAddon ? `Source add-on: ${sourceAddon.label}` : "Custom selection"}
                               </p>
                             </div>
@@ -930,8 +931,8 @@ export function CreateAssessmentBuilder({
                   })}
                 </div>
               ) : (
-                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <p className="text-sm text-slate-300">Select add-ons or a preset to continue.</p>
+                <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+                  <p className="text-sm text-[color:var(--app-muted)]">Select add-ons or a preset to continue.</p>
                 </div>
               )}
 
@@ -979,7 +980,7 @@ export function CreateAssessmentBuilder({
                             <StatusPill label={`#${index + 1}`} tone="neutral" />
                             <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
                           </div>
-                          <p className="text-xs text-slate-400">{exam.durationMinutes} min</p>
+                          <p className="text-xs text-[color:var(--app-muted)]">{exam.durationMinutes} min</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Button
@@ -1006,7 +1007,7 @@ export function CreateAssessmentBuilder({
                       </div>
 
                       <label className="mt-4 grid gap-2">
-                        <span className="text-xs uppercase tracking-[0.18em] text-slate-400">Score contribution</span>
+                        <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Score contribution</span>
                         <input
                           type="number"
                           min={0}
@@ -1019,19 +1020,19 @@ export function CreateAssessmentBuilder({
                               weightMode: "manual"
                             }))
                           }
-                          className="w-full rounded-[16px] border border-white/12 bg-white/[0.05] px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                          className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                         />
                       </label>
                     </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <p className="text-sm text-slate-300">Select at least one add-on before allocating marks.</p>
+                <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+                  <p className="text-sm text-[color:var(--app-muted)]">Select at least one add-on before allocating marks.</p>
                 </div>
               )}
 
-              <div className="rounded-[22px] bg-black/15 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
                 <IntegrityPresetPicker
                   value={integrityPreset}
                   onChange={setIntegrityPreset}
@@ -1098,8 +1099,8 @@ export function CreateAssessmentBuilder({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[20px] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-                  <p className="text-sm text-slate-300">
+                <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 shadow-[var(--app-shadow-soft)]">
+                  <p className="text-sm text-[color:var(--app-muted)]">
                     Access details will appear here after the assessment has a full 100-mark allocation
                     and all required settings are complete.
                   </p>

@@ -28,7 +28,8 @@ export function MobileNavDrawer({
       <button
         type="button"
         aria-label="Close navigation"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 backdrop-blur-sm"
+        style={{ background: "var(--app-modal-overlay)" }}
         onClick={onClose}
       />
       <aside className="absolute right-0 top-0 h-full w-[min(86vw,360px)] border-l border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-5 shadow-[var(--app-shadow)]">

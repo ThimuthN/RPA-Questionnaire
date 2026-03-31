@@ -131,10 +131,10 @@ function linkedWorkflowSummary(row: WorkspaceResultRow) {
 }
 
 const filterControlClass =
-  "w-full rounded-[18px] border border-white/16 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60";
+  "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60";
 
 const filterInputClass =
-  "w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60";
+  "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60";
 
 const resultsTableCellClassName = "px-4 py-4 align-middle text-sm";
 
@@ -149,7 +149,7 @@ function FilterField({
 }) {
   return (
     <label className={cn("grid gap-2", className)}>
-      <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{label}</span>
+      <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{label}</span>
       {children}
     </label>
   );
@@ -209,6 +209,7 @@ export default async function ResultsPage({
     <SceneTransition>
       <SceneShell
         variant="results"
+        tone="page"
         eyebrow="Assessment review"
         title="Results"
         subtitle="Review assessment outcomes."
@@ -227,21 +228,21 @@ export default async function ResultsPage({
 
           {pageState.deleted ? (
             <StaggerItem>
-              <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+              <div className="rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
                 Result deleted.
               </div>
             </StaggerItem>
           ) : null}
           {pageState.updated ? (
             <StaggerItem>
-              <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+              <div className="rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
                 Updated {pageState.updated} record(s).
               </div>
             </StaggerItem>
           ) : null}
           {pageState.error ? (
             <StaggerItem>
-              <div className="rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+              <div className="rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]">
                 {pageState.error}
               </div>
             </StaggerItem>
@@ -249,11 +250,11 @@ export default async function ResultsPage({
 
           {comparison && comparison.rows.length > 0 ? (
             <StaggerItem>
-              <StagePanel className="space-y-4">
+              <StagePanel tone="summary" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Compare results</h2>
-                <p className="text-sm text-slate-300">Compare up to four assessment results side by side. Use Compare in any row to add or remove them.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Compare results</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Compare up to four results side by side.</p>
               </div>
               <Link href={buildHref(query, { compare: undefined })}>
                 <Button variant="secondary">Clear compare</Button>
@@ -261,21 +262,24 @@ export default async function ResultsPage({
             </div>
             <div className="grid gap-4 xl:grid-cols-4">
               {comparison.rows.map((row) => (
-                <div key={row.attemptId} className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                <div
+                  key={row.attemptId}
+                  className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
+                >
                   <div className="space-y-2">
-                    <p className="text-lg text-white">{row.candidateName || "Unnamed participant"}</p>
-                    <p className="text-sm text-slate-300">{row.candidateEmail || "No email captured"}</p>
+                    <p className="text-lg text-[color:var(--app-heading)]">{row.candidateName || "Unnamed participant"}</p>
+                    <p className="text-sm text-[color:var(--app-muted)]">{row.candidateEmail || "No email"}</p>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill label={contextTypeLabel(row.contextType)} tone="neutral" />
                       <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
                       <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                       <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
                     </div>
-                    <p className="text-sm text-slate-300">{row.candidateRoleLabel || "No candidate role"} | {stackSummary(row)}</p>
-                    <p className="text-sm text-slate-300">Strongest area: {strongestArea(row)}</p>
-                    <p className="text-sm text-slate-400">{linkedWorkflowSummary(row)}</p>
+                    <p className="text-sm text-[color:var(--app-text)]">{row.candidateRoleLabel || "General assessment"} · {stackSummary(row)}</p>
+                    <p className="text-sm text-[color:var(--app-muted)]">Best area: {strongestArea(row)}</p>
+                    <p className="text-sm text-[color:var(--app-muted)]">{linkedWorkflowSummary(row)}</p>
                     <Link href={`/results/${row.attemptId}`}>
-                      <Button variant="secondary">Open result</Button>
+                      <Button variant="secondary">View</Button>
                     </Link>
                   </div>
                 </div>
@@ -286,10 +290,10 @@ export default async function ResultsPage({
           ) : null}
 
           <StaggerItem>
-            <StagePanel className="space-y-4">
+            <StagePanel tone="summary" className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-2xl text-white">Filters</h2>
-            <p className="text-sm text-slate-300">Filter by result, review state, assessment context, candidate role, and optional linked workflow metadata. Exports follow the current view.</p>
+            <h2 className="text-2xl text-[color:var(--app-heading)]">Filters</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">Filter the results you want to review.</p>
           </div>
           <form className="space-y-4">
             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(240px,0.6fr)]">
@@ -387,18 +391,18 @@ export default async function ResultsPage({
                   <option value="low">Low</option>
                 </select>
               </FilterField>
-              <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Optional workflow data</p>
+              <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Linked details</p>
                 <p className="mt-2">
-                  Owner and stage filters only apply to results that are linked to a people workflow.
+                  Owner and stage only apply when the result is linked to a tracked person.
                 </p>
               </div>
             </div>
             <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
-            <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
+            <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-1">
               <Button>Apply</Button>
               <Link href="/results">
-                <Button type="button" variant="secondary">Clear</Button>
+                <Button type="button" variant="secondary">Reset</Button>
               </Link>
               <Link href={buildHref(query, { status: "review", sort: "newest", page: "1" })}>
                 <Button type="button" variant="ghost">Review needed</Button>
@@ -406,8 +410,8 @@ export default async function ResultsPage({
             </div>
           </form>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-1">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Export filtered results</span>
+          <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-1">
+            <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Export</span>
             <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
               <Button variant="secondary">Export CSV</Button>
             </a>
@@ -420,9 +424,9 @@ export default async function ResultsPage({
 
           {page.rows.length === 0 ? (
             <StaggerItem>
-              <StagePanel className="space-y-4">
-                <h2 className="text-2xl text-white">No results match this view</h2>
-                <p className="text-slate-200">Try clearing a filter or running a new assessment.</p>
+              <StagePanel tone="summary" className="space-y-4">
+                <h2 className="text-2xl text-[color:var(--app-heading)]">No results match this view</h2>
+                <p className="text-[color:var(--app-text)]">Try clearing a filter or running a new assessment.</p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/assessments">
                     <Button>Open assessments</Button>
@@ -437,14 +441,20 @@ export default async function ResultsPage({
             <StaggerItem>
               <form id="results-bulk-form" action="/api/results/bulk" method="post" className="space-y-4">
             <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-            <StagePanel className="space-y-4">
+            <StagePanel tone="summary" className="space-y-4">
               <BulkReviewControls formId="results-bulk-form" />
             </StagePanel>
 
-            <StagePanel className="overflow-hidden p-0">
+            <StagePanel tone="open" className="overflow-hidden p-0">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-white/10 bg-white/[0.04] text-slate-300">
+                  <thead
+                    className="border-b text-[color:var(--app-muted)]"
+                    style={{
+                      borderColor: "var(--app-border)",
+                      background: "var(--app-table-head)"
+                    }}
+                  >
                     <tr>
                       <th className="px-4 py-3">Select</th>
                       <th className="px-4 py-3">Participant</th>
@@ -458,25 +468,36 @@ export default async function ResultsPage({
                   </thead>
                   <tbody>
                     {page.rows.map((row) => (
-                      <tr key={row.attemptId} className="border-b border-white/10 align-middle transition hover:bg-white/[0.03]">
+                      <tr
+                        key={row.attemptId}
+                        className="align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
+                        style={{
+                          borderBottom: "1px solid var(--app-border)"
+                        }}
+                      >
                         <td className={resultsTableCellClassName}>
-                          <input type="checkbox" name="attemptId" value={row.attemptId} className="h-4 w-4 rounded border-white/20 bg-transparent text-brand-400" />
+                          <input
+                            type="checkbox"
+                            name="attemptId"
+                            value={row.attemptId}
+                            className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent text-brand-500"
+                          />
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="min-w-[220px] space-y-1">
-                            <p className="font-medium text-white">{row.candidateName || "Unnamed participant"}</p>
-                            <p className="text-slate-300">{row.candidateEmail || "No email"}</p>
+                            <p className="font-medium text-[color:var(--app-heading)]">{row.candidateName || "Unnamed participant"}</p>
+                            <p className="text-[color:var(--app-muted)]">{row.candidateEmail || "No email"}</p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="min-w-[180px] space-y-1">
-                            <p className="text-white">{row.candidateRoleLabel || row.coreExamRoleLabel || "General assessment"}</p>
-                            <p className="text-xs text-slate-400">{stackSummary(row)}</p>
+                            <p className="text-[color:var(--app-heading)]">{row.candidateRoleLabel || row.coreExamRoleLabel || "General assessment"}</p>
+                            <p className="text-xs text-[color:var(--app-muted)]">{stackSummary(row)}</p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="min-w-[140px] space-y-1">
-                            <p className="font-medium text-white">{row.finalPercent.toFixed(1)} / 100</p>
+                            <p className="font-medium text-[color:var(--app-heading)]">{row.finalPercent.toFixed(1)} / 100</p>
                             <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                           </div>
                         </td>
@@ -488,26 +509,26 @@ export default async function ResultsPage({
                         <td className={resultsTableCellClassName}>
                           {row.candidateId ? (
                             <div className="min-w-[160px] space-y-1">
-                              <p className="text-slate-200">{row.candidateOwner || "Linked profile"}</p>
-                              <p className="text-xs text-slate-400">
+                              <p className="text-[color:var(--app-text)]">{row.candidateOwner || "Linked profile"}</p>
+                              <p className="text-xs text-[color:var(--app-muted)]">
                                 {row.candidateStage ? candidateStageLabels[row.candidateStage] : (row.candidateUiStatus ? linkedStatusLabel(row.candidateUiStatus) : "No stage")}
                               </p>
                             </div>
                           ) : (
-                            <p className="text-sm text-slate-400">None</p>
+                            <p className="text-sm text-[color:var(--app-muted)]">None</p>
                           )}
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <p className="min-w-[165px] text-slate-200">{new Date(row.submittedAt).toLocaleString()}</p>
+                          <p className="min-w-[165px] text-[color:var(--app-text)]">{new Date(row.submittedAt).toLocaleString()}</p>
                         </td>
                         <td className={resultsTableCellClassName}>
                           <div className="flex flex-wrap gap-2">
                             <Link href={`/results/${row.attemptId}`}>
-                              <Button variant="secondary">Open result</Button>
+                              <Button variant="secondary">View</Button>
                             </Link>
                             {row.candidateId ? (
                               <Link href={`/candidates/${row.candidateId}`}>
-                                <Button variant="secondary">Open profile</Button>
+                                <Button variant="secondary">Profile</Button>
                               </Link>
                             ) : null}
                             <Link href={toggleCompare(query, row.attemptId)}>

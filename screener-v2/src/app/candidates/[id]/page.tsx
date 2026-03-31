@@ -128,6 +128,7 @@ export default async function CandidateDetailPage({
   return (
     <SceneShell
       variant="results"
+      tone="page"
       eyebrow="Candidate"
       title={candidate.fullName}
       subtitle={candidate.roleLabel || candidate.email}
@@ -139,11 +140,11 @@ export default async function CandidateDetailPage({
     >
       <div className="space-y-5">
         {pageState.created || pageState.updated || pageState.noteAdded || pageState.resumeUploaded || pageState.error ? (
-          <StagePanel className="space-y-2">
-            {pageState.created || pageState.updated ? <p className="text-sm text-emerald-200">Candidate saved.</p> : null}
-            {pageState.noteAdded ? <p className="text-sm text-emerald-200">Note added.</p> : null}
-            {pageState.resumeUploaded ? <p className="text-sm text-emerald-200">Resume uploaded.</p> : null}
-            {pageState.error ? <p className="text-sm text-red-200">{pageState.error}</p> : null}
+          <StagePanel tone="summary" className="space-y-2">
+            {pageState.created || pageState.updated ? <p className="text-sm text-[color:var(--app-success)]">Candidate saved.</p> : null}
+            {pageState.noteAdded ? <p className="text-sm text-[color:var(--app-success)]">Note added.</p> : null}
+            {pageState.resumeUploaded ? <p className="text-sm text-[color:var(--app-success)]">Resume uploaded.</p> : null}
+            {pageState.error ? <p className="text-sm text-[color:var(--app-danger)]">{pageState.error}</p> : null}
           </StagePanel>
         ) : null}
 
@@ -184,48 +185,48 @@ export default async function CandidateDetailPage({
             <div className="min-w-0 space-y-4">
               {outcomeBadges}
 
-              <div className="space-y-4 rounded-[22px] border border-white/10 bg-black/20 p-4">
+              <div className="space-y-4 rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <div className="space-y-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Candidate details</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Candidate details</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Email</p>
-                      <p className="break-all text-sm text-slate-200">{candidate.email}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
+                      <p className="break-all text-sm text-[color:var(--app-text)]">{candidate.email}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Role</p>
-                      <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
+                      <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Owner</p>
-                      <p className="text-sm text-slate-300">{candidate.hrOwner || "No owner assigned"}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
+                      <p className="text-sm text-[color:var(--app-text)]">{candidate.hrOwner || "No owner assigned"}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Current stage</p>
-                      <p className="text-sm text-brand-100">{candidate.currentFocus || "No active stage yet"}</p>
+                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Current stage</p>
+                      <p className="text-sm text-[color:var(--app-brand)]">{candidate.currentFocus || "No active stage yet"}</p>
                     </div>
                   </div>
                 </div>
-                <div className="grid gap-3 border-t border-white/8 pt-4 sm:grid-cols-[0.9fr_1fr_1.1fr]">
+                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-[0.9fr_1fr_1.1fr]">
                   <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Latest result</p>
-                    <p className="text-lg text-white">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Latest result</p>
+                    <p className="text-lg text-[color:var(--app-heading)]">
                       {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-[color:var(--app-muted)]">
                       {latest?.submittedAt ? `Submitted ${compactDate(latest.submittedAt)}` : "No assessment submitted yet"}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Resume</p>
-                    <p className="text-sm text-white">{currentResume ? "Attached" : "Missing"}</p>
-                    <p className="break-all text-xs leading-5 text-slate-400">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
+                    <p className="text-sm text-[color:var(--app-heading)]">{currentResume ? "Attached" : "Missing"}</p>
+                    <p className="break-all text-xs leading-5 text-[color:var(--app-muted)]">
                       {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">Next prompt</p>
-                    <p className="text-sm text-slate-200">{nextPrompt(candidate)}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next prompt</p>
+                    <p className="text-sm text-[color:var(--app-text)]">{nextPrompt(candidate)}</p>
                   </div>
                 </div>
               </div>
@@ -234,13 +235,13 @@ export default async function CandidateDetailPage({
             <form
               action={`/api/candidates/${candidate.id}`}
               method="post"
-              className="min-w-0 space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5"
+              className="min-w-0 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5"
             >
               <HiddenCandidateFields candidate={candidate} />
               <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Decision status</p>
-                <h3 className="text-xl text-white">Set the candidate decision</h3>
-                <p className="text-sm text-slate-300">Choose the status and keep one short reason with the next step.</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision status</p>
+                <h3 className="text-xl text-[color:var(--app-heading)]">Set the candidate decision</h3>
+                <p className="text-sm text-[color:var(--app-muted)]">Choose the status and keep one short reason with the next step.</p>
               </div>
               <ChoicePills
                 name="uiStatus"
@@ -252,13 +253,13 @@ export default async function CandidateDetailPage({
                 }))}
               />
               <label className="grid gap-2">
-                <span className="text-sm text-slate-200">Decision summary</span>
+                <span className="text-sm text-[color:var(--app-text)]">Decision summary</span>
                 <textarea
                   name="notesSummary"
                   rows={4}
                   defaultValue={candidate.notesSummary || ""}
                   placeholder="Summarize the main reason, current decision, and exact next step."
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                 />
               </label>
               <div className="flex justify-end">
@@ -272,8 +273,8 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Hiring stages</h2>
-                <p className="text-sm text-slate-300">
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Hiring stages</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
                   Open the stage you are working on. Completed and inactive stages stay collapsed.
                 </p>
               </div>
@@ -284,7 +285,7 @@ export default async function CandidateDetailPage({
               />
             </div>
 
-            <div className="border-t border-white/10 pt-5">
+            <div className="border-t border-[color:var(--app-border)] pt-5">
               <CandidateActivityModal items={activityFeed} />
             </div>
           </div>
@@ -292,11 +293,11 @@ export default async function CandidateDetailPage({
           <div className="space-y-6 xl:pt-1">
             <section className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Assessment result</h2>
-                <p className="text-sm text-slate-300">View the latest assessment result and next action.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Assessment result</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">View the latest assessment result and next action.</p>
               </div>
               {latest?.attemptId ? (
-                <div className="space-y-4 rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+                <div className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                   <div className="flex flex-wrap gap-2">
                     <CandidateAssessmentPill status={screener} />
                     <StatusPill
@@ -305,7 +306,7 @@ export default async function CandidateDetailPage({
                     />
                     <StatusPill label={screener.replace("_", " ")} tone={resultTone(screener)} />
                   </div>
-                  <p className="text-sm text-slate-300">
+                  <p className="text-sm text-[color:var(--app-muted)]">
                     {latest.submittedAt
                       ? `Submitted ${new Date(latest.submittedAt).toLocaleString()}`
                       : latest.startedAt
@@ -324,8 +325,8 @@ export default async function CandidateDetailPage({
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
-                  <p className="text-sm text-slate-300">No assessment result yet.</p>
+                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <p className="text-sm text-[color:var(--app-muted)]">No assessment result yet.</p>
                   {canSendScreener && screenerMilestone ? (
                     <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
                       <Button className="mt-3">Send assessment</Button>
@@ -335,24 +336,24 @@ export default async function CandidateDetailPage({
               )}
             </section>
 
-            <section id="resume" className="space-y-4 border-t border-white/10 pt-5">
+            <section id="resume" className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Resume</h2>
-                <p className="text-sm text-slate-300">Upload, replace, or download the candidate&apos;s resume here.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Resume</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Upload, replace, or download the candidate&apos;s resume here.</p>
               </div>
 
               <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
 
               {currentResume ? (
-                <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
                       <StatusPill label="Current" tone="blue" />
                       <StatusPill label="PDF" tone="neutral" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-white">{currentResume.fileName}</p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-sm text-[color:var(--app-heading)]">{currentResume.fileName}</p>
+                      <p className="text-xs text-[color:var(--app-muted)]">
                         {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
                         {new Date(currentResume.uploadedAt).toLocaleString()}
                       </p>
@@ -376,15 +377,15 @@ export default async function CandidateDetailPage({
               ) : null}
             </section>
 
-            <section className="space-y-5 border-t border-white/10 pt-5">
+            <section className="space-y-5 border-t border-[color:var(--app-border)] pt-5">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">Notes</h2>
-                <p className="text-sm text-slate-300">Add interview and review notes here.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Notes</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Add interview and review notes here.</p>
               </div>
 
               <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
                 <div className="grid gap-2">
-                  <span className="text-sm text-slate-200">Type</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Type</span>
                   <ChoicePills
                     name="type"
                     idPrefix="candidate-note-type"
@@ -398,12 +399,12 @@ export default async function CandidateDetailPage({
                 </div>
 
                 <label className="grid gap-1">
-                  <span className="text-sm text-slate-200">Note</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Note</span>
                   <textarea
                     name="body"
                     rows={4}
                     required
-                    className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                   />
                 </label>
 
@@ -411,14 +412,14 @@ export default async function CandidateDetailPage({
               </form>
 
               {candidate.notes.length === 0 ? (
-                <p className="text-sm text-slate-300">No notes yet.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">No notes yet.</p>
               ) : (
                 <div className="space-y-3">
                   {candidate.notes.map((note) => {
                     const author = note.createdByName || note.createdByEmail;
 
                     return (
-                      <div key={note.id} className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+                      <div key={note.id} className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                         <div className="flex flex-wrap gap-2">
                           <CandidateNoteTypePill type={note.type} />
                           <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
@@ -426,7 +427,7 @@ export default async function CandidateDetailPage({
                             <StatusPill label={`by ${author}`} tone="neutral" className="normal-case tracking-normal" />
                           ) : null}
                         </div>
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{note.body}</p>
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">{note.body}</p>
                       </div>
                     );
                   })}

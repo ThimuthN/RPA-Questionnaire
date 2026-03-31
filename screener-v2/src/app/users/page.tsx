@@ -18,15 +18,16 @@ export default async function UsersPage({
   return (
     <SceneShell
       variant="create"
+      tone="page"
       eyebrow="Admin"
       title="User access"
-      subtitle="Create and review internal accounts for assessment management."
+      subtitle="Create and update internal access."
     >
       <div className="space-y-4">
-        <StagePanel className="space-y-4">
+        <StagePanel tone="summary" className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-2xl text-white">Roles</h2>
-            <p className="text-sm text-slate-300">
+            <h2 className="text-2xl text-[color:var(--app-heading)]">Roles</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">
               Add and manage the roles you want to use when registering candidates.
             </p>
           </div>
@@ -40,26 +41,26 @@ export default async function UsersPage({
         </StagePanel>
 
         <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <StagePanel className="space-y-4">
+        <StagePanel tone="summary" className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-2xl text-white">Create user</h2>
-            <p className="text-sm text-slate-300">Admins can add more internal users here.</p>
+            <h2 className="text-2xl text-[color:var(--app-heading)]">Add user</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">Admins can add internal users here.</p>
           </div>
 
           <form action="/api/users" method="post" className="space-y-3">
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200" htmlFor="name">
+              <label className="text-sm text-[color:var(--app-text)]" htmlFor="name">
                 Name
               </label>
               <input
                 id="name"
                 name="name"
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                 placeholder="Internal user"
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200" htmlFor="email">
+              <label className="text-sm text-[color:var(--app-text)]" htmlFor="email">
                 Email
               </label>
               <input
@@ -67,11 +68,11 @@ export default async function UsersPage({
                 name="email"
                 type="email"
                 required
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200" htmlFor="password">
+              <label className="text-sm text-[color:var(--app-text)]" htmlFor="password">
                 Password
               </label>
               <input
@@ -80,70 +81,74 @@ export default async function UsersPage({
                 type="password"
                 minLength={8}
                 required
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200" htmlFor="role">
+              <label className="text-sm text-[color:var(--app-text)]" htmlFor="role">
                 Role
               </label>
               <select
                 id="role"
                 name="role"
                 defaultValue="member"
-                className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
               >
                 <option value="member">Member</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-            {params.created ? <p className="text-sm text-emerald-200">Created {params.created}.</p> : null}
-            {params.updated ? <p className="text-sm text-emerald-200">Updated {params.updated}.</p> : null}
-            {params.error ? <p className="text-sm text-red-200">{params.error}</p> : null}
+            {params.created ? <p className="text-sm text-[color:var(--app-success)]">Created {params.created}.</p> : null}
+            {params.updated ? <p className="text-sm text-[color:var(--app-success)]">Updated {params.updated}.</p> : null}
+            {params.error ? <p className="text-sm text-[color:var(--app-danger)]">{params.error}</p> : null}
             <Button type="submit">Create user</Button>
           </form>
         </StagePanel>
 
-        <StagePanel className="space-y-4">
+        <StagePanel tone="open" className="space-y-4">
           <div className="space-y-1">
-            <h2 className="text-2xl text-white">Existing users</h2>
-            <p className="text-sm text-slate-300">Bootstrap admin access comes from env vars and is not listed here.</p>
+            <h2 className="text-2xl text-[color:var(--app-heading)]">Existing users</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">Bootstrap admin access comes from env vars and is not listed here.</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
             {users.length === 0 ? (
-              <p className="text-sm text-slate-300">No database-backed users yet.</p>
+              <p className="p-4 text-sm text-[color:var(--app-muted)]">No database-backed users yet.</p>
             ) : (
-              users.map((user) => (
-                <div
-                  key={user.id}
-                  className="rounded-[18px] border border-white/10 bg-black/20 p-4"
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-1">
-                      <p className="text-base text-white">{user.name || "Unnamed user"}</p>
-                      <p className="text-sm text-slate-300">{user.email}</p>
-                    </div>
-                    <div className="flex flex-col gap-3 lg:items-end">
-                      <div className="text-sm text-slate-300 lg:text-right">
-                        <p className="capitalize text-white">{user.role}</p>
-                        <p>{new Date(user.createdAt).toLocaleString()}</p>
-                      </div>
-                      <form action={`/api/users/${user.id}`} method="post" className="flex flex-wrap items-center gap-2">
-                        <select
-                          name="role"
-                          defaultValue={user.role}
-                          className="rounded-[16px] border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                        <Button type="submit" variant="secondary">Save role</Button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <table className="min-w-full text-left">
+                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Name</th>
+                    <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Role</th>
+                    <th className="px-4 py-3 font-medium">Created</th>
+                    <th className="px-4 py-3 font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]">
+                      <td className="px-4 py-3 text-[color:var(--app-heading)]">{user.name || "Unnamed user"}</td>
+                      <td className="px-4 py-3 text-[color:var(--app-text)]">{user.email}</td>
+                      <td className="px-4 py-3 text-[color:var(--app-text)] capitalize">{user.role}</td>
+                      <td className="px-4 py-3 text-[color:var(--app-muted)]">{new Date(user.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        <form action={`/api/users/${user.id}`} method="post" className="flex flex-wrap items-center justify-end gap-2">
+                          <select
+                            name="role"
+                            defaultValue={user.role}
+                            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                          >
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <Button type="submit" variant="secondary">Save</Button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </StagePanel>

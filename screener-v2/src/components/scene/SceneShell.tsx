@@ -70,7 +70,7 @@ export function SceneShell({
           <h1
             className={cn(
               "max-w-3xl font-display text-4xl leading-[0.96] md:text-5xl",
-              tone === "scene" ? "text-white" : "text-[color:var(--app-heading)]"
+              tone === "scene" ? "text-[color:var(--app-scene-heading)]" : "text-[color:var(--app-heading)]"
             )}
           >
             {title}
@@ -79,7 +79,7 @@ export function SceneShell({
             <p
               className={cn(
                 "max-w-2xl text-sm leading-6",
-                tone === "scene" ? "text-slate-300" : "text-[color:var(--app-muted)]"
+                tone === "scene" ? "text-[color:var(--app-scene-text)]" : "text-[color:var(--app-muted)]"
               )}
             >
               {subtitle}

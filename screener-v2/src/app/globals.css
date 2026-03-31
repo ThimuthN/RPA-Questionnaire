@@ -63,8 +63,25 @@ html[data-theme="light"] {
   --app-brand: #0fa8a1;
   --app-brand-strong: #0c8e88;
   --app-brand-soft: rgba(15, 168, 161, 0.12);
+  --app-brand-contrast: #ffffff;
   --app-danger: #e9704b;
   --app-danger-soft: rgba(233, 112, 75, 0.12);
+  --app-success: #1e8c5d;
+  --app-success-soft: rgba(30, 140, 93, 0.12);
+  --app-warning: #b97a11;
+  --app-warning-soft: rgba(185, 122, 17, 0.12);
+  --app-table-head: #edf4f6;
+  --app-table-row-hover: rgba(15, 168, 161, 0.05);
+  --app-modal-overlay: rgba(230, 238, 242, 0.78);
+  --app-modal-surface: rgba(255, 255, 255, 0.98);
+  --app-modal-surface-strong: #ffffff;
+  --app-modal-header: linear-gradient(180deg, rgba(237, 244, 246, 0.96), rgba(255, 255, 255, 0.98));
+  --app-modal-body: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 250, 0.98));
+  --app-modal-footer: rgba(246, 249, 250, 0.98);
+  --app-modal-shadow: 0 28px 80px rgba(24, 44, 57, 0.18);
+  --app-scene-heading: #ffffff;
+  --app-scene-text: #d9e5f0;
+  --app-scene-muted: #9cb0c5;
   --pill-neutral-bg: #eff4f6;
   --pill-neutral-border: #d9e4e8;
   --pill-neutral-text: #5f788b;
@@ -111,8 +128,25 @@ html[data-theme="dark"] {
   --app-brand: #2f86ff;
   --app-brand-strong: #1f6fff;
   --app-brand-soft: rgba(47, 134, 255, 0.14);
+  --app-brand-contrast: #ffffff;
   --app-danger: #d6455d;
   --app-danger-soft: rgba(214, 69, 93, 0.14);
+  --app-success: #20b26b;
+  --app-success-soft: rgba(32, 178, 107, 0.14);
+  --app-warning: #e6a019;
+  --app-warning-soft: rgba(230, 160, 25, 0.16);
+  --app-table-head: rgba(255, 255, 255, 0.04);
+  --app-table-row-hover: rgba(255, 255, 255, 0.04);
+  --app-modal-overlay: rgba(2, 6, 16, 0.82);
+  --app-modal-surface: linear-gradient(180deg, rgba(20, 30, 48, 0.98), rgba(8, 12, 22, 0.985));
+  --app-modal-surface-strong: rgba(11, 18, 31, 0.98);
+  --app-modal-header: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+  --app-modal-body: linear-gradient(180deg, rgba(8, 12, 20, 0.98), rgba(4, 8, 16, 1));
+  --app-modal-footer: rgba(0, 0, 0, 0.18);
+  --app-modal-shadow: 0 28px 90px rgba(0, 0, 0, 0.52);
+  --app-scene-heading: #ffffff;
+  --app-scene-text: #d9e5f0;
+  --app-scene-muted: #8aa0b6;
   --pill-neutral-bg: rgba(255, 255, 255, 0.06);
   --pill-neutral-border: rgba(255, 255, 255, 0.12);
   --pill-neutral-text: #d4deea;
@@ -192,7 +226,7 @@ pre,
 
 ::selection {
   background: color-mix(in srgb, var(--app-brand) 24%, transparent);
-  color: var(--app-heading);
+  color: var(--app-brand-contrast);
 }
 
 a,
@@ -207,6 +241,10 @@ select {
     box-shadow var(--scene-interaction) ease,
     transform var(--scene-micro) cubic-bezier(0.22, 1, 0.36, 1),
     opacity var(--scene-interaction) ease;
+}
+
+::placeholder {
+  color: color-mix(in srgb, var(--app-muted) 82%, transparent);
 }
 
 a {

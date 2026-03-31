@@ -70,23 +70,23 @@ export function InviteCredentialsPanel({
       transition={{ duration: 0.32, ease: [0.2, 1, 0.2, 1] }}
       className={cn(
         compact
-          ? "space-y-4 rounded-[22px] border border-brand-300/22 bg-[linear-gradient(180deg,rgba(47,134,255,0.12),rgba(255,255,255,0.03))] p-4 shadow-[var(--shadow-soft)]"
-          : "space-y-5 rounded-[24px] border border-brand-300/28 bg-[linear-gradient(180deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))] p-5 shadow-[var(--shadow-elevated)]",
+          ? "space-y-4 rounded-[22px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4 shadow-[var(--app-shadow-soft)]"
+          : "space-y-5 rounded-[24px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-5 shadow-[var(--app-shadow)]",
         className
       )}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="space-y-1">
           <p className="text-xs uppercase tracking-[0.2em] text-brand-200">{copy.create.ready}</p>
-          <h3 className={cn("text-white", compact ? "text-lg" : "text-xl")}>Share this assessment</h3>
+          <h3 className={cn("text-[color:var(--app-heading)]", compact ? "text-lg" : "text-xl")}>Share this assessment</h3>
         </div>
         <StatusPill label={copy.create.share} tone="blue" className="whitespace-nowrap" />
       </div>
       <div className={cn("grid gap-3", compact ? "md:grid-cols-2" : "xl:grid-cols-[minmax(0,1.8fr)_minmax(160px,0.7fr)_minmax(160px,0.7fr)]")}>
-        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.testLink}</p>
-          <div className="mt-3 rounded-[16px] border border-white/10 bg-white/[0.03] px-3 py-3">
-            <p className={cn("overflow-x-auto font-mono text-white [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", compact ? "text-[11px] leading-5" : "text-xs leading-6")}>
+        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.create.testLink}</p>
+          <div className="mt-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-3">
+            <p className={cn("overflow-x-auto font-mono text-[color:var(--app-text)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", compact ? "text-[11px] leading-5" : "text-xs leading-6")}>
               <span className="inline-block min-w-full whitespace-nowrap">{invite.entryUrl}</span>
             </p>
           </div>
@@ -101,20 +101,20 @@ export function InviteCredentialsPanel({
             {!compact ? (
               <a
                 href={openHref}
-                className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.04] px-4 py-2.5 text-sm text-white transition hover:border-brand-300/45 hover:bg-white/[0.08]"
+                className="inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2.5 text-sm text-[color:var(--app-heading)] transition hover:border-brand-300/45 hover:bg-[color:var(--app-surface-soft)]"
               >
                 Open
               </a>
             ) : null}
           </div>
         </div>
-        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.testId}</p>
-          <p className={cn("mt-3 font-mono text-white", compact ? "text-base" : "text-sm")}>{testId ?? "--"}</p>
+        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.create.testId}</p>
+          <p className={cn("mt-3 font-mono text-[color:var(--app-heading)]", compact ? "text-base" : "text-sm")}>{testId ?? "--"}</p>
         </div>
-        <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.create.passcode}</p>
-          <p className={cn("mt-3 font-mono text-white", compact ? "text-base" : "text-sm")}>{invite.passcode ?? "None"}</p>
+        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.create.passcode}</p>
+          <p className={cn("mt-3 font-mono text-[color:var(--app-heading)]", compact ? "text-base" : "text-sm")}>{invite.passcode ?? "None"}</p>
           {invite.passcode ? (
             <Button
               variant="secondary"
@@ -126,7 +126,7 @@ export function InviteCredentialsPanel({
           ) : null}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3 border-t border-white/10 pt-1">
+      <div className="flex flex-wrap items-center gap-3 border-t border-[color:var(--app-border)] pt-1">
         <a
           href={openHref}
           className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,rgba(31,111,255,1),rgba(47,134,255,0.88))] px-5 py-2.5 text-sm font-medium text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
@@ -138,7 +138,7 @@ export function InviteCredentialsPanel({
             {copy.create.copyDetails}
           </Button>
         ) : null}
-        {notice ? <p className="text-xs text-teal-200">{notice}</p> : null}
+        {notice ? <p className="text-xs text-[color:var(--app-success)]">{notice}</p> : null}
       </div>
     </motion.div>
   );

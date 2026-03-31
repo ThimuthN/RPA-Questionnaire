@@ -308,8 +308,8 @@ export function AddonLibraryClient({
           <div
             className={
               message.tone === "success"
-                ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
-                : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100"
+                ? "rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]"
+                : "rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]"
             }
           >
             {message.text}
@@ -318,19 +318,19 @@ export function AddonLibraryClient({
       ) : null}
 
       <StaggerItem>
-        <StagePanel className="space-y-4">
+        <StagePanel tone="summary" className="space-y-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl text-white">{viewMode === "addons" ? "Add-on library" : "Presets"}</h1>
-            <p className="text-sm text-slate-300">
+            <h1 className="text-2xl text-[color:var(--app-heading)]">{viewMode === "addons" ? "Add-ons" : "Presets"}</h1>
+            <p className="text-sm text-[color:var(--app-muted)]">
               {viewMode === "addons"
-                ? "Global defaults used by the assessment builder."
-                : "Reusable add-on mixes for faster setup."}
+                ? "Global defaults used by the builder."
+                : "Reusable add-on sets for faster setup."}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex flex-wrap gap-2 rounded-full border border-white/12 bg-black/20 p-1">
+            <div className="flex flex-wrap gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-1 shadow-[var(--app-shadow-soft)]">
               <button
                 type="button"
                 onClick={() => setViewMode("addons")}
@@ -338,7 +338,7 @@ export function AddonLibraryClient({
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   viewMode === "addons"
                     ? "bg-brand-500 text-white shadow-[0_0_24px_rgba(52,124,255,0.35)]"
-                    : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                    : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
                 }`}
               >
                 Add-ons
@@ -350,7 +350,7 @@ export function AddonLibraryClient({
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   viewMode === "presets"
                     ? "bg-purple-500/22 text-white shadow-[0_0_24px_rgba(148,93,255,0.28)]"
-                    : "text-slate-300 hover:bg-white/[0.05] hover:text-white"
+                    : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
                 }`}
               >
                 Presets
@@ -362,9 +362,9 @@ export function AddonLibraryClient({
       </StaggerItem>
 
       <StaggerItem>
-        <StagePanel className="space-y-4">
+        <StagePanel tone="open" className="space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h2 className="text-2xl text-white">{viewMode === "addons" ? "All add-ons" : "All presets"}</h2>
+          <h2 className="text-2xl text-[color:var(--app-heading)]">{viewMode === "addons" ? "All add-ons" : "All presets"}</h2>
           <div className="flex flex-wrap items-center gap-3">
             <StatusPill
               label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presets.length} presets`}
@@ -379,10 +379,10 @@ export function AddonLibraryClient({
         </div>
 
         {viewMode === "addons" ? (
-          <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+          <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left">
-                <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-slate-400">
+                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                   <tr>
                     <th className="px-4 py-3 font-medium">Add-on</th>
                     <th className="px-4 py-3 font-medium">Type</th>
@@ -395,20 +395,20 @@ export function AddonLibraryClient({
                 </thead>
                 <tbody>
                   {addonOptions.map((addon) => (
-                    <tr key={addon.id} className="border-t border-white/10 transition hover:bg-white/[0.03]">
+                    <tr key={addon.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
                       <td className="px-4 py-3 align-top">
                         <div className="space-y-1">
-                          <p className="text-sm text-white">{addon.label}</p>
-                          <p className="max-w-[440px] text-xs leading-5 text-slate-400">{compactText(addon.description, 72)}</p>
+                          <p className="text-sm text-[color:var(--app-heading)]">{addon.label}</p>
+                          <p className="max-w-[440px] text-xs leading-5 text-[color:var(--app-muted)]">{compactText(addon.description, 72)}</p>
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
                         <StatusPill label={resolveExamEntry(addon.engineType).label} tone={resolveExamEntry(addon.engineType).accentTone} />
                       </td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultDurationMinutes} min</td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultRequiredPercent}%</td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.defaultWeight}/100</td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{addon.isActive ? "Active" : "Inactive"}</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultDurationMinutes} min</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultRequiredPercent}%</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultWeight}/100</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.isActive ? "Active" : "Inactive"}</td>
                       <td className="px-4 py-3 text-right align-top">
                         <Button type="button" variant="ghost" onClick={() => openAddonEditor(addon)}>
                           Open
@@ -421,10 +421,10 @@ export function AddonLibraryClient({
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+          <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left">
-                <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-[0.18em] text-slate-400">
+                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                   <tr>
                     <th className="px-4 py-3 font-medium">Preset</th>
                     <th className="px-4 py-3 font-medium">Add-ons</th>
@@ -434,15 +434,15 @@ export function AddonLibraryClient({
                 </thead>
                 <tbody>
                   {presets.map((preset) => (
-                    <tr key={preset.id} className="border-t border-white/10 transition hover:bg-white/[0.03]">
+                    <tr key={preset.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
                       <td className="px-4 py-3 align-top">
                         <div className="space-y-1">
-                          <p className="text-sm text-white">{preset.label}</p>
-                          <p className="max-w-[440px] text-xs leading-5 text-slate-400">{compactText(preset.description, 72)}</p>
+                          <p className="text-sm text-[color:var(--app-heading)]">{preset.label}</p>
+                          <p className="max-w-[440px] text-xs leading-5 text-[color:var(--app-muted)]">{compactText(preset.description, 72)}</p>
                         </div>
                       </td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{preset.items.length}</td>
-                      <td className="px-4 py-3 align-top text-sm text-slate-200">{preset.isActive ? "Active" : "Inactive"}</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{preset.items.length}</td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{preset.isActive ? "Active" : "Inactive"}</td>
                       <td className="px-4 py-3 text-right align-top">
                         <Button type="button" variant="ghost" onClick={() => openPresetEditor(preset)}>
                           Open
@@ -465,19 +465,24 @@ export function AddonLibraryClient({
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(6px)" }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
           transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "var(--app-modal-overlay)" }}
         >
           <motion.div
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985, filter: "blur(10px)" }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.992, filter: "blur(8px)" }}
             transition={{ duration: reduceMotion ? 0.14 : 0.26, ease: [0.22, 1, 0.36, 1] }}
-            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-[color:var(--app-border)] p-6"
+            style={{
+              background: "var(--app-modal-surface)",
+              boxShadow: "var(--app-modal-shadow)"
+            }}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">{selectedAddon?.label ?? "New add-on"}</h2>
-                <p className="text-sm text-slate-300">Global settings applied across assessments.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">{selectedAddon?.label ?? "New add-on"}</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Global settings used across assessments.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusPill label={resolveExamEntry(addonForm.engineType).label} tone={resolveExamEntry(addonForm.engineType).accentTone} />
@@ -488,34 +493,34 @@ export function AddonLibraryClient({
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_0.95fr]">
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
+              <div className="space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
                 <label className="grid gap-2">
-                  <span className="text-sm text-slate-200">Label</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Label</span>
                   <input
                     value={addonForm.label}
                     onChange={(event) => setAddonForm((current) => ({ ...current, label: event.target.value }))}
-                    className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     placeholder="Practical UiPath"
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm text-slate-200">Description</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Description</span>
                   <textarea
                     rows={4}
                     value={addonForm.description}
                     onChange={(event) =>
                       setAddonForm((current) => ({ ...current, description: event.target.value }))
                     }
-                    className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     placeholder="What this add-on is meant to measure."
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm text-slate-200">Engine</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Engine</span>
                   <select
                     value={addonForm.engineType}
                     onChange={(event) => setAddonEngine(event.target.value as ExamDefinitionId)}
-                    className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                   >
                     {orderedExamCatalog.map((exam) => (
                       <option key={exam.id} value={exam.id}>
@@ -526,11 +531,11 @@ export function AddonLibraryClient({
                 </label>
               </div>
 
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Defaults</p>
+              <div className="space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Defaults</p>
                 <div className="grid gap-3">
                   <label className="grid gap-2">
-                    <span className="text-sm text-slate-200">Time (minutes)</span>
+                    <span className="text-sm text-[color:var(--app-text)]">Time (minutes)</span>
                     <input
                       type="number"
                       min={1}
@@ -541,11 +546,11 @@ export function AddonLibraryClient({
                           defaultDurationMinutes: Math.max(1, Math.round(Number(event.target.value) || 1))
                         }))
                       }
-                      className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                      className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm text-slate-200">Minimum pass</span>
+                    <span className="text-sm text-[color:var(--app-text)]">Minimum pass</span>
                     <input
                       type="number"
                       min={0}
@@ -557,11 +562,11 @@ export function AddonLibraryClient({
                           defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(Number(event.target.value) || 0)))
                         }))
                       }
-                      className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                      className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     />
                   </label>
                   <label className="grid gap-2">
-                    <span className="text-sm text-slate-200">Default score contribution</span>
+                    <span className="text-sm text-[color:var(--app-text)]">Default score contribution</span>
                     <input
                       type="number"
                       min={0}
@@ -573,15 +578,15 @@ export function AddonLibraryClient({
                           defaultWeight: Math.min(100, Math.max(0, Math.round(Number(event.target.value) || 0)))
                         }))
                       }
-                      className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                      className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     />
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Default config</p>
+            <div className="mt-4 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Default config</p>
               {resolveExamEntry(addonForm.engineType).configFields.length > 0 ? (
                 <div className="grid gap-4">
                   {resolveExamEntry(addonForm.engineType).configFields.map((field) => (
@@ -599,17 +604,17 @@ export function AddonLibraryClient({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-300">This engine does not need extra default config.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">This engine does not need extra default config.</p>
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-              <label className="flex items-center gap-3 text-sm text-slate-200">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-footer)] p-5">
+              <label className="flex items-center gap-3 text-sm text-[color:var(--app-text)]">
                 <input
                   type="checkbox"
                   checked={addonForm.isActive}
                   onChange={(event) => setAddonForm((current) => ({ ...current, isActive: event.target.checked }))}
-                  className="h-4 w-4 rounded border-white/20 bg-transparent"
+                  className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent"
                 />
                 Active in the library
               </label>
@@ -634,19 +639,24 @@ export function AddonLibraryClient({
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(6px)" }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
           transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "var(--app-modal-overlay)" }}
         >
           <motion.div
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985, filter: "blur(10px)" }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.992, filter: "blur(8px)" }}
             transition={{ duration: reduceMotion ? 0.14 : 0.26, ease: [0.22, 1, 0.36, 1] }}
-            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(26,37,58,0.98),rgba(11,17,29,0.98))] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-[28px] border border-[color:var(--app-border)] p-6"
+            style={{
+              background: "var(--app-modal-surface)",
+              boxShadow: "var(--app-modal-shadow)"
+            }}
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-white">{selectedPreset?.label ?? "New preset"}</h2>
-                <p className="text-sm text-slate-300">Reusable add-on mix.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">{selectedPreset?.label ?? "New preset"}</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Reusable add-on set.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusPill label={`${presetForm.items.length} add-ons`} tone="neutral" />
@@ -657,32 +667,32 @@ export function AddonLibraryClient({
             </div>
 
             <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_1fr]">
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
+              <div className="space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
                 <label className="grid gap-2">
-                  <span className="text-sm text-slate-200">Label</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Label</span>
                   <input
                     value={presetForm.label}
                     onChange={(event) => setPresetForm((current) => ({ ...current, label: event.target.value }))}
-                    className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     placeholder="Graduate screening"
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm text-slate-200">Description</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Description</span>
                   <textarea
                     rows={4}
                     value={presetForm.description}
                     onChange={(event) =>
                       setPresetForm((current) => ({ ...current, description: event.target.value }))
                     }
-                    className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     placeholder="Short note explaining when this preset should be used."
                   />
                 </label>
               </div>
 
-              <div className="space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Included add-ons</p>
+              <div className="space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Included add-ons</p>
                 <div className="flex flex-wrap gap-2">
                   {addonOptions.filter((addon) => addon.isActive).map((addon) => {
                     const active = presetForm.items.some((item) => item.addonId === addon.id);
@@ -694,7 +704,7 @@ export function AddonLibraryClient({
                         className={`rounded-full border px-4 py-2 text-sm transition ${
                           active
                             ? "border-brand-300 bg-brand-500/18 text-white"
-                            : "border-white/16 bg-white/[0.05] text-slate-200 hover:border-brand-300/50"
+                            : "border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] hover:border-brand-300/50"
                         }`}
                       >
                         {addon.label}
@@ -705,15 +715,15 @@ export function AddonLibraryClient({
               </div>
             </div>
 
-            <div className="mt-4 space-y-4 rounded-[24px] border border-white/10 bg-black/20 p-5">
+            <div className="mt-4 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Preset composition</p>
-                <label className="flex items-center gap-3 text-sm text-slate-200">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Preset composition</p>
+                <label className="flex items-center gap-3 text-sm text-[color:var(--app-text)]">
                   <input
                     type="checkbox"
                     checked={presetForm.isActive}
                     onChange={(event) => setPresetForm((current) => ({ ...current, isActive: event.target.checked }))}
-                    className="h-4 w-4 rounded border-white/20 bg-transparent"
+                    className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent"
                   />
                   Active in the builder
                 </label>
@@ -726,7 +736,7 @@ export function AddonLibraryClient({
                     if (!addon) return null;
 
                     return (
-                      <div key={item.addonId} className="space-y-4 rounded-[20px] border border-white/10 bg-white/[0.03] p-4">
+                      <div key={item.addonId} className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-2">
@@ -779,7 +789,7 @@ export function AddonLibraryClient({
                         </div>
 
                         <label className="grid gap-2">
-                          <span className="text-xs uppercase tracking-[0.18em] text-slate-400">Preset score contribution</span>
+                          <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Preset score contribution</span>
                           <input
                             type="number"
                             min={0}
@@ -796,7 +806,7 @@ export function AddonLibraryClient({
                               }))
                             }
                             placeholder={`${addon.defaultWeight}`}
-                            className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-white outline-none transition focus:border-brand-300/60"
+                            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                           />
                         </label>
 
@@ -829,13 +839,13 @@ export function AddonLibraryClient({
                   })}
                 </div>
               ) : (
-                <div className="rounded-[20px] border border-dashed border-white/14 bg-black/15 p-6 text-sm text-slate-300">
+                <div className="rounded-[20px] border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6 text-sm text-[color:var(--app-muted)]">
                   Select at least one add-on.
                 </div>
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap justify-end gap-3 rounded-[24px] border border-white/10 bg-black/20 p-5">
+            <div className="mt-4 flex flex-wrap justify-end gap-3 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-footer)] p-5">
               <Button onClick={submitPreset} disabled={savingPreset}>
                 {savingPreset ? "Saving..." : editingPresetId ? "Save preset" : "Create preset"}
               </Button>

@@ -26,7 +26,7 @@ export function StepRail({
               "flex items-center gap-3 rounded-full border px-3 py-2.5 text-sm transition",
               active
                 ? "border-brand-400/60 bg-brand-500/20 text-white shadow-[0_12px_30px_rgba(31,111,255,0.18)]"
-                : "border-white/10 bg-white/[0.05] text-slate-300"
+                : "border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] text-[color:var(--app-muted)]"
             )}
           >
             <StatusPill label={`${index + 1}`} tone={active ? "blue" : "neutral"} />

@@ -17,8 +17,8 @@ export function ConfigFieldEditor({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <p className="text-sm text-slate-100">{field.label}</p>
-        {field.description ? <p className="text-xs text-slate-400">{field.description}</p> : null}
+        <p className="text-sm text-[color:var(--app-heading)]">{field.label}</p>
+        {field.description ? <p className="text-xs text-[color:var(--app-muted)]">{field.description}</p> : null}
       </div>
       <div className="flex flex-wrap gap-2">
         {field.options.map((option) => {
@@ -45,7 +45,7 @@ export function ConfigFieldEditor({
               className={`rounded-full border px-4 py-2 text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
                 active
                   ? "border-brand-300 bg-brand-500/18 text-white shadow-[0_14px_32px_rgba(31,111,255,0.18)]"
-                  : "border-white/16 bg-white/[0.05] text-slate-200 hover:border-brand-300/50 hover:bg-white/[0.08]"
+                  : "border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-soft)]"
               }`}
             >
               {option.label}

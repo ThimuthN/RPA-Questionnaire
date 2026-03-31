@@ -9,7 +9,7 @@ const AddonLibraryClient = dynamic(
   () => import("@/components/addons/AddonLibraryClient").then((mod) => mod.AddonLibraryClient),
   {
     loading: () => (
-      <div className="rounded-[24px] border border-white/12 bg-white/[0.04] p-6 text-sm text-slate-300">
+      <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-sm text-[color:var(--app-muted)] shadow-[var(--app-shadow-soft)]">
         Loading add-on library...
       </div>
     )
@@ -28,9 +28,10 @@ export default async function AddonsPage() {
     <SceneTransition>
       <SceneShell
         variant="create"
+        tone="page"
         eyebrow="Add-ons"
         title="Add-on library"
-        subtitle="Manage global add-on defaults and simple presets."
+        subtitle="Manage add-ons and presets."
         utility={
           <div className="flex flex-wrap gap-2">
             <StatusPill label={`${addons.length} add-ons`} tone="blue" />

@@ -20,8 +20,8 @@ export function IntegrityPresetPicker({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <p className="text-sm text-slate-100">{label}</p>
-        <p className="text-xs text-slate-400">{description}</p>
+        <p className="text-sm text-[color:var(--app-heading)]">{label}</p>
+        <p className="text-xs text-[color:var(--app-muted)]">{description}</p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         {integrityPresetIds.map((presetId) => {
@@ -35,11 +35,11 @@ export function IntegrityPresetPicker({
               className={`rounded-[20px] border p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
                 active
                   ? "border-brand-300 bg-brand-500/16 text-white shadow-[0_16px_36px_rgba(31,111,255,0.16)]"
-                  : "border-white/12 bg-white/[0.05] text-slate-200 hover:border-brand-300/40 hover:bg-white/[0.08]"
+                  : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
               }`}
             >
-              <p className="text-sm text-white">{meta.shortLabel}</p>
-              <p className="mt-2 text-xs leading-5 text-slate-300">{meta.description}</p>
+              <p className="text-sm text-[color:var(--app-heading)]">{meta.shortLabel}</p>
+              <p className="mt-2 text-xs leading-5 text-[color:var(--app-muted)]">{meta.description}</p>
             </button>
           );
         })}
