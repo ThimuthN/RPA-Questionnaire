@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
-import { MascotGuide } from "@/components/motion/MascotGuide";
 import { MainNav } from "@/components/navigation/MainNav";
 import { getAppSession } from "@/lib/auth/app-session";
 import "./globals.css";
@@ -40,6 +39,15 @@ export const viewport: Viewport = {
   themeColor: "#07111f"
 };
 
+const themeInitScript = `
+  try {
+    const savedTheme = localStorage.getItem("assessment-hub-theme");
+    document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
+  } catch {
+    document.documentElement.dataset.theme = "light";
+  }
+`;
+
 export default async function RootLayout({
   children
 }: Readonly<{
@@ -48,11 +56,11 @@ export default async function RootLayout({
   const session = await getAppSession();
 
   return (
-    <html lang="en">
-      <body className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} bg-ink-950`}>
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(47,134,255,0.16),transparent_28%),linear-gradient(180deg,#040913,#091326)] text-white">
-          <MascotGuide />
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-ink-950/68 backdrop-blur-xl">
+    <html lang="en" data-theme="light" suppressHydrationWarning>
+      <body className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} bg-[color:var(--app-bg)] text-[color:var(--app-text)]`}>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)]">
+          <header className="sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl">
             <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
               <Link href="/" className="transition hover:opacity-95">
                 <AppLogo />

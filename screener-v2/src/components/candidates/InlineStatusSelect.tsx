@@ -13,7 +13,7 @@ const toneClass: Record<CandidateUiStatus, string> = {
   need_review: "border-amber-400/40 bg-amber-500/10 text-amber-100",
   moved_forward: "border-emerald-400/40 bg-emerald-500/10 text-emerald-100",
   rejected: "border-red-400/40 bg-red-500/10 text-red-100",
-  in_progress: "border-white/20 bg-white/5 text-slate-200"
+  in_progress: "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)]"
 };
 
 export function InlineStatusSelect({ candidateId, currentStatus, returnTo }: InlineStatusSelectProps) {
@@ -28,10 +28,10 @@ export function InlineStatusSelect({ candidateId, currentStatus, returnTo }: Inl
         name="status"
         defaultValue={currentStatus}
         onChange={() => formRef.current?.requestSubmit()}
-        className={`rounded-full border px-3 py-1 text-xs font-medium outline-none transition cursor-pointer ${toneClass[currentStatus] ?? toneClass.in_progress}`}
+        className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-medium outline-none transition ${toneClass[currentStatus] ?? toneClass.in_progress}`}
       >
         {candidateUiStatusValues.map((status) => (
-          <option key={status} value={status} className="bg-ink-950 text-white">
+          <option key={status} value={status} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white">
             {candidateUiStatusLabels[status]}
           </option>
         ))}

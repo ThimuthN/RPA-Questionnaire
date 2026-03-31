@@ -11,7 +11,7 @@ const items: Array<{ key: PeopleView; label: string; href: Route }> = [
 
 export function PeopleViewSwitch({ current }: { current: PeopleView }) {
   return (
-    <div className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md">
+    <div className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-1 text-sm text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)]">
       {items.map((item) => (
         <Link
           key={item.key}
@@ -19,8 +19,8 @@ export function PeopleViewSwitch({ current }: { current: PeopleView }) {
           className={cn(
             "rounded-full px-3 py-1.5 transition",
             current === item.key
-              ? "bg-[linear-gradient(135deg,rgba(31,111,255,0.24),rgba(47,134,255,0.12))] text-white shadow-[0_12px_28px_rgba(31,111,255,0.18)]"
-              : "text-slate-300 hover:bg-white/[0.07] hover:text-white"
+              ? "bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_22%,transparent)]"
+              : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
           )}
         >
           {item.label}

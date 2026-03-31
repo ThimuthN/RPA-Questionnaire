@@ -5,6 +5,7 @@ import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -28,24 +29,24 @@ export function MobileNavDrawer({
       <button
         type="button"
         aria-label="Close navigation"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <aside className="absolute right-0 top-0 h-full w-[min(86vw,360px)] border-l border-white/10 bg-ink-950/96 p-5 shadow-[var(--shadow-scene)]">
+      <aside className="absolute right-0 top-0 h-full w-[min(86vw,360px)] border-l border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-5 shadow-[var(--app-shadow)]">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-3">
             <AppLogo compact />
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Workspace</p>
-              <p className="text-lg text-white">{viewer?.name || viewer?.email || "Assessment Hub"}</p>
-              {viewer ? <p className="text-sm text-slate-400">{viewer.role}</p> : null}
+              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Workspace</p>
+              <p className="text-lg text-[color:var(--app-heading)]">{viewer?.name || viewer?.email || "Assessment Hub"}</p>
+              {viewer ? <p className="text-sm text-[color:var(--app-muted)]">{viewer.role}</p> : null}
             </div>
           </div>
           <button
             type="button"
             aria-label="Close navigation"
             onClick={onClose}
-            className="rounded-full border border-white/12 bg-white/[0.05] p-2 text-slate-200 transition hover:bg-white/[0.08]"
+            className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-2 text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -74,8 +75,8 @@ export function MobileNavDrawer({
                 className={cn(
                   "flex items-center gap-3 rounded-[18px] border px-4 py-3 text-sm transition",
                   active
-                    ? "border-brand-300/50 bg-brand-500/12 text-white"
-                    : "border-white/10 bg-white/[0.04] text-slate-200 hover:bg-white/[0.08]"
+                    ? "border-[color:var(--pill-teal-border)] bg-[color:var(--pill-teal-bg)] text-[color:var(--app-heading)]"
+                    : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-muted)]"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -85,12 +86,13 @@ export function MobileNavDrawer({
           })}
         </div>
 
-        <div className="mt-6 border-t border-white/10 pt-4">
+        <div className="mt-6 border-t border-[color:var(--app-border)] pt-4 space-y-3">
+          <ThemeToggle compact />
           {viewer ? (
             <form action="/api/auth/logout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-sm text-slate-100 transition hover:bg-white/[0.08]"
+                className="w-full rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-sm text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
               >
                 Log out
               </button>
@@ -99,7 +101,7 @@ export function MobileNavDrawer({
             <Link
               href="/login"
               onClick={onClose}
-              className="block rounded-full border border-white/16 bg-white/[0.04] px-4 py-2 text-center text-sm text-slate-100 transition hover:bg-white/[0.08]"
+              className="block rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-center text-sm text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
             >
               Log in
             </Link>

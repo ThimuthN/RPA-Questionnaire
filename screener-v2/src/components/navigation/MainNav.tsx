@@ -7,6 +7,7 @@ import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
 import { Activity, Blocks, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
 import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
@@ -31,7 +32,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
 
   return (
     <div className="flex items-center gap-3">
-      <div className="hidden items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] p-1 text-sm text-slate-200 backdrop-blur-md md:flex">
+      <div className="hidden items-center gap-1.5 rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] p-1 text-sm text-slate-200 backdrop-blur-md md:flex">
         {items.map((item) => {
           const Icon = item.icon;
           const href = item.href as string;
@@ -48,13 +49,11 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
             <Link
               key={item.href}
               href={item.href}
-              data-guide-id={`nav-${href.replace(/\//g, "-") || "home"}`}
-              data-guide-hint={item.label}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950",
+                "inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
                 active
-                  ? "bg-[linear-gradient(135deg,rgba(31,111,255,0.24),rgba(47,134,255,0.12))] text-white"
-                  : "text-slate-200 hover:bg-white/[0.06] hover:text-white"
+                  ? "bg-[linear-gradient(135deg,rgba(15,168,161,0.28),rgba(15,168,161,0.12))] text-white"
+                  : "text-slate-200 hover:bg-[color:var(--app-header-surface-hover)] hover:text-white"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -69,7 +68,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           type="button"
           aria-label="Open navigation"
           onClick={() => setMobileOpen(true)}
-          className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/[0.04] px-3 py-2 text-sm text-slate-100 transition hover:bg-white/[0.08]"
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-2 text-sm text-slate-100 transition hover:bg-[color:var(--app-header-surface-hover)]"
         >
           <Menu className="h-4 w-4" />
           <span>{viewer ? "Menu" : "Explore"}</span>
@@ -78,25 +77,29 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
 
       {viewer ? (
         <div className="flex items-center gap-2">
-          <div className="hidden rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-200 md:block">
+          <ThemeToggle />
+          <div className="hidden rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-200 md:block">
             {viewer.name || viewer.email}
           </div>
           <form action="/api/auth/logout" method="post">
             <button
               type="submit"
-              className="rounded-full border border-white/16 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-white/[0.08]"
+              className="rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-[color:var(--app-header-surface-hover)]"
             >
               Log out
             </button>
           </form>
         </div>
       ) : (
-        <Link
-          href="/login"
-          className="rounded-full border border-white/16 bg-white/[0.04] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-white/[0.08]"
-        >
-          Log in
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/login"
+            className="rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-[color:var(--app-header-surface-hover)]"
+          >
+            Log in
+          </Link>
+        </div>
       )}
 
       <MobileNavDrawer

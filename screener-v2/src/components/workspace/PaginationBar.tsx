@@ -19,7 +19,7 @@ export function PaginationBar({
   const end = Math.min(total, page * pageSize);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-white/10 bg-white/[0.05] p-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)]">
       <div className="flex flex-wrap gap-2">
         <StatusPill label={`Showing ${start}-${end}`} tone="neutral" />
         <StatusPill label={`Total ${total}`} tone="neutral" />

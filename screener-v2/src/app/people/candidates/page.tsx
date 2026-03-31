@@ -66,7 +66,7 @@ function bucketLabel(bucket: string) {
 }
 
 function filterFieldClassName() {
-  return "rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50 focus:bg-white/[0.06]";
+  return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
 
 function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
@@ -123,6 +123,7 @@ export default async function PeopleCandidatesPage({
     <SceneTransition>
       <SceneShell
         variant="results"
+        tone="page"
         eyebrow="People"
         title="Candidates"
         subtitle="Search and manage candidates in one place."
@@ -152,8 +153,8 @@ export default async function PeopleCandidatesPage({
             <div className="space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-1">
-                  <h2 className="text-2xl text-white">Candidates</h2>
-                  <p className="text-sm text-slate-300">Track people, assessments, and next steps.</p>
+                  <h2 className="text-2xl text-[color:var(--app-heading)]">Candidates</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">Track people, assessments, and next steps.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.total} total`} tone="neutral" />
@@ -162,7 +163,7 @@ export default async function PeopleCandidatesPage({
                 </div>
               </div>
 
-              <form className="grid gap-3 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8 xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
+              <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
                 <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
                 <input
                   name="q"
@@ -249,11 +250,11 @@ export default async function PeopleCandidatesPage({
                 </Link>
               </div>
 
-              <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+              <div className="rounded-[20px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm text-white">Import from CSV</p>
-                    <p className="text-sm text-slate-400">Use: `fullName,email,role,hrOwner`.</p>
+                    <p className="text-sm text-[color:var(--app-heading)]">Import from CSV</p>
+                    <p className="text-sm text-[color:var(--app-muted)]">Use: `fullName,email,role,hrOwner`.</p>
                   </div>
                   <form action="/api/candidates/bulk" method="post" encType="multipart/form-data" className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <input type="hidden" name="action" value="import_csv" />
@@ -262,7 +263,7 @@ export default async function PeopleCandidatesPage({
                       type="file"
                       name="csvFile"
                       accept=".csv,text/csv"
-                      className="w-full rounded-[16px] border border-dashed border-white/12 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 lg:min-w-[320px]"
+                      className="w-full rounded-[16px] border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)] lg:min-w-[320px]"
                     />
                     <Button type="submit">Import CSV</Button>
                   </form>
@@ -274,8 +275,8 @@ export default async function PeopleCandidatesPage({
           {page.rows.length === 0 ? (
             <StaggerItem>
               <StagePanel className="space-y-3">
-                <h2 className="text-2xl text-white">No candidates match this view</h2>
-                <p className="text-sm text-slate-300">Try clearing a filter, importing candidates, or registering a new candidate.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">No candidates match this view</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Try clearing a filter, importing candidates, or adding a candidate.</p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/candidates/new">
                     <Button>Add candidate</Button>
@@ -290,15 +291,15 @@ export default async function PeopleCandidatesPage({
             <StaggerItem>
               <form action="/api/candidates/bulk" method="post" className="space-y-4">
                 <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-                <details className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+                <details className="rounded-[20px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
                     <div className="space-y-1">
-                      <h2 className="text-lg text-white">Bulk actions</h2>
-                      <p className="text-sm text-slate-300">Use when you need to update several candidates at once.</p>
+                      <h2 className="text-lg text-[color:var(--app-heading)]">Bulk actions</h2>
+                      <p className="text-sm text-[color:var(--app-muted)]">Use when you need to update several candidates at once.</p>
                     </div>
                     <StatusPill label="Optional" tone="neutral" />
                   </summary>
-                  <div className="mt-4 grid gap-3 border-t border-white/8 pt-4 xl:grid-cols-4">
+                  <div className="mt-4 grid gap-3 border-t border-[color:var(--app-border)] pt-4 xl:grid-cols-4">
                       <select
                         name="action"
                         defaultValue="assign_owner"
@@ -330,13 +331,13 @@ export default async function PeopleCandidatesPage({
                     name="noteBody"
                     rows={2}
                     placeholder="Optional note"
-                    className="mt-3 w-full rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50"
+                    className="mt-3 w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50"
                   />
                 </details>
 
-                <div className="overflow-hidden rounded-[24px] bg-white/[0.03] ring-1 ring-white/8">
+                <div className="overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
                   {page.rows.map((candidate) => (
-                    <div key={candidate.id} className="border-t border-white/8 p-4 first:border-t-0">
+                    <div key={candidate.id} className="border-t border-[color:var(--app-border)] p-4 first:border-t-0">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex gap-4">
                           <div className="pt-1">
@@ -344,7 +345,7 @@ export default async function PeopleCandidatesPage({
                               type="checkbox"
                               name="candidateId"
                               value={candidate.id}
-                              className="h-4 w-4 rounded border-white/20 bg-transparent text-brand-400"
+                              className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400"
                             />
                           </div>
                           <div className="space-y-3">
@@ -370,21 +371,21 @@ export default async function PeopleCandidatesPage({
                             </div>
                             <div className="space-y-2">
                               <div className="space-y-1">
-                                <p className="text-lg text-white">{candidate.fullName}</p>
-                                <p className="text-sm text-slate-300">{candidate.roleLabel || "Role not set"}</p>
+                                <p className="text-lg text-[color:var(--app-heading)]">{candidate.fullName}</p>
+                                <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
                               </div>
-                              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
+                              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[color:var(--app-muted)]">
                                 <span>{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}</span>
                                 <span>{candidate.currentFocus ? `Stage: ${candidate.currentFocus}` : `Stage: ${candidateStageLabels[candidate.stage]}`}</span>
                                 <span>{candidate.staleDays === 0 ? "Updated today" : `Updated ${candidate.staleDays} day(s) ago`}</span>
                               </div>
-                              <p className="text-sm text-slate-300">
+                              <p className="text-sm text-[color:var(--app-text)]">
                                 Latest assessment:{" "}
                                 {typeof candidate.latestAssessment?.finalPercent === "number"
                                   ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
                                   : candidateAssessmentStatusLabels[candidate.latestAssessmentStatus]}
                               </p>
-                              {candidate.notesSummary ? <p className="text-sm text-slate-300">{candidate.notesSummary}</p> : null}
+                              {candidate.notesSummary ? <p className="text-sm text-[color:var(--app-muted)]">{candidate.notesSummary}</p> : null}
                             </div>
                           </div>
                         </div>

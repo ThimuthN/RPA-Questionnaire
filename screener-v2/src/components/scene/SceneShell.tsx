@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { AmbientCanvasLayer } from "@/components/scene/AmbientCanvasLayer";
 
 type SceneVariant = "create" | "run" | "results";
+type SceneTone = "scene" | "page";
 
 const sceneClasses: Record<SceneVariant, string> = {
   create:
@@ -19,6 +20,7 @@ export function SceneShell({
   eyebrow,
   subtitle,
   utility,
+  tone = "scene",
   className,
   children
 }: PropsWithChildren<{
@@ -27,26 +29,39 @@ export function SceneShell({
   eyebrow: string;
   subtitle?: string;
   utility?: ReactNode;
+  tone?: SceneTone;
   className?: string;
 }>) {
   return (
     <section
       className={cn(
-        "relative isolate overflow-hidden rounded-[32px] border border-white/8 px-6 py-7 shadow-[0_28px_90px_rgba(3,9,22,0.34)] md:px-9 md:py-9",
-        sceneClasses[variant],
+        "relative isolate md:px-9 md:py-9",
+        tone === "scene" &&
+          "overflow-hidden rounded-[32px] border border-[color:var(--app-border)] px-6 py-7 shadow-[var(--app-shadow)]",
+        tone === "scene" && sceneClasses[variant],
+        tone === "page" && "px-0 py-0",
         className
       )}
     >
-      <AmbientCanvasLayer variant={variant} className="opacity-55" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.02)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/12" />
+      {tone === "scene" ? <AmbientCanvasLayer variant={variant} className="opacity-55" /> : null}
+      {tone === "scene" ? (
+        <>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
+          <div className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.02)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/12" />
+        </>
+      ) : null}
 
-      <header className="relative z-10 mb-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end">
+      <header
+        className={cn(
+          "relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end",
+          tone === "scene" ? "mb-8" : "mb-6"
+        )}
+      >
         <div className="space-y-3">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">{eyebrow}</p>
-          <h1 className="max-w-3xl font-display text-4xl leading-[0.96] text-white md:text-5xl">{title}</h1>
-          {subtitle ? <p className="max-w-2xl text-sm leading-6 text-slate-300">{subtitle}</p> : null}
+          <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--app-brand)]">{eyebrow}</p>
+          <h1 className="max-w-3xl font-display text-4xl leading-[0.96] text-[color:var(--app-heading)] md:text-5xl">{title}</h1>
+          {subtitle ? <p className="max-w-2xl text-sm leading-6 text-[color:var(--app-muted)]">{subtitle}</p> : null}
         </div>
         {utility ? <div className="relative z-10 flex flex-wrap items-center gap-2 lg:justify-self-end">{utility}</div> : null}
       </header>

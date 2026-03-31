@@ -50,7 +50,7 @@ function contextLabel(value: string) {
 }
 
 function filterFieldClassName() {
-  return "rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50 focus:bg-white/[0.06]";
+  return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
 
 export default async function PeopleEmployeesPage({
@@ -78,6 +78,7 @@ export default async function PeopleEmployeesPage({
     <SceneTransition>
       <SceneShell
         variant="results"
+        tone="page"
         eyebrow="People"
         title="Employees"
         subtitle="Track assessments, certifications, and recent results."
@@ -95,8 +96,8 @@ export default async function PeopleEmployeesPage({
             <div className="space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-1">
-                  <h2 className="text-2xl text-white">Employees</h2>
-                  <p className="text-sm text-slate-300">Keep internal learning and certification records in view.</p>
+                  <h2 className="text-2xl text-[color:var(--app-heading)]">Employees</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">Keep internal learning and certification records in view.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.summary.activeEmployees} employees`} tone="neutral" />
@@ -105,7 +106,7 @@ export default async function PeopleEmployeesPage({
                 </div>
               </div>
 
-              <form className="grid gap-3 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
+              <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
                 <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
                 <input
                   name="q"
@@ -150,8 +151,8 @@ export default async function PeopleEmployeesPage({
           {page.rows.length === 0 ? (
             <StaggerItem>
               <StagePanel className="space-y-3">
-                <h2 className="text-2xl text-white">No employees match this view</h2>
-                <p className="text-sm text-slate-300">Employees appear here after using internal access for assessments or certifications.</p>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">No employees match this view</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Employees appear here after using internal access for assessments or certifications.</p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/employee">
                     <Button>Open internal access</Button>
@@ -164,9 +165,9 @@ export default async function PeopleEmployeesPage({
             </StaggerItem>
           ) : (
             <StaggerItem>
-              <div className="overflow-hidden rounded-[24px] bg-white/[0.03] ring-1 ring-white/8">
+              <div className="overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
                 {page.rows.map((employee) => (
-                  <div key={employee.id} className="border-t border-white/8 p-4 first:border-t-0">
+                  <div key={employee.id} className="border-t border-[color:var(--app-border)] p-4 first:border-t-0">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
@@ -177,16 +178,16 @@ export default async function PeopleEmployeesPage({
                           ) : null}
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg text-white">{employee.fullName}</p>
-                          <p className="text-sm text-slate-300">{employee.email}</p>
+                          <p className="text-lg text-[color:var(--app-heading)]">{employee.fullName}</p>
+                          <p className="text-sm text-[color:var(--app-text)]">{employee.email}</p>
                         </div>
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
+                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[color:var(--app-muted)]">
                           <span>{employee.employeeId ? `Employee ID: ${employee.employeeId}` : "Employee ID not set"}</span>
                           <span>{employee.latestAssessmentLabel ?? "No assessment attached yet"}</span>
                           <span>{employee.completedCount} completed</span>
                           <span>{employee.latestSubmittedAt ? `Latest submit ${new Date(employee.latestSubmittedAt).toLocaleDateString()}` : "No completed attempt yet"}</span>
                         </div>
-                        <p className="text-sm text-slate-300">
+                        <p className="text-sm text-[color:var(--app-text)]">
                           Latest result: {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "Still in progress"}
                         </p>
                       </div>
