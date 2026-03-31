@@ -422,7 +422,7 @@ export default async function ResultsPage({
 
             <StagePanel tone="open" className="overflow-hidden p-0">
               <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
+                <table className="min-w-[1180px] w-full table-fixed text-left text-sm">
                   <thead
                     className="border-b text-[color:var(--app-muted)]"
                     style={{
@@ -431,14 +431,14 @@ export default async function ResultsPage({
                     }}
                   >
                     <tr>
-                      <th className="px-4 py-3">Select</th>
-                      <th className="px-4 py-3">Participant</th>
-                      <th className="px-4 py-3">Assessment</th>
-                      <th className="px-4 py-3">Score</th>
-                      <th className="px-4 py-3">Review</th>
-                      <th className="px-4 py-3">Linked record</th>
-                      <th className="px-4 py-3">Submitted</th>
-                      <th className="px-4 py-3">Actions</th>
+                      <th className="w-12 px-4 py-3">Select</th>
+                      <th className="w-[22%] px-4 py-3">Participant</th>
+                      <th className="w-[17%] px-4 py-3">Assessment</th>
+                      <th className="w-[12%] px-4 py-3">Score</th>
+                      <th className="w-[12%] px-4 py-3">Review</th>
+                      <th className="w-[15%] px-4 py-3">Linked record</th>
+                      <th className="w-[12%] px-4 py-3">Submitted</th>
+                      <th className="w-[16%] px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -459,31 +459,31 @@ export default async function ResultsPage({
                           />
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="min-w-[220px] space-y-1">
+                          <div className="space-y-1">
                             <p className="font-medium text-[color:var(--app-heading)]">{row.candidateName || "Unnamed participant"}</p>
                             <p className="text-[color:var(--app-muted)]">{row.candidateEmail || "No email"}</p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="min-w-[180px] space-y-1">
+                          <div className="space-y-1">
                             <p className="text-[color:var(--app-heading)]">{row.candidateRoleLabel || row.coreExamRoleLabel || "General assessment"}</p>
                             <p className="text-xs text-[color:var(--app-muted)]">{stackSummary(row)}</p>
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="min-w-[140px] space-y-1">
+                          <div className="space-y-1 whitespace-nowrap">
                             <p className="font-medium text-[color:var(--app-heading)]">{row.finalPercent.toFixed(1)} / 100</p>
                             <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="min-w-[130px]">
+                          <div className="whitespace-nowrap">
                             <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
                           </div>
                         </td>
                         <td className={resultsTableCellClassName}>
                           {row.candidateId ? (
-                            <div className="min-w-[160px] space-y-1">
+                            <div className="space-y-1">
                               <p className="text-[color:var(--app-text)]">{row.candidateOwner || "Linked profile"}</p>
                               <p className="text-xs text-[color:var(--app-muted)]">
                                 {row.candidateStage ? candidateStageLabels[row.candidateStage] : (row.candidateUiStatus ? linkedStatusLabel(row.candidateUiStatus) : "No stage")}
@@ -494,20 +494,22 @@ export default async function ResultsPage({
                           )}
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <p className="min-w-[165px] text-[color:var(--app-text)]">{new Date(row.submittedAt).toLocaleString()}</p>
+                          <p className="whitespace-nowrap text-[color:var(--app-text)]">{new Date(row.submittedAt).toLocaleString()}</p>
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex justify-end gap-2 whitespace-nowrap">
                             <Link href={`/results/${row.attemptId}`}>
-                              <Button variant="secondary">View</Button>
+                              <Button variant="secondary" className="px-3 py-2 text-xs">View</Button>
                             </Link>
                             {row.candidateId ? (
                               <Link href={`/candidates/${row.candidateId}`}>
-                                <Button variant="secondary">Profile</Button>
+                                <Button variant="secondary" className="px-3 py-2 text-xs">Profile</Button>
                               </Link>
                             ) : null}
                             <Link href={toggleCompare(query, row.attemptId)}>
-                              <Button variant="ghost">{compareIds.includes(row.attemptId) ? "Remove compare" : "Compare"}</Button>
+                              <Button variant="ghost" className="px-3 py-2 text-xs">
+                                {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
+                              </Button>
                             </Link>
                           </div>
                         </td>

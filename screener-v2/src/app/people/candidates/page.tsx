@@ -82,14 +82,14 @@ function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWork
   if (candidate.latestAssessment?.attemptId) {
     return {
       href: `/results/${candidate.latestAssessment.attemptId}` as Route,
-      label: "View result"
+      label: "Result"
     };
   }
 
   if (candidate.latestAssessmentStatus === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Send assessment"
+      label: "Send"
     };
   }
 
@@ -342,18 +342,18 @@ export default async function PeopleCandidatesPage({
 
                 <div className={tableShellClassName}>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full text-left">
+                    <table className="min-w-[1120px] w-full table-fixed text-left">
                       <thead className={tableHeadClassName}>
                         <tr>
                           <th className="w-12 px-4 py-3 font-medium">Select</th>
-                          <th className="px-4 py-3 font-medium">Name</th>
-                          <th className="px-4 py-3 font-medium">Role</th>
-                          <th className="px-4 py-3 font-medium">Owner</th>
-                          <th className="px-4 py-3 font-medium">Status</th>
-                          <th className="px-4 py-3 font-medium">Stage</th>
-                          <th className="px-4 py-3 font-medium">Latest assessment</th>
-                          <th className="px-4 py-3 font-medium">Updated</th>
-                          <th className="px-4 py-3 font-medium">Actions</th>
+                          <th className="w-[18%] px-4 py-3 font-medium">Name</th>
+                          <th className="w-[12%] px-4 py-3 font-medium">Role</th>
+                          <th className="w-[11%] px-4 py-3 font-medium">Owner</th>
+                          <th className="w-[17%] px-4 py-3 font-medium">Status</th>
+                          <th className="w-[10%] px-4 py-3 font-medium">Stage</th>
+                          <th className="w-[15%] px-4 py-3 font-medium">Latest assessment</th>
+                          <th className="w-[9%] px-4 py-3 font-medium">Updated</th>
+                          <th className="w-[16%] px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -368,7 +368,7 @@ export default async function PeopleCandidatesPage({
                               />
                             </td>
                             <td className={tableCellClassName}>
-                              <div className="min-w-[180px]">
+                              <div>
                                 <p className="font-medium text-[color:var(--app-heading)]">{candidate.fullName}</p>
                                 <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
                                   {bucketLabel(candidate.openWorkBucket)}
@@ -382,7 +382,7 @@ export default async function PeopleCandidatesPage({
                               <span>{candidate.hrOwner || "Unassigned"}</span>
                             </td>
                             <td className={tableCellClassName}>
-                              <div className="min-w-[170px]">
+                              <div className="min-w-[150px]">
                                 <InlineStatusSelect
                                   candidateId={candidate.id}
                                   currentStatus={candidate.uiStatus}
@@ -394,7 +394,7 @@ export default async function PeopleCandidatesPage({
                               <span>{candidate.currentFocus || candidateStageLabels[candidate.stage]}</span>
                             </td>
                             <td className={tableCellClassName}>
-                              <div className="flex min-w-[140px] items-center gap-2">
+                              <div className="flex items-center gap-2 whitespace-nowrap">
                                 <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
                                 <span className="text-xs text-[color:var(--app-muted)]">
                                   {typeof candidate.latestAssessment?.finalPercent === "number"
@@ -407,17 +407,19 @@ export default async function PeopleCandidatesPage({
                               <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
                             </td>
                             <td className={tableCellClassName}>
-                              <div className="flex flex-wrap justify-end gap-2">
+                              <div className="flex justify-end gap-2 whitespace-nowrap">
                                 {(() => {
                                   const action = contextualAction(candidate);
                                   return action ? (
                                     <Link href={action.href}>
-                                      <Button variant="secondary">{action.label}</Button>
+                                      <Button variant="secondary" className="px-3 py-2 text-xs">
+                                        {action.label}
+                                      </Button>
                                     </Link>
                                   ) : null;
                                 })()}
                                 <Link href={`/candidates/${candidate.id}`}>
-                                  <Button>View</Button>
+                                  <Button className="px-3 py-2 text-xs">View</Button>
                                 </Link>
                               </div>
                             </td>

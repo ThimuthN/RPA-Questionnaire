@@ -172,24 +172,24 @@ export default async function PeopleEmployeesPage({
             <StaggerItem>
               <div className={tableShellClassName}>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-left">
+                  <table className="min-w-[1120px] w-full table-fixed text-left">
                     <thead className={tableHeadClassName}>
                       <tr>
-                        <th className="px-4 py-3 font-medium">Name</th>
-                        <th className="px-4 py-3 font-medium">Email</th>
-                        <th className="px-4 py-3 font-medium">Role / ID</th>
-                        <th className="px-4 py-3 font-medium">Assessment</th>
-                        <th className="px-4 py-3 font-medium">Latest result</th>
-                        <th className="px-4 py-3 font-medium">Completed</th>
-                        <th className="px-4 py-3 font-medium">Submitted</th>
-                        <th className="px-4 py-3 font-medium">Actions</th>
+                        <th className="w-[16%] px-4 py-3 font-medium">Name</th>
+                        <th className="w-[20%] px-4 py-3 font-medium">Email</th>
+                        <th className="w-[15%] px-4 py-3 font-medium">Role / ID</th>
+                        <th className="w-[16%] px-4 py-3 font-medium">Assessment</th>
+                        <th className="w-[15%] px-4 py-3 font-medium">Latest result</th>
+                        <th className="w-[8%] px-4 py-3 font-medium">Completed</th>
+                        <th className="w-[10%] px-4 py-3 font-medium">Submitted</th>
+                        <th className="w-[12%] px-4 py-3 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {page.rows.map((employee) => (
                         <tr key={employee.id} className="transition hover:bg-[color:var(--app-surface-soft)]/70">
                           <td className={tableCellClassName}>
-                            <div className="min-w-[180px]">
+                            <div>
                               <p className="font-medium text-[color:var(--app-heading)]">{employee.fullName}</p>
                               <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
                                 {employee.latestReviewState ? contextLabel(employee.latestReviewState) : contextLabel(employee.latestStatus)}
@@ -198,7 +198,7 @@ export default async function PeopleEmployeesPage({
                           </td>
                           <td className={tableCellClassName}>{employee.email}</td>
                           <td className={tableCellClassName}>
-                            <div className="min-w-[170px]">
+                            <div>
                               <p>{contextLabel(employee.latestContextType)}</p>
                               <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
                                 {employee.employeeId || "ID not set"}
@@ -207,7 +207,7 @@ export default async function PeopleEmployeesPage({
                           </td>
                           <td className={tableCellClassName}>{employee.latestAssessmentLabel ?? "Not attached"}</td>
                           <td className={tableCellClassName}>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 whitespace-nowrap">
                               <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
                               <span className="text-xs text-[color:var(--app-muted)]">
                                 {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "In progress"}
@@ -219,10 +219,10 @@ export default async function PeopleEmployeesPage({
                             {employee.latestSubmittedAt ? new Date(employee.latestSubmittedAt).toLocaleDateString() : "—"}
                           </td>
                           <td className={tableCellClassName}>
-                            <div className="flex justify-end">
+                            <div className="flex justify-end whitespace-nowrap">
                               {employee.latestAttemptId ? (
                                 <Link href={`/results/${employee.latestAttemptId}`}>
-                                  <Button variant="secondary">View result</Button>
+                                  <Button variant="secondary" className="px-3 py-2 text-xs">Result</Button>
                                 </Link>
                               ) : (
                                 <span className="text-xs text-[color:var(--app-muted)]">—</span>
