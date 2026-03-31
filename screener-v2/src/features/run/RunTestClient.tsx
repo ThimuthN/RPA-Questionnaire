@@ -10,6 +10,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import type { IntegrityPresetId } from "@/lib/assessment-engine/types";
 import { copy } from "@/lib/design/copy";
+import { cn } from "@/lib/utils";
 
 type RunMode = "join_link" | "test_id" | "live_call" | "employee";
 
@@ -192,7 +193,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
                 className={`rounded-full border px-4 py-2 text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
                   mode === item
                     ? "border-brand-300 bg-brand-500/18 text-white shadow-[0_14px_30px_rgba(31,111,255,0.16)]"
-                    : "border-white/16 bg-white/[0.05] text-slate-200 hover:border-brand-300/50 hover:bg-white/[0.08]"
+                    : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-muted)]"
                 }`}
               >
                 {modeMeta[item].title}
@@ -204,11 +205,11 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill label={meta.title} tone={meta.tone} />
             </div>
-            <h2 className="text-3xl text-white">{meta.title}</h2>
+            <h2 className="text-3xl text-[color:var(--app-heading)]">{meta.title}</h2>
           </div>
 
           {!canManageAccess ? (
-            <div className="rounded-[20px] border border-white/10 bg-white/[0.05] p-4 text-sm text-slate-200">
+            <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 text-sm text-[color:var(--app-text)]">
               Internal creation, results, and employee/live management become available after login.
             </div>
           ) : null}
@@ -216,7 +217,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           {mode === "join_link" ? (
             <div className="space-y-3 scene-fade-up">
               <input
-                className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className={inputClassName}
                 placeholder="Test link"
                 value={shareLink}
                 onChange={(event) => setShareLink(event.target.value)}
@@ -229,19 +230,19 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
             <div className="space-y-3 scene-fade-up">
               <div className="grid gap-3 md:grid-cols-3">
                 <input
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  className={inputClassName}
                   placeholder="Test ID"
                   value={testId}
                   onChange={(event) => setTestId(event.target.value)}
                 />
                 <input
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  className={inputClassName}
                   placeholder="Token (optional)"
                   value={token}
                   onChange={(event) => setToken(event.target.value)}
                 />
                 <input
-                  className="rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  className={inputClassName}
                   placeholder="Passcode"
                   value={passcode}
                   onChange={(event) => setPasscode(event.target.value)}
@@ -281,7 +282,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           {canManageAccess && mode === "employee" ? (
             <div className="space-y-3 scene-fade-up">
               <input
-                className="w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className={inputClassName}
                 placeholder="employee@company.com"
                 value={employeeEmail}
                 onChange={(event) => setEmployeeEmail(event.target.value)}
@@ -290,11 +291,11 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
                 {loading ? "Sending..." : "Send Magic Link"}
               </Button>
               {employeeShortcutUrl ? (
-                <div className="space-y-2 rounded-[20px] border border-white/10 bg-white/[0.05] p-4">
-                  <p className="text-sm text-slate-200">
+                <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <p className="text-sm text-[color:var(--app-text)]">
                     Magic link issued for internal access. The raw token is hidden from the normal UI.
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-[color:var(--app-muted)]">
                     Use the internal shortcut below only for local admin testing.
                   </p>
                   <Button variant="secondary" onClick={() => window.location.assign(employeeShortcutUrl)}>
@@ -305,7 +306,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
             </div>
           ) : null}
 
-          {error ? <p className="text-sm text-red-200">{error}</p> : null}
+          {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
         </StagePanel>
 
         <StagePanel className="space-y-5">
@@ -314,22 +315,25 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           </div>
 
           <div className="grid gap-3">
-            <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{copy.runModes.selectedMethod}</p>
-              <p className="mt-2 text-xl text-white">{meta.title}</p>
+            <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.runModes.selectedMethod}</p>
+              <p className="mt-2 text-xl text-[color:var(--app-heading)]">{meta.title}</p>
             </div>
-            <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{copy.runModes.nextStep}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-200">{meta.signal}</p>
+            <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.runModes.nextStep}</p>
+              <p className="mt-2 text-sm leading-6 text-[color:var(--app-text)]">{meta.signal}</p>
             </div>
-            <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{copy.runModes.testFlow}</p>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-300">
-                <span className="rounded-full border border-white/10 px-2 py-1">Briefing</span>
-                <span className="rounded-full border border-white/10 px-2 py-1">Check-in</span>
-                <span className="rounded-full border border-white/10 px-2 py-1">Core</span>
-                <span className="rounded-full border border-white/10 px-2 py-1">Practical</span>
-                <span className="rounded-full border border-white/10 px-2 py-1">Outcome</span>
+            <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
+              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{copy.runModes.testFlow}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--app-muted)]">
+                {["Briefing", "Check-in", "Core", "Practical", "Outcome"].map((step) => (
+                  <span
+                    key={step}
+                    className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2 py-1"
+                  >
+                    {step}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
@@ -345,7 +349,7 @@ export function RunTestClient({ canManageAccess }: { canManageAccess: boolean })
       fallback={
         <section className="space-y-4">
           <StagePanel>
-            <p className="text-slate-200">Preparing run modes...</p>
+            <p className="text-[color:var(--app-text)]">Preparing run modes...</p>
           </StagePanel>
         </section>
       }
@@ -354,3 +358,8 @@ export function RunTestClient({ canManageAccess }: { canManageAccess: boolean })
     </Suspense>
   );
 }
+
+const inputClassName = cn(
+  "w-full rounded-[18px] border px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
+  "border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)]"
+);
