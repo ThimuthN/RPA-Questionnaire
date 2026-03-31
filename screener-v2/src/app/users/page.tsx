@@ -2,6 +2,7 @@ import { Button } from "@/components/primitives/Button";
 import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { AddUserModal } from "@/components/users/AddUserModal";
 import { requireAdminPageSession } from "@/lib/auth/guards";
 import { listAppUsers } from "@/lib/auth/app-auth";
 
@@ -25,11 +26,14 @@ export default async function UsersPage({
     >
       <div className="space-y-4">
         <StagePanel tone="summary" className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Roles</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">
-              Add and manage the roles you want to use when registering candidates.
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h2 className="text-2xl text-[color:var(--app-heading)]">Roles</h2>
+              <p className="text-sm text-[color:var(--app-muted)]">
+                Add and manage the roles you want to use when registering candidates.
+              </p>
+            </div>
+            <AddUserModal created={params.created} updated={params.updated} error={params.error} />
           </div>
           <div className="max-w-xl">
             <RolePicker
@@ -38,71 +42,6 @@ export default async function UsersPage({
               helperText="Create, rename, group by department, or deactivate roles."
             />
           </div>
-        </StagePanel>
-
-        <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
-        <StagePanel tone="summary" className="space-y-4">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Add user</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Admins can add internal users here.</p>
-          </div>
-
-          <form action="/api/users" method="post" className="space-y-3">
-            <div className="grid gap-1">
-              <label className="text-sm text-[color:var(--app-text)]" htmlFor="name">
-                Name
-              </label>
-              <input
-                id="name"
-                name="name"
-                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                placeholder="Internal user"
-              />
-            </div>
-            <div className="grid gap-1">
-              <label className="text-sm text-[color:var(--app-text)]" htmlFor="email">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              />
-            </div>
-            <div className="grid gap-1">
-              <label className="text-sm text-[color:var(--app-text)]" htmlFor="password">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                minLength={8}
-                required
-                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              />
-            </div>
-            <div className="grid gap-1">
-              <label className="text-sm text-[color:var(--app-text)]" htmlFor="role">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                defaultValue="member"
-                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-              >
-                <option value="member">Member</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            {params.created ? <p className="text-sm text-[color:var(--app-success)]">Created {params.created}.</p> : null}
-            {params.updated ? <p className="text-sm text-[color:var(--app-success)]">Updated {params.updated}.</p> : null}
-            {params.error ? <p className="text-sm text-[color:var(--app-danger)]">{params.error}</p> : null}
-            <Button type="submit">Create user</Button>
-          </form>
         </StagePanel>
 
         <StagePanel tone="open" className="space-y-4">
@@ -160,7 +99,6 @@ export default async function UsersPage({
             )}
           </div>
         </StagePanel>
-        </div>
       </div>
     </SceneShell>
   );
