@@ -138,6 +138,8 @@ const filterInputClass =
   "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60";
 
 const resultsTableCellClassName = "px-4 py-4 align-middle text-sm";
+const inlineActionClassName =
+  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
 
 function FilterField({
   label,
@@ -445,7 +447,7 @@ export default async function ResultsPage({
                     {page.rows.map((row) => (
                       <tr
                         key={row.attemptId}
-                        className="align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
+                        className="h-[88px] align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
                         style={{
                           borderBottom: "1px solid var(--app-border)"
                         }}
@@ -506,19 +508,21 @@ export default async function ResultsPage({
                           </p>
                         </td>
                         <td className={resultsTableCellClassName}>
-                          <div className="flex justify-end gap-2 whitespace-nowrap">
-                            <Link href={`/results/${row.attemptId}`}>
-                              <Button variant="secondary" className="px-2.5 py-2 text-xs">View</Button>
+                          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                            <Link href={`/results/${row.attemptId}`} className={inlineActionClassName}>
+                              View
                             </Link>
                             {row.candidateId ? (
-                              <Link href={`/candidates/${row.candidateId}`}>
-                                <Button variant="secondary" className="px-2.5 py-2 text-xs">Profile</Button>
-                              </Link>
+                              <>
+                                <span className="text-[color:var(--app-muted)]">|</span>
+                                <Link href={`/candidates/${row.candidateId}`} className={inlineActionClassName}>
+                                  Profile
+                                </Link>
+                              </>
                             ) : null}
-                            <Link href={toggleCompare(query, row.attemptId)}>
-                              <Button variant="ghost" className="px-2 py-2 text-xs">
-                                {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
-                              </Button>
+                            <span className="text-[color:var(--app-muted)]">|</span>
+                            <Link href={toggleCompare(query, row.attemptId)} className={inlineActionClassName}>
+                              {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
                             </Link>
                           </div>
                         </td>

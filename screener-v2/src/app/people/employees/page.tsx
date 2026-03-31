@@ -62,6 +62,9 @@ const tableHeadClassName =
 const tableCellClassName =
   "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
 
+const inlineActionClassName =
+  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
+
 export default async function PeopleEmployeesPage({
   searchParams
 }: {
@@ -187,7 +190,7 @@ export default async function PeopleEmployeesPage({
                     </thead>
                     <tbody>
                       {page.rows.map((employee) => (
-                        <tr key={employee.id} className="transition hover:bg-[color:var(--app-surface-soft)]/70">
+                        <tr key={employee.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
                           <td className={tableCellClassName}>
                             <div>
                               <p className="font-medium text-[color:var(--app-heading)]">{employee.fullName}</p>
@@ -221,8 +224,8 @@ export default async function PeopleEmployeesPage({
                           <td className={tableCellClassName}>
                             <div className="flex justify-end whitespace-nowrap">
                               {employee.latestAttemptId ? (
-                                <Link href={`/results/${employee.latestAttemptId}`}>
-                                  <Button variant="secondary" className="px-3 py-2 text-xs">Result</Button>
+                                <Link href={`/results/${employee.latestAttemptId}`} className={inlineActionClassName}>
+                                  View result
                                 </Link>
                               ) : (
                                 <span className="text-xs text-[color:var(--app-muted)]">—</span>

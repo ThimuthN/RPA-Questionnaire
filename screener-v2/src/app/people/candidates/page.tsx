@@ -78,6 +78,9 @@ const tableHeadClassName =
 const tableCellClassName =
   "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
 
+const inlineActionClassName =
+  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
+
 function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
   if (candidate.latestAssessment?.attemptId) {
     return {
@@ -358,7 +361,7 @@ export default async function PeopleCandidatesPage({
                       </thead>
                       <tbody>
                         {page.rows.map((candidate) => (
-                          <tr key={candidate.id} className="transition hover:bg-[color:var(--app-surface-soft)]/70">
+                          <tr key={candidate.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
                             <td className={tableCellClassName}>
                               <input
                                 type="checkbox"
@@ -407,19 +410,18 @@ export default async function PeopleCandidatesPage({
                               <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
                             </td>
                             <td className={tableCellClassName}>
-                              <div className="flex justify-end gap-2 whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                                 {(() => {
                                   const action = contextualAction(candidate);
                                   return action ? (
-                                    <Link href={action.href}>
-                                      <Button variant="secondary" className="px-3 py-2 text-xs">
-                                        {action.label}
-                                      </Button>
+                                    <Link href={action.href} className={inlineActionClassName}>
+                                      {action.label}
                                     </Link>
                                   ) : null;
                                 })()}
-                                <Link href={`/candidates/${candidate.id}`}>
-                                  <Button className="px-3 py-2 text-xs">View</Button>
+                                {contextualAction(candidate) ? <span className="text-[color:var(--app-muted)]">|</span> : null}
+                                <Link href={`/candidates/${candidate.id}`} className={inlineActionClassName}>
+                                  View profile
                                 </Link>
                               </div>
                             </td>
