@@ -161,10 +161,6 @@ export default async function PeopleCandidatesPage({
           <StaggerItem>
             <div className="space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div className="space-y-1">
-                  <h2 className="text-2xl text-[color:var(--app-heading)]">Candidates</h2>
-                  <p className="text-sm text-[color:var(--app-muted)]">Track people, assessments, and next steps.</p>
-                </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.total} total`} tone="neutral" />
                   <StatusPill label={`${page.summary.readyForReview} ready`} tone="amber" />

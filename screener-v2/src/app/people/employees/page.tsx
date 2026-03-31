@@ -104,10 +104,6 @@ export default async function PeopleEmployeesPage({
           <StaggerItem>
             <div className="space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div className="space-y-1">
-                  <h2 className="text-2xl text-[color:var(--app-heading)]">Employees</h2>
-                  <p className="text-sm text-[color:var(--app-muted)]">Keep internal learning and certification records in view.</p>
-                </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.summary.activeEmployees} employees`} tone="neutral" />
                   <StatusPill label={`${page.summary.withCompletedResults} with results`} tone="teal" />

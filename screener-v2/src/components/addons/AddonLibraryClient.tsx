@@ -318,17 +318,7 @@ export function AddonLibraryClient({
       ) : null}
 
       <StaggerItem>
-        <StagePanel tone="summary" className="space-y-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl text-[color:var(--app-heading)]">{viewMode === "addons" ? "Add-ons" : "Presets"}</h1>
-            <p className="text-sm text-[color:var(--app-muted)]">
-              {viewMode === "addons"
-                ? "Global defaults used by the builder."
-                : "Reusable add-on sets for faster setup."}
-            </p>
-          </div>
-
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-end">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex flex-wrap gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-1 shadow-[var(--app-shadow-soft)]">
               <button
@@ -358,7 +348,6 @@ export function AddonLibraryClient({
             </div>
           </div>
         </div>
-        </StagePanel>
       </StaggerItem>
 
       <StaggerItem>
