@@ -65,6 +65,10 @@ function bucketLabel(bucket: string) {
     .join(" ");
 }
 
+function filterFieldClassName() {
+  return "rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50 focus:bg-white/[0.06]";
+}
+
 function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
   if (candidate.latestAssessment?.attemptId) {
     return {
@@ -119,14 +123,14 @@ export default async function PeopleCandidatesPage({
     <SceneTransition>
       <SceneShell
         variant="results"
-        eyebrow="People workspace"
+        eyebrow="People"
         title="Candidates"
-        subtitle="Hiring lives here. Track candidates, send assessments, and move the process forward without leaving the same workspace."
+        subtitle="Search and manage candidates in one place."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="candidates" />
             <Link href="/candidates/new">
-              <Button>Register candidate</Button>
+              <Button>Add candidate</Button>
             </Link>
           </div>
         }
@@ -145,11 +149,11 @@ export default async function PeopleCandidatesPage({
           {params.error ? <StaggerItem><div className={messageTone("error")}>{params.error}</div></StaggerItem> : null}
 
           <StaggerItem>
-            <StagePanel className="space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-1">
-                  <h2 className="text-xl text-white">Candidate view</h2>
-                  <p className="text-sm text-slate-300">Search, filter, and manage the hiring pipeline from one place.</p>
+                  <h2 className="text-2xl text-white">Candidates</h2>
+                  <p className="text-sm text-slate-300">Track people, assessments, and next steps.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.total} total`} tone="neutral" />
@@ -158,18 +162,18 @@ export default async function PeopleCandidatesPage({
                 </div>
               </div>
 
-              <form className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
+              <form className="grid gap-3 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8 xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
                 <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
                 <input
                   name="q"
                   defaultValue={params.q ?? ""}
-                  placeholder="Search name, email, owner, notes"
-                  className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  placeholder="Search name, email, or owner"
+                  className={filterFieldClassName()}
                 />
                 <select
                   name="roleId"
                   defaultValue={params.roleId ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
                   <option value="">All roles</option>
                   {page.roleOptions.map((role) => (
@@ -181,9 +185,9 @@ export default async function PeopleCandidatesPage({
                 <select
                   name="status"
                   defaultValue={params.status ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
-                  <option value="">All inbox states</option>
+                  <option value="">All statuses</option>
                   {candidateUiStatusValues.map((status) => (
                     <option key={status} value={status}>
                       {candidateUiStatusLabels[status]}
@@ -193,7 +197,7 @@ export default async function PeopleCandidatesPage({
                 <select
                   name="owner"
                   defaultValue={params.owner ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
                   <option value="">All owners</option>
                   {page.ownerOptions.map((owner) => (
@@ -205,9 +209,9 @@ export default async function PeopleCandidatesPage({
                 <select
                   name="assessmentStatus"
                   defaultValue={params.assessmentStatus ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
-                  <option value="">All assessment statuses</option>
+                  <option value="">Assessment</option>
                   {candidateAssessmentStatusValues.map((status) => (
                     <option key={status} value={status}>
                       {candidateAssessmentStatusLabels[status]}
@@ -217,9 +221,9 @@ export default async function PeopleCandidatesPage({
                 <select
                   name="sort"
                   defaultValue={params.sort ?? "inbox"}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
-                  <option value="inbox">Inbox priority</option>
+                  <option value="inbox">Sort</option>
                   <option value="updated_desc">Newest activity</option>
                   <option value="updated_asc">Oldest activity</option>
                   <option value="stale_desc">Most stale</option>
@@ -245,11 +249,11 @@ export default async function PeopleCandidatesPage({
                 </Link>
               </div>
 
-              <div className="rounded-[20px] border border-white/10 bg-black/20 p-4">
+              <div className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm text-white">Import candidates from CSV</p>
-                    <p className="text-sm text-slate-400">Headers: `fullName,email,role,hrOwner`.</p>
+                    <p className="text-sm text-white">Import from CSV</p>
+                    <p className="text-sm text-slate-400">Use: `fullName,email,role,hrOwner`.</p>
                   </div>
                   <form action="/api/candidates/bulk" method="post" encType="multipart/form-data" className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <input type="hidden" name="action" value="import_csv" />
@@ -258,13 +262,13 @@ export default async function PeopleCandidatesPage({
                       type="file"
                       name="csvFile"
                       accept=".csv,text/csv"
-                      className="w-full rounded-[16px] border border-dashed border-white/12 bg-black/20 px-4 py-3 text-sm text-slate-200 lg:min-w-[320px]"
+                      className="w-full rounded-[16px] border border-dashed border-white/12 bg-white/[0.03] px-4 py-3 text-sm text-slate-200 lg:min-w-[320px]"
                     />
                     <Button type="submit">Import CSV</Button>
                   </form>
                 </div>
               </div>
-            </StagePanel>
+            </div>
           </StaggerItem>
 
           {page.rows.length === 0 ? (
@@ -274,7 +278,7 @@ export default async function PeopleCandidatesPage({
                 <p className="text-sm text-slate-300">Try clearing a filter, importing candidates, or registering a new candidate.</p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/candidates/new">
-                    <Button>Register candidate</Button>
+                    <Button>Add candidate</Button>
                   </Link>
                   <Link href="/people/candidates">
                     <Button variant="secondary">Reset filters</Button>
@@ -286,31 +290,33 @@ export default async function PeopleCandidatesPage({
             <StaggerItem>
               <form action="/api/candidates/bulk" method="post" className="space-y-4">
                 <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-                <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
-                  <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <details className="rounded-[20px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
                     <div className="space-y-1">
-                      <h2 className="text-lg text-white">Bulk update</h2>
-                      <p className="text-sm text-slate-300">Select rows to assign an owner, update inbox state, or add one shared note.</p>
+                      <h2 className="text-lg text-white">Bulk actions</h2>
+                      <p className="text-sm text-slate-300">Use when you need to update several candidates at once.</p>
                     </div>
-                    <div className="grid gap-2 xl:grid-cols-4">
+                    <StatusPill label="Optional" tone="neutral" />
+                  </summary>
+                  <div className="mt-4 grid gap-3 border-t border-white/8 pt-4 xl:grid-cols-4">
                       <select
                         name="action"
                         defaultValue="assign_owner"
-                        className="rounded-[16px] border border-white/12 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none"
+                        className={filterFieldClassName()}
                       >
                         <option value="assign_owner">Assign owner</option>
-                        <option value="set_ui_status">Set inbox state</option>
+                        <option value="set_ui_status">Change status</option>
                         <option value="add_note">Add note</option>
                       </select>
                       <input
                         name="owner"
                         placeholder="Owner"
-                        className="rounded-[16px] border border-white/12 bg-black/20 px-3 py-2.5 text-sm text-white outline-none"
+                        className={filterFieldClassName()}
                       />
                       <select
                         name="status"
                         defaultValue="need_review"
-                        className="rounded-[16px] border border-white/12 bg-ink-950 px-3 py-2.5 text-sm text-white outline-none"
+                        className={filterFieldClassName()}
                       >
                         {candidateUiStatusValues.map((status) => (
                           <option key={status} value={status}>
@@ -319,19 +325,18 @@ export default async function PeopleCandidatesPage({
                         ))}
                       </select>
                       <Button type="submit">Apply to selected</Button>
-                    </div>
                   </div>
                   <textarea
                     name="noteBody"
                     rows={2}
-                    placeholder="Optional reviewer note used when action = Add note"
-                    className="mt-3 w-full rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                    placeholder="Optional note"
+                    className="mt-3 w-full rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50"
                   />
-                </div>
+                </details>
 
-                <div className="space-y-3">
+                <div className="overflow-hidden rounded-[24px] bg-white/[0.03] ring-1 ring-white/8">
                   {page.rows.map((candidate) => (
-                    <div key={candidate.id} className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                    <div key={candidate.id} className="border-t border-white/8 p-4 first:border-t-0">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div className="flex gap-4">
                           <div className="pt-1">
@@ -370,9 +375,8 @@ export default async function PeopleCandidatesPage({
                               </div>
                               <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-400">
                                 <span>{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}</span>
-                                <span>{candidate.currentFocus ? `Current stage: ${candidate.currentFocus}` : "No current stage"}</span>
-                                <span>Last activity {candidate.staleDays} day(s) ago</span>
-                                <span>Stage: {candidateStageLabels[candidate.stage]}</span>
+                                <span>{candidate.currentFocus ? `Stage: ${candidate.currentFocus}` : `Stage: ${candidateStageLabels[candidate.stage]}`}</span>
+                                <span>{candidate.staleDays === 0 ? "Updated today" : `Updated ${candidate.staleDays} day(s) ago`}</span>
                               </div>
                               <p className="text-sm text-slate-300">
                                 Latest assessment:{" "}
@@ -395,7 +399,7 @@ export default async function PeopleCandidatesPage({
                             ) : null;
                           })()}
                           <Link href={`/candidates/${candidate.id}`}>
-                            <Button>Open</Button>
+                            <Button>View</Button>
                           </Link>
                         </div>
                       </div>

@@ -49,6 +49,10 @@ function contextLabel(value: string) {
     .join(" ");
 }
 
+function filterFieldClassName() {
+  return "rounded-[16px] border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/50 focus:bg-white/[0.06]";
+}
+
 export default async function PeopleEmployeesPage({
   searchParams
 }: {
@@ -74,9 +78,9 @@ export default async function PeopleEmployeesPage({
     <SceneTransition>
       <SceneShell
         variant="results"
-        eyebrow="People workspace"
+        eyebrow="People"
         title="Employees"
-        subtitle="Internal tracking stays here. Follow assessments, certifications, and recent outcomes without the hiring layer around it."
+        subtitle="Track assessments, certifications, and recent results."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="employees" />
@@ -88,11 +92,11 @@ export default async function PeopleEmployeesPage({
       >
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
-            <StagePanel className="space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div className="space-y-1">
-                  <h2 className="text-xl text-white">Employee view</h2>
-                  <p className="text-sm text-slate-300">Track internal assessments and certifications without the hiring workflow noise.</p>
+                  <h2 className="text-2xl text-white">Employees</h2>
+                  <p className="text-sm text-slate-300">Keep internal learning and certification records in view.</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label={`${page.summary.activeEmployees} employees`} tone="neutral" />
@@ -101,20 +105,20 @@ export default async function PeopleEmployeesPage({
                 </div>
               </div>
 
-              <form className="grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
+              <form className="grid gap-3 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
                 <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
                 <input
                   name="q"
                   defaultValue={params.q ?? ""}
-                  placeholder="Search name, email, employee ID, assessment"
-                  className="rounded-[16px] border border-white/12 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  placeholder="Search name, email, ID, or assessment"
+                  className={filterFieldClassName()}
                 />
                 <select
                   name="contextType"
                   defaultValue={params.contextType ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
-                  <option value="">All contexts</option>
+                  <option value="">Context</option>
                   {page.contextOptions.map((option) => (
                     <option key={option} value={option}>
                       {contextLabel(option)}
@@ -124,9 +128,9 @@ export default async function PeopleEmployeesPage({
                 <select
                   name="reviewState"
                   defaultValue={params.reviewState ?? ""}
-                  className="rounded-[16px] border border-white/12 bg-ink-950 px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60"
+                  className={filterFieldClassName()}
                 >
-                  <option value="">All review states</option>
+                  <option value="">Review</option>
                   {page.reviewStateOptions.map((option) => (
                     <option key={option} value={option}>
                       {contextLabel(option)}
@@ -140,7 +144,7 @@ export default async function PeopleEmployeesPage({
                   </Button>
                 </Link>
               </form>
-            </StagePanel>
+            </div>
           </StaggerItem>
 
           {page.rows.length === 0 ? (
@@ -160,9 +164,9 @@ export default async function PeopleEmployeesPage({
             </StaggerItem>
           ) : (
             <StaggerItem>
-              <div className="space-y-3">
+              <div className="overflow-hidden rounded-[24px] bg-white/[0.03] ring-1 ring-white/8">
                 {page.rows.map((employee) => (
-                  <div key={employee.id} className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+                  <div key={employee.id} className="border-t border-white/8 p-4 first:border-t-0">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-3">
                         <div className="flex flex-wrap gap-2">
