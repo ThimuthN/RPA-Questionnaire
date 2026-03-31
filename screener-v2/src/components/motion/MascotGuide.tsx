@@ -41,17 +41,32 @@ export function MascotGuide() {
   const reduceMotion = useReducedMotion();
   const [targets, setTargets] = useState<GuideTarget[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [mounted, setMounted] = useState(false);
+  const isHome = pathname === "/";
 
   useEffect(() => {
-    if (reduceMotion) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion || !isHome) {
+      setTargets([]);
+      return;
+    }
 
     const refresh = () => {
-      setTargets((current) => {
-        const next = readTargets();
-        if (next.length === 0) return [];
-        if (current.length === 0) return next;
-        return next;
-      });
+      try {
+        setViewport({ width: window.innerWidth, height: window.innerHeight });
+        setTargets((current) => {
+          const next = readTargets();
+          if (next.length === 0) return [];
+          if (current.length === 0) return next;
+          return next;
+        });
+      } catch {
+        setTargets([]);
+      }
     };
 
     const timer = window.setTimeout(refresh, 120);
@@ -64,17 +79,17 @@ export function MascotGuide() {
       window.removeEventListener("resize", refresh);
       window.removeEventListener("scroll", refresh);
     };
-  }, [pathname, reduceMotion]);
+  }, [isHome, pathname, reduceMotion]);
 
   useEffect(() => {
-    if (targets.length === 0 || reduceMotion) return;
+    if (targets.length === 0 || reduceMotion || !isHome) return;
 
     const cycle = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % targets.length);
     }, 3600);
 
     return () => window.clearInterval(cycle);
-  }, [targets, reduceMotion]);
+  }, [isHome, targets, reduceMotion]);
 
   useEffect(() => {
     if (activeIndex >= targets.length) {
@@ -82,17 +97,17 @@ export function MascotGuide() {
     }
   }, [activeIndex, targets.length]);
 
-  if (reduceMotion || targets.length === 0) return null;
+  if (!mounted || !isHome || reduceMotion || targets.length === 0 || viewport.width === 0 || viewport.height === 0) return null;
 
   const target = targets[activeIndex];
-  const mascotSize = 96;
+  const mascotSize = 82;
   const aboveTarget = target.rect.top > 170;
-  const mascotX = clamp(target.rect.left + target.rect.width / 2 - mascotSize / 2, 18, window.innerWidth - mascotSize - 18);
+  const mascotX = clamp(target.rect.left + target.rect.width / 2 - mascotSize / 2, 18, viewport.width - mascotSize - 18);
   const mascotY = aboveTarget
-    ? clamp(target.rect.top - mascotSize - 30, 74, window.innerHeight - mascotSize - 24)
-    : clamp(target.rect.bottom + 16, 74, window.innerHeight - mascotSize - 24);
-  const bubbleX = clamp(mascotX - 14, 18, window.innerWidth - 200);
-  const bubbleY = aboveTarget ? mascotY - 58 : mascotY + mascotSize - 10;
+    ? clamp(target.rect.top - mascotSize - 30, 74, viewport.height - mascotSize - 24)
+    : clamp(target.rect.bottom + 16, 74, viewport.height - mascotSize - 24);
+  const bubbleX = clamp(mascotX - 8, 18, viewport.width - 190);
+  const bubbleY = aboveTarget ? mascotY - 46 : mascotY + mascotSize - 4;
 
   return (
     <div className="pointer-events-none fixed inset-0 z-40 hidden md:block" aria-hidden="true">
@@ -121,7 +136,7 @@ export function MascotGuide() {
       </motion.div>
 
       <motion.div
-        className="absolute rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(10,22,43,0.96),rgba(7,15,30,0.9))] px-3 py-2 text-xs font-medium text-white shadow-[0_16px_30px_rgba(2,8,23,0.28)] backdrop-blur-xl"
+        className="absolute rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(10,22,43,0.96),rgba(7,15,30,0.9))] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-white shadow-[0_16px_30px_rgba(2,8,23,0.28)] backdrop-blur-xl"
         animate={{ left: bubbleX, top: bubbleY }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >

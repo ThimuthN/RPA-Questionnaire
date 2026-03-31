@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { RiveMascot } from "@/components/brand/RiveMascot";
 
 export function AppLogo({
   className,
@@ -10,9 +10,8 @@ export function AppLogo({
 }) {
   return (
     <div className={cn("flex items-center gap-3", className)}>
-      <div className="relative">
-        <div className="absolute inset-0 rounded-full bg-brand-500/20 blur-md" />
-        <RiveMascot size={compact ? "sm" : "md"} glow={!compact} className="relative" />
+      <div className="relative overflow-hidden rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-1.5 shadow-[0_10px_22px_rgba(4,12,28,0.18)]">
+        <Image src="/icon.svg" alt="" width={compact ? 32 : 44} height={compact ? 32 : 44} className="block" />
       </div>
       {!compact ? (
         <div className="space-y-0.5">

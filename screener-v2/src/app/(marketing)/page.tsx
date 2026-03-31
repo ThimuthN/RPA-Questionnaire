@@ -57,13 +57,13 @@ export default async function MarketingHomePage() {
           session ? (
             <div className="flex flex-wrap gap-2">
               <Link href="/candidates">
-                <Button data-guide-id="utility-candidates" data-guide-hint="Candidates">Candidates</Button>
+                <Button data-guide-id="utility-candidates" data-guide-hint="see people">Candidates</Button>
               </Link>
               <Link href="/results">
-                <Button variant="secondary" data-guide-id="utility-results" data-guide-hint="Results">Results</Button>
+                <Button variant="secondary" data-guide-id="utility-results" data-guide-hint="peek results">Results</Button>
               </Link>
               <Link href="/assessments">
-                <Button variant="secondary" data-guide-id="utility-assessments" data-guide-hint="Assessments">Assessments</Button>
+                <Button variant="secondary" data-guide-id="utility-assessments" data-guide-hint="build here">Assessments</Button>
               </Link>
             </div>
           ) : null
@@ -90,13 +90,13 @@ export default async function MarketingHomePage() {
               <StaggerItem>
                 <div className="flex flex-wrap gap-3">
                   <Link href={createHref}>
-                    <Button className="gap-2" data-guide-id="hero-create" data-guide-hint="Create">
+                    <Button className="gap-2" data-guide-id="hero-create" data-guide-hint="start here">
                       Create assessment
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link href="/run-test">
-                    <Button variant="secondary" className="gap-2" data-guide-id="hero-explore" data-guide-hint="Explore">
+                    <Button variant="secondary" className="gap-2" data-guide-id="hero-explore" data-guide-hint="play around">
                       <PlayCircle className="h-4 w-4" />
                       Explore platform
                     </Button>
@@ -205,13 +205,13 @@ export default async function MarketingHomePage() {
               </div>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href={createHref}>
-                  <Button className="gap-2" data-guide-id="start-create" data-guide-hint="Start here">
+                  <Button className="gap-2" data-guide-id="start-create" data-guide-hint="make one">
                     Create assessment
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/run-test">
-                  <Button variant="secondary" data-guide-id="start-demo" data-guide-hint="View demo">View demo</Button>
+                  <Button variant="secondary" data-guide-id="start-demo" data-guide-hint="watch demo">View demo</Button>
                 </Link>
               </div>
             </StagePanel>

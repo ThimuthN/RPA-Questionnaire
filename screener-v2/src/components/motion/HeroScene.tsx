@@ -2,7 +2,6 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
-import { RiveMascot } from "@/components/brand/RiveMascot";
 import { cn } from "@/lib/utils";
 
 export function HeroScene({ className }: { className?: string }) {
@@ -50,9 +49,9 @@ export function HeroScene({ className }: { className?: string }) {
       <div className="relative z-10 flex min-h-[520px] flex-col justify-between">
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-full border border-brand-300/20 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-brand-200">
-            Interactive guide
+            Motion system
           </div>
-          <div className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Less clutter. More motion.</div>
+          <div className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Clear. Fast. Alive.</div>
         </div>
 
         <div className="relative flex flex-1 items-center justify-center py-8">
@@ -92,17 +91,33 @@ export function HeroScene({ className }: { className?: string }) {
           ))}
 
           <motion.div
-            className="relative"
-            animate={reduceMotion ? { y: 0 } : { y: [0, -12, 0], rotate: [0, -2, 2, 0] }}
-            transition={{ duration: reduceMotion ? 0 : 5.8, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+            className="absolute h-4 w-4 rounded-full bg-white shadow-[0_0_28px_rgba(255,255,255,0.75)]"
+            animate={
+              reduceMotion
+                ? { left: "48%", top: "38%" }
+                : {
+                    left: ["22%", "47%", "77%", "52%", "22%"],
+                    top: ["64%", "34%", "52%", "58%", "64%"],
+                    scale: [0.9, 1.2, 1, 1.15, 0.9]
+                  }
+            }
+            transition={{ duration: reduceMotion ? 0 : 8, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+          />
+
+          <motion.div
+            className="relative h-[320px] w-[320px] rounded-full border border-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(138,184,255,0.10),rgba(138,184,255,0.03)_44%,transparent_72%)]"
+            animate={reduceMotion ? { scale: 1 } : { scale: [1, 1.03, 1], opacity: [0.8, 1, 0.84] }}
+            transition={{ duration: reduceMotion ? 0 : 5.2, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
           >
-            <RiveMascot size="hero" className="drop-shadow-[0_24px_50px_rgba(16,80,194,0.24)]" />
+            <div className="absolute inset-[14%] rounded-full border border-brand-300/16" />
+            <div className="absolute inset-[28%] rounded-full border border-teal-300/12" />
+            <div className="absolute inset-[42%] rounded-full border border-white/10" />
           </motion.div>
         </div>
 
         <div className="flex justify-center">
           <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-slate-200 shadow-[0_12px_26px_rgba(2,8,23,0.24)] backdrop-blur-xl">
-            Follow the guide
+            Watch it move
           </div>
         </div>
       </div>
