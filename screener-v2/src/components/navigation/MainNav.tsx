@@ -7,7 +7,6 @@ import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
 import { Activity, Blocks, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
 import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
@@ -77,7 +76,6 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
 
       {viewer ? (
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <div className="hidden rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-200 md:block">
             {viewer.name || viewer.email}
           </div>
@@ -91,15 +89,12 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           </form>
         </div>
       ) : (
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <Link
-            href="/login"
-            className="rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-[color:var(--app-header-surface-hover)]"
-          >
-            Log in
-          </Link>
-        </div>
+        <Link
+          href="/login"
+          className="rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-slate-100 transition hover:bg-[color:var(--app-header-surface-hover)]"
+        >
+          Log in
+        </Link>
       )}
 
       <MobileNavDrawer

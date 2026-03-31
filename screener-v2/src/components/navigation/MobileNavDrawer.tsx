@@ -5,7 +5,6 @@ import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -87,7 +86,6 @@ export function MobileNavDrawer({
         </div>
 
         <div className="mt-6 border-t border-[color:var(--app-border)] pt-4 space-y-3">
-          <ThemeToggle compact />
           {viewer ? (
             <form action="/api/auth/logout" method="post">
               <button

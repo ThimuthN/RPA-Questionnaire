@@ -3,6 +3,7 @@ import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { getAppSession } from "@/lib/auth/app-session";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default async function RootLayout({
             </nav>
           </header>
           <main className="mx-auto w-full max-w-7xl px-4 py-8 md:py-10">{children}</main>
+          <ThemeToggle />
         </div>
       </body>
     </html>

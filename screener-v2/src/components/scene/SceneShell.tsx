@@ -59,9 +59,32 @@ export function SceneShell({
         )}
       >
         <div className="space-y-3">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--app-brand)]">{eyebrow}</p>
-          <h1 className="max-w-3xl font-display text-4xl leading-[0.96] text-[color:var(--app-heading)] md:text-5xl">{title}</h1>
-          {subtitle ? <p className="max-w-2xl text-sm leading-6 text-[color:var(--app-muted)]">{subtitle}</p> : null}
+          <p
+            className={cn(
+              "text-[11px] uppercase tracking-[0.28em]",
+              tone === "scene" ? "text-brand-300" : "text-[color:var(--app-brand)]"
+            )}
+          >
+            {eyebrow}
+          </p>
+          <h1
+            className={cn(
+              "max-w-3xl font-display text-4xl leading-[0.96] md:text-5xl",
+              tone === "scene" ? "text-white" : "text-[color:var(--app-heading)]"
+            )}
+          >
+            {title}
+          </h1>
+          {subtitle ? (
+            <p
+              className={cn(
+                "max-w-2xl text-sm leading-6",
+                tone === "scene" ? "text-slate-300" : "text-[color:var(--app-muted)]"
+              )}
+            >
+              {subtitle}
+            </p>
+          ) : null}
         </div>
         {utility ? <div className="relative z-10 flex flex-wrap items-center gap-2 lg:justify-self-end">{utility}</div> : null}
       </header>
