@@ -69,6 +69,15 @@ function filterFieldClassName() {
   return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
 
+const tableShellClassName =
+  "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
+
+const tableHeadClassName =
+  "bg-[color:var(--app-surface-soft)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
+
+const tableCellClassName =
+  "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
+
 function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
   if (candidate.latestAssessment?.attemptId) {
     return {
@@ -126,7 +135,7 @@ export default async function PeopleCandidatesPage({
         tone="page"
         eyebrow="People"
         title="Candidates"
-        subtitle="Search and manage candidates in one place."
+        subtitle="Search and manage candidates."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="candidates" />
@@ -293,9 +302,9 @@ export default async function PeopleCandidatesPage({
                 <input type="hidden" name="returnTo" value={currentPathAndQuery} />
                 <details className="rounded-[20px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
-                    <div className="space-y-1">
-                      <h2 className="text-lg text-[color:var(--app-heading)]">Bulk actions</h2>
-                      <p className="text-sm text-[color:var(--app-muted)]">Use when you need to update several candidates at once.</p>
+                  <div className="space-y-1">
+                    <h2 className="text-lg text-[color:var(--app-heading)]">Bulk actions</h2>
+                      <p className="text-sm text-[color:var(--app-muted)]">Update several candidates at once.</p>
                     </div>
                     <StatusPill label="Optional" tone="neutral" />
                   </summary>
@@ -325,7 +334,7 @@ export default async function PeopleCandidatesPage({
                           </option>
                         ))}
                       </select>
-                      <Button type="submit">Apply to selected</Button>
+                      <Button type="submit">Apply</Button>
                   </div>
                   <textarea
                     name="noteBody"
@@ -335,77 +344,92 @@ export default async function PeopleCandidatesPage({
                   />
                 </details>
 
-                <div className="overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
-                  {page.rows.map((candidate) => (
-                    <div key={candidate.id} className="border-t border-[color:var(--app-border)] p-4 first:border-t-0">
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex gap-4">
-                          <div className="pt-1">
-                            <input
-                              type="checkbox"
-                              name="candidateId"
-                              value={candidate.id}
-                              className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400"
-                            />
-                          </div>
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap gap-2">
-                              <InlineStatusSelect
-                                candidateId={candidate.id}
-                                currentStatus={candidate.uiStatus}
-                                returnTo={currentPathAndQuery}
+                <div className={tableShellClassName}>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-left">
+                      <thead className={tableHeadClassName}>
+                        <tr>
+                          <th className="w-12 px-4 py-3 font-medium">Select</th>
+                          <th className="px-4 py-3 font-medium">Name</th>
+                          <th className="px-4 py-3 font-medium">Role</th>
+                          <th className="px-4 py-3 font-medium">Owner</th>
+                          <th className="px-4 py-3 font-medium">Status</th>
+                          <th className="px-4 py-3 font-medium">Stage</th>
+                          <th className="px-4 py-3 font-medium">Latest assessment</th>
+                          <th className="px-4 py-3 font-medium">Updated</th>
+                          <th className="px-4 py-3 font-medium">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {page.rows.map((candidate) => (
+                          <tr key={candidate.id} className="transition hover:bg-[color:var(--app-surface-soft)]/70">
+                            <td className={tableCellClassName}>
+                              <input
+                                type="checkbox"
+                                name="candidateId"
+                                value={candidate.id}
+                                className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400"
                               />
-                              <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
-                              <StatusPill
-                                label={bucketLabel(candidate.openWorkBucket)}
-                                tone={
-                                  candidate.openWorkBucket === "ready_for_review"
-                                    ? "amber"
-                                    : candidate.openWorkBucket === "stalled"
-                                      ? "red"
-                                      : candidate.openWorkBucket === "moved_forward"
-                                        ? "emerald"
-                                        : "neutral"
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <div className="space-y-1">
-                                <p className="text-lg text-[color:var(--app-heading)]">{candidate.fullName}</p>
-                                <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <div className="min-w-[180px]">
+                                <p className="font-medium text-[color:var(--app-heading)]">{candidate.fullName}</p>
+                                <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
+                                  {bucketLabel(candidate.openWorkBucket)}
+                                </p>
                               </div>
-                              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[color:var(--app-muted)]">
-                                <span>{candidate.hrOwner ? `Owner: ${candidate.hrOwner}` : "No owner assigned"}</span>
-                                <span>{candidate.currentFocus ? `Stage: ${candidate.currentFocus}` : `Stage: ${candidateStageLabels[candidate.stage]}`}</span>
-                                <span>{candidate.staleDays === 0 ? "Updated today" : `Updated ${candidate.staleDays} day(s) ago`}</span>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <span>{candidate.roleLabel || "Not set"}</span>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <span>{candidate.hrOwner || "Unassigned"}</span>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <div className="min-w-[170px]">
+                                <InlineStatusSelect
+                                  candidateId={candidate.id}
+                                  currentStatus={candidate.uiStatus}
+                                  returnTo={currentPathAndQuery}
+                                />
                               </div>
-                              <p className="text-sm text-[color:var(--app-text)]">
-                                Latest assessment:{" "}
-                                {typeof candidate.latestAssessment?.finalPercent === "number"
-                                  ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
-                                  : candidateAssessmentStatusLabels[candidate.latestAssessmentStatus]}
-                              </p>
-                              {candidate.notesSummary ? <p className="text-sm text-[color:var(--app-muted)]">{candidate.notesSummary}</p> : null}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                          {(() => {
-                            const action = contextualAction(candidate);
-                            return action ? (
-                              <Link href={action.href}>
-                                <Button variant="secondary">{action.label}</Button>
-                              </Link>
-                            ) : null;
-                          })()}
-                          <Link href={`/candidates/${candidate.id}`}>
-                            <Button>View</Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                            </td>
+                            <td className={tableCellClassName}>
+                              <span>{candidate.currentFocus || candidateStageLabels[candidate.stage]}</span>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <div className="flex min-w-[140px] items-center gap-2">
+                                <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
+                                <span className="text-xs text-[color:var(--app-muted)]">
+                                  {typeof candidate.latestAssessment?.finalPercent === "number"
+                                    ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
+                                    : candidateAssessmentStatusLabels[candidate.latestAssessmentStatus]}
+                                </span>
+                              </div>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
+                            </td>
+                            <td className={tableCellClassName}>
+                              <div className="flex flex-wrap justify-end gap-2">
+                                {(() => {
+                                  const action = contextualAction(candidate);
+                                  return action ? (
+                                    <Link href={action.href}>
+                                      <Button variant="secondary">{action.label}</Button>
+                                    </Link>
+                                  ) : null;
+                                })()}
+                                <Link href={`/candidates/${candidate.id}`}>
+                                  <Button>View</Button>
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </form>
             </StaggerItem>

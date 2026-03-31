@@ -136,6 +136,8 @@ const filterControlClass =
 const filterInputClass =
   "w-full rounded-[18px] border border-white/16 bg-white/[0.05] px-4 py-3 text-sm text-white outline-none transition focus:border-brand-300/60";
 
+const resultsTableCellClassName = "px-4 py-4 align-middle text-sm";
+
 function FilterField({
   label,
   className,
@@ -209,7 +211,7 @@ export default async function ResultsPage({
         variant="results"
         eyebrow="Assessment review"
         title="Results"
-        subtitle="Review assessment outcomes across hiring, internal growth, promotions, certification, and ad hoc evaluations."
+        subtitle="Review assessment outcomes."
         utility={
           <div className="flex flex-wrap gap-2">
             <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
@@ -447,76 +449,58 @@ export default async function ResultsPage({
                       <th className="px-4 py-3">Select</th>
                       <th className="px-4 py-3">Participant</th>
                       <th className="px-4 py-3">Assessment</th>
+                      <th className="px-4 py-3">Score</th>
                       <th className="px-4 py-3">Review</th>
-                      <th className="px-4 py-3">Linked workflow</th>
+                      <th className="px-4 py-3">Linked record</th>
                       <th className="px-4 py-3">Submitted</th>
                       <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {page.rows.map((row) => (
-                      <tr key={row.attemptId} className="border-b border-white/10 align-top">
-                        <td className="px-4 py-4">
+                      <tr key={row.attemptId} className="border-b border-white/10 align-middle transition hover:bg-white/[0.03]">
+                        <td className={resultsTableCellClassName}>
                           <input type="checkbox" name="attemptId" value={row.attemptId} className="h-4 w-4 rounded border-white/20 bg-transparent text-brand-400" />
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="space-y-1">
+                        <td className={resultsTableCellClassName}>
+                          <div className="min-w-[220px] space-y-1">
                             <p className="font-medium text-white">{row.candidateName || "Unnamed participant"}</p>
-                            <p className="text-slate-300">{row.candidateEmail || "No email captured"}</p>
-                            <p className="text-xs text-slate-400">
-                              {row.candidateId ? "Linked profile attached" : "Assessment-only result"}
-                            </p>
-                            {row.candidateNotesSummary ? <p className="text-xs text-brand-100">{row.candidateNotesSummary}</p> : null}
+                            <p className="text-slate-300">{row.candidateEmail || "No email"}</p>
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="space-y-1">
-                            <p className="text-white">{row.candidateRoleLabel || "No candidate role"}</p>
-                            <p className="text-xs text-slate-400">{row.coreExamRoleLabel || row.roleId || "Generic assessment"}</p>
+                        <td className={resultsTableCellClassName}>
+                          <div className="min-w-[180px] space-y-1">
+                            <p className="text-white">{row.candidateRoleLabel || row.coreExamRoleLabel || "General assessment"}</p>
                             <p className="text-xs text-slate-400">{stackSummary(row)}</p>
-                            <p className="text-xs text-slate-400">{contextTypeLabel(row.contextType)}</p>
-                            <p className="text-xs text-slate-400">
-                              {row.exams.length} exam{row.exams.length === 1 ? "" : "s"}
-                            </p>
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-2">
-                              <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
-                              <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
-                              <StatusPill label={`Integrity ${row.integrityRisk}`} tone={toneForIntegrity(row.integrityRisk)} />
-                            </div>
-                            <p className="text-white">{row.finalPercent.toFixed(1)} / 100</p>
-                            <p className="text-xs text-slate-400">Strongest area: {strongestArea(row)}</p>
+                        <td className={resultsTableCellClassName}>
+                          <div className="min-w-[140px] space-y-1">
+                            <p className="font-medium text-white">{row.finalPercent.toFixed(1)} / 100</p>
+                            <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                           </div>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className={resultsTableCellClassName}>
+                          <div className="min-w-[130px]">
+                            <StatusPill label={reviewStateLabel(row.reviewState)} tone={reviewStateTone(row.reviewState)} />
+                          </div>
+                        </td>
+                        <td className={resultsTableCellClassName}>
                           {row.candidateId ? (
-                            <div className="space-y-2">
-                              {row.candidateUiStatus ? (
-                                <StatusPill label={linkedStatusLabel(row.candidateUiStatus)} tone={toneForLinkedStatus(row.candidateUiStatus)} />
-                              ) : null}
-                              <p className="text-slate-300">{row.candidateOwner || "No linked owner"}</p>
+                            <div className="min-w-[160px] space-y-1">
+                              <p className="text-slate-200">{row.candidateOwner || "Linked profile"}</p>
                               <p className="text-xs text-slate-400">
-                                {row.candidateStage ? candidateStageLabels[row.candidateStage] : "No linked stage"}
+                                {row.candidateStage ? candidateStageLabels[row.candidateStage] : (row.candidateUiStatus ? linkedStatusLabel(row.candidateUiStatus) : "No stage")}
                               </p>
                             </div>
                           ) : (
-                            <p className="text-sm text-slate-400">No linked workflow record.</p>
+                            <p className="text-sm text-slate-400">None</p>
                           )}
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="space-y-1">
-                            <p className="text-slate-200">{new Date(row.submittedAt).toLocaleString()}</p>
-                            <p className="text-xs text-slate-400">
-                              {row.candidateId
-                                ? `${row.candidateStaleDays ?? 0} day(s) since linked workflow activity`
-                                : "Assessment-only result"}
-                            </p>
-                          </div>
+                        <td className={resultsTableCellClassName}>
+                          <p className="min-w-[165px] text-slate-200">{new Date(row.submittedAt).toLocaleString()}</p>
                         </td>
-                        <td className="px-4 py-4">
+                        <td className={resultsTableCellClassName}>
                           <div className="flex flex-wrap gap-2">
                             <Link href={`/results/${row.attemptId}`}>
                               <Button variant="secondary">Open result</Button>

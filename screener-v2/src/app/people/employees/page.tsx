@@ -53,6 +53,15 @@ function filterFieldClassName() {
   return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
 
+const tableShellClassName =
+  "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
+
+const tableHeadClassName =
+  "bg-[color:var(--app-surface-soft)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
+
+const tableCellClassName =
+  "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
+
 export default async function PeopleEmployeesPage({
   searchParams
 }: {
@@ -165,43 +174,70 @@ export default async function PeopleEmployeesPage({
             </StaggerItem>
           ) : (
             <StaggerItem>
-              <div className="overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
-                {page.rows.map((employee) => (
-                  <div key={employee.id} className="border-t border-[color:var(--app-border)] p-4 first:border-t-0">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-3">
-                        <div className="flex flex-wrap gap-2">
-                          <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
-                          <StatusPill label={contextLabel(employee.latestContextType)} tone="blue" />
-                          {employee.latestReviewState ? (
-                            <StatusPill label={contextLabel(employee.latestReviewState)} tone={reviewTone(employee.latestReviewState)} />
-                          ) : null}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-lg text-[color:var(--app-heading)]">{employee.fullName}</p>
-                          <p className="text-sm text-[color:var(--app-text)]">{employee.email}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-[color:var(--app-muted)]">
-                          <span>{employee.employeeId ? `Employee ID: ${employee.employeeId}` : "Employee ID not set"}</span>
-                          <span>{employee.latestAssessmentLabel ?? "No assessment attached yet"}</span>
-                          <span>{employee.completedCount} completed</span>
-                          <span>{employee.latestSubmittedAt ? `Latest submit ${new Date(employee.latestSubmittedAt).toLocaleDateString()}` : "No completed attempt yet"}</span>
-                        </div>
-                        <p className="text-sm text-[color:var(--app-text)]">
-                          Latest result: {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "Still in progress"}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2 lg:justify-end">
-                        {employee.latestAttemptId ? (
-                          <Link href={`/results/${employee.latestAttemptId}`}>
-                            <Button variant="secondary">View result</Button>
-                          </Link>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className={tableShellClassName}>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-left">
+                    <thead className={tableHeadClassName}>
+                      <tr>
+                        <th className="px-4 py-3 font-medium">Name</th>
+                        <th className="px-4 py-3 font-medium">Email</th>
+                        <th className="px-4 py-3 font-medium">Role / ID</th>
+                        <th className="px-4 py-3 font-medium">Assessment</th>
+                        <th className="px-4 py-3 font-medium">Latest result</th>
+                        <th className="px-4 py-3 font-medium">Completed</th>
+                        <th className="px-4 py-3 font-medium">Submitted</th>
+                        <th className="px-4 py-3 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {page.rows.map((employee) => (
+                        <tr key={employee.id} className="transition hover:bg-[color:var(--app-surface-soft)]/70">
+                          <td className={tableCellClassName}>
+                            <div className="min-w-[180px]">
+                              <p className="font-medium text-[color:var(--app-heading)]">{employee.fullName}</p>
+                              <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
+                                {employee.latestReviewState ? contextLabel(employee.latestReviewState) : contextLabel(employee.latestStatus)}
+                              </p>
+                            </div>
+                          </td>
+                          <td className={tableCellClassName}>{employee.email}</td>
+                          <td className={tableCellClassName}>
+                            <div className="min-w-[170px]">
+                              <p>{contextLabel(employee.latestContextType)}</p>
+                              <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
+                                {employee.employeeId || "ID not set"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className={tableCellClassName}>{employee.latestAssessmentLabel ?? "Not attached"}</td>
+                          <td className={tableCellClassName}>
+                            <div className="flex items-center gap-2">
+                              <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
+                              <span className="text-xs text-[color:var(--app-muted)]">
+                                {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "In progress"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className={tableCellClassName}>{employee.completedCount}</td>
+                          <td className={tableCellClassName}>
+                            {employee.latestSubmittedAt ? new Date(employee.latestSubmittedAt).toLocaleDateString() : "—"}
+                          </td>
+                          <td className={tableCellClassName}>
+                            <div className="flex justify-end">
+                              {employee.latestAttemptId ? (
+                                <Link href={`/results/${employee.latestAttemptId}`}>
+                                  <Button variant="secondary">View result</Button>
+                                </Link>
+                              ) : (
+                                <span className="text-xs text-[color:var(--app-muted)]">—</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </StaggerItem>
           )}
