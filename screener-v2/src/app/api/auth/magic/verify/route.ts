@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyMagicToken } from "@/lib/auth/magic-link";
-import { createOrGetParticipant } from "@/lib/db/repositories";
+import {
+  createMagicVerificationToken,
+  setMagicVerificationCookie,
+  verifyMagicToken
+} from "@/lib/auth/magic-link";
 
 const verifySchema = z.object({
   token: z.string().min(8),
@@ -15,19 +18,16 @@ export async function POST(request: Request) {
     if (!verified.ok || !verified.email) {
       return NextResponse.json({ ok: false, message: verified.message || "Token invalid." }, { status: 400 });
     }
-    const participant = await createOrGetParticipant({
-      kind: "employee",
-      fullName: body.fullName || verified.email.split("@")[0],
-      email: verified.email
-    });
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       session: {
-        participantId: participant.id,
-        email: participant.email,
+        email: verified.email.trim().toLowerCase(),
         mode: "employee"
       }
     });
+    const verificationToken = await createMagicVerificationToken(verified.email);
+    setMagicVerificationCookie(response, verificationToken);
+    return response;
   } catch (error) {
     return NextResponse.json(
       { ok: false, message: error instanceof Error ? error.message : "Invalid request." },

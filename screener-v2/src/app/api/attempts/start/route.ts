@@ -18,6 +18,10 @@ import {
   setRuntimeSessionCookie
 } from "@/lib/auth/runtime-session";
 import {
+  clearMagicVerificationCookie,
+  getMagicVerificationSession
+} from "@/lib/auth/magic-link";
+import {
   createRequestLogContext,
   logRouteError,
   messageFromError
@@ -105,6 +109,22 @@ export async function POST(request: Request) {
       );
     }
 
+    const participantEmail = body.participant.email.trim().toLowerCase();
+    const isInternalFlow = runtimeSlug === "internal" && !inviteId;
+
+    if (isInternalFlow) {
+      const magicVerification = await getMagicVerificationSession();
+      if (!magicVerification || magicVerification.email !== participantEmail) {
+        return NextResponse.json(
+          {
+            ok: false,
+            message: "Employee verification is required before starting this assessment."
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     if (inviteId) {
       const linkedCandidate = await prisma.candidateAssessment.findUnique({
         where: { inviteId },
@@ -118,7 +138,7 @@ export async function POST(request: Request) {
       });
 
       if (linkedCandidate?.candidate?.email) {
-        const submittedEmail = body.participant.email.trim().toLowerCase();
+        const submittedEmail = participantEmail;
         const candidateEmail = linkedCandidate.candidate.email.trim().toLowerCase();
 
         if (submittedEmail !== candidateEmail) {
@@ -136,7 +156,7 @@ export async function POST(request: Request) {
     const participant = await createOrGetParticipant({
       kind: body.participant.kind,
       fullName: body.participant.fullName,
-      email: body.participant.email,
+      email: participantEmail,
       phone: body.participant.phone
     });
     const started = await startAttempt({
@@ -161,6 +181,9 @@ export async function POST(request: Request) {
         slug: runtimeSlug
       });
       setRuntimeSessionCookie(response, runtimeToken);
+    }
+    if (isInternalFlow) {
+      clearMagicVerificationCookie(response);
     }
     return response;
   } catch (error) {
