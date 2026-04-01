@@ -957,105 +957,152 @@ export async function startAttempt(input: {
       .find((exam) => carriesRoleContext(exam.definitionId))
       ?.contentSnapshot.items.map((item) => item.id) ?? [];
 
-  const attempt = await prisma.$transaction(async (tx) => {
-    let linkedCandidateAssessmentId: string | null = null;
+  let attempt;
+  const maxStartRetries = input.inviteId ? 2 : 1;
 
-    if (input.inviteId) {
-      const invite = await tx.invite.findUnique({
-        where: { id: input.inviteId },
-        select: {
-          id: true,
-          maxAttempts: true,
-          usedAttempts: true
-        }
-      });
+  for (let startRetry = 0; startRetry < maxStartRetries; startRetry += 1) {
+    try {
+      attempt = await prisma.$transaction(async (tx) => {
+        let linkedCandidateAssessmentId: string | null = null;
 
-      if (!invite) {
-        throw new Error("Invite not found.");
-      }
-      if (invite.usedAttempts >= invite.maxAttempts) {
-        throw new Error("Invite attempt limit reached.");
-      }
+        if (input.inviteId) {
+          const existing = await tx.attempt.findFirst({
+            where: {
+              inviteId: input.inviteId,
+              participantId: input.participantId,
+              status: "in_progress"
+            },
+            orderBy: {
+              startedAt: "desc"
+            }
+          });
 
-      const reserved = await tx.invite.updateMany({
-        where: {
-          id: invite.id,
-          usedAttempts: invite.usedAttempts
-        },
-        data: {
-          usedAttempts: {
-            increment: 1
+          if (existing) {
+            return existing;
           }
+
+          const invite = await tx.invite.findUnique({
+            where: { id: input.inviteId },
+            select: {
+              id: true,
+              maxAttempts: true,
+              usedAttempts: true
+            }
+          });
+
+          if (!invite) {
+            throw new Error("Invite not found.");
+          }
+          if (invite.usedAttempts >= invite.maxAttempts) {
+            throw new Error("Invite attempt limit reached.");
+          }
+
+          const reserved = await tx.invite.updateMany({
+            where: {
+              id: invite.id,
+              usedAttempts: invite.usedAttempts
+            },
+            data: {
+              usedAttempts: {
+                increment: 1
+              }
+            }
+          });
+
+          if (reserved.count !== 1) {
+            throw new Error("Invite attempt reservation failed. Please retry.");
+          }
+
+          linkedCandidateAssessmentId =
+            (
+              await tx.candidateAssessment.findFirst({
+                where: { inviteId: invite.id },
+                select: { id: true }
+              })
+            )?.id ?? null;
+        }
+
+        const created = await tx.attempt.create({
+          data: {
+            id: attemptId,
+            assessmentVersionId: input.assessmentVersionId ?? "v1-default",
+            inviteId: input.inviteId ?? null,
+              participantId: input.participantId,
+              contextType: input.contextType ?? "general",
+              integrityPreset,
+              roleId: effectiveRoleId ?? null,
+            passTargetPercent,
+            stacksJson: toJsonValue(effectiveStacks),
+            sectionsJson: toJsonValue(effectiveSections),
+            blueprintJson: toJsonValue(blueprint),
+            sectionStateJson: toJsonValue(
+              buildExamStateEnvelopeJson({
+                examState,
+                activeExamInstanceId: blueprint.exams[0]?.instanceId,
+                activeExamStartedAt: startedAt.toISOString(),
+                integrity: initialIntegrity
+              })
+            ),
+            seed: 0,
+            stage: blueprint.exams[0]?.instanceId ?? "submitted",
+            status: "in_progress",
+            coreQuestionIdsJson: toJsonValue(coreQuestionIds),
+            coreAnswersJson: toJsonValue(split.coreAnswers),
+            practicalAnswerJson: toJsonValue(split.practicalAnswer),
+            practicalEarned: 0,
+            practicalPossible: 0,
+            logicReasoningAnswerJson: effectiveSections.includes("applied_logic_reasoning")
+              ? toJsonValue(split.logicReasoningAnswer)
+              : Prisma.JsonNull,
+            logicReasoningEarned: 0,
+            logicReasoningPossible: 0,
+            stateVersion: 0,
+            remainingCoreSeconds: split.remainingCoreSeconds,
+            remainingPracticalSeconds: split.remainingPracticalSeconds,
+            remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
+            integrityJson: toJsonValue(initialIntegrity),
+            startedAt
+          }
+        });
+
+        if (linkedCandidateAssessmentId) {
+          await linkCandidateAssessmentAttemptInTx({
+            tx,
+            candidateAssessmentId: linkedCandidateAssessmentId,
+            attemptId: created.id,
+            linkedAt: startedAt
+          });
+        }
+
+        return created;
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+      break;
+    } catch (error) {
+      if (!input.inviteId) {
+        throw error;
+      }
+
+      const existing = await prisma.attempt.findFirst({
+        where: {
+          inviteId: input.inviteId,
+          participantId: input.participantId,
+          status: "in_progress"
+        },
+        orderBy: {
+          startedAt: "desc"
         }
       });
 
-      if (reserved.count !== 1) {
-        throw new Error("Invite attempt reservation failed. Please retry.");
+      if (existing) {
+        attempt = existing;
+        break;
       }
 
-      linkedCandidateAssessmentId =
-        (
-          await tx.candidateAssessment.findFirst({
-            where: { inviteId: invite.id },
-            select: { id: true }
-          })
-        )?.id ?? null;
-    }
-
-    const created = await tx.attempt.create({
-      data: {
-        id: attemptId,
-        assessmentVersionId: input.assessmentVersionId ?? "v1-default",
-        inviteId: input.inviteId ?? null,
-          participantId: input.participantId,
-          contextType: input.contextType ?? "general",
-          integrityPreset,
-          roleId: effectiveRoleId ?? null,
-        passTargetPercent,
-        stacksJson: toJsonValue(effectiveStacks),
-        sectionsJson: toJsonValue(effectiveSections),
-        blueprintJson: toJsonValue(blueprint),
-        sectionStateJson: toJsonValue(
-          buildExamStateEnvelopeJson({
-            examState,
-            activeExamInstanceId: blueprint.exams[0]?.instanceId,
-            activeExamStartedAt: startedAt.toISOString(),
-            integrity: initialIntegrity
-          })
-        ),
-        seed: 0,
-        stage: blueprint.exams[0]?.instanceId ?? "submitted",
-        status: "in_progress",
-        coreQuestionIdsJson: toJsonValue(coreQuestionIds),
-        coreAnswersJson: toJsonValue(split.coreAnswers),
-        practicalAnswerJson: toJsonValue(split.practicalAnswer),
-        practicalEarned: 0,
-        practicalPossible: 0,
-        logicReasoningAnswerJson: effectiveSections.includes("applied_logic_reasoning")
-          ? toJsonValue(split.logicReasoningAnswer)
-          : Prisma.JsonNull,
-        logicReasoningEarned: 0,
-        logicReasoningPossible: 0,
-        stateVersion: 0,
-        remainingCoreSeconds: split.remainingCoreSeconds,
-        remainingPracticalSeconds: split.remainingPracticalSeconds,
-        remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
-        integrityJson: toJsonValue(initialIntegrity),
-        startedAt
+      if (startRetry === maxStartRetries - 1) {
+        throw error;
       }
-    });
-
-    if (linkedCandidateAssessmentId) {
-      await linkCandidateAssessmentAttemptInTx({
-        tx,
-        candidateAssessmentId: linkedCandidateAssessmentId,
-        attemptId: created.id,
-        linkedAt: startedAt
-      });
     }
-
-    return created;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }
 
   return { attempt: mapAttempt(attempt), blueprint };
 }
