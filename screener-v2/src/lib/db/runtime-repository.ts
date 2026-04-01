@@ -12,6 +12,7 @@ import type {
 import { buildResultSummary } from "@/lib/assessment-engine/scoring";
 import { getQuestionsByIds, getRoleConfig } from "@/lib/data/question-bank";
 import { prisma } from "@/lib/db/prisma";
+import { toResultSummary } from "@/lib/db/result-projections";
 import {
   createSectionState,
   getDefaultSelectedSections,
@@ -1399,25 +1400,25 @@ export async function submitAttempt(input: {
 }
 
 async function loadResultSummary(attemptId: string) {
+  const resultRow = await prisma.result.findUnique({
+    where: { attemptId }
+  });
+  if (!resultRow) return null;
+
   const attemptRow = await prisma.attempt.findUnique({
     where: { id: attemptId }
   });
   if (!attemptRow) return null;
 
-  const attempt = mapAttempt(attemptRow);
-  if (attempt.status !== "submitted") {
-    return null;
-  }
-
-  return buildResultSummary({
-    attemptId: attempt.id,
-    roleId: attempt.roleId,
-    stacks: attempt.stacks,
-    passTargetPercent: attempt.passTargetPercent,
-    blueprint: attempt.blueprint,
-    examState: attempt.examState,
-    integrity: attempt.integrity
+  const participantRow = await prisma.participant.findUnique({
+    where: { id: attemptRow.participantId }
   });
+
+  return toResultSummary(
+    resultRow,
+    mapAttempt(attemptRow),
+    participantRow ? mapParticipant(participantRow) : null
+  );
 }
 
 export async function getAttempt(attemptId: string) {
