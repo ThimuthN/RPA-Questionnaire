@@ -22,6 +22,7 @@ import {
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
+import { prisma } from "@/lib/db/prisma";
 
 const startSchema = z.object({
   inviteToken: z.string().optional(),
@@ -102,6 +103,34 @@ export async function POST(request: Request) {
         { ok: false, message: "Exam configuration is missing." },
         { status: 400 }
       );
+    }
+
+    if (inviteId) {
+      const linkedCandidate = await prisma.candidateAssessment.findUnique({
+        where: { inviteId },
+        select: {
+          candidate: {
+            select: {
+              email: true
+            }
+          }
+        }
+      });
+
+      if (linkedCandidate?.candidate?.email) {
+        const submittedEmail = body.participant.email.trim().toLowerCase();
+        const candidateEmail = linkedCandidate.candidate.email.trim().toLowerCase();
+
+        if (submittedEmail !== candidateEmail) {
+          return NextResponse.json(
+            {
+              ok: false,
+              message: "This assessment link is assigned to a different candidate email."
+            },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     const participant = await createOrGetParticipant({
