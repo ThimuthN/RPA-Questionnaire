@@ -73,6 +73,16 @@ export function buildResultSummary(input: BuildResultInput): ResultSummary {
   let weightSum = 0;
 
   const orderedExams = [...input.blueprint.exams].sort((a, b) => a.order - b.order);
+  const sectionIds = orderedExams
+    .map((exam) => exam.legacySectionId)
+    .filter((sectionId): sectionId is NonNullable<typeof sectionId> => Boolean(sectionId));
+  const duplicateSectionIds = [...new Set(sectionIds.filter((sectionId, index) => sectionIds.indexOf(sectionId) !== index))];
+
+  if (duplicateSectionIds.length > 0) {
+    throw new Error(
+      `Duplicate legacySectionId values are not supported in scoring: ${duplicateSectionIds.join(", ")}`
+    );
+  }
 
   for (const exam of orderedExams) {
     const state = input.examState[exam.instanceId] ?? { answers: {}, remainingSeconds: 0 };
