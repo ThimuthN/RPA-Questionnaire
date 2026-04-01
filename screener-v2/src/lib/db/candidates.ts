@@ -40,6 +40,7 @@ export interface CandidateRecord {
   phone?: string;
   roleId?: string;
   roleLabel?: string;
+  roleDepartment?: string;
   coreBasisRoleId?: RoleId;
   positionAppliedFor?: string;
   batchId?: string;
@@ -168,7 +169,7 @@ function mapCandidate(row: {
   email: string;
   phone: string | null;
   roleId: string | null;
-  role: { label: string; coreBasisRoleId: string } | null;
+  role: { label: string; department: string | null; coreBasisRoleId: string } | null;
   positionAppliedFor: string | null;
   batchId: string | null;
   resumeSource: string | null;
@@ -189,6 +190,7 @@ function mapCandidate(row: {
     phone: row.phone ?? undefined,
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? row.positionAppliedFor ?? undefined,
+    roleDepartment: row.role?.department ?? undefined,
     coreBasisRoleId: (row.role?.coreBasisRoleId as RoleId | null) ?? undefined,
     positionAppliedFor: row.positionAppliedFor ?? row.role?.label ?? undefined,
     batchId: row.batchId ?? undefined,
@@ -466,6 +468,7 @@ export async function createCandidate(input: {
         role: {
           select: {
             label: true,
+            department: true,
             coreBasisRoleId: true
           }
         }
@@ -544,6 +547,7 @@ export async function updateCandidate(
       role: {
         select: {
           label: true,
+          department: true,
           coreBasisRoleId: true
         }
       }
@@ -1144,6 +1148,7 @@ export async function listCandidates(filters?: {
       role: {
         select: {
           label: true,
+          department: true,
           coreBasisRoleId: true
         }
       }
@@ -1294,6 +1299,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       role: {
         select: {
           label: true,
+          department: true,
           coreBasisRoleId: true
         }
       }

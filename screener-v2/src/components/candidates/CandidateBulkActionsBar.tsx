@@ -1,0 +1,121 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/primitives/Button";
+import {
+  candidateUiStatusLabels,
+  candidateUiStatusValues,
+  type CandidateUiStatus
+} from "@/lib/candidates/types";
+
+export function CandidateBulkActionsBar({
+  formId,
+  defaultStatus = "need_review"
+}: {
+  formId: string;
+  defaultStatus?: CandidateUiStatus;
+}) {
+  const [selectedCount, setSelectedCount] = useState(0);
+  const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note">("assign_owner");
+
+  useEffect(() => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+
+    const syncSelected = () => {
+      const checked = form.querySelectorAll<HTMLInputElement>('input[name="candidateId"]:checked').length;
+      setSelectedCount(checked);
+    };
+
+    syncSelected();
+    form.addEventListener("change", syncSelected);
+    return () => form.removeEventListener("change", syncSelected);
+  }, [formId]);
+
+  const helperText = useMemo(() => {
+    if (action === "assign_owner") return "Assign an owner to the selected candidates.";
+    if (action === "set_ui_status") return "Set the next hiring status for the selected candidates.";
+    return "Add one note to every selected candidate.";
+  }, [action]);
+
+  function clearSelection() {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    form.querySelectorAll<HTMLInputElement>('input[name="candidateId"]:checked').forEach((input) => {
+      input.checked = false;
+    });
+    setSelectedCount(0);
+  }
+
+  if (selectedCount === 0) return null;
+
+  return (
+    <div className="rounded-[20px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg text-[color:var(--app-heading)]">Bulk actions</h2>
+            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-2.5 py-1 text-[10px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
+              {selectedCount} selected
+            </span>
+          </div>
+          <p className="text-sm text-[color:var(--app-muted)]">{helperText}</p>
+        </div>
+        <Button type="button" variant="ghost" onClick={clearSelection}>
+          Clear selection
+        </Button>
+      </div>
+
+      <div className="mt-4 grid gap-3 xl:grid-cols-[200px_minmax(0,1fr)_auto]">
+        <select
+          form={formId}
+          name="action"
+          value={action}
+          onChange={(event) => setAction(event.target.value as typeof action)}
+          className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+        >
+          <option value="assign_owner">Assign owner</option>
+          <option value="set_ui_status">Change status</option>
+          <option value="add_note">Add note</option>
+        </select>
+
+        {action === "assign_owner" ? (
+          <input
+            form={formId}
+            name="owner"
+            placeholder="Owner"
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          />
+        ) : null}
+
+        {action === "set_ui_status" ? (
+          <select
+            form={formId}
+            name="status"
+            defaultValue={defaultStatus}
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          >
+            {candidateUiStatusValues.map((status) => (
+              <option key={status} value={status}>
+                {candidateUiStatusLabels[status]}
+              </option>
+            ))}
+          </select>
+        ) : null}
+
+        {action === "add_note" ? (
+          <input
+            form={formId}
+            name="noteBody"
+            placeholder="Add one note to all selected candidates"
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          />
+        ) : null}
+
+        <Button type="submit" form={formId}>
+          Apply
+        </Button>
+      </div>
+    </div>
+  );
+}
