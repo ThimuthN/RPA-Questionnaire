@@ -62,13 +62,6 @@ function buildHref(params: URLSearchParams, overrides: Record<string, string | u
   return `/people/candidates${next.toString() ? `?${next.toString()}` : ""}` as Route;
 }
 
-function bucketLabel(bucket: string) {
-  return bucket
-    .split("_")
-    .map((part) => part[0].toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
 function filterFieldClassName() {
   return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
@@ -299,8 +292,10 @@ export default async function PeopleCandidatesPage({
                     <table className="w-full table-fixed text-left">
                       <thead className={tableHeadClassName}>
                         <tr>
-                          <th className="w-12 px-4 py-3 font-medium">Select</th>
-                          <th className="w-[28%] px-4 py-3 font-medium">Candidate</th>
+                          <th className="w-12 px-4 py-3 font-medium">
+                            <span className="sr-only">Select</span>
+                          </th>
+                          <th className="w-[28%] px-4 py-3 font-medium">Name</th>
                           <th className="w-[12%] px-4 py-3 font-medium">Owner</th>
                           <th className="w-[18%] px-4 py-3 font-medium">Status</th>
                           <th className="w-[15%] px-4 py-3 font-medium">Assessment</th>
@@ -347,15 +342,12 @@ export default async function PeopleCandidatesPage({
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2 whitespace-nowrap">
                                   <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
-                                  <span className="text-xs text-[color:var(--app-muted)]">
-                                    {typeof candidate.latestAssessment?.finalPercent === "number"
-                                      ? `${candidate.latestAssessment.finalPercent.toFixed(1)} / 100`
-                                      : candidateAssessmentStatusLabels[candidate.latestAssessmentStatus]}
-                                  </span>
+                                  {typeof candidate.latestAssessment?.finalPercent === "number" ? (
+                                    <span className="text-xs text-[color:var(--app-muted)]">
+                                      {candidate.latestAssessment.finalPercent.toFixed(1)} / 100
+                                    </span>
+                                  ) : null}
                                 </div>
-                                <p className="text-xs text-[color:var(--app-muted)]">
-                                  {bucketLabel(candidate.openWorkBucket)}
-                                </p>
                               </div>
                             </td>
                             <td className={tableCellClassName}>
