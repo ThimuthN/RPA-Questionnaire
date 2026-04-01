@@ -57,6 +57,7 @@ const modeMeta: Record<
 
 function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
   const searchParams = useSearchParams();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const availableModes: RunMode[] = canManageAccess
     ? ["join_link", "test_id", "live_call", "employee"]
     : ["join_link", "test_id"];
@@ -87,7 +88,21 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
     if (rawId) setTestId(rawId);
   }, [availableModes, searchParams]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => {
+      setTheme(root.dataset.theme === "dark" ? "dark" : "light");
+    };
+
+    syncTheme();
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => observer.disconnect();
+  }, []);
+
   const meta = useMemo(() => modeMeta[mode], [mode]);
+  const isDarkTheme = theme === "dark";
 
   function onStartFromLink() {
     if (!shareLink.trim()) {
@@ -169,6 +184,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
   return (
     <SceneShell
       variant="run"
+      tone={isDarkTheme ? "scene" : "page"}
       eyebrow={copy.run.eyebrow}
       title={copy.run.title}
       subtitle={copy.run.subtitle}
@@ -180,7 +196,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
       }
     >
       <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <StagePanel className="space-y-5">
+        <StagePanel tone={isDarkTheme ? "workspace" : "summary"} className="space-y-5">
           <div className="flex flex-wrap gap-2">
             {availableModes.map((item) => (
               <button
@@ -192,7 +208,9 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
                 }}
                 className={`rounded-full border px-4 py-2 text-sm transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
                   mode === item
-                    ? "border-brand-300 bg-brand-500/18 text-white shadow-[0_14px_30px_rgba(31,111,255,0.16)]"
+                    ? isDarkTheme
+                      ? "border-brand-300 bg-brand-500/18 text-white shadow-[0_14px_30px_rgba(31,111,255,0.16)]"
+                      : "border-[color:var(--app-brand)] bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand-strong)] shadow-[var(--app-shadow-soft)]"
                     : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-muted)]"
                 }`}
               >
@@ -309,7 +327,7 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
         </StagePanel>
 
-        <StagePanel className="space-y-5">
+        <StagePanel tone={isDarkTheme ? "workspace" : "summary"} className="space-y-5">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-[0.22em] text-brand-300">{copy.runModes.selectedMethod}</p>
           </div>
