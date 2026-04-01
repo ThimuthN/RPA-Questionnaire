@@ -1392,10 +1392,15 @@ export async function submitAttempt(input: {
     return { status: "missing" };
   }
 
+  const persistedResult = await loadResultSummary(input.attemptId);
+  if (!persistedResult) {
+    throw new Error("Submitted result could not be loaded.");
+  }
+
   return {
     status: "submitted",
     attempt: mapAttempt(updatedRow),
-    result
+    result: persistedResult
   };
 }
 
