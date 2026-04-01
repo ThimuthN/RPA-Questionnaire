@@ -891,18 +891,15 @@ export async function createOrGetParticipant(input: {
   phone?: string;
 }): Promise<ParticipantRecord> {
   const normalizedEmail = input.email.toLowerCase();
-  const existing = await prisma.participant.findUnique({
+  const participant = await prisma.participant.upsert({
     where: {
       kind_email: {
         kind: input.kind,
         email: normalizedEmail
       }
-    }
-  });
-  if (existing) return mapParticipant(existing);
-
-  const created = await prisma.participant.create({
-    data: {
+    },
+    update: {},
+    create: {
       id: cuidLike(),
       kind: input.kind,
       fullName: input.fullName,
@@ -911,7 +908,7 @@ export async function createOrGetParticipant(input: {
       createdAt: new Date()
     }
   });
-  return mapParticipant(created);
+  return mapParticipant(participant);
 }
 
 export async function startAttempt(input: {
