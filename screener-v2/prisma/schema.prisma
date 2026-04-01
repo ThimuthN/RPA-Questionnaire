@@ -115,7 +115,7 @@ model Invite {
 model RoleCatalog {
   id              String   @id @default(cuid())
   slug            String   @unique
-  label           String   @unique
+  label           String
   department      String?
   sortOrder       Int      @default(0)
   isActive        Boolean  @default(true)
@@ -125,6 +125,7 @@ model RoleCatalog {
   candidates      Candidate[]
 
   @@index([isActive, sortOrder])
+  @@index([label, department])
 }
 
 model Participant {

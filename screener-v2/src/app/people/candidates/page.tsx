@@ -295,12 +295,12 @@ export default async function PeopleCandidatesPage({
                           <th className="w-12 px-4 py-3 font-medium">
                             <span className="sr-only">Select</span>
                           </th>
-                          <th className="w-[28%] px-4 py-3 font-medium">Name</th>
-                          <th className="w-[12%] px-4 py-3 font-medium">Owner</th>
-                          <th className="w-[18%] px-4 py-3 font-medium">Status</th>
-                          <th className="w-[15%] px-4 py-3 font-medium">Assessment</th>
+                          <th className="w-[24%] px-4 py-3 font-medium">Name</th>
+                          <th className="w-[13%] px-4 py-3 font-medium">Owner</th>
+                          <th className="w-[19%] px-4 py-3 font-medium">Status</th>
+                          <th className="w-[16%] px-4 py-3 font-medium">Assessment</th>
                           <th className="w-[8%] px-4 py-3 font-medium">Updated</th>
-                          <th className="w-[19%] px-4 py-3 font-medium text-right">Actions</th>
+                          <th className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody>

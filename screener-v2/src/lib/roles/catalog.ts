@@ -20,6 +20,16 @@ function slugifyRoleLabel(value: string) {
     .slice(0, 64);
 }
 
+function normalizeDepartment(value?: string) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed.length > 0 ? trimmed : "";
+}
+
+function slugifyRoleIdentity(label: string, department?: string) {
+  const parts = [label.trim(), normalizeDepartment(department)].filter(Boolean);
+  return slugifyRoleLabel(parts.join(" "));
+}
+
 function mapRole(row: {
   id: string;
   slug: string;
@@ -57,16 +67,22 @@ export async function getRoleCatalogEntry(roleId: string) {
   return row ? mapRole(row) : null;
 }
 
-export async function findRoleCatalogEntryByLabel(label: string) {
+export async function findRoleCatalogEntryByLabel(label: string, department?: string) {
   const trimmed = label.trim();
   if (!trimmed) return null;
 
-  const slug = slugifyRoleLabel(trimmed);
-  const row = await prisma.roleCatalog.findFirst({
+  const normalizedDepartment = normalizeDepartment(department);
+  const slug = slugifyRoleIdentity(trimmed, normalizedDepartment);
+  const rows = await prisma.roleCatalog.findMany({
     where: {
       OR: [{ label: trimmed }, { slug }]
-    }
+    },
+    orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
   });
+
+  const row =
+    rows.find((candidate) => normalizeDepartment(candidate.department ?? undefined) === normalizedDepartment) ??
+    rows[0];
 
   return row ? mapRole(row) : null;
 }
@@ -77,11 +93,12 @@ export async function createRoleCatalogEntry(input: {
   coreBasisRoleId?: RoleId;
 }) {
   const label = input.label.trim();
+  const department = normalizeDepartment(input.department);
   if (!label) {
     throw new Error("Role label is required.");
   }
 
-  const existing = await findRoleCatalogEntryByLabel(label);
+  const existing = await findRoleCatalogEntryByLabel(label, department);
   if (existing) {
     return existing;
   }
@@ -93,9 +110,9 @@ export async function createRoleCatalogEntry(input: {
 
   const created = await prisma.roleCatalog.create({
     data: {
-      slug: slugifyRoleLabel(label),
+      slug: slugifyRoleIdentity(label, department),
       label,
-      department: input.department?.trim() || null,
+      department: department || null,
       sortOrder: (last?.sortOrder ?? -1) + 1,
       isActive: true,
       coreBasisRoleId: input.coreBasisRoleId ?? "Associate"
@@ -115,28 +132,31 @@ export async function updateRoleCatalogEntry(
   }
 ) {
   const label = input.label.trim();
+  const department = normalizeDepartment(input.department);
   if (!label) {
     throw new Error("Role label is required.");
   }
 
-  const duplicate = await prisma.roleCatalog.findFirst({
-    where: {
-      id: { not: roleId },
-      OR: [{ label }, { slug: slugifyRoleLabel(label) }]
-    },
-    select: { id: true }
-  });
+  const duplicate = (
+    await prisma.roleCatalog.findMany({
+      where: {
+        id: { not: roleId },
+        label
+      },
+      select: { id: true, department: true }
+    })
+  ).find((candidate) => normalizeDepartment(candidate.department ?? undefined) === department);
 
   if (duplicate) {
-    throw new Error("A role with that name already exists.");
+    throw new Error("A role with that name already exists in that department.");
   }
 
   const updated = await prisma.roleCatalog.update({
     where: { id: roleId },
     data: {
-      slug: slugifyRoleLabel(label),
+      slug: slugifyRoleIdentity(label, department),
       label,
-      department: input.department?.trim() || null,
+      department: department || null,
       coreBasisRoleId: input.coreBasisRoleId,
       isActive: input.isActive
     }
