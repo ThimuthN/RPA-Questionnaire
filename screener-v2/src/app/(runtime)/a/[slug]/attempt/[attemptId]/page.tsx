@@ -55,6 +55,7 @@ export default async function AttemptRuntimePage({
       }
       stacks={attempt.stacks}
       blueprint={sanitizeBlueprintForClient(attempt.blueprint)}
+      initialStage={attempt.stage}
       initialExamState={attempt.examState ?? {}}
       initialIntegrity={attempt.integrity}
       initialStateVersion={attempt.stateVersion}

@@ -33,6 +33,7 @@ interface RuntimeClientProps {
   roleId?: string;
   stacks: StackId[];
   blueprint: ExamBlueprint;
+  initialStage?: string | "submitted";
   initialExamState: Partial<Record<string, ExamState>>;
   initialIntegrity: IntegritySnapshot;
   initialStateVersion: number;
@@ -123,7 +124,18 @@ export function RuntimeClient(props: RuntimeClientProps) {
     [props.blueprint.exams]
   );
   const integrityPolicy = useMemo(() => getIntegrityPolicy(props.integrityPreset), [props.integrityPreset]);
-  const [stage, setStage] = useState<string | "submitted">(() => orderedExams[0]?.instanceId ?? "submitted");
+  const [stage, setStage] = useState<string | "submitted">(() => {
+    if (props.initialStage === "submitted") {
+      return "submitted";
+    }
+    if (
+      typeof props.initialStage === "string" &&
+      orderedExams.some((exam) => exam.instanceId === props.initialStage)
+    ) {
+      return props.initialStage;
+    }
+    return orderedExams[0]?.instanceId ?? "submitted";
+  });
   const [itemIndices, setItemIndices] = useState<Record<string, number>>({});
   const [examState, setExamState] = useState<Partial<Record<string, ExamState>>>(() => {
     const next = { ...(props.initialExamState ?? {}) };
