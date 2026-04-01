@@ -61,6 +61,14 @@ type SubmitResponse = {
   stateVersion?: number;
 };
 
+function mergeIntegrity(local: IntegritySnapshot, server: IntegritySnapshot): IntegritySnapshot {
+  return {
+    tabHiddenCount: Math.max(local.tabHiddenCount, server.tabHiddenCount),
+    copyCount: Math.max(local.copyCount, server.copyCount),
+    pasteCount: Math.max(local.pasteCount, server.pasteCount)
+  };
+}
+
 function statusMeta(status: RuntimeUiStatus): { label: string; tone: "blue" | "teal" | "emerald" | "amber" | "red" } {
   switch (status) {
     case RuntimeUiStatus.Attention:
@@ -194,6 +202,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
   ]);
 
   const stageRef = useRef<string | "submitted">(stage);
+  const examStateRef = useRef(examState);
+  const integrityRef = useRef(integrity);
   const remainingRef = useRef<number>(currentRemaining);
   const stateVersionRef = useRef<number>(props.initialStateVersion);
   const integrityNoticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -221,8 +231,8 @@ export function RuntimeClient(props: RuntimeClientProps) {
     options?: { updateStage?: boolean; updateTimers?: boolean }
   ) {
     if (options?.updateTimers !== false && data.timers) {
-      setExamState((prev) =>
-        mergeExamState(
+      setExamState((prev) => {
+        const next = mergeExamState(
           prev,
           Object.fromEntries(
             Object.entries(data.timers ?? {}).map(([instanceId, remainingSeconds]) => [
@@ -230,14 +240,19 @@ export function RuntimeClient(props: RuntimeClientProps) {
               { remainingSeconds }
             ])
           )
-        )
-      );
+        );
+        examStateRef.current = next;
+        return next;
+      });
     }
     if (options?.updateStage !== false && data.stage && data.stage !== stageRef.current) {
+      stageRef.current = data.stage;
       setStage(data.stage);
     }
     if (data.integrity) {
-      setIntegrity(data.integrity);
+      const nextIntegrity = mergeIntegrity(integrityRef.current, data.integrity);
+      integrityRef.current = nextIntegrity;
+      setIntegrity(nextIntegrity);
     }
     if (typeof data.stateVersion === "number") {
       stateVersionRef.current = data.stateVersion;
@@ -252,6 +267,18 @@ export function RuntimeClient(props: RuntimeClientProps) {
   useEffect(() => {
     stageRef.current = stage;
   }, [stage]);
+
+  useEffect(() => {
+    // Conflict retries happen after async round-trips, so refs must track the latest
+    // rendered state instead of relying on whatever state snapshot created the request.
+    examStateRef.current = examState;
+  }, [examState]);
+
+  useEffect(() => {
+    // Integrity can change from background events while a request is in flight.
+    // Keeping a ref in sync prevents replaying an older snapshot after a conflict.
+    integrityRef.current = integrity;
+  }, [integrity]);
 
   useEffect(() => {
     remainingRef.current = currentRemaining;
@@ -333,8 +360,42 @@ export function RuntimeClient(props: RuntimeClientProps) {
     const data = (await response.json()) as AttemptSyncPayload;
 
     if (response.status === 409 && data.code === "version_conflict" && retryCount < 2) {
-      applyAutosaveResponse(data, options);
-      return sendAutosaveRequest(body, options, retryCount + 1);
+      if (options?.updateTimers !== false && data.timers) {
+        setExamState((prev) => {
+          const next = mergeExamState(
+            prev,
+            Object.fromEntries(
+              Object.entries(data.timers ?? {}).map(([instanceId, remainingSeconds]) => [
+                instanceId,
+                { remainingSeconds }
+              ])
+            )
+          );
+          examStateRef.current = next;
+          return next;
+        });
+      }
+      if (options?.updateStage !== false && data.stage && data.stage !== stageRef.current) {
+        stageRef.current = data.stage;
+        setStage(data.stage);
+      }
+      if (typeof data.stateVersion === "number") {
+        stateVersionRef.current = data.stateVersion;
+        setStateVersion(data.stateVersion);
+      }
+
+      // Retrying the original request body is dangerous here because it may contain
+      // older answers or integrity values than the client currently holds.
+      // Rebuild from refs so the retry uses the latest client-authoritative state.
+      return sendAutosaveRequest(
+        {
+          stage: stageRef.current,
+          examState: examStateRef.current,
+          integrity: integrityRef.current
+        },
+        options,
+        retryCount + 1
+      );
     }
 
     return data;
@@ -439,6 +500,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
     if (stageRef.current === "submitted") return;
     setIntegrity((prev) => {
       const next = { ...prev, [type]: prev[type] + 1 };
+      integrityRef.current = next;
       void (async () => {
         try {
           const data = await sendAutosaveRequest(
@@ -469,13 +531,15 @@ export function RuntimeClient(props: RuntimeClientProps) {
   useEffect(() => {
     if (stage === "submitted" || !currentExam) return;
     const timer = setInterval(() => {
-      setExamState((prev) =>
-        mergeExamState(prev, {
+      setExamState((prev) => {
+        const next = mergeExamState(prev, {
           [currentExam.instanceId]: {
             remainingSeconds: Math.max(0, (prev[currentExam.instanceId]?.remainingSeconds ?? 0) - 1)
           }
-        })
-      );
+        });
+        examStateRef.current = next;
+        return next;
+      });
     }, 1000);
     return () => clearInterval(timer);
   }, [currentExam, stage]);
@@ -718,11 +782,13 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   async function onAnswer(itemId: string, value: unknown) {
     if (!currentExam) return;
-    setExamState((prev) =>
-      mergeExamState(prev, {
+    setExamState((prev) => {
+      const next = mergeExamState(prev, {
         [currentExam.instanceId]: { answers: { [itemId]: value } }
-      })
-    );
+      });
+      examStateRef.current = next;
+      return next;
+    });
     setVisited((prev) => ({ ...prev, [itemId]: true }));
     await persistAutosave({
       stage: currentExam.instanceId,
@@ -785,6 +851,7 @@ export function RuntimeClient(props: RuntimeClientProps) {
 
   async function confirmSectionStart() {
     if (!pendingTransition) return;
+    stageRef.current = pendingTransition.to;
     setStage(pendingTransition.to);
     setPendingTransition(null);
     await persistAutosave({ stage: pendingTransition.to });
