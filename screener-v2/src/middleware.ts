@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import {
-  isAdminOnlyPath,
-  isAuthRequiredPath
-} from "@/lib/auth/policy";
-import { SESSION_COOKIE_NAME, sanitizeNextPath, verifySessionToken } from "@/lib/auth/session";
+import { isAuthRequiredPath } from "@/lib/auth/policy";
+import { SESSION_COOKIE_NAME, sanitizeNextPath } from "@/lib/auth/session";
 
 function unauthorizedApi(message: string, status = 401) {
   return NextResponse.json({ ok: false, message }, { status });
@@ -22,25 +19,11 @@ function redirectToLogin(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isApi = pathname.startsWith("/api/");
-  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = await verifySessionToken(token);
-
-  if (pathname === "/login") {
-    if (session) {
-      return NextResponse.redirect(new URL("/create-test", request.url));
-    }
-    return NextResponse.next();
-  }
+  const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   if (isAuthRequiredPath(pathname)) {
-    if (!session) {
+    if (!hasSessionCookie) {
       return isApi ? unauthorizedApi("Login required.") : redirectToLogin(request);
-    }
-
-    if (isAdminOnlyPath(pathname) && session.role !== "admin") {
-      return isApi
-        ? unauthorizedApi("Admin access required.", 403)
-        : NextResponse.redirect(new URL("/create-test", request.url));
     }
   }
 

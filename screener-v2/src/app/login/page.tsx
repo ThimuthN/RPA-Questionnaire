@@ -1,6 +1,9 @@
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { getAppSession } from "@/lib/auth/app-session";
+import { sanitizeNextPath } from "@/lib/auth/session";
 
 export default async function LoginPage({
   searchParams
@@ -8,6 +11,11 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
   const params = await searchParams;
+  const session = await getAppSession();
+
+  if (session) {
+    redirect(sanitizeNextPath(params.next));
+  }
 
   return (
     <SceneShell

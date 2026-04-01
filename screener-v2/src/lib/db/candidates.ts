@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { del } from "@vercel/blob";
 import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import {
@@ -311,6 +312,14 @@ function mapAssessment(
   };
 }
 
+function candidateAssessmentActivityAt(assessment: CandidateAssessmentRecord) {
+  return Date.parse(assessment.submittedAt ?? assessment.startedAt ?? assessment.createdAt);
+}
+
+function sortCandidateAssessmentsByLatestActivity<T extends CandidateAssessmentRecord>(assessments: T[]) {
+  return [...assessments].sort((left, right) => candidateAssessmentActivityAt(right) - candidateAssessmentActivityAt(left));
+}
+
 function mapMilestone(
   row: {
     id: string;
@@ -562,6 +571,11 @@ export async function deleteCandidate(candidateId: string) {
     where: { id: candidateId },
     select: {
       id: true,
+      resumes: {
+        select: {
+          storageKey: true
+        }
+      },
       assessments: {
         select: {
           inviteId: true,
@@ -580,7 +594,6 @@ export async function deleteCandidate(candidateId: string) {
     throw new Error("Candidate not found.");
   }
 
-  const inviteIds = [...new Set(candidate.assessments.map((assessment) => assessment.inviteId))];
   const attemptIds = [
     ...new Set(
       candidate.assessments.flatMap((assessment) => [
@@ -589,6 +602,15 @@ export async function deleteCandidate(candidateId: string) {
       ])
     )
   ];
+  const resumeStorageKeys = [...new Set(candidate.resumes.map((resume) => resume.storageKey).filter(Boolean))];
+
+  if (resumeStorageKeys.length > 0) {
+    try {
+      await del(resumeStorageKeys);
+    } catch {
+      throw new Error("Could not delete candidate resume files.");
+    }
+  }
 
   await prisma.$transaction(async (tx) => {
     const attempts =
@@ -620,16 +642,6 @@ export async function deleteCandidate(candidateId: string) {
         where: {
           id: {
             in: attemptIds
-          }
-        }
-      });
-    }
-
-    if (inviteIds.length > 0) {
-      await tx.invite.deleteMany({
-        where: {
-          id: {
-            in: inviteIds
           }
         }
       });
@@ -1108,7 +1120,6 @@ export async function listCandidates(filters?: {
       },
       assessments: {
         orderBy: { createdAt: "desc" },
-        take: 1,
         include: {
           invite: {
             select: {
@@ -1155,14 +1166,24 @@ export async function listCandidates(filters?: {
     }
   });
 
-  const attemptIds = rows
-    .map((row) => row.assessments[0]?.attemptId)
-    .filter((value): value is string => Boolean(value));
+  const attemptIds = rows.flatMap((row) =>
+    row.assessments
+      .map((assessment) => assessment.attemptId)
+      .filter((value): value is string => Boolean(value))
+  );
   const resultsByAttemptId = await loadResultsByAttemptId(attemptIds);
 
   const mapped = rows.map((row) => {
     const base = mapCandidate(row);
-    const latest = row.assessments[0] ?? null;
+    const assessments = sortCandidateAssessmentsByLatestActivity(
+      row.assessments.map((assessment) =>
+        mapAssessment(
+          assessment,
+          assessment.attemptId ? resultsByAttemptId.get(assessment.attemptId) ?? null : null
+        )
+      )
+    );
+    const latest = assessments[0] ?? null;
 
     return {
       ...base,
@@ -1336,17 +1357,20 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
         : null
     )
   );
+  const assessments = sortCandidateAssessmentsByLatestActivity(
+    row.assessments.map((assessment) =>
+      mapAssessment(
+        assessment,
+        assessment.attemptId ? resultsByAttemptId.get(assessment.attemptId) ?? null : null
+      )
+    )
+  );
 
   return {
     ...mapCandidate(row),
     resumes: row.resumes.map(mapResume),
     notes: row.notes.map((note) => mapNote(note, note.createdById ? authorsById.get(note.createdById) ?? null : null)),
-    assessments: row.assessments.map((assessment) =>
-      mapAssessment(
-        assessment,
-        assessment.attemptId ? resultsByAttemptId.get(assessment.attemptId) ?? null : null
-      )
-    ),
+    assessments,
     milestones,
     currentFocus: currentFocusFromMilestones(milestones)
   };

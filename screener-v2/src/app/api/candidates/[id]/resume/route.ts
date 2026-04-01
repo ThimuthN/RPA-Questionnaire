@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { del, put } from "@vercel/blob";
 import { requireApiSession } from "@/lib/auth/guards";
 import {
   getLatestCandidateResume
@@ -61,14 +61,20 @@ export async function POST(
       contentType: file.type
     });
 
-    const resume = await persistCandidateResumeUpload({
-      candidateId: id,
-      fileName: file.name,
-      mimeType: file.type,
-      sizeBytes: file.size,
-      storageKey: blob.pathname,
-      storageUrl: blob.url
-    });
+    let resume;
+    try {
+      resume = await persistCandidateResumeUpload({
+        candidateId: id,
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+        storageKey: blob.pathname,
+        storageUrl: blob.url
+      });
+    } catch (error) {
+      await del(blob.pathname);
+      throw error;
+    }
 
     return NextResponse.json({ ok: true, resume });
   } catch (error) {
