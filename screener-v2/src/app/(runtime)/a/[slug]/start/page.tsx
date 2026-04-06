@@ -93,27 +93,41 @@ function InviteStartContent() {
     async function hydrateInviteMeta() {
       setDetailsLoading(true);
       setError("");
-      const response = await fetch("/api/invites/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          token
-            ? { token, passcode: passcode || undefined }
-            : { slug: params.slug, passcode: passcode || undefined }
-        )
-      });
-      const data = (await response.json()) as InviteValidationResponse;
-      if (!active) return;
+      try {
+        const response = await fetch("/api/invites/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            token
+              ? { token, passcode: passcode || undefined }
+              : { slug: params.slug, passcode: passcode || undefined }
+          )
+        });
+        const data = (await response.json()) as InviteValidationResponse;
+        if (!active) return;
 
-      setValidationState(data.state);
-      setValidationMessage(data.message || "Could not load test details.");
-      setRemainingAttempts(typeof data.remainingAttempts === "number" ? data.remainingAttempts : 0);
-      setInviteMeta(data.invite);
-      setTotalDurationMinutes(
-        typeof data.totalDurationMinutes === "number" ? data.totalDurationMinutes : null
-      );
-      setStacks(data.invite?.stacks ?? []);
-      setDetailsLoading(false);
+        setValidationState(data.state);
+        setValidationMessage(data.message || "Could not load test details.");
+        setRemainingAttempts(typeof data.remainingAttempts === "number" ? data.remainingAttempts : 0);
+        setInviteMeta(data.invite);
+        setTotalDurationMinutes(
+          typeof data.totalDurationMinutes === "number" ? data.totalDurationMinutes : null
+        );
+        setStacks(data.invite?.stacks ?? []);
+      } catch {
+        if (!active) return;
+        setValidationState("invalid");
+        setValidationMessage("Could not load assessment access. Refresh the page and try again.");
+        setRemainingAttempts(0);
+        setInviteMeta(null);
+        setTotalDurationMinutes(null);
+        setStacks([]);
+        setError("Could not load assessment details. Refresh the page and try again.");
+      } finally {
+        if (active) {
+          setDetailsLoading(false);
+        }
+      }
     }
 
     void hydrateInviteMeta();
@@ -123,61 +137,64 @@ function InviteStartContent() {
   }, [params.slug, passcode, token]);
 
   async function onStart() {
-    setLoading(true);
-    setError("");
     if (!hasExams) {
       setError("Test details are not ready.");
-      setLoading(false);
       return;
     }
-    const validateResponse = await fetch("/api/invites/validate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(token ? { token, passcode } : { slug: params.slug, passcode })
-    });
-    const validated = (await validateResponse.json()) as InviteValidationResponse;
-    setValidationState(validated.state);
-    setValidationMessage(validated.message);
-    setRemainingAttempts(
-      typeof validated.remainingAttempts === "number" ? validated.remainingAttempts : 0
-    );
-    if (!validated.ok || !validated.invite) {
-      setError(validated.message || "Invite check failed.");
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
+    setError("");
+    try {
+      const validateResponse = await fetch("/api/invites/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(token ? { token, passcode } : { slug: params.slug, passcode })
+      });
+      const validated = (await validateResponse.json()) as InviteValidationResponse;
+      setValidationState(validated.state);
+      setValidationMessage(validated.message);
+      setRemainingAttempts(
+        typeof validated.remainingAttempts === "number" ? validated.remainingAttempts : 0
+      );
+      if (!validated.ok || !validated.invite) {
+        setError(validated.message || "Assessment access could not be confirmed. Check your details and try again.");
+        return;
+      }
 
-    const invite = validated.invite;
-    const effectiveStacks = invite.stacks?.length ? invite.stacks : stacks;
-    setInviteMeta(invite);
-    setTotalDurationMinutes(
-      typeof validated.totalDurationMinutes === "number" ? validated.totalDurationMinutes : null
-    );
-    setStacks(effectiveStacks);
+      const invite = validated.invite;
+      const effectiveStacks = invite.stacks?.length ? invite.stacks : stacks;
+      setInviteMeta(invite);
+      setTotalDurationMinutes(
+        typeof validated.totalDurationMinutes === "number" ? validated.totalDurationMinutes : null
+      );
+      setStacks(effectiveStacks);
 
-    const startResponse = await fetch("/api/attempts/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        inviteToken: token || undefined,
-        inviteSlug: token ? undefined : params.slug,
-        passcode: passcode || undefined,
-        participant: {
-          kind: "candidate",
-          fullName,
-          email,
-          phone
-        },
-        stacks: effectiveStacks
-      })
-    });
-    const started = await startResponse.json();
-    if (!started.ok) {
-      setError(started.message || "Could not start assessment.");
+      const startResponse = await fetch("/api/attempts/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          inviteToken: token || undefined,
+          inviteSlug: token ? undefined : params.slug,
+          passcode: passcode || undefined,
+          participant: {
+            kind: "candidate",
+            fullName,
+            email,
+            phone
+          },
+          stacks: effectiveStacks
+        })
+      });
+      const started = await startResponse.json();
+      if (!started.ok) {
+        setError(started.message || "Could not start assessment. Please try again.");
+        return;
+      }
+      router.push(`/a/${params.slug}/attempt/${started.attemptId}`);
+    } catch {
+      setError("Could not start assessment. Check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push(`/a/${params.slug}/attempt/${started.attemptId}`);
   }
 
   return (

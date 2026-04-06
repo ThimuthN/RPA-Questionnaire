@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState, type ReactNode } from "react";
 import type { AddonCatalogEntry, AssessmentPresetEntry } from "@/lib/addons/catalog";
 import { buildDraftFromAddon, buildDraftsFromPreset } from "@/lib/addons/catalog";
@@ -19,7 +19,6 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StepRail } from "@/components/primitives/StepRail";
 import { SceneShell } from "@/components/scene/SceneShell";
-import { StagePanel } from "@/components/scene/StagePanel";
 import {
   deriveExamSelectionMetadata,
   examCatalog,
@@ -155,6 +154,13 @@ function moveItem<T>(items: T[], index: number, direction: -1 | 1) {
   return next;
 }
 
+function stepRailGridClassName(stepCount: number) {
+  if (stepCount <= 1) return "md:grid-cols-1";
+  if (stepCount === 2) return "md:grid-cols-2";
+  if (stepCount === 3) return "md:grid-cols-3";
+  return "md:grid-cols-4";
+}
+
 function ScoreMixBar({ exams, total }: { exams: PreviewExam[]; total: number }) {
   const remaining = Math.max(0, 100 - total);
 
@@ -284,7 +290,7 @@ export function CreateAssessmentBuilder({
   const [step, setStep] = useState<WizardStep>("select");
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
   const [selectedExams, setSelectedExams] = useState<ExamBlueprintDraftItem[]>([]);
-  const [passTarget, setPassTarget] = useState(60);
+  const passTarget = 60;
   const [integrityPreset, setIntegrityPreset] = useState<IntegrityPresetId>("standard");
   const [configuringAddonId, setConfiguringAddonId] = useState<string | null>(null);
   const [configuringExam, setConfiguringExam] = useState<ExamBlueprintDraftItem | null>(null);
@@ -421,56 +427,59 @@ export function CreateAssessmentBuilder({
     setLoading(true);
     setError("");
     setInvite(null);
-
-    const response = await fetch("/api/invites/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        assessmentVersionId: "v1-default",
-        mode: "candidate",
-        contextType: linkedCandidateId ? "hiring" : "general",
-        candidateId: linkedCandidateId,
-        candidateMilestoneId: linkedCandidateMilestoneId,
-        integrityPreset,
-        roleLocked: true,
-        stackLocked: true,
-        passTarget,
-        blueprint: {
-          exams: previewExams.map((exam) => ({
-            definitionId: exam.definitionId,
-            sourceAddonId: exam.sourceAddonId,
-            sourcePresetId: exam.sourcePresetId,
-            label: exam.label,
-            description: exam.description,
-            config: exam.config,
-            durationMinutes: exam.durationMinutes,
-            weight: exam.weight,
-            weightMode: exam.weightMode,
-            requiredPercent: exam.requiredPercent,
-            requiredPercentMode: exam.requiredPercentMode
-          }))
-        },
-        withPasscode: true,
-        maxAttempts: 1
-      })
-    });
-
-    const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
-    if (data.ok) {
-      setInvite({
-        entryUrl: data.entryUrl,
-        token: data.token,
-        passcode: data.passcode,
-        slug: data.slug,
-        inviteId: data.inviteId
+    try {
+      const response = await fetch("/api/invites/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assessmentVersionId: "v1-default",
+          mode: "candidate",
+          contextType: linkedCandidateId ? "hiring" : "general",
+          candidateId: linkedCandidateId,
+          candidateMilestoneId: linkedCandidateMilestoneId,
+          integrityPreset,
+          roleLocked: true,
+          stackLocked: true,
+          passTarget,
+          blueprint: {
+            exams: previewExams.map((exam) => ({
+              definitionId: exam.definitionId,
+              sourceAddonId: exam.sourceAddonId,
+              sourcePresetId: exam.sourcePresetId,
+              label: exam.label,
+              description: exam.description,
+              config: exam.config,
+              durationMinutes: exam.durationMinutes,
+              weight: exam.weight,
+              weightMode: exam.weightMode,
+              requiredPercent: exam.requiredPercent,
+              requiredPercentMode: exam.requiredPercentMode
+            }))
+          },
+          withPasscode: true,
+          maxAttempts: 1
+        })
       });
-      setStep("share");
-      setLoading(false);
-      return;
-    }
 
-    setError(data.message || "Could not generate access.");
-    setLoading(false);
+      const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
+      if (data.ok) {
+        setInvite({
+          entryUrl: data.entryUrl,
+          token: data.token,
+          passcode: data.passcode,
+          slug: data.slug,
+          inviteId: data.inviteId
+        });
+        setStep("share");
+        return;
+      }
+
+      setError(data.message || "Could not generate access. Review the setup and try again.");
+    } catch {
+      setError("Could not generate access. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const summaryContent = (
@@ -576,7 +585,7 @@ export function CreateAssessmentBuilder({
       <div className="space-y-4">
         <StepRail
           activeId={step}
-          className={`md:grid-cols-${visibleStepIds.length}`}
+          className={stepRailGridClassName(visibleStepIds.length)}
           steps={visibleStepIds.map((id) => ({
             id,
             label: id === "select" ? "Select" : id === "customize" ? "Customize" : id === "calibrate" ? "Score" : "Share"

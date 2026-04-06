@@ -47,6 +47,8 @@ type PageState = {
   skipped?: string;
 };
 
+const transientBannerKeys = ["deleted", "error", "updated", "imported", "skipped"] as const;
+
 function messageTone(type: "success" | "error") {
   return type === "success"
     ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
@@ -110,7 +112,12 @@ export default async function PeopleCandidatesPage({
   const params = await searchParams;
   const query = new URLSearchParams(
     Object.entries(params)
-      .filter(([, value]) => typeof value === "string" && value.length > 0)
+      .filter(
+        ([key, value]) =>
+          typeof value === "string" &&
+          value.length > 0 &&
+          !transientBannerKeys.includes(key as (typeof transientBannerKeys)[number])
+      )
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
@@ -152,7 +159,10 @@ export default async function PeopleCandidatesPage({
           </div>
         }
       >
-        <PersistedTableState storageKey="people-candidates-table-view" />
+        <PersistedTableState
+          storageKey="people-candidates-table-view"
+          transientKeys={[...transientBannerKeys]}
+        />
         <StaggerGroup className="space-y-5" delay={0.04}>
           {params.deleted ? <StaggerItem><div className={messageTone("success")}>Candidate deleted.</div></StaggerItem> : null}
           {params.updated ? <StaggerItem><div className={messageTone("success")}>Updated {params.updated} candidate(s).</div></StaggerItem> : null}

@@ -18,8 +18,6 @@ interface QuestionRuntimeCardProps {
   question: any;
   answer: any;
   onChange: (value: any) => void;
-  sectionLabel?: string;
-  sectionSummary?: string;
   questionIndex?: number;
   questionCount?: number;
 }
@@ -78,8 +76,6 @@ export function QuestionRuntimeCard({
   question,
   answer,
   onChange,
-  sectionLabel,
-  sectionSummary,
   questionIndex,
   questionCount
 }: QuestionRuntimeCardProps) {

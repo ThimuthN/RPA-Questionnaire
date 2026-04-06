@@ -1105,6 +1105,10 @@ export async function startAttempt(input: {
     }
   }
 
+  if (!attempt) {
+    throw new Error("Attempt could not be started.");
+  }
+
   return { attempt: mapAttempt(attempt), blueprint };
 }
 

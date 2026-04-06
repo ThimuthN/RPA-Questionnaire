@@ -263,13 +263,6 @@ export function AddonLibraryClient({
     });
   }
 
-  function startNewAddon() {
-    setViewMode("addons");
-    setEditingAddonId(null);
-    setAddonForm(baseAddonForm());
-    setAddonModalOpen(true);
-  }
-
   function startNewPreset() {
     setViewMode("presets");
     setEditingPresetId(null);

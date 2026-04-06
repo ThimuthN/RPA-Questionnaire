@@ -16,7 +16,6 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
-  const { session } = auth;
 
   try {
     const rawBody = isFormRequest(request)

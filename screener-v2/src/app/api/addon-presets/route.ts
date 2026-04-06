@@ -20,6 +20,11 @@ const presetSchema = z.object({
 });
 
 export async function GET(request: Request) {
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const { searchParams } = new URL(request.url);
   const includeInactive = searchParams.get("includeInactive") === "1";
   const presets = await listAssessmentPresets(includeInactive);

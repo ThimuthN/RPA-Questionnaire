@@ -35,6 +35,7 @@ export function ResultsFiltersModal({
     stage?: string;
     scoreBand?: string;
     pageSize?: string;
+    compare?: string;
   };
   roleOptions: Option[];
   ownerOptions: Option[];
@@ -117,6 +118,7 @@ export function ResultsFiltersModal({
                       <input type="hidden" name="sort" value={current.sort ?? "newest"} />
                       <input type="hidden" name="status" value={current.status ?? ""} />
                       <input type="hidden" name="pageSize" value={current.pageSize ?? "12"} />
+                      <input type="hidden" name="compare" value={current.compare ?? ""} />
 
                       <div className="grid gap-4 md:grid-cols-2">
                         <FilterField label="Review state">

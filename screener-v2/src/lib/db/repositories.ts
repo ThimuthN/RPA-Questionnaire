@@ -15,6 +15,7 @@ export {
   getNextUnreviewedAttemptId,
   getResult,
   getScoreContextForAttempt,
+  listAllResultWorkspaceRows,
   listResults,
   listResultWorkspacePage,
   type ResultWorkspacePage

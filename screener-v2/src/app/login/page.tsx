@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
@@ -14,7 +15,7 @@ export default async function LoginPage({
   const session = await getAppSession();
 
   if (session) {
-    redirect(sanitizeNextPath(params.next));
+    redirect(sanitizeNextPath(params.next) as Route);
   }
 
   return (

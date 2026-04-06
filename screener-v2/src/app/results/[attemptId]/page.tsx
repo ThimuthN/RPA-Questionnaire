@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
 import { getDetailedResult, getNextUnreviewedAttemptId, getScoreContextForAttempt } from "@/lib/db/repositories";
+import { ResultDecisionActions } from "@/components/results/ResultDecisionActions";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
 import { ResultReviewSections } from "@/components/results/ResultReviewSections";
 import { StickyDecisionBar } from "@/components/results/StickyDecisionBar";
@@ -86,7 +87,7 @@ export default async function ResultDetailPage({
           </Link>
           {nextUnreviewedId && nextUnreviewedId !== attemptId && (
             <Link href={`/results/${nextUnreviewedId}`}>
-              <Button variant="secondary">Next unreviewed →</Button>
+              <Button variant="secondary">Next unreviewed -&gt;</Button>
             </Link>
           )}
           <form action={`/api/results/${attemptId}/delete`} method="post">
@@ -184,27 +185,14 @@ export default async function ResultDetailPage({
                   <p className="text-sm text-slate-300">{candidate.email}</p>
                   {candidate.notesSummary ? <p className="text-sm text-brand-100">{candidate.notesSummary}</p> : null}
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <form action="/api/results/bulk" method="post">
-                      <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                      <input type="hidden" name="action" value="set_ui_status" />
-                      <input type="hidden" name="status" value="moved_forward" />
-                      <input type="hidden" name="attemptId" value={attemptId} />
-                      <Button type="submit">Move forward</Button>
-                    </form>
-                    <form action="/api/results/bulk" method="post">
-                      <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                      <input type="hidden" name="action" value="set_ui_status" />
-                      <input type="hidden" name="status" value="need_review" />
-                      <input type="hidden" name="attemptId" value={attemptId} />
-                      <Button type="submit" variant="secondary">Keep in review</Button>
-                    </form>
-                    <form action="/api/results/bulk" method="post">
-                      <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                      <input type="hidden" name="action" value="set_ui_status" />
-                      <input type="hidden" name="status" value="rejected" />
-                      <input type="hidden" name="attemptId" value={attemptId} />
-                      <Button type="submit" variant="secondary">Reject</Button>
-                    </form>
+                    <ResultDecisionActions
+                      attemptId={attemptId}
+                      renderAction={(action) => (
+                        <Button type="submit" variant={action.buttonVariant}>
+                          {action.label}
+                        </Button>
+                      )}
+                    />
                     <Link href={`/candidates/${candidate.id}`}>
                       <Button variant="secondary">Open candidate</Button>
                     </Link>
@@ -246,7 +234,6 @@ export default async function ResultDetailPage({
         score={row.finalPercent}
         resultStatus={row.pass ? "pass" : row.borderline ? "review" : "fail"}
         hasLinkedCandidate={!!candidate}
-        candidateId={candidate?.id}
         nextUnreviewedId={nextUnreviewedId ?? undefined}
       />
     </SceneShell>

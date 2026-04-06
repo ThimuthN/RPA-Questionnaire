@@ -63,4 +63,23 @@ describe("candidate workspace", () => {
     const sorted = sortCandidateWorkspaceItems([emptyCandidate, reviewCandidate], "inbox");
     expect(sorted[0]?.id).toBe("review");
   });
+
+  it("uses the newest assessment timestamp as latest activity", () => {
+    const row = toCandidateWorkspaceItem(
+      candidate({
+        updatedAt: "2026-03-20T00:00:00.000Z",
+        latestAssessment: {
+          id: "assessment-3",
+          inviteId: "invite-3",
+          inviteSlug: "latest",
+          createdAt: "2026-03-21T00:00:00.000Z",
+          startedAt: "2026-03-22T00:00:00.000Z",
+          submittedAt: "2026-03-23T00:00:00.000Z",
+          status: "review"
+        }
+      })
+    );
+
+    expect(row.latestActivityAt).toBe("2026-03-23T00:00:00.000Z");
+  });
 });

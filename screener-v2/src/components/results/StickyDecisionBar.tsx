@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ResultDecisionActions } from "@/components/results/ResultDecisionActions";
 
 interface StickyDecisionBarProps {
   attemptId: string;
@@ -9,7 +10,6 @@ interface StickyDecisionBarProps {
   score: number;
   resultStatus: "pass" | "review" | "fail";
   hasLinkedCandidate: boolean;
-  candidateId?: string;
   nextUnreviewedId?: string;
 }
 
@@ -19,7 +19,6 @@ export function StickyDecisionBar({
   score,
   resultStatus,
   hasLinkedCandidate,
-  candidateId,
   nextUnreviewedId
 }: StickyDecisionBarProps) {
   const [visible, setVisible] = useState(false);
@@ -51,44 +50,14 @@ export function StickyDecisionBar({
 
         <div className="flex flex-wrap items-center gap-2">
           {hasLinkedCandidate && (
-            <>
-              <form action="/api/results/bulk" method="post">
-                <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                <input type="hidden" name="action" value="set_ui_status" />
-                <input type="hidden" name="status" value="moved_forward" />
-                <input type="hidden" name="attemptId" value={attemptId} />
-                <button
-                  type="submit"
-                  className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100 transition hover:bg-emerald-500/25"
-                >
-                  Move forward
+            <ResultDecisionActions
+              attemptId={attemptId}
+              renderAction={(action) => (
+                <button type="submit" className={action.barButtonClassName}>
+                  {action.label}
                 </button>
-              </form>
-              <form action="/api/results/bulk" method="post">
-                <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                <input type="hidden" name="action" value="set_ui_status" />
-                <input type="hidden" name="status" value="need_review" />
-                <input type="hidden" name="attemptId" value={attemptId} />
-                <button
-                  type="submit"
-                  className="rounded-full border border-amber-400/30 bg-amber-500/15 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/25"
-                >
-                  Keep in review
-                </button>
-              </form>
-              <form action="/api/results/bulk" method="post">
-                <input type="hidden" name="returnTo" value={`/results/${attemptId}`} />
-                <input type="hidden" name="action" value="set_ui_status" />
-                <input type="hidden" name="status" value="rejected" />
-                <input type="hidden" name="attemptId" value={attemptId} />
-                <button
-                  type="submit"
-                  className="rounded-full border border-red-400/30 bg-red-500/15 px-4 py-2 text-sm text-red-100 transition hover:bg-red-500/25"
-                >
-                  Reject
-                </button>
-              </form>
-            </>
+              )}
+            />
           )}
 
           {nextUnreviewedId && (
@@ -96,7 +65,7 @@ export function StickyDecisionBar({
               href={`/results/${nextUnreviewedId}`}
               className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-slate-100 transition hover:border-brand-300/60 hover:bg-white/[0.08]"
             >
-              Next unreviewed →
+              Next unreviewed -&gt;
             </Link>
           )}
         </div>

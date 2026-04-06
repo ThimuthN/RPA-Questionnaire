@@ -37,12 +37,6 @@ function statusTone(status: string): "neutral" | "emerald" | "teal" {
   return "neutral";
 }
 
-function reviewTone(status?: string): "amber" | "emerald" | "red" {
-  if (status === "flagged") return "red";
-  if (status === "reviewed") return "emerald";
-  return "amber";
-}
-
 function contextLabel(value: string) {
   return value
     .split("_")
@@ -221,7 +215,7 @@ export default async function PeopleEmployeesPage({
                           </td>
                           <td className={tableCellClassName}>{employee.completedCount}</td>
                           <td className={tableCellClassName}>
-                            {employee.latestSubmittedAt ? new Date(employee.latestSubmittedAt).toLocaleDateString() : "—"}
+                            {employee.latestSubmittedAt ? new Date(employee.latestSubmittedAt).toLocaleDateString() : "-"}
                           </td>
                           <td className={tableCellClassName}>
                             <div className="flex justify-end whitespace-nowrap">
@@ -230,7 +224,7 @@ export default async function PeopleEmployeesPage({
                                   View result
                                 </Link>
                               ) : (
-                                <span className="text-xs text-[color:var(--app-muted)]">—</span>
+                                <span className="text-xs text-[color:var(--app-muted)]">-</span>
                               )}
                             </div>
                           </td>

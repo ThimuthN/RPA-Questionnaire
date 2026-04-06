@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { del } from "@vercel/blob";
 import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
@@ -32,6 +31,7 @@ import type {
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { linkCandidateAssessmentAttemptInTx } from "@/lib/db/candidate-assessment-links";
 import { cuidLike } from "@/lib/tokens/token-service";
+import { logError } from "@/lib/server/logger";
 
 
 export interface CandidateRecord {
@@ -604,14 +604,6 @@ export async function deleteCandidate(candidateId: string) {
   ];
   const resumeStorageKeys = [...new Set(candidate.resumes.map((resume) => resume.storageKey).filter(Boolean))];
 
-  if (resumeStorageKeys.length > 0) {
-    try {
-      await del(resumeStorageKeys);
-    } catch {
-      throw new Error("Could not delete candidate resume files.");
-    }
-  }
-
   await prisma.$transaction(async (tx) => {
     const attempts =
       attemptIds.length > 0
@@ -663,6 +655,18 @@ export async function deleteCandidate(candidateId: string) {
       }
     }
   });
+
+  if (resumeStorageKeys.length > 0) {
+    try {
+      await del(resumeStorageKeys);
+    } catch (error) {
+      logError("candidate.resume_cleanup_failed", {
+        candidateId,
+        resumeStorageKeys,
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }
 }
 
 export async function addCandidateResume(input: {
@@ -1191,11 +1195,6 @@ export async function listCandidates(filters?: {
       latestResumeStorageKey: row.resumes[0]?.storageKey ?? undefined,
       currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
       latestAssessment: latest
-        ? mapAssessment(
-            latest,
-            latest.attemptId ? resultsByAttemptId.get(latest.attemptId) ?? null : null
-          )
-        : null
     } satisfies CandidateListItem;
   });
 

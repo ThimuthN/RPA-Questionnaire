@@ -18,41 +18,46 @@ function EmployeeVerifyContent() {
   async function onVerify() {
     setLoading(true);
     setError("");
-    const verifyResponse = await fetch("/api/auth/magic/verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, fullName })
-    });
-    const verified = await verifyResponse.json();
-    if (!verified.ok) {
-      setError(verified.message || "Verification failed.");
-      setLoading(false);
-      return;
-    }
+    setVerified(false);
+    try {
+      const verifyResponse = await fetch("/api/auth/magic/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, fullName })
+      });
+      const verified = await verifyResponse.json();
+      if (!verified.ok) {
+        setError(verified.message || "Verification failed. Check the link and try again.");
+        return;
+      }
 
-    const startResponse = await fetch("/api/attempts/start", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        runtimeSlug: "internal",
-        participant: {
-          kind: "employee",
-          fullName: fullName || "Employee",
-          email: verified.session.email
-        },
-        roleId: "Associate",
-        stacks: ["UiPath"]
-      })
-    });
-    const started = await startResponse.json();
-    if (!started.ok) {
-      setError(started.message || "Unable to start assessment.");
+      const startResponse = await fetch("/api/attempts/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          runtimeSlug: "internal",
+          participant: {
+            kind: "employee",
+            fullName: fullName || "Employee",
+            email: verified.session.email
+          },
+          roleId: "Associate",
+          stacks: ["UiPath"]
+        })
+      });
+      const started = await startResponse.json();
+      if (!started.ok) {
+        setError(started.message || "Unable to start assessment. Please try again.");
+        return;
+      }
+      setVerified(true);
+      await new Promise((resolve) => setTimeout(resolve, 420));
+      router.push(`/a/internal/attempt/${started.attemptId}`);
+    } catch {
+      setError("Verification could not be completed. Check your connection and try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-    setVerified(true);
-    await new Promise((resolve) => setTimeout(resolve, 420));
-    router.push(`/a/internal/attempt/${started.attemptId}`);
   }
 
   return (

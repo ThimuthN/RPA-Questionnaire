@@ -52,11 +52,24 @@ function latestAssessmentStatus(candidate: CandidateListItem): CandidateAssessme
 }
 
 function latestActivityAt(candidate: CandidateListItem) {
-  const dates = [candidate.updatedAt];
-  if (candidate.latestAssessment?.submittedAt) dates.push(candidate.latestAssessment.submittedAt);
-  if (candidate.latestAssessment?.startedAt) dates.push(candidate.latestAssessment.startedAt);
-  if (candidate.latestAssessment?.createdAt) dates.push(candidate.latestAssessment.createdAt);
-  return [...dates].sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? candidate.updatedAt;
+  let latestAt = candidate.updatedAt;
+  let latestTime = Date.parse(latestAt);
+
+  for (const date of [
+    candidate.latestAssessment?.submittedAt,
+    candidate.latestAssessment?.startedAt,
+    candidate.latestAssessment?.createdAt
+  ]) {
+    if (!date) continue;
+
+    const parsed = Date.parse(date);
+    if (parsed > latestTime) {
+      latestAt = date;
+      latestTime = parsed;
+    }
+  }
+
+  return latestAt;
 }
 
 function openWorkBucket(args: {
@@ -67,9 +80,6 @@ function openWorkBucket(args: {
   nextAction: CandidateNextAction;
 }) {
   if (!args.hasResume) return "needs_resume" as const;
-  if (args.staleDays >= 7 && args.uiStatus !== "moved_forward" && args.uiStatus !== "rejected") {
-    return "stalled" as const;
-  }
   if (args.assessmentStatus === "none") return "test_not_sent" as const;
   if (
     args.assessmentStatus === "passed" ||
@@ -79,17 +89,21 @@ function openWorkBucket(args: {
   ) {
     return "ready_for_review" as const;
   }
+  if (args.staleDays >= 7 && args.uiStatus !== "moved_forward" && args.uiStatus !== "rejected") {
+    return "stalled" as const;
+  }
   if (args.uiStatus === "moved_forward") return "moved_forward" as const;
   return "in_progress" as const;
 }
 
 export function toCandidateWorkspaceItem(candidate: CandidateListItem): CandidateWorkspaceItem {
+  const assessmentStatus = latestAssessmentStatus(candidate);
   const uiStatus = getCandidateUiStatus({
     stage: candidate.stage,
     finalDecision: candidate.finalDecision,
     nextAction: candidate.nextAction,
     screeningStatus: candidate.screeningStatus,
-    latestAssessmentStatus: latestAssessmentStatus(candidate)
+    latestAssessmentStatus: assessmentStatus
   });
   const activityAt = latestActivityAt(candidate);
   const staleDays = daysSince(activityAt);
@@ -97,14 +111,14 @@ export function toCandidateWorkspaceItem(candidate: CandidateListItem): Candidat
   return {
     ...candidate,
     uiStatus,
-    latestAssessmentStatus: latestAssessmentStatus(candidate),
+    latestAssessmentStatus: assessmentStatus,
     latestActivityAt: activityAt,
     staleDays,
     openWorkBucket: openWorkBucket({
       hasResume: candidate.hasResume,
       uiStatus,
       staleDays,
-      assessmentStatus: latestAssessmentStatus(candidate),
+      assessmentStatus,
       nextAction: candidate.nextAction
     })
   };

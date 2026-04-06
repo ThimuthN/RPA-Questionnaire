@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
-import { listResultWorkspacePage } from "@/lib/db/repositories";
+import { listAllResultWorkspaceRows } from "@/lib/db/repositories";
+import { parseResultsWorkspaceQuery } from "@/lib/results/query";
 
 export async function GET(request: Request) {
   const auth = await requireApiSession();
@@ -9,25 +10,8 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const rows = (
-    await listResultWorkspacePage({
-      q: searchParams.get("q") || undefined,
-      status: (searchParams.get("status") as "pass" | "review" | "fail" | null) ?? undefined,
-      reviewState:
-        (searchParams.get("reviewState") as "unreviewed" | "reviewed" | "flagged" | null) ?? undefined,
-      contextType:
-        (searchParams.get("contextType") as "general" | "hiring" | "promotion" | "training" | "certification" | null) ??
-        undefined,
-      integrity: (searchParams.get("integrity") as "clean" | "watch" | "review" | null) ?? undefined,
-      role: (searchParams.get("role") as "Intern" | "Associate" | "SE" | "SeniorSE" | "TechLead" | null) ?? undefined,
-      owner: searchParams.get("owner") || undefined,
-      stage: (searchParams.get("stage") as "new" | "screening" | "interview" | "testing" | "decision" | "offer" | "closed" | null) ?? undefined,
-      scoreBand: (searchParams.get("scoreBand") as "high" | "mid" | "low" | null) ?? undefined,
-      sort: (searchParams.get("sort") as "newest" | "score_desc" | "score_asc" | "risk_desc" | "stale_desc" | null) ?? undefined,
-      page: 1,
-      pageSize: 2000
-    })
-  ).rows;
+  const query = parseResultsWorkspaceQuery(searchParams, { page: 1, pageSize: 2000 });
+  const rows = await listAllResultWorkspaceRows(query);
   return NextResponse.json({
     ok: true,
     exportedAt: new Date().toISOString(),

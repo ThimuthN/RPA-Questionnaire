@@ -34,22 +34,18 @@ function ItemIcon({ state }: { state: NavigatorItemState }) {
 export function NavigatorRail({
   items,
   statusLabel,
-  statusTone,
   onNextUnanswered,
   answeredCount,
   unansweredCount,
   flaggedCount,
-  totalCount,
   className
 }: {
   items: NavigatorItem[];
   statusLabel: string;
-  statusTone: "blue" | "teal" | "emerald" | "amber" | "red" | "neutral";
   onNextUnanswered: () => void;
   answeredCount: number;
   unansweredCount: number;
   flaggedCount: number;
-  totalCount: number;
   className?: string;
 }) {
   const reduceMotion = useReducedMotion();

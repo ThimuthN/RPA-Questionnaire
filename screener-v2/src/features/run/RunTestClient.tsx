@@ -133,52 +133,63 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
     setLoading(true);
     setError("");
     setLiveInvite(null);
-    const response = await fetch("/api/invites/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        assessmentVersionId: "v1-default",
-        mode: "live",
-        integrityPreset: liveIntegrityPreset,
-        roleLocked: true,
-        stackLocked: true,
-        roleId: "Associate",
-        stacks: ["UiPath"],
-        sections: ["core", "practical"],
-        withPasscode: true,
-        maxAttempts: 1
-      })
-    });
-    const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
-    if (data.ok) {
-      setLiveInvite({
-        entryUrl: data.entryUrl,
-        token: data.token,
-        passcode: data.passcode,
-        slug: data.slug
+    try {
+      const response = await fetch("/api/invites/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assessmentVersionId: "v1-default",
+          mode: "live",
+          integrityPreset: liveIntegrityPreset,
+          roleLocked: true,
+          stackLocked: true,
+          roleId: "Associate",
+          stacks: ["UiPath"],
+          sections: ["core", "practical"],
+          withPasscode: true,
+          maxAttempts: 1
+        })
       });
-    } else {
-      setError(data.message || "Could not generate live session.");
+      const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
+      if (data.ok) {
+        setLiveInvite({
+          entryUrl: data.entryUrl,
+          token: data.token,
+          passcode: data.passcode,
+          slug: data.slug
+        });
+      } else {
+        setError(data.message || "Could not generate live session. Please try again.");
+      }
+    } catch {
+      setError("Could not generate live session. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function onRequestEmployeeMagic() {
     if (!employeeEmail.trim()) return;
     setLoading(true);
     setError("");
-    const response = await fetch("/api/auth/magic/request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: employeeEmail.trim() })
-    });
-    const data = (await response.json()) as { ok: boolean; devShortcutUrl?: string; message?: string };
-    if (data.ok) {
-      setEmployeeShortcutUrl(data.devShortcutUrl || "");
-    } else {
-      setError(data.message || "Could not send magic link.");
+    setEmployeeShortcutUrl("");
+    try {
+      const response = await fetch("/api/auth/magic/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: employeeEmail.trim() })
+      });
+      const data = (await response.json()) as { ok: boolean; devShortcutUrl?: string; message?: string };
+      if (data.ok) {
+        setEmployeeShortcutUrl(data.devShortcutUrl || "");
+      } else {
+        setError(data.message || "Could not send magic link. Please try again.");
+      }
+    } catch {
+      setError("Could not send magic link. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

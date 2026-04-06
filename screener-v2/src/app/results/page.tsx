@@ -19,19 +19,26 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { ResultsFiltersModal } from "@/components/results/ResultsFiltersModal";
 import { requirePageSession } from "@/lib/auth/guards";
-import { candidateStageLabels, candidateStageValues, type CandidateStage, type CandidateUiStatus } from "@/lib/candidates/types";
+import { candidateStageLabels, candidateStageValues, type CandidateUiStatus } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
+import {
+  integrityRiskLevelValues,
+  parseResultsWorkspaceQuery,
+  resultScoreBandValues,
+  resultStatusFilterValues,
+  toResultsWorkspaceSearchParams
+} from "@/lib/results/query";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
-import type { ResultListSort, ResultScoreBand, WorkspaceResultRow } from "@/lib/results/workspace";
+import type { ResultScoreBand, WorkspaceResultRow } from "@/lib/results/workspace";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-const statusOptions: ResultStatusFilter[] = ["pass", "review", "fail"];
-const integrityOptions: IntegrityRiskLevel[] = ["clean", "watch", "review"];
+const statusOptions: ResultStatusFilter[] = [...resultStatusFilterValues];
+const integrityOptions: IntegrityRiskLevel[] = [...integrityRiskLevelValues];
 const reviewStateOptions: ResultReviewState[] = [...resultReviewStateValues];
 const contextTypeOptions: AssessmentContextType[] = [...assessmentContextTypeValues];
-const scoreBandOptions: ResultScoreBand[] = ["high", "mid", "low"];
+const scoreBandOptions: ResultScoreBand[] = [...resultScoreBandValues];
 
 type PageState = {
   deleted?: string;
@@ -51,6 +58,8 @@ type PageState = {
   pageSize?: string;
   compare?: string;
 };
+
+const transientBannerKeys = ["deleted", "error", "updated"] as const;
 
 function buildHref(params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
   const next = new URLSearchParams(params.toString());
@@ -73,17 +82,6 @@ function toggleCompare(params: URLSearchParams, attemptId: string) {
 
 function toneForStatus(status: ResultStatusFilter) {
   return status === "pass" ? "emerald" : status === "review" ? "amber" : "red";
-}
-
-function toneForIntegrity(level: IntegrityRiskLevel) {
-  return level === "clean" ? "emerald" : level === "watch" ? "amber" : "red";
-}
-
-function toneForLinkedStatus(status: CandidateUiStatus) {
-  if (status === "moved_forward") return "emerald";
-  if (status === "need_review") return "amber";
-  if (status === "rejected") return "red";
-  return "blue";
 }
 
 function linkedStatusLabel(status: CandidateUiStatus) {
@@ -180,39 +178,18 @@ export default async function ResultsPage({
   searchParams: Promise<PageState>;
 }) {
   const pageState = await searchParams;
-  const query = new URLSearchParams(
-    Object.entries(pageState)
-      .filter(([, value]) => typeof value === "string" && value.length > 0)
-      .map(([key, value]) => [key, value as string])
-  );
+  const persistentState = Object.fromEntries(
+    Object.entries(pageState).filter(
+      ([key, value]) =>
+        typeof value === "string" &&
+        value.length > 0 &&
+        !transientBannerKeys.includes(key as (typeof transientBannerKeys)[number])
+    )
+  ) as Record<string, string>;
+  const query = toResultsWorkspaceSearchParams(persistentState);
   const nextPath = `/results${query.toString() ? `?${query.toString()}` : ""}`;
   await requirePageSession(nextPath);
-  const page = await listResultWorkspacePage({
-    q: pageState.q?.trim() || undefined,
-    status: statusOptions.includes(pageState.status as ResultStatusFilter)
-      ? (pageState.status as ResultStatusFilter)
-      : undefined,
-    reviewState: reviewStateOptions.includes(pageState.reviewState as ResultReviewState)
-      ? (pageState.reviewState as ResultReviewState)
-      : undefined,
-    contextType: contextTypeOptions.includes(pageState.contextType as AssessmentContextType)
-      ? (pageState.contextType as AssessmentContextType)
-      : undefined,
-    integrity: integrityOptions.includes(pageState.integrity as IntegrityRiskLevel)
-      ? (pageState.integrity as IntegrityRiskLevel)
-      : undefined,
-    role: pageState.role?.trim() || undefined,
-    owner: pageState.owner?.trim() || undefined,
-    stage: candidateStageValues.includes(pageState.stage as CandidateStage)
-      ? (pageState.stage as CandidateStage)
-      : undefined,
-    scoreBand: scoreBandOptions.includes(pageState.scoreBand as ResultScoreBand)
-      ? (pageState.scoreBand as ResultScoreBand)
-      : undefined,
-    sort: (pageState.sort as ResultListSort) || "newest",
-    page: Number(pageState.page ?? 1),
-    pageSize: Number(pageState.pageSize ?? 12)
-  });
+  const page = await listResultWorkspacePage(parseResultsWorkspaceQuery(pageState));
   const currentPathAndQuery = nextPath;
   const compareIds = compareIdsFromRaw(pageState.compare);
   const comparison =
@@ -241,7 +218,10 @@ export default async function ResultsPage({
           </div>
         }
       >
-        <PersistedTableState storageKey="results-table-view" />
+        <PersistedTableState
+          storageKey="results-table-view"
+          transientKeys={[...transientBannerKeys]}
+        />
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
             <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
@@ -296,7 +276,7 @@ export default async function ResultsPage({
                       <StatusPill label={row.resultStatus} tone={toneForStatus(row.resultStatus)} />
                       <StatusPill label={`${row.finalPercent.toFixed(1)} / 100`} tone="blue" />
                     </div>
-                    <p className="text-sm text-[color:var(--app-text)]">{row.candidateRoleLabel || "General assessment"} · {stackSummary(row)}</p>
+                    <p className="text-sm text-[color:var(--app-text)]">{row.candidateRoleLabel || "General assessment"} - {stackSummary(row)}</p>
                     <p className="text-sm text-[color:var(--app-muted)]">Best area: {strongestArea(row)}</p>
                     <p className="text-sm text-[color:var(--app-muted)]">{linkedWorkflowSummary(row)}</p>
                     <Link href={`/results/${row.attemptId}`}>
@@ -351,6 +331,7 @@ export default async function ResultsPage({
               <input type="hidden" name="stage" value={pageState.stage ?? ""} />
               <input type="hidden" name="scoreBand" value={pageState.scoreBand ?? ""} />
               <input type="hidden" name="pageSize" value={pageState.pageSize ?? String(page.pageSize)} />
+              <input type="hidden" name="compare" value={pageState.compare ?? ""} />
               <div className="flex items-end">
                 <Button>Apply</Button>
               </div>
@@ -368,7 +349,8 @@ export default async function ResultsPage({
                     owner: pageState.owner,
                     stage: pageState.stage,
                     scoreBand: pageState.scoreBand,
-                    pageSize: pageState.pageSize ?? String(page.pageSize)
+                    pageSize: pageState.pageSize ?? String(page.pageSize),
+                    compare: pageState.compare
                   }}
                   roleOptions={page.roleOptions.map((role) => ({ value: role.id, label: role.label }))}
                   ownerOptions={page.ownerOptions.map((owner) => ({ value: owner, label: owner }))}

@@ -39,6 +39,12 @@ export interface ResultWorkspacePage {
   };
 }
 
+type ResultWorkspaceQuery = ResultsWorkspaceFilters & {
+  page?: number;
+  pageSize?: number;
+  attemptIds?: string[];
+};
+
 export async function listResults() {
   const resultRows = await prisma.result.findMany({
     orderBy: { createdAt: "desc" }
@@ -194,16 +200,18 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
     .filter((row): row is WorkspaceResultRow => Boolean(row));
 }
 
+export async function listAllResultWorkspaceRows(
+  filters: Omit<ResultWorkspaceQuery, "page" | "pageSize"> = {}
+) {
+  return filterResultWorkspaceRows(await listWorkspaceResultRows(filters.attemptIds), filters);
+}
+
 export async function listResultWorkspacePage(
-  filters: ResultsWorkspaceFilters & {
-    page?: number;
-    pageSize?: number;
-    attemptIds?: string[];
-  } = {}
+  filters: ResultWorkspaceQuery = {}
 ): Promise<ResultWorkspacePage> {
   const page = Math.max(1, Number(filters.page ?? 1));
   const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
-  const rows = filterResultWorkspaceRows(await listWorkspaceResultRows(filters.attemptIds), filters);
+  const rows = await listAllResultWorkspaceRows(filters);
   const start = (page - 1) * pageSize;
   const roleOptions = (await listRoleCatalog()).map((role) => ({
     id: role.id,
@@ -436,12 +444,12 @@ export async function getScoreContextForAttempt(
   const diff = finalPercent - avg;
   const label =
     diff > 8
-      ? `Top performer â€” ${percentile}th percentile for this role`
+      ? `Top performer - ${percentile}th percentile for this role`
       : diff > 0
-        ? `Above average â€” ${percentile}th percentile for this role`
+        ? `Above average - ${percentile}th percentile for this role`
         : diff > -8
-          ? `Near average â€” ${percentile}th percentile for this role`
-          : `Below average â€” ${percentile}th percentile for this role`;
+          ? `Near average - ${percentile}th percentile for this role`
+          : `Below average - ${percentile}th percentile for this role`;
 
   return { roleAverage: Math.round(avg * 10) / 10, percentile, label };
 }
@@ -506,24 +514,6 @@ export async function deleteResultAttempt(attemptId: string) {
         await syncCandidateAssessmentLatestAttemptInTx({
           tx,
           candidateAssessmentId: link.candidateAssessmentId
-        });
-      }
-
-      const invite = await tx.invite.findUnique({
-        where: { id: attempt.inviteId },
-        select: {
-          usedAttempts: true
-        }
-      });
-
-      if (invite && invite.usedAttempts > 0) {
-        await tx.invite.update({
-          where: { id: attempt.inviteId },
-          data: {
-            usedAttempts: {
-              decrement: 1
-            }
-          }
         });
       }
     }

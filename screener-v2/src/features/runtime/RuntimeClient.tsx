@@ -1031,12 +1031,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
             <NavigatorRail
               items={navigatorItems}
               statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
-              statusTone={nextExam ? "teal" : "emerald"}
               onNextUnanswered={jumpToNextUnanswered}
               answeredCount={progress.answered}
               unansweredCount={currentUnansweredCount}
               flaggedCount={currentFlaggedCount}
-              totalCount={progress.total}
             />
           </div>
 
@@ -1046,8 +1044,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
                 question={currentItem}
                 answer={currentExamState?.answers?.[currentItem!.id]}
                 onChange={(value) => onAnswer(currentItem!.id, value)}
-                sectionLabel={currentExam.label}
-                sectionSummary={currentExam.configSummary}
                 questionIndex={currentIndex}
                 questionCount={currentItems.length}
               />
@@ -1119,12 +1115,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
           <NavigatorRail
             items={navigatorItems}
             statusLabel={nextExam ? `${nextExam.label} next` : "Ready to submit"}
-            statusTone={nextExam ? "teal" : "emerald"}
             onNextUnanswered={jumpToNextUnanswered}
             answeredCount={progress.answered}
             unansweredCount={currentUnansweredCount}
             flaggedCount={currentFlaggedCount}
-            totalCount={progress.total}
           />
         </div>
       ) : null}
