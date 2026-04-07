@@ -14,16 +14,16 @@ export function SignalCard({
   tone: SignalTone;
   className?: string;
 }) {
-  const toneClass =
+const toneClass =
     tone === "emerald"
-      ? "from-emerald-500/20 to-transparent"
+      ? "bg-[linear-gradient(135deg,rgba(16,185,129,0.14),var(--app-surface-muted)_72%)]"
       : tone === "amber"
-      ? "from-amber-500/20 to-transparent"
-      : "from-brand-500/20 to-transparent";
+      ? "bg-[linear-gradient(135deg,rgba(245,158,11,0.14),var(--app-surface-muted)_72%)]"
+      : "bg-[linear-gradient(135deg,rgba(47,134,255,0.14),var(--app-surface-muted)_72%)]";
   return (
     <article
       className={cn(
-        `rounded-[22px] border border-white/10 bg-gradient-to-br ${toneClass} p-4 shadow-[var(--shadow-elevated)] backdrop-blur-sm`,
+        `rounded-[22px] border border-[color:var(--app-border)] ${toneClass} p-4 shadow-[var(--app-shadow-soft)] backdrop-blur-sm`,
         className
       )}
     >
@@ -31,7 +31,7 @@ export function SignalCard({
         label={label}
         tone={tone === "emerald" ? "emerald" : tone === "amber" ? "amber" : "blue"}
       />
-      <p className="mt-3 text-sm leading-6 text-white">{value}</p>
+      <p className="mt-3 text-sm leading-6 text-[color:var(--app-heading)]">{value}</p>
     </article>
   );
 }

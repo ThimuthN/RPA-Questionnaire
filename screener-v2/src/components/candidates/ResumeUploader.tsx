@@ -128,24 +128,24 @@ export function ResumeUploader({
         }}
         className={`w-full rounded-[24px] border border-dashed px-5 py-8 text-left transition ${
           dragging
-            ? "border-brand-300/70 bg-brand-500/10"
-            : "border-white/18 bg-white/[0.04] hover:border-white/28 hover:bg-white/[0.06]"
+            ? "border-brand-300/70 bg-[color:var(--app-brand-soft)]"
+            : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]"
         }`}
       >
         <div className="space-y-2">
-          <p className="text-base text-white">{hasResume ? "Replace resume" : "Add resume"}</p>
-          <p className="text-sm text-slate-300">Drag and drop a PDF here, or click to choose a file.</p>
-          <p className="text-xs text-slate-400">Up to 10 MB.</p>
+          <p className="text-base text-[color:var(--app-heading)]">{hasResume ? "Replace resume" : "Add resume"}</p>
+          <p className="text-sm text-[color:var(--app-text)]">Drag and drop a PDF here, or click to choose a file.</p>
+          <p className="text-xs text-[color:var(--app-muted)]">Up to 10 MB.</p>
         </div>
       </button>
 
       {(uploadState === "uploading" || uploadState === "processing") ? (
-        <div className="rounded-[18px] border border-white/10 bg-black/20 px-4 py-3">
-          <p className="text-sm text-white">
+        <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3">
+          <p className="text-sm text-[color:var(--app-heading)]">
             {uploadState === "uploading" ? "Uploading..." : "Processing..."}
           </p>
           {progress !== null ? (
-            <p className="mt-1 text-sm text-slate-300">
+            <p className="mt-1 text-sm text-[color:var(--app-muted)]">
               {progress}% complete
               {uploadState === "uploading" && progress >= 80 ? " | Finalizing with storage..." : ""}
             </p>
@@ -153,8 +153,8 @@ export function ResumeUploader({
         </div>
       ) : null}
 
-      {message ? <p className="text-sm text-emerald-200">{message}</p> : null}
-      {error ? <p className="text-sm text-red-200">{error}</p> : null}
+      {message ? <p className="text-sm text-[color:var(--app-success)]">{message}</p> : null}
+      {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
 
       <div className="flex flex-wrap gap-3">
         <Button type="button" variant="secondary" onClick={onChooseFile}>

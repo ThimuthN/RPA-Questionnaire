@@ -20,7 +20,7 @@ import {
 import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
 
 const fieldClassName =
-  "w-full rounded-[16px] border border-white/14 bg-white/[0.05] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
+  "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
 function derivedResult(milestone: CandidateMilestoneRecord) {
   if (milestone.mode === "manual") {
@@ -122,10 +122,10 @@ function MilestoneStatusSelect({
 }) {
   return (
     <label className="grid gap-1">
-      <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</span>
+      <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">{label}</span>
       <select name={name} defaultValue={defaultValue} className={fieldClassName}>
         {candidateMilestoneStatusValues.map((status) => (
-          <option key={status} value={status} className="bg-slate-900">
+          <option key={status} value={status}>
             {candidateMilestoneStatusLabels[status]}
           </option>
         ))}
@@ -150,7 +150,7 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
   }
 
   return (
-    <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
       <div className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <CandidateAssessmentPill status={milestone.assessment.status} />
@@ -162,24 +162,24 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
           ) : null}
         </div>
 
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-[color:var(--app-text)]">
           {milestone.assessment.inviteSlug
             ? `Linked to ${milestone.assessment.inviteSlug.toUpperCase()}.`
             : "Linked to an assessment."}
         </p>
 
-        <div className="grid gap-3 rounded-[16px] border border-white/8 bg-white/[0.04] p-3 md:grid-cols-2">
+        <div className="grid gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 md:grid-cols-2">
           <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Invite code</p>
-            <p className="text-sm text-white">{inviteCode || "Not available"}</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Invite code</p>
+            <p className="text-sm text-[color:var(--app-heading)]">{inviteCode || "Not available"}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Created</p>
-            <p className="text-sm text-white">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Created</p>
+            <p className="text-sm text-[color:var(--app-heading)]">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
           </div>
           <div className="space-y-1 md:col-span-2">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Share path</p>
-            <p className="break-all text-sm text-slate-200">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Share path</p>
+            <p className="break-all text-sm text-[color:var(--app-text)]">
               {shareHref ? shareHref : "Available after the assessment is created."}
             </p>
           </div>
@@ -217,15 +217,15 @@ function AttachExistingTest({
     <form
       action={`/api/candidates/${candidateId}/milestones/${milestoneId}`}
       method="post"
-      className="grid gap-3 rounded-[18px] border border-white/10 bg-black/20 p-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
+      className="grid gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
     >
       <input type="hidden" name="action" value="link_existing" />
       <label className="grid gap-1">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Attempt ID</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Attempt ID</span>
         <input name="attemptId" className={fieldClassName} />
       </label>
       <label className="grid gap-1">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Invite slug</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Invite slug</span>
         <input name="inviteSlug" className={fieldClassName} />
       </label>
       <Button type="submit" variant="secondary">
@@ -262,7 +262,7 @@ function TestMilestoneCard({
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
           <div className="grid gap-1.5">
-            <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Assessment type</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Assessment type</span>
             <ChoicePills
               name="mode"
               idPrefix={`milestone-mode-${milestone.id}`}
@@ -293,7 +293,7 @@ function TestMilestoneCard({
           <>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="grid gap-1">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Date</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Date</span>
                 <input
                   name="date"
                   type="datetime-local"
@@ -303,7 +303,7 @@ function TestMilestoneCard({
               </label>
 
               <label className="grid gap-1">
-                <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Score</span>
+                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Score</span>
                 <input
                   name="score"
                   type="number"
@@ -316,7 +316,7 @@ function TestMilestoneCard({
             </div>
 
             <div className="grid gap-1.5">
-              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Result</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Result</span>
               <ChoicePills
                 name="result"
                 idPrefix={`milestone-result-${milestone.id}`}
@@ -330,7 +330,7 @@ function TestMilestoneCard({
             </div>
 
             <label className="grid gap-1">
-              <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Feedback</span>
+              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Feedback</span>
               <textarea
                 name="notes"
                 rows={4}
@@ -378,7 +378,7 @@ function DocumentationMilestoneCard({
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px] md:items-end">
         <label className="grid gap-1">
-          <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Date</span>
+          <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Date</span>
           <input
             name="date"
             type="datetime-local"
@@ -391,7 +391,7 @@ function DocumentationMilestoneCard({
       </div>
 
       <div className="grid gap-1.5">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">Result</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Result</span>
         <ChoicePills
           name="result"
           idPrefix={`doc-result-${milestone.id}`}
@@ -405,7 +405,7 @@ function DocumentationMilestoneCard({
       </div>
 
       <label className="grid gap-1">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-400">{feedbackLabel(milestone.type)}</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">{feedbackLabel(milestone.type)}</span>
         <textarea
           name="notes"
           rows={4}
@@ -440,7 +440,7 @@ export function CandidateMilestoneTimeline({
 }) {
   return (
     <div className="relative space-y-0">
-      <div className="absolute bottom-6 left-4 top-4 hidden w-px bg-gradient-to-b from-brand-300/30 via-white/10 to-transparent sm:block" />
+      <div className="absolute bottom-6 left-4 top-4 hidden w-px bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--app-brand)_28%,transparent),color-mix(in_srgb,var(--app-border)_88%,transparent),transparent)] sm:block" />
       {milestones.map((milestone, index) => {
         const result = derivedResult(milestone);
         const hasActivity = Boolean(
@@ -461,12 +461,12 @@ export function CandidateMilestoneTimeline({
           <details
             key={milestone.id}
             open={!compactByDefault}
-            className="group relative ml-0 border-t border-white/10 py-4 first:border-t-0 sm:pl-14"
+            className="group relative ml-0 border-t border-[color:var(--app-border)] py-4 first:border-t-0 sm:pl-14"
           >
             <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
               <div className="flex items-start gap-3">
                 <div className="hidden sm:block">
-                  <div className="absolute left-0 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/14 bg-[linear-gradient(180deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))] text-sm text-slate-200 shadow-[0_0_0_6px_rgba(5,10,20,0.9)]">
+                  <div className="absolute left-0 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-brand)_18%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_94%,white))] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]">
                     {index + 1}
                   </div>
                 </div>
@@ -486,12 +486,12 @@ export function CandidateMilestoneTimeline({
                       </div>
 
                       <div className="space-y-1">
-                        <h3 className="text-lg text-white">{milestone.title}</h3>
-                        <p className="text-sm text-slate-300">{stepSummary(milestone, hasResume)}</p>
+                        <h3 className="text-lg text-[color:var(--app-heading)]">{milestone.title}</h3>
+                        <p className="text-sm text-[color:var(--app-text)]">{stepSummary(milestone, hasResume)}</p>
                       </div>
                     </div>
 
-                    <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-300 transition duration-200 group-open:rotate-180">
+                    <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)] transition duration-200 group-open:rotate-180">
                       <ChevronIcon />
                     </span>
                   </div>
@@ -499,10 +499,10 @@ export function CandidateMilestoneTimeline({
               </div>
             </summary>
 
-            <div className="mt-4 rounded-[24px] bg-white/[0.03] p-4 ring-1 ring-white/8">
+            <div className="mt-4 rounded-[24px] bg-[color:var(--app-surface-soft)] p-4 ring-1 ring-[color:var(--app-border)]">
               {milestone.type === "registration" ? (
                 hasResume ? (
-                  <p className="text-sm text-slate-300">Resume attached.</p>
+                  <p className="text-sm text-[color:var(--app-text)]">Resume attached.</p>
                 ) : (
                   <Link href={`/candidates/${candidateId}#resume` as Route}>
                     <Button type="button" variant="secondary">

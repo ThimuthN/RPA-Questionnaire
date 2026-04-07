@@ -5,6 +5,7 @@ import { getAttempt } from "@/lib/db/repositories";
 import { sanitizeBlueprintForClient } from "@/lib/exams/client-blueprint";
 import { carriesRoleContext } from "@/lib/exams/catalog";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { copy } from "@/lib/design/copy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +30,11 @@ export default async function AttemptRuntimePage({
     return (
       <section className="space-y-4">
         <StagePanel>
-          <h1 className="text-3xl text-white">This attempt is complete.</h1>
-          <p className="mt-2 text-slate-300">Viewing results... you cannot resume the assessment.</p>
+          <h1 className="text-3xl text-white">{copy.runtime.submittedTitle}</h1>
+          <p className="mt-2 text-slate-300">{copy.runtime.submittedBody}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Link href={`/a/${slug}/result/${attempt.id}`}>
-              <button className="rounded-[12px] bg-brand-500 px-4 py-2 text-white">Continue to results</button>
-            </Link>
             <Link href="/">
-              <button className="rounded-[12px] border border-white/20 bg-white/5 px-4 py-2 text-white">Return home</button>
+              <button className="rounded-[12px] bg-brand-500 px-4 py-2 text-white">{copy.runtime.finish}</button>
             </Link>
           </div>
         </StagePanel>

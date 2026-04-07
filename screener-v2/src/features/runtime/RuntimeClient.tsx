@@ -9,10 +9,9 @@ import type {
   ExamBlueprint,
   ExamQuestion,
   ExamState,
-    IntegrityPresetId,
-    ResultSummary,
-    StackId
-  } from "@/lib/assessment-engine/types";
+  IntegrityPresetId,
+  StackId
+} from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
 import { HudBar } from "@/components/runtime/HudBar";
 import { RuntimeTrustBanner } from "@/components/runtime/RuntimeTrustBanner";
@@ -55,7 +54,6 @@ type SubmitResponse = {
   ok: boolean;
   code?: string;
   message?: string;
-  result?: ResultSummary;
   stage?: string | "submitted";
   timers?: Record<string, number>;
   integrity?: IntegritySnapshot;
@@ -148,7 +146,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
     return next;
   });
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<ResultSummary | null>(null);
   const [uiStatus, setUiStatus] = useState<RuntimeUiStatus>(RuntimeUiStatus.Idle);
   const [flagged, setFlagged] = useState<Record<string, boolean>>({});
   const [visited, setVisited] = useState<Record<string, boolean>>({});
@@ -845,7 +842,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
         stateVersionRef.current = data.stateVersion;
         setStateVersion(data.stateVersion);
       }
-      setResult(data.result ?? null);
       setStage("submitted");
       setSaveIssue("");
       setUiStatus(RuntimeUiStatus.Saved);
@@ -931,19 +927,14 @@ export function RuntimeClient(props: RuntimeClientProps) {
     );
   }
 
-  if (stage === "submitted" && result) {
+  if (stage === "submitted") {
     return (
       <section className="space-y-4">
         <StagePanel className="space-y-3">
-          <h1 className="text-3xl text-white">
-            {copy.runtime.finalScore} {result.finalPercent.toFixed(1)} / 100
-          </h1>
-          <p className="text-slate-200">
-            {copy.runtime.outcome}: {result.pass ? "Pass" : result.borderline ? "Review" : "Fail"}
-          </p>
+          <h1 className="text-3xl text-white">{copy.runtime.submittedTitle}</h1>
+          <p className="text-slate-200">{copy.runtime.submittedBody}</p>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => router.push(`/a/${props.slug}/result/${props.attemptId}`)}>{copy.runtime.openResult}</Button>
-            <Button variant="secondary" onClick={() => router.push("/")}>
+            <Button onClick={() => router.push("/")}>
               {copy.runtime.finish}
             </Button>
           </div>

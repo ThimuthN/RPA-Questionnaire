@@ -56,9 +56,8 @@ export const copy = {
     startPractical: "Start practical",
     reviewSubmit: "Review and submit",
     submitTitle: "Submit assessment?",
-    finalScore: "Final score",
-    outcome: "Result",
-    openResult: "View results",
+    submittedTitle: "Submission confirmed",
+    submittedBody: "Your assessment has been submitted successfully. You can now close this page or return home.",
     finish: "Finish"
   },
   results: {

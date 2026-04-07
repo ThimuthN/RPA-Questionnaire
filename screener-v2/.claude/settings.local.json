@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep -r \"hardcoded\\\\|TODO\\\\|FIXME\\\\|BUG\" '/c/Users/ThimuthNayanapriya/Documents/RPA Questionnaire/screener-v2/src/components' --include=*.tsx)",
-      "Bash(xargs grep:*)"
-    ]
-  }
-}

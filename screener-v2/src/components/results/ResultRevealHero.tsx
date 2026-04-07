@@ -33,7 +33,7 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   }, [reduceMotion, row.finalPercent, score]);
 
   return (
-    <StagePanel className="overflow-hidden bg-[linear-gradient(135deg,rgba(47,134,255,0.16),rgba(255,255,255,0.04))] p-0">
+    <StagePanel className="overflow-hidden bg-[linear-gradient(135deg,rgba(47,134,255,0.12),var(--app-surface)_34%,var(--app-surface-soft))] p-0">
       <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -46,35 +46,40 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl text-white md:text-4xl">{copy.results.finalScore}</h1>
-            {row.candidateName ? <p className="text-lg text-slate-100">{row.candidateName}</p> : null}
-            {row.candidateEmail ? <p className="text-sm text-slate-300">{row.candidateEmail}</p> : null}
+            <h1 className="text-3xl text-[color:var(--app-heading)] md:text-4xl">{copy.results.finalScore}</h1>
+            {row.candidateName ? <p className="text-lg text-[color:var(--app-text)]">{row.candidateName}</p> : null}
+            {row.candidateEmail ? <p className="text-sm text-[color:var(--app-muted)]">{row.candidateEmail}</p> : null}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Integrity signals</p>
-              <p className="mt-3 text-xl text-white">
+            <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Integrity signals</p>
+              <p className="mt-3 text-xl text-[color:var(--app-heading)]">
                 {row.integrity.tabHiddenCount + row.integrity.copyCount + row.integrity.pasteCount}
               </p>
-              <p className="mt-1 text-xs text-slate-300">
+              <p className="mt-1 text-xs text-[color:var(--app-text)]">
                 Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
               </p>
             </div>
             {examRows.map((exam) => (
-              <div key={exam.instanceId} className="rounded-[18px] border border-white/10 bg-black/20 p-4">
+              <div
+                key={exam.instanceId}
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusPill label={`#${exam.order + 1}`} tone="neutral" />
                   <StatusPill label={exam.label} tone="blue" />
                   <StatusPill label={exam.pass ? "Passed gate" : "Missed gate"} tone={exam.pass ? "emerald" : "red"} />
                 </div>
-                <p className="mt-3 text-xl text-white">
+                <p className="mt-3 text-xl text-[color:var(--app-heading)]">
                   {exam.weightedMarksEarned.toFixed(1)}/{exam.weightedMarksPossible}
                 </p>
-                <p className="mt-1 text-sm text-slate-300">{exam.percent.toFixed(1)}% raw score</p>
-                {exam.configSummary ? <p className="mt-2 text-xs text-slate-300">Config: {exam.configSummary}</p> : null}
-                <p className="mt-1 text-xs text-slate-400">Time allocated: {exam.durationMinutes} min</p>
-                <p className="mt-1 text-xs text-slate-400">Minimum pass: {exam.requiredPercent.toFixed(0)}%</p>
+                <p className="mt-1 text-sm text-[color:var(--app-text)]">{exam.percent.toFixed(1)}% raw score</p>
+                {exam.configSummary ? (
+                  <p className="mt-2 text-xs text-[color:var(--app-text)]">Config: {exam.configSummary}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-[color:var(--app-muted)]">Time allocated: {exam.durationMinutes} min</p>
+                <p className="mt-1 text-xs text-[color:var(--app-muted)]">Minimum pass: {exam.requiredPercent.toFixed(0)}%</p>
               </div>
             ))}
           </div>
@@ -84,15 +89,15 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
           initial={reduceMotion ? false : { opacity: 0, scale: 0.92, y: 14 }}
           animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.42, ease: [0.2, 1, 0.2, 1] }}
-          className="relative flex h-[180px] w-[180px] items-center justify-center self-center rounded-full border border-white/10 bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_62%)]"
+          className="relative flex h-[180px] w-[180px] items-center justify-center self-center rounded-full border border-[color:var(--app-border)] bg-[radial-gradient(circle,rgba(47,134,255,0.12),transparent_62%),linear-gradient(180deg,var(--app-surface),var(--app-surface-muted))]"
         >
           <div className="absolute inset-3 rounded-full border border-brand-300/20" />
-          <div className="absolute inset-0 rounded-full border border-white/10" />
+          <div className="absolute inset-0 rounded-full border border-[color:var(--app-border)]" />
           <div className="text-center">
-            <p className="font-display text-5xl text-white">
+            <p className="font-display text-5xl text-[color:var(--app-heading)]">
               <motion.span>{rounded}</motion.span>
             </p>
-            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">out of 100</p>
+            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">out of 100</p>
           </div>
         </motion.div>
       </div>

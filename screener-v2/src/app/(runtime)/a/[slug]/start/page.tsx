@@ -42,6 +42,12 @@ interface InviteValidationResponse {
   remainingAttempts: number;
 }
 
+const fieldLabelClassName = "text-sm text-[color:var(--app-muted)]";
+const fieldInputClassName =
+  "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
+const detailRowClassName =
+  "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-text)]";
+
 function InviteStartContent() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
@@ -214,18 +220,18 @@ function InviteStartContent() {
         <StagePanel className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200">Full name</label>
+              <label className={fieldLabelClassName}>Full name</label>
               <input
-                className="rounded-[18px] border border-white/20 bg-white/5 px-3 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className={fieldInputClassName}
                 placeholder="Alex Perera"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
               />
             </div>
             <div className="grid gap-1">
-              <label className="text-sm text-slate-200">Email</label>
+              <label className={fieldLabelClassName}>Email</label>
               <input
-                className="rounded-[18px] border border-white/20 bg-white/5 px-3 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className={fieldInputClassName}
                 placeholder="you@company.com"
                 type="email"
                 value={email}
@@ -233,9 +239,9 @@ function InviteStartContent() {
               />
             </div>
             <div className="grid gap-1 md:col-span-2">
-              <label className="text-sm text-slate-200">Phone (optional)</label>
+              <label className={fieldLabelClassName}>Phone (optional)</label>
               <input
-                className="rounded-[18px] border border-white/20 bg-white/5 px-3 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                className={fieldInputClassName}
                 placeholder="+94 7x xxx xxxx"
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
@@ -243,9 +249,9 @@ function InviteStartContent() {
             </div>
             {showPasscodeField ? (
               <div className="grid gap-1 md:col-span-2">
-                <label className="text-sm text-slate-200">Passcode</label>
+                <label className={fieldLabelClassName}>Passcode</label>
                 <input
-                  className="rounded-[18px] border border-white/20 bg-white/5 px-3 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                  className={fieldInputClassName}
                   placeholder="6-digit passcode"
                   value={passcode}
                   onChange={(event) => setPasscode(event.target.value)}
@@ -257,17 +263,17 @@ function InviteStartContent() {
           <div
             className={`rounded-md border px-3 py-2 text-sm ${
               blocked
-                ? "border-red-400/40 bg-red-500/20 text-red-100"
+                ? "border-[color:var(--app-danger)]/40 bg-[color:var(--app-danger-soft)] text-[color:var(--app-danger)]"
                 : isInvitePasscodeState(validationState)
-                  ? "border-amber-400/40 bg-amber-500/20 text-amber-100"
-                  : "border-white/12 bg-white/[0.04] text-slate-200"
+                  ? "border-[color:var(--app-warning)]/40 bg-[color:var(--app-warning-soft)] text-[color:var(--app-warning)]"
+                  : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)]"
             }`}
           >
             {validationMessage}
           </div>
 
           {error ? (
-            <p className="rounded-md border border-red-400/40 bg-red-500/20 px-3 py-2 text-sm text-red-100">
+            <p className="rounded-md border border-[color:var(--app-danger)]/40 bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">
               {error}
             </p>
           ) : null}
@@ -294,13 +300,13 @@ function InviteStartContent() {
           <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Test details</p>
           <StatusPill label={readiness.label} tone={readiness.tone} />
           <div className="space-y-2 text-sm">
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Stack: {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Time: {totalDurationMinutes != null ? `${totalDurationMinutes}m total` : "Loading..."}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Pass target:{" "}
               {detailsLoading
                 ? "Loading..."
@@ -308,13 +314,13 @@ function InviteStartContent() {
                   ? `${inviteMeta.passTarget}%`
                   : "Not available"}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Integrity: {preset ? preset.shortLabel : detailsLoading ? "Loading..." : "Not available"}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Attempts left: {detailsLoading ? "Loading..." : remainingAttempts}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Exams:{" "}
               {detailsLoading
                 ? "Loading..."
@@ -324,7 +330,7 @@ function InviteStartContent() {
                       .join(", ")
                   : "Not available"}
             </p>
-            <p className="rounded-[18px] border border-white/10 bg-white/5 px-3 py-2 text-slate-100">
+            <p className={detailRowClassName}>
               Autosave: Enabled
             </p>
           </div>
@@ -340,7 +346,7 @@ export default function InviteStartPage() {
       fallback={
         <section className="space-y-4">
           <StagePanel>
-            <p className="text-slate-200">Preparing check-in...</p>
+            <p className="text-[color:var(--app-text)]">Preparing check-in...</p>
           </StagePanel>
         </section>
       }

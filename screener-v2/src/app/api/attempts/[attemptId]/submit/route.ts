@@ -55,7 +55,7 @@ export async function POST(
     }
     return NextResponse.json({
       ok: true,
-      result: result.result,
+      stage: "submitted",
       stateVersion: result.attempt.stateVersion
     });
   } catch (error) {

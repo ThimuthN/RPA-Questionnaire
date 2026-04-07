@@ -41,7 +41,7 @@ export function ChoicePills({
             />
             <label
               htmlFor={id}
-              className="inline-flex cursor-pointer items-center rounded-full border border-white/16 bg-white/[0.05] px-3 py-2 text-sm text-slate-200 transition hover:border-white/30 hover:bg-white/[0.08] peer-checked:border-brand-300/60 peer-checked:bg-brand-500/15 peer-checked:text-white"
+              className="inline-flex cursor-pointer items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)] peer-checked:border-brand-300/60 peer-checked:bg-[color:var(--app-brand-soft)] peer-checked:text-[color:var(--app-brand)] peer-checked:shadow-[0_10px_24px_color-mix(in_srgb,var(--app-brand)_16%,transparent)]"
             >
               {option.label}
             </label>

@@ -58,9 +58,13 @@ const LogicReasoningRenderer = dynamic(() =>
   import("@/components/runtime/renderers/LogicReasoningRenderer").then((mod) => mod.LogicReasoningRenderer)
 ) as ComponentType<BaseQuestionRendererProps>;
 
+const MultiChoiceRenderer = (props: BaseQuestionRendererProps) => (
+  <ChoiceRenderer {...props} multiple={true} />
+);
+
 const rendererRegistry: Record<string, ComponentType<BaseQuestionRendererProps>> = {
   single_select: ChoiceRenderer,
-  multi_select: ChoiceRenderer,
+  multi_select: MultiChoiceRenderer,
   ordering: OrderingRenderer,
   matching: MatchingRenderer,
   fill_blank_constrained: FillBlankRenderer,

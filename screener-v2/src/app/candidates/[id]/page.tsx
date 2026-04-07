@@ -148,12 +148,12 @@ export default async function CandidateDetailPage({
           </StagePanel>
         ) : null}
 
-        <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,rgba(47,134,255,0.14),rgba(255,255,255,0.04))]">
+        <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_16%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Hiring decision</p>
-              <h2 className="text-3xl text-white">Decision</h2>
-              <p className="max-w-2xl text-sm text-slate-300">
+              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Hiring decision</p>
+              <h2 className="text-3xl text-[color:var(--app-heading)]">Decision</h2>
+              <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
                 Record the current decision, key reason, and next step.
               </p>
             </div>

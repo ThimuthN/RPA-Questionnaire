@@ -34,12 +34,20 @@ export function IntegrityPresetPicker({
               onClick={() => onChange(presetId)}
               className={`rounded-[20px] border p-4 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 ${
                 active
-                  ? "border-brand-300 bg-brand-500/16 text-white shadow-[0_16px_36px_rgba(31,111,255,0.16)]"
+                  ? "border-brand-300/60 bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand)] shadow-[0_16px_36px_color-mix(in_srgb,var(--app-brand)_14%,transparent)]"
                   : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
               }`}
             >
-              <p className="text-sm text-[color:var(--app-heading)]">{meta.shortLabel}</p>
-              <p className="mt-2 text-xs leading-5 text-[color:var(--app-muted)]">{meta.description}</p>
+              <p className={`text-sm ${active ? "text-[color:var(--app-heading)]" : "text-[color:var(--app-heading)]"}`}>
+                {meta.shortLabel}
+              </p>
+              <p
+                className={`mt-2 text-xs leading-5 ${
+                  active ? "text-[color:var(--app-text)]" : "text-[color:var(--app-muted)]"
+                }`}
+              >
+                {meta.description}
+              </p>
             </button>
           );
         })}

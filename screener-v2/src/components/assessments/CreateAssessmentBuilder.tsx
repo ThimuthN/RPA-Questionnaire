@@ -493,8 +493,8 @@ export function CreateAssessmentBuilder({
       </div>
 
       {selectedPresetId ? (
-        <div className="rounded-[18px] bg-purple-500/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-purple-200">Preset source</p>
+        <div className="rounded-[18px] bg-[color:var(--pill-purple-bg)] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--pill-purple-text)]">Preset source</p>
           <p className="mt-2 text-sm text-[color:var(--app-heading)]">
             {activePresets.find((preset) => preset.id === selectedPresetId)?.label ?? "Preset applied"}
           </p>
@@ -695,7 +695,7 @@ export function CreateAssessmentBuilder({
                           onClick={() => applyPreset(preset)}
                           className={`min-w-[280px] snap-start rounded-[22px] border p-4 text-left transition ${
                             active
-                              ? "border-brand-300/60 bg-[linear-gradient(135deg,rgba(31,111,255,0.18),rgba(14,23,40,0.92))] shadow-[0_18px_40px_rgba(31,111,255,0.16)]"
+                              ? "border-brand-300/60 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_12%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))] shadow-[0_18px_40px_color-mix(in_srgb,var(--app-brand)_12%,transparent)]"
                               : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
                           }`}
                         >
@@ -706,7 +706,7 @@ export function CreateAssessmentBuilder({
                           <p
                             className={cn(
                               "mt-3 text-xl",
-                              active ? "text-white" : "text-[color:var(--app-heading)]",
+                              active ? "text-[color:var(--app-heading)]" : "text-[color:var(--app-heading)]",
                             )}
                           >
                             {preset.label}
@@ -714,7 +714,7 @@ export function CreateAssessmentBuilder({
                           <p
                             className={cn(
                               "mt-2 text-sm",
-                              active ? "text-slate-200" : "text-[color:var(--app-muted)]",
+                              active ? "text-[color:var(--app-text)]" : "text-[color:var(--app-muted)]",
                             )}
                           >
                             {preset.description}
@@ -925,8 +925,8 @@ export function CreateAssessmentBuilder({
                               />
                             </div>
                             <div className="space-y-1">
-                              <p className="text-base text-white">{exam.configSummary}</p>
-                              <p className="text-xs text-slate-200">
+                              <p className="text-base text-[color:var(--app-heading)]">{exam.configSummary}</p>
+                              <p className="text-xs text-[color:var(--app-text)]">
                                 {sourceAddon ? `Source add-on: ${sourceAddon.label}` : "Custom selection"}
                               </p>
                             </div>
@@ -1004,7 +1004,7 @@ export function CreateAssessmentBuilder({
                             <StatusPill label={`#${index + 1}`} tone="neutral" />
                             <StatusPill label={exam.label} tone={examCatalog[exam.definitionId].accentTone} />
                           </div>
-                          <p className="text-xs text-slate-200">{exam.durationMinutes} min</p>
+                          <p className="text-xs text-[color:var(--app-text)]">{exam.durationMinutes} min</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <Button
@@ -1031,7 +1031,7 @@ export function CreateAssessmentBuilder({
                       </div>
 
                       <label className="mt-4 grid gap-2">
-                        <span className="text-xs uppercase tracking-[0.18em] text-slate-200">Score contribution</span>
+                        <span className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Score contribution</span>
                         <input
                           type="number"
                           min={0}
