@@ -19,10 +19,10 @@ export function RuntimeTrustBanner({
   return (
     <StagePanel tone="summary" className="px-4 py-3">
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <p className="max-w-2xl text-sm text-slate-200">
+        <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
           {note || "Your answers keep saving while you work. If something interrupts the flow, you will be guided back in."}
         </p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-[color:var(--app-muted)]">
           {integrityPresetLabel} preset | Last sync {timeLabel(lastSyncedAt)}
         </p>
       </div>

@@ -22,8 +22,8 @@ export function ChoiceRenderer({ question, answer, onChange, multiple = false }:
             key={`${question.id}-${index}`}
             className={`group flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3.5 transition-all duration-150 ${
               checked
-                ? "border-brand-400/60 bg-brand-500/10 shadow-[0_0_0_1px_rgba(47,134,255,0.2)]"
-                : "border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.07]"
+                ? "border-[color:color-mix(in_srgb,var(--app-brand)_55%,transparent)] bg-[color:var(--app-brand-soft)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--app-brand)_20%,transparent)]"
+                : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-control-bg)]"
             }`}
           >
             {/* Hidden native input for a11y + form semantics */}
@@ -51,7 +51,7 @@ export function ChoiceRenderer({ question, answer, onChange, multiple = false }:
               } border ${
                 checked
                   ? "border-brand-400 bg-brand-500"
-                  : "border-white/25 bg-white/[0.04] group-hover:border-white/40"
+                  : "border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg)] group-hover:border-[color:color-mix(in_srgb,var(--app-brand)_45%,transparent)]"
               }`}
             >
               {checked && (
@@ -67,7 +67,7 @@ export function ChoiceRenderer({ question, answer, onChange, multiple = false }:
               )}
             </span>
 
-            <span className={`text-sm leading-relaxed ${checked ? "text-white" : "text-slate-200"}`}>
+            <span className={`text-sm leading-relaxed ${checked ? "text-[color:var(--app-heading)]" : "text-[color:var(--app-text)]"}`}>
               {option}
             </span>
           </label>

@@ -15,12 +15,22 @@ export interface NavigatorItem {
 }
 
 function itemClass(state: NavigatorItemState) {
-  if (state === "current") return "border-brand-400 bg-brand-500/18 text-white shadow-[0_0_0_1px_rgba(138,184,255,0.18)]";
-  if (state === "answered") return "border-emerald-400/60 bg-emerald-500/12 text-emerald-100";
-  if (state === "flagged") return "border-amber-400/60 bg-amber-500/12 text-amber-100";
-  if (state === "skipped") return "border-red-400/60 bg-red-500/12 text-red-100";
-  if (state === "locked") return "border-white/10 bg-white/[0.04] text-slate-500";
-  return "border-white/15 bg-white/[0.05] text-slate-200 hover:border-brand-300/50";
+  if (state === "current") {
+    return "border-[color:var(--app-brand)] bg-[color:var(--app-brand-soft)] text-[color:var(--app-heading)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--app-brand)_22%,transparent)]";
+  }
+  if (state === "answered") {
+    return "border-[color:color-mix(in_srgb,var(--app-success)_35%,transparent)] bg-[color:var(--app-success-soft)] text-[color:var(--app-success)]";
+  }
+  if (state === "flagged") {
+    return "border-[color:color-mix(in_srgb,var(--app-warning)_35%,transparent)] bg-[color:var(--app-warning-soft)] text-[color:var(--app-warning)]";
+  }
+  if (state === "skipped") {
+    return "border-[color:color-mix(in_srgb,var(--app-danger)_35%,transparent)] bg-[color:var(--app-danger-soft)] text-[color:var(--app-danger)]";
+  }
+  if (state === "locked") {
+    return "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)]";
+  }
+  return "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-[color:color-mix(in_srgb,var(--app-brand)_45%,transparent)]";
 }
 
 function ItemIcon({ state }: { state: NavigatorItemState }) {
@@ -55,16 +65,16 @@ export function NavigatorRail({
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.22em] text-brand-300">Navigator</p>
-          <span className="text-xs text-slate-400">{statusLabel}</span>
+          <span className="text-xs text-[color:var(--app-muted)]">{statusLabel}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-300">
-          <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-2 py-1 text-center">
+        <div className="grid grid-cols-3 gap-2 text-[11px]">
+          <span className="rounded-full border border-[color:color-mix(in_srgb,var(--app-success)_25%,transparent)] bg-[color:var(--app-success-soft)] px-2 py-1 text-center text-[color:var(--app-success)]">
             {answeredCount} done
           </span>
-          <span className="rounded-full border border-red-400/20 bg-red-500/10 px-2 py-1 text-center">
+          <span className="rounded-full border border-[color:color-mix(in_srgb,var(--app-danger)_25%,transparent)] bg-[color:var(--app-danger-soft)] px-2 py-1 text-center text-[color:var(--app-danger)]">
             {unansweredCount} left
           </span>
-          <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2 py-1 text-center">
+          <span className="rounded-full border border-[color:color-mix(in_srgb,var(--app-warning)_25%,transparent)] bg-[color:var(--app-warning-soft)] px-2 py-1 text-center text-[color:var(--app-warning)]">
             {flaggedCount} flagged
           </span>
         </div>
@@ -78,7 +88,7 @@ export function NavigatorRail({
                 onClick={item.onSelect}
                 disabled={!item.onSelect}
                 className={cn(
-                  "relative flex h-11 items-center justify-between rounded-xl border px-3 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950 disabled:cursor-not-allowed disabled:opacity-70",
+                  "relative flex h-11 items-center justify-between rounded-xl border px-3 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--app-surface)] disabled:cursor-not-allowed disabled:opacity-70",
                   itemClass(item.state)
                 )}
                 initial={false}

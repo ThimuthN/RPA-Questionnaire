@@ -46,9 +46,9 @@ function renderTable(
   table: { headers: string[]; rows: string[][] }
 ) {
   return (
-    <div key={key} className="overflow-x-auto rounded-xl border border-white/10 bg-black/20">
-      <table className="min-w-full border-collapse text-left text-sm text-slate-200">
-        <thead className="bg-white/5 text-slate-100">
+    <div key={key} className="overflow-x-auto rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)]">
+      <table className="min-w-full border-collapse text-left text-sm text-[color:var(--app-text)]">
+        <thead className="bg-[color:var(--app-surface)] text-[color:var(--app-heading)]">
           <tr>
             {table.headers.map((header) => (
               <th key={header} className="px-3 py-2 font-medium">
@@ -59,7 +59,7 @@ function renderTable(
         </thead>
         <tbody>
           {table.rows.map((row, rowIndex) => (
-            <tr key={`row-${rowIndex}`} className="border-t border-white/10">
+            <tr key={`row-${rowIndex}`} className="border-t border-[color:var(--app-border)]">
               {row.map((cell, cellIndex) => (
                 <td key={`cell-${rowIndex}-${cellIndex}`} className="px-3 py-2 align-top">
                   {cell}
@@ -93,7 +93,7 @@ export function StructuredPromptBlocks({
       {blocks.map((block, index) => {
         if (block.type === "paragraph") {
           return (
-            <p key={`block-${index}`} className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+            <p key={`block-${index}`} className="whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">
               {block.text}
             </p>
           );
@@ -101,7 +101,7 @@ export function StructuredPromptBlocks({
 
         if (block.type === "prompt") {
           return (
-            <p key={`block-${index}`} className="text-sm font-semibold leading-6 text-slate-100">
+            <p key={`block-${index}`} className="text-sm font-semibold leading-6 text-[color:var(--app-heading)]">
               {block.text}
             </p>
           );
@@ -111,7 +111,7 @@ export function StructuredPromptBlocks({
           return (
             <section key={`block-${index}`} className="space-y-3">
               {block.heading ? (
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{block.heading}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{block.heading}</p>
               ) : null}
               {renderTable(`table-${index}`, { headers: block.headers, rows: block.rows })}
             </section>
@@ -121,12 +121,12 @@ export function StructuredPromptBlocks({
         return (
           <section key={`block-${index}`} className="space-y-3">
             {block.heading ? (
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{block.heading}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{block.heading}</p>
             ) : null}
             {block.style === "plain" ? (
               <ul className="space-y-2">
                 {block.items.map((item) => (
-                  <li key={`${index}-${item}`} className="text-sm leading-6 text-slate-200">
+                  <li key={`${index}-${item}`} className="text-sm leading-6 text-[color:var(--app-text)]">
                     {item}
                   </li>
                 ))}
@@ -136,7 +136,7 @@ export function StructuredPromptBlocks({
                 {block.items.map((item) => (
                   <li
                     key={`${index}-${item}`}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm leading-6 text-slate-200"
+                    className="rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-sm leading-6 text-[color:var(--app-text)]"
                   >
                     {item}
                   </li>
@@ -184,14 +184,14 @@ function renderPromptContent({ text, className }: StructuredPromptContentProps) 
 
           return (
             <section key={`block-${index}`} className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{block.slice(0, -1)}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{block.slice(0, -1)}</p>
               {sectionTable ? renderTable(`section-table-${index}`, sectionTable) : null}
               {listItems.length > 0 ? (
                 <ul className="space-y-2">
                   {listItems.map((item) => (
                     <li
                       key={`${block}-${item}`}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm leading-6 text-slate-200"
+                      className="rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-sm leading-6 text-[color:var(--app-text)]"
                     >
                       {item}
                     </li>
@@ -205,7 +205,7 @@ function renderPromptContent({ text, className }: StructuredPromptContentProps) 
                 }
 
                 return (
-                  <p key={`${block}-${item}`} className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+                  <p key={`${block}-${item}`} className="whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">
                     {item}
                   </p>
                 );
@@ -215,7 +215,7 @@ function renderPromptContent({ text, className }: StructuredPromptContentProps) 
         }
 
         return (
-          <p key={`block-${index}`} className="whitespace-pre-wrap text-sm leading-6 text-slate-200">
+          <p key={`block-${index}`} className="whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">
             {block}
           </p>
         );

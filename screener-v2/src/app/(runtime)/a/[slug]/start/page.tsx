@@ -42,11 +42,13 @@ interface InviteValidationResponse {
   remainingAttempts: number;
 }
 
-const fieldLabelClassName = "text-sm text-[color:var(--app-muted)]";
+const fieldLabelClassName = "text-sm font-medium text-[color:var(--app-heading)]";
 const fieldInputClassName =
-  "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
+  "rounded-[18px] border border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg-strong)] px-3 py-2 text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
 const detailRowClassName =
-  "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-text)]";
+  "rounded-[18px] border border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg-strong)] px-4 py-3 shadow-[var(--app-shadow-soft)]";
+const detailLabelClassName = "text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]";
+const detailValueClassName = "mt-1 text-sm leading-6 text-[color:var(--app-heading)]";
 
 function InviteStartContent() {
   const params = useParams<{ slug: string }>();
@@ -217,7 +219,7 @@ function InviteStartContent() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-        <StagePanel className="space-y-4">
+        <StagePanel className="space-y-4 border-[color:var(--app-border-strong)] shadow-[0_20px_50px_rgba(22,58,77,0.16)]">
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-1">
               <label className={fieldLabelClassName}>Full name</label>
@@ -261,12 +263,12 @@ function InviteStartContent() {
           </div>
 
           <div
-            className={`rounded-md border px-3 py-2 text-sm ${
+            className={`rounded-[18px] border px-4 py-3 text-sm leading-6 shadow-[var(--app-shadow-soft)] ${
               blocked
                 ? "border-[color:var(--app-danger)]/40 bg-[color:var(--app-danger-soft)] text-[color:var(--app-danger)]"
                 : isInvitePasscodeState(validationState)
                   ? "border-[color:var(--app-warning)]/40 bg-[color:var(--app-warning-soft)] text-[color:var(--app-warning)]"
-                  : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)]"
+                  : "border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg-strong)] text-[color:var(--app-heading)]"
             }`}
           >
             {validationMessage}
@@ -296,43 +298,58 @@ function InviteStartContent() {
           </div>
         </StagePanel>
 
-        <StagePanel className="space-y-4 lg:sticky lg:top-20 lg:h-fit">
+        <StagePanel className="space-y-4 border-[color:var(--app-border-strong)] shadow-[0_20px_50px_rgba(22,58,77,0.16)] lg:sticky lg:top-20 lg:h-fit">
           <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Test details</p>
           <StatusPill label={readiness.label} tone={readiness.tone} />
           <div className="space-y-2 text-sm">
-            <p className={detailRowClassName}>
-              Stack: {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
-            </p>
-            <p className={detailRowClassName}>
-              Time: {totalDurationMinutes != null ? `${totalDurationMinutes}m total` : "Loading..."}
-            </p>
-            <p className={detailRowClassName}>
-              Pass target:{" "}
-              {detailsLoading
-                ? "Loading..."
-                : inviteMeta?.passTarget != null
-                  ? `${inviteMeta.passTarget}%`
-                  : "Not available"}
-            </p>
-            <p className={detailRowClassName}>
-              Integrity: {preset ? preset.shortLabel : detailsLoading ? "Loading..." : "Not available"}
-            </p>
-            <p className={detailRowClassName}>
-              Attempts left: {detailsLoading ? "Loading..." : remainingAttempts}
-            </p>
-            <p className={detailRowClassName}>
-              Exams:{" "}
-              {detailsLoading
-                ? "Loading..."
-                : inviteMeta?.exams?.length
-                  ? inviteMeta.exams
-                      .map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`)
-                      .join(", ")
-                  : "Not available"}
-            </p>
-            <p className={detailRowClassName}>
-              Autosave: Enabled
-            </p>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Stack</p>
+              <p className={detailValueClassName}>
+                {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
+              </p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Time</p>
+              <p className={detailValueClassName}>
+                {totalDurationMinutes != null ? `${totalDurationMinutes}m total` : "Loading..."}
+              </p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Pass target</p>
+              <p className={detailValueClassName}>
+                {detailsLoading
+                  ? "Loading..."
+                  : inviteMeta?.passTarget != null
+                    ? `${inviteMeta.passTarget}%`
+                    : "Not available"}
+              </p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Integrity</p>
+              <p className={detailValueClassName}>
+                {preset ? preset.shortLabel : detailsLoading ? "Loading..." : "Not available"}
+              </p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Attempts left</p>
+              <p className={detailValueClassName}>{detailsLoading ? "Loading..." : remainingAttempts}</p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Exams</p>
+              <p className={detailValueClassName}>
+                {detailsLoading
+                  ? "Loading..."
+                  : inviteMeta?.exams?.length
+                    ? inviteMeta.exams
+                        .map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`)
+                        .join(", ")
+                    : "Not available"}
+              </p>
+            </div>
+            <div className={detailRowClassName}>
+              <p className={detailLabelClassName}>Autosave</p>
+              <p className={detailValueClassName}>Enabled</p>
+            </div>
           </div>
         </StagePanel>
       </div>

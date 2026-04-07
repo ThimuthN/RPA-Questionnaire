@@ -9,6 +9,12 @@ import {
 export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuestionRendererProps) {
   const value = answer && typeof answer === "object" ? (answer as Record<string, unknown>) : {};
   const fields = Array.isArray(question.subtasks) ? question.subtasks : [];
+  const taskCardClassName =
+    "rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4";
+  const titleClassName = "text-base font-semibold leading-6 text-[color:var(--app-heading)]";
+  const labelClassName = "flex items-start gap-2 text-sm text-[color:var(--app-text)]";
+  const selectClassName =
+    "w-full rounded-md border border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg-strong)] px-3 py-2 text-[color:var(--app-text)]";
 
   return (
     <div className="space-y-4">
@@ -25,9 +31,9 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
         if (taskType === "single_select") {
           const options = Array.isArray(task.options) ? task.options : [];
           return (
-            <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
+            <div key={key} className={taskCardClassName}>
               <div className="space-y-3">
-                <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+                <p className={titleClassName}>{title}</p>
                 {promptBlocks.length > 0 ? (
                   <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
                 ) : body ? (
@@ -36,7 +42,7 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
               </div>
               <div className="space-y-2">
                 {options.map((option: any) => (
-                  <label key={`${key}-${option.id}`} className="flex items-start gap-2 text-sm text-slate-200">
+                  <label key={`${key}-${option.id}`} className={labelClassName}>
                     <input
                       type="radio"
                       name={key}
@@ -65,9 +71,9 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
               ? (current as Record<string, unknown>)
               : {};
           return (
-            <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
+            <div key={key} className={taskCardClassName}>
               <div className="space-y-3">
-                <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+                <p className={titleClassName}>{title}</p>
                 {promptBlocks.length > 0 ? (
                   <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
                 ) : body ? (
@@ -77,9 +83,9 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
               <div className="space-y-2">
                 {leftItems.map((left: string) => (
                   <div key={`${key}-${left}`} className="grid gap-2 md:grid-cols-[1fr_1fr] md:items-center">
-                    <p className="text-sm text-slate-200">{left}</p>
+                    <p className="text-sm text-[color:var(--app-text)]">{left}</p>
                     <select
-                      className="w-full rounded-md border border-white/20 bg-ink-950 px-3 py-2 text-slate-100"
+                      className={selectClassName}
                       value={String(currentMap[left] || "")}
                       onChange={(event) =>
                         onChange({
@@ -106,16 +112,16 @@ export function LogicReasoningRenderer({ question, answer, onChange }: BaseQuest
         }
 
         return (
-          <div key={key} className="rounded-md border border-white/10 bg-white/5 p-3">
+          <div key={key} className={taskCardClassName}>
             <div className="space-y-3">
-              <p className="text-base font-semibold leading-6 text-slate-100">{title}</p>
+              <p className={titleClassName}>{title}</p>
               {promptBlocks.length > 0 ? (
                 <StructuredPromptBlocks blocks={promptBlocks} className="space-y-4" />
               ) : body ? (
                 <StructuredPromptContent text={body} className="space-y-4" />
               ) : null}
             </div>
-            <p className="text-sm text-amber-200">Unsupported logic reasoning task type.</p>
+            <p className="text-sm text-[color:var(--app-warning)]">Unsupported logic reasoning task type.</p>
           </div>
         );
       })}

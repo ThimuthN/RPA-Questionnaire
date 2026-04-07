@@ -89,7 +89,7 @@ export function QuestionRuntimeCard({
   if (!Renderer) {
     return (
       <StagePanel>
-        <p className="text-red-200">Unsupported question format: {String(question.format)}</p>
+        <p className="text-[color:var(--app-danger)]">Unsupported question format: {String(question.format)}</p>
       </StagePanel>
     );
   }
@@ -104,7 +104,7 @@ export function QuestionRuntimeCard({
       : "";
 
   return (
-    <StagePanel className="space-y-5 border-white/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.07))]">
+    <StagePanel className="space-y-5 border-[color:var(--app-border-strong)] bg-[linear-gradient(180deg,var(--app-control-bg-strong),var(--app-surface-soft))]">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <StatusPill label={formatLabel[question.format] || question.format} tone="neutral" />
@@ -116,17 +116,17 @@ export function QuestionRuntimeCard({
             />
           ) : null}
         </div>
-        <h3 className="max-w-3xl font-display text-2xl leading-tight text-white">{promptTitle}</h3>
+        <h3 className="max-w-3xl font-display text-2xl leading-tight text-[color:var(--app-heading)]">{promptTitle}</h3>
         {Array.isArray(question.promptBlocks) && question.promptBlocks.length > 0 ? (
           <StructuredPromptBlocks blocks={question.promptBlocks} className="space-y-4" />
         ) : promptBody ? (
           <StructuredPromptContent text={promptBody} className="space-y-4" />
         ) : null}
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-[color:var(--app-text)]">
           {formatHint[question.format] || "Answer carefully and move to the next question."}
         </p>
         {question.logSnippet ? (
-          <pre className="overflow-auto rounded-[18px] border border-white/10 bg-black/55 p-4 text-xs leading-6 text-blue-100">
+          <pre className="overflow-auto rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 text-xs leading-6 text-[color:var(--app-text)]">
             <code>{question.logSnippet}</code>
           </pre>
         ) : null}

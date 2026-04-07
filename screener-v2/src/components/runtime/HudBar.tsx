@@ -29,7 +29,11 @@ export function HudBar({
   trustStrip?: ReactNode;
 }) {
   const timerClass =
-    remainingSeconds <= 120 ? "text-red-200 runtime-timer-critical" : remainingSeconds <= 300 ? "text-amber-200" : "text-white";
+    remainingSeconds <= 120
+      ? "text-[color:var(--app-danger)] runtime-timer-critical"
+      : remainingSeconds <= 300
+        ? "text-[color:var(--app-warning)]"
+        : "text-[color:var(--app-heading)]";
 
   return (
     <StagePanel className="px-4 py-4 md:px-5">
@@ -43,11 +47,11 @@ export function HudBar({
           </div>
 
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.18em] text-slate-300">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
               <span>Progress</span>
               <span>{sectionProgressValue}</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+            <div className="h-2 overflow-hidden rounded-full bg-[color:var(--app-surface-soft)]">
               <div
                 className="h-full rounded-full bg-[linear-gradient(90deg,rgba(47,134,255,1),rgba(18,179,168,0.92))] transition-all duration-300"
                 style={{
@@ -68,7 +72,7 @@ export function HudBar({
           <div className="flex items-center justify-between gap-4 lg:justify-end">
             <StatusPill label={statusLabel} tone={statusTone} />
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Time Left</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Time Left</p>
               <p className={`font-mono text-2xl ${timerClass}`}>{fmt(remainingSeconds)}</p>
             </div>
           </div>
