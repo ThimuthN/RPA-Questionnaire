@@ -12,6 +12,7 @@ import { buildCore2Questions } from "@/features/core2/questions";
 import { generalCapabilityQuestions } from "@/features/general-capability/questions";
 import { pickLogicReasoningPack } from "@/features/logic-reasoning/packs";
 import { pickPracticalPack } from "@/features/practical/packs";
+import { buildRpaRuntimeQuestions, normalizeRpaRuntimeLevel } from "@/features/rpa-runtime/questions";
 import { revenueCycleManagementQuestions } from "@/features/rcm/questions";
 import { resolveCoreBasisRoleId } from "@/lib/exams/catalog";
 
@@ -48,6 +49,10 @@ function resolveCore2Items(config: Record<string, unknown>): ExamQuestion[] {
   return buildCore2Questions(stacks);
 }
 
+function resolveRpaRuntimeItems(config: Record<string, unknown>): ExamQuestion[] {
+  return buildRpaRuntimeQuestions(normalizeRpaRuntimeLevel(config.level));
+}
+
 function resolveLogicItems(config: Record<string, unknown>): ExamQuestion[] {
   const stack = String(config.stack || "UiPath") as StackId;
   const pack = pickLogicReasoningPack("Associate", [stack]);
@@ -65,6 +70,7 @@ function resolveLogicItems(config: Record<string, unknown>): ExamQuestion[] {
 const examContentResolvers: Record<ExamDefinitionId, (config: Record<string, unknown>) => ExamQuestion[]> = {
   core_exam: resolveCoreItems,
   core_2_exam: resolveCore2Items,
+  rpa_runtime_exam: resolveRpaRuntimeItems,
   practical_exam: resolvePracticalItems,
   applied_logic_exam: resolveLogicItems,
   general_capability_exam: () => generalCapabilityQuestions,

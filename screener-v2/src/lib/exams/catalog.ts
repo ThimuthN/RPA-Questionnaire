@@ -51,6 +51,17 @@ const advancedCoreRoleOptions = roleOptions.filter((option) =>
   ["SE", "SeniorSE", "TechLead"].includes(option.value)
 );
 
+const rpaRuntimeLevelOptions = [
+  {
+    value: "Senior",
+    label: "Senior"
+  },
+  {
+    value: "Lead",
+    label: "Lead"
+  }
+];
+
 const stackOptions = configV2.stacks.map((stackId) => ({
   value: stackId,
   label: configV2.stackLabels[stackId]
@@ -142,6 +153,32 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
       return [resolveCoreRoleLabel(config), stacks.join(", ")].filter(Boolean).join(" | ");
     },
     buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 72)
+  },
+  rpa_runtime_exam: {
+    id: "rpa_runtime_exam",
+    label: "RPA Runtime Screener",
+    description: "Runtime-heavy RPA screener focused on production judgment, Selenium, and Python automation.",
+    accentTone: "teal",
+    scoreBarClass: "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]",
+    panelClass: "border-teal-400/25 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--pill-teal-bg)_90%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))]",
+    configFields: [
+      {
+        key: "level",
+        label: "Level",
+        description: "Choose whether the runtime screener should use the Senior or Lead paper.",
+        type: "single_select",
+        required: true,
+        options: rpaRuntimeLevelOptions
+      }
+    ],
+    defaultWeight: 100,
+    defaultConfig: {
+      level: "Senior"
+    },
+    buildDurationMinutes: (config) => (String(config.level || "Senior") === "Lead" ? 40 : 36),
+    buildConfigSummary: (config) => `${String(config.level || "Senior")} | RPA runtime, Selenium, Python`,
+    buildRequiredPercent: (config, fallbackPassPercent) =>
+      Math.max(fallbackPassPercent, String(config.level || "Senior") === "Lead" ? 70 : 65)
   },
   practical_exam: {
     id: "practical_exam",
