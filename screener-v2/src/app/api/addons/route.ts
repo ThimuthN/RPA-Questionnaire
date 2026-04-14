@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
-import { addonAssessmentTypeIdSchema } from "@/lib/addons/assessment-types";
+import { addonUpsertSchema } from "@/lib/addons/api-schema";
 import { createAddonCatalogEntry, listAddonCatalog } from "@/lib/addons/catalog";
-
-const addonSchema = z.object({
-  label: z.string().min(2),
-  description: z.string().default(""),
-  assessmentTypeId: addonAssessmentTypeIdSchema,
-  defaultConfig: z.record(z.string(), z.unknown()).default({}),
-  defaultDurationMinutes: z.number().int().positive(),
-  defaultRequiredPercent: z.number().int().min(0).max(100),
-  defaultWeight: z.number().int().min(0).max(100),
-  isActive: z.boolean().optional()
-});
 
 export async function GET(request: Request) {
   const auth = await requireApiSession();
@@ -38,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = addonSchema.parse(await request.json());
+    const body = addonUpsertSchema.parse(await request.json());
     const addon = await createAddonCatalogEntry({
       label: body.label,
       description: body.description,
