@@ -71,8 +71,18 @@ function stableId(seedKey) {
 
 async function main() {
   const { addonCatalogSeeds: seeds } = await import("@/lib/addons/catalog-seeds");
+  const { orderedAddonDefinitions } = await import("@/lib/addons/definitions");
   let created = 0;
   let updated = 0;
+  let retired = 0;
+  const activeSeedSlugs = new Set(seeds.map((seed) => seed.slug));
+  const retiredLibrarySlugs = Array.from(
+    new Set(
+      orderedAddonDefinitions.flatMap((definition) =>
+        Array.isArray(definition.retiredLibrarySlugs) ? definition.retiredLibrarySlugs : []
+      )
+    )
+  );
 
   for (const seed of seeds) {
     const id = stableId(seed.seedKey);
@@ -115,7 +125,21 @@ async function main() {
     created += 1;
   }
 
-  console.log(`Addon catalog sync complete. Created: ${created}. Updated: ${updated}. Total seeds: ${seeds.length}.`);
+  if (retiredLibrarySlugs.length > 0) {
+    const result = await prisma.addonCatalog.updateMany({
+      where: {
+        slug: { in: retiredLibrarySlugs.filter((slug) => !activeSeedSlugs.has(slug)) }
+      },
+      data: {
+        isActive: false
+      }
+    });
+    retired = result.count;
+  }
+
+  console.log(
+    `Addon catalog sync complete. Created: ${created}. Updated: ${updated}. Retired: ${retired}. Total seeds: ${seeds.length}.`
+  );
 }
 
 main()

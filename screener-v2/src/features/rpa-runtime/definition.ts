@@ -24,13 +24,14 @@ export const rpaRuntimeAddonDefinition = {
   defaultConfig: {
     level: "Senior"
   },
+  retiredLibrarySlugs: ["rpa-runtime-senior", "rpa-runtime-lead"],
   libraryEntries: [
     {
-      seedKey: "addon-rpa-runtime-senior-default",
-      slug: "rpa-runtime-senior",
-      label: "RPA Runtime Senior",
+      seedKey: "addon-rpa-runtime-default",
+      slug: "rpa-runtime",
+      label: "RPA Runtime",
       description:
-        "24-question runtime screener focused on production judgment, Selenium, and Python automation for senior engineers.",
+        "24-question runtime screener with configurable Senior or Lead level focused on production judgment, Selenium, and Python automation.",
       defaultConfig: {
         level: "Senior"
       },
@@ -39,21 +40,6 @@ export const rpaRuntimeAddonDefinition = {
       defaultWeight: 100,
       isActive: true,
       sortOrder: 7
-    },
-    {
-      seedKey: "addon-rpa-runtime-lead-default",
-      slug: "rpa-runtime-lead",
-      label: "RPA Runtime Lead",
-      description:
-        "24-question runtime screener focused on recovery, supportability, release judgment, Selenium, and Python automation for leads.",
-      defaultConfig: {
-        level: "Lead"
-      },
-      defaultDurationMinutes: 40,
-      defaultRequiredPercent: 70,
-      defaultWeight: 100,
-      isActive: true,
-      sortOrder: 8
     }
   ],
   buildDurationMinutes: (config) => (String(config.level || "Senior") === "Lead" ? 40 : 36),

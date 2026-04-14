@@ -22,6 +22,7 @@ export interface AddonDefinitionRegistration {
   configFields: ExamConfigFieldDefinition[];
   defaultWeight: number;
   defaultConfig: Record<string, unknown>;
+  retiredLibrarySlugs?: string[];
   libraryEntries?: Array<{
     seedKey: string;
     slug: string;
