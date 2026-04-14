@@ -67,6 +67,8 @@ function scoreLogicReasoning(question: any, answer: Record<string, unknown>) {
 
 export const logicReasoningDef: QuestionTypeDef<any, Record<string, unknown>, { lines: string[] }> = {
   type: "logic_reasoning",
+  runtimeLabel: "Logic reasoning",
+  runtimeHint: "Work through each subtask and answer the full set before moving on.",
   schema: logicReasoningSchema,
   answerSchema: logicReasoningAnswerSchema,
   validateAnswer: validateLogicReasoning,

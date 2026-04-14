@@ -1,6 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import type { ExamBlueprintDraftItem, ExamDefinitionId } from "@/lib/assessment-engine/types";
+import {
+  assertAddonAssessmentTypeConfig,
+  prepareAddonAssessmentTypeConfig
+} from "@/lib/addons/assessment-types";
 import { prisma } from "@/lib/db/prisma";
 
 export interface AddonCatalogEntry {
@@ -8,7 +12,7 @@ export interface AddonCatalogEntry {
   slug: string;
   label: string;
   description: string;
-  engineType: ExamDefinitionId;
+  assessmentTypeId: ExamDefinitionId;
   defaultConfig: Record<string, unknown>;
   defaultDurationMinutes: number;
   defaultRequiredPercent: number;
@@ -62,7 +66,7 @@ function mapAddon(row: {
   slug: string;
   label: string;
   description: string;
-  engineType: string;
+  assessmentTypeId: string;
   defaultConfigJson: unknown;
   defaultDurationMinutes: number;
   defaultRequiredPercent: number;
@@ -75,7 +79,7 @@ function mapAddon(row: {
     slug: row.slug,
     label: row.label,
     description: row.description,
-    engineType: row.engineType as ExamDefinitionId,
+    assessmentTypeId: row.assessmentTypeId as ExamDefinitionId,
     defaultConfig: asRecord(row.defaultConfigJson),
     defaultDurationMinutes: row.defaultDurationMinutes,
     defaultRequiredPercent: row.defaultRequiredPercent,
@@ -103,7 +107,7 @@ function mapPreset(row: {
       slug: string;
       label: string;
       description: string;
-      engineType: string;
+      assessmentTypeId: string;
       defaultConfigJson: unknown;
       defaultDurationMinutes: number;
       defaultRequiredPercent: number;
@@ -149,6 +153,27 @@ async function nextPresetSortOrder() {
   return (last?.sortOrder ?? -1) + 1;
 }
 
+async function loadAddonConfigMap(addonIds: string[]) {
+  const uniqueAddonIds = Array.from(new Set(addonIds));
+  const rows = await prisma.addonCatalog.findMany({
+    where: { id: { in: uniqueAddonIds } }
+  });
+  const addons = rows.map(mapAddon);
+  return new Map(addons.map((addon) => [addon.id, addon]));
+}
+
+function normalizeConfigOverride(
+  addon: AddonCatalogEntry,
+  configOverride?: Record<string, unknown>
+) {
+  const rawOverride = configOverride ?? {};
+  const prepared = assertAddonAssessmentTypeConfig(addon.assessmentTypeId, {
+    ...addon.defaultConfig,
+    ...rawOverride
+  });
+  return Object.fromEntries(Object.keys(rawOverride).map((key) => [key, prepared[key]]));
+}
+
 export async function listAddonCatalog(includeInactive = false): Promise<AddonCatalogEntry[]> {
   const rows = await prisma.addonCatalog.findMany({
     where: includeInactive ? undefined : { isActive: true },
@@ -169,7 +194,7 @@ export async function getAddonCatalogEntry(id: string) {
 export async function createAddonCatalogEntry(input: {
   label: string;
   description: string;
-  engineType: ExamDefinitionId;
+  assessmentTypeId: ExamDefinitionId;
   defaultConfig?: Record<string, unknown>;
   defaultDurationMinutes: number;
   defaultRequiredPercent: number;
@@ -191,13 +216,15 @@ export async function createAddonCatalogEntry(input: {
     throw new Error("An add-on with this name already exists.");
   }
 
+  const defaultConfig = assertAddonAssessmentTypeConfig(input.assessmentTypeId, input.defaultConfig);
+
   const created = await prisma.addonCatalog.create({
     data: {
       slug,
       label,
       description: input.description.trim(),
-      engineType: input.engineType,
-      defaultConfigJson: asInputJson(input.defaultConfig),
+      assessmentTypeId: input.assessmentTypeId,
+      defaultConfigJson: asInputJson(defaultConfig),
       defaultDurationMinutes: Math.max(1, Math.round(input.defaultDurationMinutes)),
       defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(input.defaultRequiredPercent))),
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
@@ -214,7 +241,7 @@ export async function updateAddonCatalogEntry(
   input: {
     label: string;
     description: string;
-    engineType: ExamDefinitionId;
+    assessmentTypeId: ExamDefinitionId;
     defaultConfig?: Record<string, unknown>;
     defaultDurationMinutes: number;
     defaultRequiredPercent: number;
@@ -239,14 +266,16 @@ export async function updateAddonCatalogEntry(
     throw new Error("An add-on with this name already exists.");
   }
 
+  const defaultConfig = assertAddonAssessmentTypeConfig(input.assessmentTypeId, input.defaultConfig);
+
   const updated = await prisma.addonCatalog.update({
     where: { id },
     data: {
       slug,
       label,
       description: input.description.trim(),
-      engineType: input.engineType,
-      defaultConfigJson: asInputJson(input.defaultConfig),
+      assessmentTypeId: input.assessmentTypeId,
+      defaultConfigJson: asInputJson(defaultConfig),
       defaultDurationMinutes: Math.max(1, Math.round(input.defaultDurationMinutes)),
       defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(input.defaultRequiredPercent))),
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
@@ -304,6 +333,19 @@ export async function createAssessmentPreset(input: {
     throw new Error("A preset with this name already exists.");
   }
 
+  const addonConfigMap = await loadAddonConfigMap(input.items.map((item) => item.addonId));
+  const normalizedItems = input.items.map((item) => {
+    const addon = addonConfigMap.get(item.addonId);
+    if (!addon) {
+      throw new Error("One or more selected add-ons could not be found.");
+    }
+
+    return {
+      ...item,
+      configOverride: normalizeConfigOverride(addon, item.configOverride)
+    };
+  });
+
   const created = await prisma.$transaction(async (tx) => {
     const preset = await tx.assessmentPreset.create({
       data: {
@@ -316,7 +358,7 @@ export async function createAssessmentPreset(input: {
     });
 
     await tx.assessmentPresetItem.createMany({
-      data: input.items.map((item, index) => ({
+      data: normalizedItems.map((item, index) => ({
         presetId: preset.id,
         addonId: item.addonId,
         sortOrder: typeof item.sortOrder === "number" ? item.sortOrder : index,
@@ -376,6 +418,19 @@ export async function updateAssessmentPreset(
     throw new Error("A preset with this name already exists.");
   }
 
+  const addonConfigMap = await loadAddonConfigMap(input.items.map((item) => item.addonId));
+  const normalizedItems = input.items.map((item) => {
+    const addon = addonConfigMap.get(item.addonId);
+    if (!addon) {
+      throw new Error("One or more selected add-ons could not be found.");
+    }
+
+    return {
+      ...item,
+      configOverride: normalizeConfigOverride(addon, item.configOverride)
+    };
+  });
+
   const updated = await prisma.$transaction(async (tx) => {
     await tx.assessmentPreset.update({
       where: { id },
@@ -392,7 +447,7 @@ export async function updateAssessmentPreset(
     });
 
     await tx.assessmentPresetItem.createMany({
-      data: input.items.map((item, index) => ({
+      data: normalizedItems.map((item, index) => ({
         presetId: id,
         addonId: item.addonId,
         sortOrder: typeof item.sortOrder === "number" ? item.sortOrder : index,
@@ -427,17 +482,18 @@ export function buildDraftFromAddon(
   }
 ): ExamBlueprintDraftItem {
   const weightOverride = options?.weightOverride;
+  const preparedConfig = prepareAddonAssessmentTypeConfig(addon.assessmentTypeId, {
+    ...addon.defaultConfig,
+    ...(options?.configOverride ?? {})
+  });
 
   return {
-    definitionId: addon.engineType,
+    definitionId: addon.assessmentTypeId,
     sourceAddonId: addon.id,
     sourcePresetId: options?.sourcePresetId,
     label: addon.label,
     description: addon.description,
-    config: {
-      ...addon.defaultConfig,
-      ...(options?.configOverride ?? {})
-    },
+    config: preparedConfig.config,
     durationMinutes: addon.defaultDurationMinutes,
     requiredPercent: addon.defaultRequiredPercent,
     requiredPercentMode: "manual",

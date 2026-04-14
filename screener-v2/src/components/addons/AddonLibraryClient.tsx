@@ -12,12 +12,16 @@ import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { ConfigFieldEditor } from "@/components/addons/ConfigFieldEditor";
-import { examCatalog, orderedExamCatalog } from "@/lib/exams/catalog";
+import {
+  getAddonAssessmentType,
+  getAddonAssessmentTypeMeta,
+  orderedAddonAssessmentTypes
+} from "@/lib/addons/assessment-types";
 
 type AddonFormState = {
   label: string;
   description: string;
-  engineType: ExamDefinitionId;
+  assessmentTypeId: ExamDefinitionId;
   defaultDurationMinutes: number;
   defaultRequiredPercent: number;
   defaultWeight: number;
@@ -39,16 +43,15 @@ type PresetFormState = {
   items: PresetItemForm[];
 };
 
-function resolveExamEntry(engineType: string) {
-  return examCatalog[engineType as ExamDefinitionId] ?? examCatalog.core_exam;
-}
-
-function baseAddonForm(engineType: ExamDefinitionId = "core_exam"): AddonFormState {
-  const entry = resolveExamEntry(engineType);
+function baseAddonForm(assessmentTypeId: ExamDefinitionId = "core_exam"): AddonFormState {
+  const entry = getAddonAssessmentType(assessmentTypeId);
+  if (!entry) {
+    throw new Error(`Unknown assessment type: ${assessmentTypeId}`);
+  }
   return {
     label: "",
     description: "",
-    engineType,
+    assessmentTypeId,
     defaultDurationMinutes: entry.buildDurationMinutes(entry.defaultConfig),
     defaultRequiredPercent: entry.buildRequiredPercent(entry.defaultConfig, 60),
     defaultWeight: entry.defaultWeight,
@@ -79,7 +82,7 @@ function addonToForm(addon: AddonCatalogEntry): AddonFormState {
   return {
     label: addon.label,
     description: addon.description,
-    engineType: addon.engineType,
+    assessmentTypeId: addon.assessmentTypeId,
     defaultDurationMinutes: addon.defaultDurationMinutes,
     defaultRequiredPercent: addon.defaultRequiredPercent,
     defaultWeight: addon.defaultWeight,
@@ -140,6 +143,9 @@ export function AddonLibraryClient({
   );
   const selectedAddon = editingAddonId ? addonLookup.get(editingAddonId) ?? null : null;
   const selectedPreset = editingPresetId ? presets.find((preset) => preset.id === editingPresetId) ?? null : null;
+  const selectedAddonEntry = getAddonAssessmentType(addonForm.assessmentTypeId);
+  const selectedAddonType = getAddonAssessmentTypeMeta(addonForm.assessmentTypeId);
+  const editingUnknownAddonType = addonModalOpen && !selectedAddonEntry;
 
   async function submitAddon() {
     setSavingAddon(true);
@@ -232,11 +238,14 @@ export function AddonLibraryClient({
     }
   }
 
-  function setAddonEngine(engineType: ExamDefinitionId) {
-    const entry = resolveExamEntry(engineType);
+  function setAddonAssessmentType(assessmentTypeId: ExamDefinitionId) {
+    const entry = getAddonAssessmentType(assessmentTypeId);
+    if (!entry) {
+      return;
+    }
     setAddonForm((current) => ({
       ...current,
-      engineType,
+      assessmentTypeId,
       defaultDurationMinutes: entry.buildDurationMinutes(entry.defaultConfig),
       defaultRequiredPercent: entry.buildRequiredPercent(entry.defaultConfig, 60),
       defaultWeight: entry.defaultWeight,
@@ -385,7 +394,7 @@ export function AddonLibraryClient({
                         </div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <StatusPill label={resolveExamEntry(addon.engineType).label} tone={resolveExamEntry(addon.engineType).accentTone} />
+                        <StatusPill label={getAddonAssessmentTypeMeta(addon.assessmentTypeId).label} tone={getAddonAssessmentTypeMeta(addon.assessmentTypeId).tone} />
                       </td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultDurationMinutes} min</td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultRequiredPercent}%</td>
@@ -467,7 +476,7 @@ export function AddonLibraryClient({
                 <p className="text-sm text-[color:var(--app-muted)]">Global settings used across assessments.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <StatusPill label={resolveExamEntry(addonForm.engineType).label} tone={resolveExamEntry(addonForm.engineType).accentTone} />
+                <StatusPill label={selectedAddonType.label} tone={selectedAddonType.tone} />
                 <Button type="button" variant="secondary" onClick={closeAddonEditor}>
                   Close
                 </Button>
@@ -498,18 +507,21 @@ export function AddonLibraryClient({
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-sm text-[color:var(--app-text)]">Engine</span>
+                  <span className="text-sm text-[color:var(--app-text)]">Assessment type</span>
                   <select
-                    value={addonForm.engineType}
-                    onChange={(event) => setAddonEngine(event.target.value as ExamDefinitionId)}
+                    value={addonForm.assessmentTypeId}
+                    onChange={(event) => setAddonAssessmentType(event.target.value as ExamDefinitionId)}
                     className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                   >
-                    {orderedExamCatalog.map((exam) => (
+                    {orderedAddonAssessmentTypes.map((exam) => (
                       <option key={exam.id} value={exam.id}>
                         {exam.label}
                       </option>
                     ))}
                   </select>
+                  {selectedAddonType.description ? (
+                    <p className="text-xs text-[color:var(--app-muted)]">{selectedAddonType.description}</p>
+                  ) : null}
                 </label>
               </div>
 
@@ -569,9 +581,16 @@ export function AddonLibraryClient({
 
             <div className="mt-4 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
               <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Default config</p>
-              {resolveExamEntry(addonForm.engineType).configFields.length > 0 ? (
+              {editingUnknownAddonType ? (
+                <div className="rounded-[18px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]">
+                  This add-on references an assessment type that this app build does not recognize:
+                  {" "}
+                  <span className="font-mono">{addonForm.assessmentTypeId}</span>
+                  . Refresh or redeploy the app before editing and saving it.
+                </div>
+              ) : selectedAddonType.configFields.length > 0 ? (
                 <div className="grid gap-4">
-                  {resolveExamEntry(addonForm.engineType).configFields.map((field) => (
+                  {selectedAddonType.configFields.map((field) => (
                     <ConfigFieldEditor
                       key={field.key}
                       field={field}
@@ -586,7 +605,7 @@ export function AddonLibraryClient({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[color:var(--app-muted)]">This engine does not need extra default config.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">This assessment type does not need extra default config.</p>
               )}
             </div>
 
@@ -601,7 +620,7 @@ export function AddonLibraryClient({
                 Active in the library
               </label>
               <div className="flex flex-wrap gap-3">
-                <Button onClick={submitAddon} disabled={savingAddon}>
+                <Button onClick={submitAddon} disabled={savingAddon || editingUnknownAddonType}>
                   {savingAddon ? "Saving..." : editingAddonId ? "Save add-on" : "Create add-on"}
                 </Button>
                 <Button type="button" variant="secondary" onClick={closeAddonEditor}>
@@ -723,7 +742,7 @@ export function AddonLibraryClient({
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-2">
                               <StatusPill label={`#${index + 1}`} tone="neutral" />
-                              <StatusPill label={addon.label} tone={resolveExamEntry(addon.engineType).accentTone} />
+                              <StatusPill label={addon.label} tone={getAddonAssessmentTypeMeta(addon.assessmentTypeId).tone} />
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -792,9 +811,9 @@ export function AddonLibraryClient({
                           />
                         </label>
 
-                        {resolveExamEntry(addon.engineType).configFields.length > 0 ? (
+                        {getAddonAssessmentTypeMeta(addon.assessmentTypeId).configFields.length > 0 ? (
                           <div className="grid gap-4">
-                            {resolveExamEntry(addon.engineType).configFields.map((field) => (
+                            {getAddonAssessmentTypeMeta(addon.assessmentTypeId).configFields.map((field) => (
                               <ConfigFieldEditor
                                 key={`${item.addonId}-${field.key}`}
                                 field={field}

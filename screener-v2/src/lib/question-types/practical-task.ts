@@ -64,6 +64,8 @@ function practicalReview(question: any, answer: Record<string, unknown>) {
 
 export const practicalTaskDef: QuestionTypeDef<any, Record<string, unknown>, { lines: string[] }> = {
   type: "practical_task",
+  runtimeLabel: "Practical task",
+  runtimeHint: "Complete each subtask carefully. This exam is auto-graded.",
   schema: practicalSchema,
   answerSchema: practicalAnswerSchema,
   validateAnswer: validatePractical,

@@ -26,6 +26,8 @@ export const questionRegistry: Record<QuestionFormatId, QuestionTypeDef<any, any
   logic_reasoning: logicReasoningDef
 };
 
+export const registeredQuestionFormatIds = Object.keys(questionRegistry).sort() as QuestionFormatId[];
+
 export const formatAliasMap: Record<string, QuestionFormatId> = {
   single_choice: "single_select",
   log_analysis_single_choice: "log_analysis_single_select",

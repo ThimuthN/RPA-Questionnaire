@@ -42,7 +42,7 @@ model AddonCatalog {
   slug                  String   @unique
   label                 String
   description           String
-  engineType            String
+  assessmentTypeId      String   @map("engineType")
   defaultConfigJson     Json
   defaultDurationMinutes Int
   defaultRequiredPercent Int

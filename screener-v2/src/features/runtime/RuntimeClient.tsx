@@ -821,40 +821,48 @@ export function RuntimeClient(props: RuntimeClientProps) {
     setUiStatus(RuntimeUiStatus.Submitting);
     if (auto) setShowSubmitReview(false);
 
-    const flushed = await flushAttemptState();
-    if (!flushed) {
-      setSaveIssue("We could not confirm the final save. Please keep this tab open and try again.");
-      setUiStatus(RuntimeUiStatus.Attention);
-      setSubmitting(false);
-      return;
-    }
-
-    const response = await fetch(`/api/attempts/${props.attemptId}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        expectedStateVersion: stateVersionRef.current
-      })
-    });
-    const data = (await response.json()) as SubmitResponse;
-    if (data.ok) {
-      if (typeof data.stateVersion === "number") {
-        stateVersionRef.current = data.stateVersion;
-        setStateVersion(data.stateVersion);
+    try {
+      const flushed = await flushAttemptState();
+      if (!flushed) {
+        setSaveIssue("We could not confirm the final save. Please keep this tab open and try again.");
+        setUiStatus(RuntimeUiStatus.Attention);
+        return;
       }
-      setStage("submitted");
-      setSaveIssue("");
-      setUiStatus(RuntimeUiStatus.Saved);
-    } else if (response.status === 409 && data.code === "version_conflict" && retryCount < 2) {
-      applyAutosaveResponse(data);
-      setSubmitting(false);
-      await onSubmitFinal(auto, retryCount + 1);
-      return;
-    } else {
+
+      const response = await fetch(`/api/attempts/${props.attemptId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedStateVersion: stateVersionRef.current
+        })
+      });
+      const data = (await response.json()) as SubmitResponse;
+      if (data.ok) {
+        if (typeof data.stateVersion === "number") {
+          stateVersionRef.current = data.stateVersion;
+          setStateVersion(data.stateVersion);
+        }
+        setStage("submitted");
+        setSaveIssue("");
+        setUiStatus(RuntimeUiStatus.Saved);
+        return;
+      }
+
+      if (response.status === 409 && data.code === "version_conflict" && retryCount < 2) {
+        applyAutosaveResponse(data);
+        setSubmitting(false);
+        await onSubmitFinal(auto, retryCount + 1);
+        return;
+      }
+
       setSaveIssue("We could not submit just yet. Your answers remain in the attempt, so please try again.");
       setUiStatus(RuntimeUiStatus.Attention);
+    } catch {
+      setSaveIssue("We could not submit just yet. Your answers remain in the attempt, so please try again.");
+      setUiStatus(RuntimeUiStatus.Attention);
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   async function confirmSectionStart() {

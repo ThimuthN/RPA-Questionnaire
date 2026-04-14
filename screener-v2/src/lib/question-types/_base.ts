@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { scoreQuestion } from "@/lib/question-types/scoring";
+import { clamp } from "@/lib/assessment-engine/utils";
+import type { ScoringMethod } from "@/lib/assessment-engine/types";
+import type { QuestionAutoScorer } from "@/lib/question-types/auto-scorers";
 
 export const commonQuestionSchema = z.object({
   id: z.string(),
@@ -16,12 +18,19 @@ export const commonQuestionSchema = z.object({
   acceptedAnswers: z.array(z.string()).optional()
 });
 
-export function scoreAdapter(question: any, answer: any) {
-  const score = scoreQuestion(question, answer);
-  return {
-    normalized: score.normalized,
-    pointsEarned: score.pointsEarned,
-    isCorrect: score.isCorrect
+export function buildAutoScoreAdapter<Q extends { points?: number; scoringMethod?: ScoringMethod }, A>(
+  scorer: QuestionAutoScorer<Q, A>
+) {
+  return (question: Q, answer: A) => {
+    const normalized = clamp(scorer(question, answer, question.scoringMethod || "all_or_nothing"), 0, 1);
+    const pointsPossible = Number(question.points || 1);
+    const pointsEarned = Math.round(normalized * pointsPossible * 100) / 100;
+
+    return {
+      normalized,
+      pointsEarned,
+      isCorrect: normalized >= 0.999
+    };
   };
 }
 

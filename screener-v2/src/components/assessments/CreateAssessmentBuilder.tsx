@@ -15,6 +15,11 @@ import {
 } from "@/components/access/InviteCredentialsPanel";
 import { IntegrityPresetPicker } from "@/components/access/IntegrityPresetPicker";
 import { ConfigFieldEditor } from "@/components/addons/ConfigFieldEditor";
+import {
+  getAddonAssessmentType,
+  getAddonAssessmentTypeMeta
+} from "@/lib/addons/assessment-types";
+import { prepareAddonAssessmentTypeConfig } from "@/lib/addons/assessment-types";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StepRail } from "@/components/primitives/StepRail";
@@ -69,23 +74,8 @@ function examKey(exam: ExamBlueprintDraftItem, index: number) {
   return exam.sourceAddonId ?? `${exam.definitionId}-${index}`;
 }
 
-function fieldValid(field: ExamConfigFieldDefinition, value: unknown) {
-  if (!field.required) return true;
-  if (field.type === "single_select") {
-    return typeof value === "string" && value.trim().length > 0;
-  }
-  return Array.isArray(value) && value.length > 0;
-}
-
 function validateExam(definitionId: PreviewExam["definitionId"], config: Record<string, unknown>) {
-  const entry = examCatalog[definitionId];
-  const messages = entry.configFields
-    .filter((field) => !fieldValid(field, config[field.key]))
-    .map((field) =>
-      field.type === "multi_select"
-        ? `${entry.label} needs at least one ${field.label.toLowerCase()} selected.`
-        : `${entry.label} needs ${field.label.toLowerCase()}.`
-    );
+  const { messages } = prepareAddonAssessmentTypeConfig(definitionId, config);
   return { valid: messages.length === 0, messages };
 }
 
@@ -301,7 +291,13 @@ export function CreateAssessmentBuilder({
   const [loading, setLoading] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [selectionSource, setSelectionSource] = useState<SelectionSource>(
-    initialPresets.some((preset) => preset.isActive) ? "presets" : "library"
+    initialPresets.some(
+      (preset) =>
+        preset.isActive &&
+        preset.items.every((item) => Boolean(getAddonAssessmentType(item.addon.assessmentTypeId)))
+    )
+      ? "presets"
+      : "library"
   );
   const transition = reduceMotion ? undefined : { duration: 0.18 };
 
@@ -320,6 +316,28 @@ export function CreateAssessmentBuilder({
         .slice()
         .sort((left, right) => left.sortOrder - right.sortOrder),
     [initialPresets]
+  );
+  const supportedAddons = useMemo(
+    () => activeAddons.filter((addon) => Boolean(getAddonAssessmentType(addon.assessmentTypeId))),
+    [activeAddons]
+  );
+  const unsupportedAddons = useMemo(
+    () => activeAddons.filter((addon) => !getAddonAssessmentType(addon.assessmentTypeId)),
+    [activeAddons]
+  );
+  const supportedPresets = useMemo(
+    () =>
+      activePresets.filter((preset) =>
+        preset.items.every((item) => Boolean(getAddonAssessmentType(item.addon.assessmentTypeId)))
+      ),
+    [activePresets]
+  );
+  const unsupportedPresets = useMemo(
+    () =>
+      activePresets.filter((preset) =>
+        preset.items.some((item) => !getAddonAssessmentType(item.addon.assessmentTypeId))
+      ),
+    [activePresets]
   );
   const addonLookup = useMemo(
     () => new Map(initialAddons.map((addon) => [addon.id, addon])),
@@ -364,6 +382,11 @@ export function CreateAssessmentBuilder({
   const visibleStepIds = stepIds.slice(0, Math.max(1, stepIds.indexOf(step) + 1));
 
   function beginAddonConfig(addon: AddonCatalogEntry) {
+    if (!getAddonAssessmentType(addon.assessmentTypeId)) {
+      setError(`This build does not support the assessment type used by ${addon.label}.`);
+      return;
+    }
+
     const existing = selectedExams.find((exam) => exam.sourceAddonId === addon.id);
     setSelectedPresetId(null);
     setConfiguringAddonId(addon.id);
@@ -398,6 +421,11 @@ export function CreateAssessmentBuilder({
   }
 
   function applyPreset(preset: AssessmentPresetEntry) {
+    if (preset.items.some((item) => !getAddonAssessmentType(item.addon.assessmentTypeId))) {
+      setError(`This build does not support one or more add-ons inside ${preset.label}.`);
+      return;
+    }
+
     const drafts = buildDraftsFromPreset(preset);
     setSelectedPresetId(preset.id);
     setSelectedExams(drafts);
@@ -648,7 +676,7 @@ export function CreateAssessmentBuilder({
               />
 
               <div className="flex flex-wrap gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-1 shadow-[var(--app-shadow-soft)]">
-                {activePresets.length > 0 ? (
+                {supportedPresets.length > 0 ? (
                   <button
                     type="button"
                     onClick={() => setSelectionSource("presets")}
@@ -674,7 +702,18 @@ export function CreateAssessmentBuilder({
                 </button>
               </div>
 
-              {selectionSource === "presets" && activePresets.length > 0 ? (
+              {unsupportedAddons.length > 0 || unsupportedPresets.length > 0 ? (
+                <div className="rounded-[18px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-100">
+                  This build is hiding unsupported library content:
+                  {" "}
+                  {unsupportedAddons.length > 0 ? `${unsupportedAddons.length} add-on(s)` : null}
+                  {unsupportedAddons.length > 0 && unsupportedPresets.length > 0 ? " and " : null}
+                  {unsupportedPresets.length > 0 ? `${unsupportedPresets.length} preset(s)` : null}
+                  . Refresh or redeploy if you recently added a new assessment type.
+                </div>
+              ) : null}
+
+              {selectionSource === "presets" && supportedPresets.length > 0 ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="space-y-1">
@@ -686,7 +725,7 @@ export function CreateAssessmentBuilder({
                     </Button>
                   </div>
                   <div className="flex snap-x gap-3 overflow-x-auto pb-1">
-                    {activePresets.map((preset) => {
+                    {supportedPresets.map((preset) => {
                       const active = selectedPresetId === preset.id;
                       return (
                         <button
@@ -724,7 +763,7 @@ export function CreateAssessmentBuilder({
                               <StatusPill
                                 key={item.id}
                                 label={item.addon.label}
-                                tone={examCatalog[item.addon.engineType].accentTone}
+                                tone={getAddonAssessmentTypeMeta(item.addon.assessmentTypeId).tone}
                                 className="normal-case tracking-normal"
                               />
                             ))}
@@ -755,10 +794,10 @@ export function CreateAssessmentBuilder({
                           </tr>
                         </thead>
                         <tbody>
-                          {activeAddons.map((addon) => {
+                          {supportedAddons.map((addon) => {
                             const active = selectedExams.some((exam) => exam.sourceAddonId === addon.id);
                             const selectedExam = selectedExams.find((exam) => exam.sourceAddonId === addon.id);
-                            const configFields = examCatalog[addon.engineType].configFields;
+                            const configFields = getAddonAssessmentTypeMeta(addon.assessmentTypeId).configFields;
                             const isConfiguring = configuringAddonId === addon.id && configuringExam !== null;
                             const draftExam = isConfiguring ? configuringExam : selectedExam ?? null;
                             return (
@@ -782,8 +821,8 @@ export function CreateAssessmentBuilder({
                                   </td>
                                   <td className="px-4 py-3 align-top">
                                     <StatusPill
-                                      label={examCatalog[addon.engineType].label}
-                                      tone={examCatalog[addon.engineType].accentTone}
+                                      label={getAddonAssessmentTypeMeta(addon.assessmentTypeId).label}
+                                      tone={getAddonAssessmentTypeMeta(addon.assessmentTypeId).tone}
                                     />
                                   </td>
                                   <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultDurationMinutes} min</td>

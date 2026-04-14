@@ -60,15 +60,20 @@ export function RolePicker({
 
   async function loadRoles() {
     setLoading(true);
-    const response = await fetch("/api/roles", { cache: "no-store" });
-    const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[]; message?: string };
-    if (data.ok && Array.isArray(data.roles)) {
-      setOptions(data.roles);
-      setError("");
-    } else {
-      setError(data.message || "Could not load roles.");
+    try {
+      const response = await fetch("/api/roles", { cache: "no-store" });
+      const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[]; message?: string };
+      if (data.ok && Array.isArray(data.roles)) {
+        setOptions(data.roles);
+        setError("");
+      } else {
+        setError(data.message || "Could not load roles.");
+      }
+    } catch {
+      setError("Could not load roles. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -135,27 +140,32 @@ export function RolePicker({
     }
 
     setSaving(true);
-    const response = await fetch(editor.id ? `/api/roles/${editor.id}` : "/api/roles", {
-      method: editor.id ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch(editor.id ? `/api/roles/${editor.id}` : "/api/roles", {
+        method: editor.id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    const data = (await response.json()) as {
-      ok: boolean;
-      role?: RolePickerOption;
-      message?: string;
-    };
-    setSaving(false);
+      const data = (await response.json()) as {
+        ok: boolean;
+        role?: RolePickerOption;
+        message?: string;
+      };
 
-    if (!data.ok || !data.role) {
-      setError(data.message || "Could not save role.");
-      return;
+      if (!data.ok || !data.role) {
+        setError(data.message || "Could not save role.");
+        return;
+      }
+
+      await loadRoles();
+      commit(data.role);
+      beginEdit(data.role);
+    } catch {
+      setError("Could not save role. Check your connection and try again.");
+    } finally {
+      setSaving(false);
     }
-
-    await loadRoles();
-    commit(data.role);
-    beginEdit(data.role);
   }
 
   const managerModal =

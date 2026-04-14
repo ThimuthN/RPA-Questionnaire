@@ -2,10 +2,13 @@ import { z } from "zod";
 import type { QuestionTypeDef } from "@/lib/question-types/types";
 import { FillBlankRenderer } from "@/components/runtime/renderers/FillBlankRenderer";
 import { GenericReviewRenderer } from "@/components/runtime/renderers/ReviewRenderer";
-import { commonQuestionSchema, reviewLines, scoreAdapter } from "@/lib/question-types/_base";
+import { scoreFillBlank } from "@/lib/question-types/auto-scorers";
+import { buildAutoScoreAdapter, commonQuestionSchema, reviewLines } from "@/lib/question-types/_base";
 
 export const fillBlankDef: QuestionTypeDef<any, string, { lines: string[] }> = {
   type: "fill_blank_constrained",
+  runtimeLabel: "Fill in the blank",
+  runtimeHint: "Pick the most precise completion.",
   schema: commonQuestionSchema.extend({
     blank: z.string(),
     choices: z.array(z.string()).min(2),
@@ -16,8 +19,9 @@ export const fillBlankDef: QuestionTypeDef<any, string, { lines: string[] }> = {
     ok: Boolean(String(answer || "").trim()),
     reason: "Select one answer."
   }),
-  score: scoreAdapter,
+  score: buildAutoScoreAdapter(scoreFillBlank),
   toReviewModel: reviewLines,
+  autoScorer: scoreFillBlank,
   Renderer: FillBlankRenderer,
   ReviewRenderer: GenericReviewRenderer
 };

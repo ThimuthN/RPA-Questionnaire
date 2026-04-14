@@ -176,12 +176,51 @@ export interface ExamConfigFieldOption {
   description?: string;
 }
 
-export interface ExamConfigFieldDefinition {
+export interface ExamConfigFieldBase {
   key: string;
   label: string;
   description?: string;
-  type: "single_select" | "multi_select";
   required: boolean;
+}
+
+export interface ExamConfigSingleSelectFieldDefinition extends ExamConfigFieldBase {
+  type: "single_select";
+  options: ExamConfigFieldOption[];
+}
+
+export interface ExamConfigMultiSelectFieldDefinition extends ExamConfigFieldBase {
+  type: "multi_select";
+  options: ExamConfigFieldOption[];
+}
+
+export interface ExamConfigTextFieldDefinition extends ExamConfigFieldBase {
+  type: "text";
+  placeholder?: string;
+}
+
+export interface ExamConfigNumberFieldDefinition extends ExamConfigFieldBase {
+  type: "number";
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+}
+
+export interface ExamConfigBooleanFieldDefinition extends ExamConfigFieldBase {
+  type: "boolean";
+  trueLabel?: string;
+  falseLabel?: string;
+}
+
+export type ExamConfigFieldDefinition =
+  | ExamConfigSingleSelectFieldDefinition
+  | ExamConfigMultiSelectFieldDefinition
+  | ExamConfigTextFieldDefinition
+  | ExamConfigNumberFieldDefinition
+  | ExamConfigBooleanFieldDefinition;
+
+export interface ExamConfigFieldDefinitionWithOptions extends ExamConfigFieldBase {
+  type: "single_select" | "multi_select";
   options: ExamConfigFieldOption[];
 }
 
