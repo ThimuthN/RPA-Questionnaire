@@ -120,6 +120,7 @@ export function AddonLibraryClient({
 }) {
   const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
+  const [showInactive, setShowInactive] = useState(false);
   const [addons, setAddons] = useState(initialAddons);
   const [presets, setPresets] = useState(initialPresets);
   const [editingAddonId, setEditingAddonId] = useState<string | null>(null);
@@ -133,8 +134,21 @@ export function AddonLibraryClient({
   const [savingPreset, setSavingPreset] = useState(false);
 
   const addonOptions = useMemo(
-    () => addons.slice().sort((left, right) => left.sortOrder - right.sortOrder),
-    [addons]
+    () =>
+      addons
+        .filter((addon) => showInactive || addon.isActive)
+        .slice()
+        .sort((left, right) => left.sortOrder - right.sortOrder),
+    [addons, showInactive]
+  );
+
+  const presetOptions = useMemo(
+    () =>
+      presets
+        .filter((preset) => showInactive || preset.isActive)
+        .slice()
+        .sort((left, right) => left.sortOrder - right.sortOrder),
+    [presets, showInactive]
   );
 
   const addonLookup = useMemo(
@@ -358,9 +372,18 @@ export function AddonLibraryClient({
           <h2 className="text-2xl text-[color:var(--app-heading)]">{viewMode === "addons" ? "All add-ons" : "All presets"}</h2>
           <div className="flex flex-wrap items-center gap-3">
             <StatusPill
-              label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presets.length} presets`}
+              label={viewMode === "addons" ? `${addonOptions.length} add-ons` : `${presetOptions.length} presets`}
               tone="neutral"
             />
+            <label className="flex items-center gap-2 text-sm text-[color:var(--app-muted)]">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(event) => setShowInactive(event.target.checked)}
+                className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent"
+              />
+              Show inactive
+            </label>
             {viewMode === "presets" ? (
               <Button type="button" onClick={startNewPreset}>
                 New preset
@@ -424,7 +447,7 @@ export function AddonLibraryClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {presets.map((preset) => (
+                  {presetOptions.map((preset) => (
                     <tr key={preset.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
                       <td className="px-4 py-3 align-top">
                         <div className="space-y-1">
