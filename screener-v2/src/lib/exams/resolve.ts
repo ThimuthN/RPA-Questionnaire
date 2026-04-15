@@ -13,6 +13,7 @@ import {
   deriveExamSelectionMetadata,
   isPracticalExamDefinition
 } from "@/lib/exams/catalog";
+import { randomizeExamQuestion } from "@/lib/exams/question-randomization";
 import type { SectionId } from "@/lib/sections/types";
 import { resolveExamItems } from "@/lib/exams/server-registry";
 import { cuidLike } from "@/lib/tokens/token-service";
@@ -77,10 +78,13 @@ export function resolveExamBlueprint(args: {
 }): ExamBlueprint {
   const exams: FrozenExamInstance[] = args.drafts.map((draft, index) => {
     const metadata = deriveExamSelectionMetadata(draft.definitionId, draft.config ?? {}, args.passPercent);
-    const items = resolveExamItems(draft.definitionId, draft.config ?? {});
+    const instanceId = cuidLike();
+    const items = resolveExamItems(draft.definitionId, draft.config ?? {}).map((item, itemIndex) =>
+      randomizeExamQuestion(item, `${instanceId}|${draft.definitionId}|${item.id}|${itemIndex}`)
+    );
 
     return {
-      instanceId: cuidLike(),
+      instanceId,
       definitionId: draft.definitionId,
       legacySectionId: metadata.legacySectionId,
       label: draft.label?.trim() || metadata.label,

@@ -2,19 +2,10 @@
 
 import type { BaseQuestionRendererProps } from "@/components/runtime/renderers/types";
 
-function stableOptionOrder(seed: string, value: string) {
-  let hash = 0;
-  const source = `${seed}:${value}`;
-  for (let index = 0; index < source.length; index += 1) {
-    hash = (hash * 31 + source.charCodeAt(index)) % 100000;
-  }
-  return hash;
-}
-
 export function MatchingRenderer({ question, answer, onChange }: BaseQuestionRendererProps) {
   const left = Array.isArray(question.leftItems) ? question.leftItems : [];
   const right = Array.isArray(question.rightItems) ? question.rightItems : [];
-  const options = [...right].sort((a, b) => stableOptionOrder(question.id, a) - stableOptionOrder(question.id, b));
+  const options = [...right];
   const value = answer && typeof answer === "object" ? (answer as Record<string, string>) : {};
 
   function pick(item: string, option: string) {
