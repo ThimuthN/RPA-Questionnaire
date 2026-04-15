@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type {
   AddonCatalogEntry,
@@ -118,6 +119,7 @@ export function AddonLibraryClient({
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
 }) {
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
   const [showInactive, setShowInactive] = useState(false);
@@ -500,6 +502,15 @@ export function AddonLibraryClient({
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusPill label={selectedAddonType.label} tone={selectedAddonType.tone} />
+                {editingAddonId && !editingUnknownAddonType ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => router.push(`/addons/${editingAddonId}/review`)}
+                  >
+                    Review
+                  </Button>
+                ) : null}
                 <Button type="button" variant="secondary" onClick={closeAddonEditor}>
                   Close
                 </Button>
@@ -643,6 +654,15 @@ export function AddonLibraryClient({
                 Active in the library
               </label>
               <div className="flex flex-wrap gap-3">
+                {editingAddonId && !editingUnknownAddonType ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => router.push(`/addons/${editingAddonId}/review`)}
+                  >
+                    Review
+                  </Button>
+                ) : null}
                 <Button onClick={submitAddon} disabled={savingAddon || editingUnknownAddonType}>
                   {savingAddon ? "Saving..." : editingAddonId ? "Save add-on" : "Create add-on"}
                 </Button>

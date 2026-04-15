@@ -57,10 +57,12 @@ function AnswerBlock({
 
 export function ResultReviewSections({
   sections,
-  examBreakdown
+  examBreakdown,
+  mode = "result"
 }: {
   sections: ResultReviewSection[];
-  examBreakdown: ExamBreakdown;
+  examBreakdown?: ExamBreakdown;
+  mode?: "result" | "answer_key";
 }) {
   if (sections.length === 0) {
     return null;
@@ -69,7 +71,7 @@ export function ResultReviewSections({
   return (
     <div className="space-y-5">
       {sections.map((section) => {
-        const exam = examBreakdown[section.id];
+        const exam = examBreakdown?.[section.id];
         return (
           <StagePanel key={section.id} className="space-y-5">
             <div className="space-y-2">
@@ -99,7 +101,9 @@ export function ResultReviewSections({
                   <span>Minimum pass: {exam.requiredPercent.toFixed(0)}%</span>
                 </div>
               ) : null}
-              <h2 className="text-2xl text-[color:var(--app-heading)]">{section.label} Review</h2>
+              <h2 className="text-2xl text-[color:var(--app-heading)]">
+                {section.label} {mode === "result" ? "Review" : "Answer Key"}
+              </h2>
               {section.description ? (
                 <StructuredPromptContent text={section.description} className="space-y-4" />
               ) : null}
@@ -116,7 +120,9 @@ export function ResultReviewSections({
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
-                          <StatusPill label={status.label} tone={status.tone} />
+                          {mode === "result" ? (
+                            <StatusPill label={status.label} tone={status.tone} />
+                          ) : null}
                           <StatusPill label={item.formatLabel} tone="neutral" />
                           {item.category ? (
                             <StatusPill
@@ -125,11 +131,13 @@ export function ResultReviewSections({
                               className="normal-case tracking-normal"
                             />
                           ) : null}
-                          <StatusPill
-                            label={`${item.pointsEarned}/${item.pointsPossible} pts`}
-                            tone="neutral"
-                            className="normal-case tracking-normal"
-                          />
+                          {mode === "result" ? (
+                            <StatusPill
+                              label={`${item.pointsEarned}/${item.pointsPossible} pts`}
+                              tone="neutral"
+                              className="normal-case tracking-normal"
+                            />
+                          ) : null}
                         </div>
                         <h3 className="text-xl text-[color:var(--app-heading)]">{item.title}</h3>
                         {item.promptBlocks && item.promptBlocks.length > 0 ? (
@@ -144,10 +152,14 @@ export function ResultReviewSections({
                         ) : null}
                       </div>
 
-                      <div className="grid gap-3 lg:grid-cols-2">
-                        <AnswerBlock title="Candidate Answer" lines={item.candidateAnswerLines} tone="blue" />
+                      {mode === "result" ? (
+                        <div className="grid gap-3 lg:grid-cols-2">
+                          <AnswerBlock title="Candidate Answer" lines={item.candidateAnswerLines} tone="blue" />
+                          <AnswerBlock title="Expected Answer" lines={item.expectedAnswerLines} tone="emerald" />
+                        </div>
+                      ) : (
                         <AnswerBlock title="Expected Answer" lines={item.expectedAnswerLines} tone="emerald" />
-                      </div>
+                      )}
 
                       {item.explanation ? (
                         <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">

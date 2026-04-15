@@ -181,39 +181,39 @@ const rpaRuntimeBaseQuestions: Question[] = [
   }),
   choiceQuestion({
     id: "rpa_runtime_base_q5",
-    category: "Runtime Diagnosis",
+    category: "Dependency Load Control",
     tier: "hard",
     format: "log_analysis_single_select",
-    prompt: "What is the real flaw in this flow?",
+    prompt: "A dependency is slow, queue depth is rising, and retries are stacking up. What is the best immediate control?",
     logSnippet:
-      "Sent invoice INV-402\nTimed out after send\nRetry queued\nOriginal request later succeeded\nRetry rejected as duplicate",
+      "Latency rising\nQueue depth increasing\nRetries rising\nNo hard outage declared",
     options: [
-      "Timeout was too short",
-      "The queue should never retry timed-out items",
-      "The bot retried before checking whether the first attempt already worked",
-      "The target system should not reject duplicates"
+      "Add more workers so the queue clears faster",
+      "Keep retries unchanged because the dependency is still responding",
+      "Slow or gate retries so the bot does not amplify load while the dependency is degraded",
+      "Mark timed-out items successful and reconcile them later"
     ],
     correctAnswer: "C",
-    explanation: "The design retried before proving whether the original submission had already worked.",
-    rationale: "Tests log-based duplicate diagnosis."
+    explanation: "When a dependency is degraded, the bot should avoid turning retry pressure into even more load.",
+    rationale: "Tests runtime control during dependency slowdown."
   }),
   choiceQuestion({
     id: "rpa_runtime_base_q8",
-    category: "Cross-System Recovery",
+    category: "Input Quality Control",
     tier: "hard",
     format: "log_analysis_single_select",
-    prompt: "What is the strongest next move?",
+    prompt: "A source file has valid headers, but its row count is far below normal and totals do not match the upstream summary. What should the bot do?",
     logSnippet:
-      "Customer record updated\nBilling request timed out after send\nAudit step not reached\nWorker restarted",
+      "Headers valid\nRow count 40% below normal\nControl total mismatch\nFile not locked",
     options: [
-      "Re-run the whole transaction so both systems stay aligned",
-      "Retry the billing action immediately",
-      "Check whether billing already happened before deciding whether to retry",
-      "Treat it as bad source data"
+      "Process the file because the structure is valid",
+      "Wait ten minutes and process it if the file is unchanged",
+      "Raise a data-quality exception and stop automated posting for that file",
+      "Process only rows that pass local validation"
     ],
     correctAnswer: "C",
-    explanation: "The billing step may already have completed, so the process has to check before retrying it.",
-    rationale: "Tests safe handling of partial completion across systems."
+    explanation: "A structurally valid file can still be unsafe when counts and control totals disagree with the expected business handoff.",
+    rationale: "Tests handling of malformed-but-parseable input."
   }),
   choiceQuestion({
     id: "rpa_runtime_base_q11",
@@ -235,19 +235,19 @@ const rpaRuntimeBaseQuestions: Question[] = [
   }),
   orderingQuestion({
     id: "rpa_runtime_base_q12",
-    category: "Crash Recovery",
+    category: "Input Exception Handling",
     tier: "hard",
     prompt:
-      "A bot crashes after sending an external update but before saving its own final state. Arrange the strongest recovery steps in order.",
+      "A bot receives a file with valid columns, but totals do not match the control report. Arrange the strongest handling steps in order.",
     items: [
-      "Check what happened in the external system",
-      "Capture enough recovery evidence to support a safe next action",
-      "Decide whether to continue, retry, or stop the item",
-      "Resume processing with the chosen action"
+      "Prevent the bot from posting items from that file",
+      "Capture counts, totals, and file details as evidence",
+      "Route the file through the agreed exception path",
+      "Resume only after corrected input is confirmed"
     ],
     correctOrder: [0, 1, 2, 3],
-    explanation: "Recovery should start with checking external state, then recording evidence, then choosing a safe path.",
-    rationale: "Tests recovery sequencing under uncertainty."
+    explanation: "The bot should stop harm first, record evidence, route the issue properly, and only resume after corrected input is confirmed.",
+    rationale: "Tests sequencing for input anomalies."
   })
 ];
 
@@ -258,16 +258,16 @@ const seniorQuestions: Question[] = [
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A bot sometimes restarts after failure and posts the same invoice twice. What is the strongest preventive control?",
+      "Invoice duplicates are rare but expensive. Which control gives the strongest protection?",
     options: [
-      "Add a longer delay before posting",
-      "Reduce retry count",
-      "Check a business-unique identifier before posting",
-      "Clean up duplicates at the end of the day"
+      "Retry only once before stopping the item",
+      "Add a fixed delay before each submit",
+      "Check a business-unique identifier before posting and log the same value for recovery",
+      "Run a daily duplicate report and reverse anything extra"
     ],
     correctAnswer: "C",
-    explanation: "A stable business identifier is the strongest direct control against duplicate posting.",
-    rationale: "Tests duplicate prevention design."
+    explanation: "The safest direct control is to prevent replay against the same business transaction in the first place.",
+    rationale: "Tests duplicate-prevention design."
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q4",
@@ -361,16 +361,16 @@ const seniorQuestions: Question[] = [
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A button is visible in the DOM, but clicks fail because a loading layer still covers it. What is the strongest fix?",
+      "A button is present and enabled, but a sliding panel sometimes passes over it during load. What is the best fix?",
     options: [
       "Retry the click three times",
-      "Wait until the element exists, then click",
-      "Wait until the element is actually interactable and the blocker is gone",
-      "Add a fixed sleep before all clicks"
+      "Add a fixed delay before the step",
+      "Use JavaScript click for this page",
+      "Wait for both the blocker to disappear and the target to become interactable"
     ],
-    correctAnswer: "C",
-    explanation: "Element presence is not enough when another overlay is still blocking interaction.",
-    rationale: "Tests click-readiness judgment."
+    correctAnswer: "D",
+    explanation: "The real requirement is not just element presence; it is a state where the blocker is gone and the action is truly safe to perform.",
+    rationale: "Tests blocker-aware click readiness."
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q16",
@@ -397,16 +397,16 @@ const seniorQuestions: Question[] = [
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A bot keeps selecting the wrong claim because it clicks row 3 after the table re-sorts. What is the strongest fix?",
+      "A claims grid can show both an original claim and an adjustment with the same claim number. What locator strategy is best?",
     options: [
-      "Add a longer delay before clicking row 3",
-      "Retry if the wrong row opens",
-      "Find the row using a business identifier like claim number",
-      "Disable sorting in the browser"
+      "Use the first row with that claim number",
+      "Sort by date and use the top matching row",
+      "Match the claim number and a second business field that uniquely identifies the target row",
+      "Use screen position because the adjustment row is usually lower"
     ],
     correctAnswer: "C",
-    explanation: "The row should be targeted by business identity, not by visual position.",
-    rationale: "Tests dynamic-grid targeting."
+    explanation: "When one business value is not unique enough, the locator needs another stable business clue to separate similar rows.",
+    rationale: "Tests robust grid targeting."
   }),
   multiSelectQuestion({
     id: "rpa_runtime_senior_q18",
@@ -459,20 +459,20 @@ const seniorQuestions: Question[] = [
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q21",
-    category: "Browser Automation",
+    category: "Automation Environment",
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A claim table can re-sort, rows move, and element IDs change each refresh. The bot needs to click the Approve button for one specific claim. Which locator approach is strongest?",
+      "A Selenium flow passes locally but fails in CI because the app opens in a mobile-style layout and hides the target action in another menu. What is the best correction?",
     options: [
-      "Use the third row because the right claim is usually near the top",
-      "Use a locator anchored to the claim number, then find the related action button in that same row",
-      "Use screen coordinates because they are faster once recorded",
-      "Use the shortest XPath available so it is easier to maintain"
+      "Add more waits around the hidden action",
+      "Set a deterministic viewport and target the intended layout explicitly",
+      "Retry after page refresh in case the menu appears",
+      "Run headed only so the CI browser behaves more like local"
     ],
     correctAnswer: "B",
-    explanation: "A stable business value is the safest anchor in a dynamic grid.",
-    rationale: "Tests locator strategy in changing tables."
+    explanation: "The more reliable fix is to remove layout drift between environments instead of treating it as a timing issue.",
+    rationale: "Tests environment consistency for browser automation."
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q22",
@@ -480,16 +480,16 @@ const seniorQuestions: Question[] = [
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A Selenium bot can see a Login button on screen, but find_element fails. The page source shows the button is inside an embedded frame that loads after the main page shell. What is the strongest fix?",
+      "A target control sits inside a frame, but the frame name changes between releases. What is the best approach?",
     options: [
-      "Add a longer wait and keep searching from the top page until the frame finishes loading",
-      "Switch into the correct frame, then locate and interact with the button from that context",
-      "Use JavaScript click from the top page once the button is visible on screen",
-      "Switch this step to image-based clicking because frame content is too unreliable"
+      "Hardcode the current frame name and update it when needed",
+      "Try frames by index until the click works",
+      "Identify the correct frame using stable page context, then switch into it before locating the control",
+      "Replace the step with image automation so frame context no longer matters"
     ],
-    correctAnswer: "B",
-    explanation: "The bot has to switch into the frame before locating elements inside it.",
-    rationale: "Tests frame-context handling."
+    correctAnswer: "C",
+    explanation: "The bot still needs the correct frame context, but the route to that frame should depend on stable cues instead of brittle names.",
+    rationale: "Tests frame handling under release drift."
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q25",
@@ -513,17 +513,17 @@ const seniorQuestions: Question[] = [
     category: "Python Automation",
     tier: "hard",
     format: "single_select",
-    prompt: "What is the biggest problem with this retry logic?",
-    logSnippet: "try:\n    send_invoice(row)\nexcept TimeoutError:\n    send_invoice(row)",
+    prompt: "Before retrying a timed-out transaction, what must the bot do?",
+    logSnippet: "try:\n    send_invoice(row)\nexcept TimeoutError:\n    retry_if_needed(row)",
     options: [
-      "It retries too quickly and should sleep longer first",
-      "It catches too narrow an exception type",
-      "It retries without checking whether the first attempt may already have worked",
-      "It should log before the second call, not after it"
+      "Sleep longer so the dependency has time to recover",
+      "Check whether the first attempt may already have completed using business or system evidence",
+      "Lower the retry count so duplicates become less likely",
+      "Restart the session before any replay"
     ],
-    correctAnswer: "C",
-    explanation: "A timeout does not prove the first call failed, so retrying blindly can duplicate work.",
-    rationale: "Tests replay safety in Python automation code."
+    correctAnswer: "B",
+    explanation: "A timeout does not prove failure, so replay should start with evidence about the first attempt, not just another call.",
+    rationale: "Tests safe recovery in Python automation."
   }),
   choiceQuestion({
     id: "rpa_runtime_senior_q27",
@@ -547,18 +547,18 @@ const seniorQuestions: Question[] = [
     category: "Python Automation",
     tier: "hard",
     format: "single_select",
-    prompt: "What is the biggest risk in this batch-processing pattern?",
+    prompt: "A batch bot logs every failure as just 'failed' and keeps moving. What is the biggest design weakness?",
     logSnippet:
-      "for claim in claims:\n    try:\n        submit_claim(claim)\n    except Exception:\n        submit_claim(claim)",
+      "for claim in claims:\n    try:\n        submit_claim(claim)\n    except Exception:\n        logger.error(\"failed\")\n        continue",
     options: [
-      "It retries without checking whether the first attempt may already have completed",
-      "It should retry more than once before failing",
-      "It should process claims in parallel so one bad claim does not slow the batch",
-      "It should only catch network-related exceptions"
+      "It should log at WARN instead of ERROR for item-level issues",
+      "Item-level try/except should never be used in batch automations",
+      "It does not classify failures into retryable, business-exception, and terminal handling paths",
+      "The batch should be parallelized so failed items do not slow the run"
     ],
-    correctAnswer: "A",
-    explanation: "Blindly replaying on every exception can create duplicate external actions.",
-    rationale: "Tests risky retry behavior in Python loops."
+    correctAnswer: "C",
+    explanation: "Good batch handling depends on different failure types taking different paths instead of collapsing everything into one generic outcome.",
+    rationale: "Tests failure classification in batch bots."
   })
 ];
 
@@ -630,16 +630,16 @@ const leadQuestions: Question[] = [
     tier: "mediumHard",
     format: "single_select",
     prompt:
-      "A browser bot has locators, waits, retries, and recovery steps copied across many scripts. A UI change now requires the same fix in five places. What is the strongest improvement?",
+      "Shared browser logic now exists across multiple automations, but some flows still have client-specific rules. What is the best design decision?",
     options: [
-      "Move shared browser actions into one reusable layer so locator and wait changes are fixed in one place",
-      "Keep the scripts separate, but document the repeated logic more clearly",
-      "Replace all explicit waits with one global implicit wait",
-      "Add more screenshots so support can tell which script failed"
+      "Move every browser action into one shared layer immediately so the team has one standard",
+      "Keep everything local because shared layers create too much coupling",
+      "Extract only the clearly repeated browser behavior and leave client-specific logic local",
+      "Delay any refactor until another incident proves the need"
     ],
-    correctAnswer: "A",
-    explanation: "Shared browser logic should live in one place when the behavior is truly shared.",
-    rationale: "Tests maintainability decisions in browser automation."
+    correctAnswer: "C",
+    explanation: "The best shared layer is small, intentional, and limited to behavior that is truly reused.",
+    rationale: "Tests practical reuse boundaries."
   }),
   matchingQuestion({
     id: "rpa_runtime_lead_q28",
@@ -689,33 +689,32 @@ const leadQuestions: Question[] = [
     tier: "hard",
     format: "single_select",
     prompt:
-      "A bot sends an update to a payer portal. The browser freezes after clicking Submit. The queue item is still marked In Progress. The portal session is gone after restart, and there is no internal audit write yet. What is the strongest next step?",
+      "Finance wants ambiguous portal submits auto-replayed to reduce backlog. Support wants every ambiguous item routed manually. What is the best lead decision?",
     options: [
-      "Retry once because the queue item is still In Progress and no completion was recorded",
-      "Mark failed and let support compare portal records later to avoid creating another duplicate",
-      "Verify in the external system whether the action already happened, then choose retry, skip, or stop from that result",
-      "Restart from the first screen, but stop before final submit if a related record already appears"
+      "Route every ambiguous item manually because duplication is always the bigger risk",
+      "Auto-replay every ambiguous item after a fixed delay so backlog stays under control",
+      "Use evidence-based replay rules for low-risk verifiable cases and manual handling for the rest",
+      "Let each support shift decide based on the queue pressure that day"
     ],
     correctAnswer: "C",
-    explanation: "The process should confirm portal state before deciding whether the item is safe to replay.",
-    rationale: "Tests lead-level recovery judgment."
+    explanation: "The strongest policy is neither fully automatic nor fully manual; it depends on what can actually be verified safely.",
+    rationale: "Tests policy design for ambiguous recovery."
   }),
-  multiSelectQuestion({
+  choiceQuestion({
     id: "rpa_runtime_lead_q32",
-    category: "Recovery Evidence",
+    category: "Recovery Governance",
     tier: "hard",
-    prompt:
-      "A support team wants to replay failed items faster. Which evidence should be considered mandatory before replaying a transaction where partial completion is possible? Select all that apply.",
+    format: "single_select",
+    prompt: "A team wants a production replay tool for failed items. What guardrail matters most before approval?",
     options: [
-      "Last confirmed internal step",
-      "Whether the external system already changed state",
-      "A screenshot of the final screen only",
-      "Correlated transaction ID across logs",
-      "Retry history and timestamps"
+      "Only senior support users may open the tool",
+      "The tool must require proof of current external state before replay",
+      "The tool must run only outside business hours",
+      "The tool must take a screenshot before each replay"
     ],
-    correctAnswer: ["A", "B", "D", "E"],
-    explanation: "Replay decisions need step evidence, external-state proof, correlation, and retry history.",
-    rationale: "Tests operational evidence requirements before replay."
+    correctAnswer: "B",
+    explanation: "Access control helps, but the most important guardrail is forcing the replay decision to rely on actual current-state evidence.",
+    rationale: "Tests safe replay governance."
   }),
   choiceQuestion({
     id: "rpa_runtime_lead_q33",
@@ -819,31 +818,22 @@ const leadQuestions: Question[] = [
     explanation: "Fixed delays guess about readiness instead of waiting for meaningful application states.",
     rationale: "Tests lead-level wait strategy judgment."
   }),
-  matchingQuestion({
+  choiceQuestion({
     id: "rpa_runtime_lead_q39",
     category: "Root Cause Analysis",
     tier: "hard",
-    prompt: "Match each evidence pattern to the most likely root issue.",
-    leftItems: [
-      "Same item ID appears twice with two different run IDs",
-      "Screenshot shows target button visible but banner overlaps page bottom",
-      "Logs show success marked before downstream confirmation exists",
-      "DOM refresh occurs between locate and click"
+    format: "single_select",
+    prompt:
+      "An incident shows item overlap across run IDs, success marked before downstream confirmation, and too little evidence to decide whether replay is safe. What is the strongest conclusion?",
+    options: [
+      "The main issue was poor logging only",
+      "The dependency outage was the true root cause of everything else",
+      "The design failed across concurrency control, commit boundary, and recovery evidence",
+      "The retry count was simply too high"
     ],
-    rightItems: [
-      "Stale element risk",
-      "False completion logic",
-      "Overlap or concurrency problem",
-      "Click interception or overlay problem"
-    ],
-    correctPairs: {
-      "Same item ID appears twice with two different run IDs": "Overlap or concurrency problem",
-      "Screenshot shows target button visible but banner overlaps page bottom": "Click interception or overlay problem",
-      "Logs show success marked before downstream confirmation exists": "False completion logic",
-      "DOM refresh occurs between locate and click": "Stale element risk"
-    },
-    explanation: "Each evidence pattern points to a different failure family.",
-    rationale: "Tests mapping from evidence to root cause."
+    correctAnswer: "C",
+    explanation: "This is not one isolated bug; multiple safety boundaries failed at the same time.",
+    rationale: "Tests system-level root-cause judgment."
   }),
   multiSelectQuestion({
     id: "rpa_runtime_lead_q40",
@@ -868,34 +858,34 @@ const leadQuestions: Question[] = [
     tier: "hard",
     format: "single_select",
     prompt:
-      "A stakeholder says, 'If the portal says pending for too long, just resubmit.' There is no exact time threshold, no duplicate-safe rule, and no exception path defined. What is the strongest response?",
+      "A stakeholder says, 'If pending takes too long, just resubmit.' What most needs clarification before build approval?",
     options: [
-      "Use a default threshold now, but make it configurable so support can tune it later",
-      "Resubmit once after a reasonable delay and treat any second pending state as manual review",
-      "Stop and get the rule clarified, including the delay threshold, duplicate-safe behavior, exception path, and decision owner",
-      "Build a pending-age report first, then let production behavior guide the resubmit rule"
+      "Who should receive the daily pending-age report",
+      "The exact threshold, replay rule, exception path, and decision owner",
+      "Whether the bot should log pending items at INFO or WARN",
+      "Whether the queue should show amber or red while items are pending"
     ],
-    correctAnswer: "C",
-    explanation: "The rule needs to be clarified before implementation because retry timing and duplicate prevention are still undefined.",
-    rationale: "Tests lead-level requirement clarification."
+    correctAnswer: "B",
+    explanation: "The missing problem is not monitoring polish; it is the business rule that determines when replay is allowed at all.",
+    rationale: "Tests requirement clarification for risky automation."
   }),
   choiceQuestion({
     id: "rpa_runtime_lead_q42",
     category: "Code Review",
     tier: "hard",
     format: "single_select",
-    prompt: "What is the most dangerous combination of flaws in this automation code?",
+    prompt: "Which flaw is most dangerous from a production-risk perspective?",
     logSnippet:
       "for claim in claims:\n    try:\n        driver.find_element(By.ID, \"search\").send_keys(claim[\"id\"])\n        driver.find_element(By.ID, \"submit\").click()\n        time.sleep(5)\n        logger.info(\"done\")\n    except Exception:\n        pass",
     options: [
-      "The loop is too short and the logger message is too small",
-      "Broad exception swallowing, fixed sleep, and no transaction-level evidence make failures invisible and unsafe to recover",
-      "Selenium should not be used inside loops",
-      "send_keys should be replaced with JavaScript"
+      "Fixed sleeps, because they make the browser flow flaky",
+      "Missing transaction correlation, because support will search logs less efficiently",
+      "Writing success before downstream confirmation, because it can permanently misstate business completion",
+      "Broad exception swallowing, because developers will miss errors during debugging"
     ],
-    correctAnswer: "B",
-    explanation: "The code hides failures, guesses with sleeps, and records no usable recovery evidence.",
-    rationale: "Tests code-review judgment for automation safety."
+    correctAnswer: "C",
+    explanation: "Flaky waits and weak logs matter, but false success is the error that most directly corrupts business truth and makes recovery unsafe.",
+    rationale: "Tests production-risk prioritization in code review."
   })
 ];
 
