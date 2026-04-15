@@ -6,6 +6,7 @@ import { core2AddonDefinition } from "@/features/core2/definition";
 import { generalCapabilityAddonDefinition } from "@/features/general-capability/definition";
 import { appliedLogicAddonDefinition } from "@/features/logic-reasoning/definition";
 import { practicalAddonDefinition } from "@/features/practical/definition";
+import { pythonRpaScreenerAddonDefinition } from "@/features/python-rpa-screener/definition";
 import { rcmAddonDefinition } from "@/features/rcm/definition";
 import { rpaRuntimeAddonDefinition } from "@/features/rpa-runtime/definition";
 
@@ -45,6 +46,7 @@ export const orderedAddonDefinitions = [
   coreAddonDefinition,
   core2AddonDefinition,
   rpaRuntimeAddonDefinition,
+  pythonRpaScreenerAddonDefinition,
   practicalAddonDefinition,
   appliedLogicAddonDefinition,
   generalCapabilityAddonDefinition,

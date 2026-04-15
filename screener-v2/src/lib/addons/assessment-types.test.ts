@@ -23,6 +23,7 @@ describe("addon assessment types", () => {
 
   it("accepts only registered add-on assessment types", () => {
     expect(() => addonAssessmentTypeIdSchema.parse("rpa_runtime_exam")).not.toThrow();
+    expect(() => addonAssessmentTypeIdSchema.parse("python_rpa_screener_exam")).not.toThrow();
     expect(() => addonAssessmentTypeIdSchema.parse("imaginary_exam")).toThrow();
   });
 
@@ -31,6 +32,7 @@ describe("addon assessment types", () => {
       "core_exam",
       "core_2_exam",
       "rpa_runtime_exam",
+      "python_rpa_screener_exam",
       "practical_exam",
       "applied_logic_exam",
       "general_capability_exam",
