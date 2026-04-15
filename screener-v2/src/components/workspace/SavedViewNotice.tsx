@@ -42,8 +42,8 @@ export function SavedViewNotice({
     return (
       <StagePanel className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="space-y-1">
-          <p className="text-sm text-white">Save this view</p>
-          <p className="text-xs text-slate-400">Bookmark your current filters so you can restore them next time.</p>
+          <p className="text-sm text-[color:var(--app-heading)]">Save this view</p>
+          <p className="text-xs text-[color:var(--app-muted)]">Bookmark your current filters so you can restore them next time.</p>
         </div>
         <Button variant="secondary" type="button" onClick={saveCurrentView}>
           Save this view
@@ -57,8 +57,8 @@ export function SavedViewNotice({
     return (
       <StagePanel className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="space-y-1">
-          <p className="text-sm text-white">Restore your last filtered view</p>
-          <p className="text-xs text-slate-400">Your previous filters were saved in this browser.</p>
+          <p className="text-sm text-[color:var(--app-heading)]">Restore your last filtered view</p>
+          <p className="text-xs text-[color:var(--app-muted)]">Your previous filters were saved in this browser.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={savedHref as Route}>

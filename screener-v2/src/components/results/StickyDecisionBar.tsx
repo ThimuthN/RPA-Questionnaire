@@ -33,18 +33,18 @@ export function StickyDecisionBar({
 
   const statusColor =
     resultStatus === "pass"
-      ? "text-emerald-300"
+      ? "text-[color:var(--app-success)]"
       : resultStatus === "review"
-        ? "text-amber-300"
-        : "text-red-300";
+        ? "text-[color:var(--app-warning)]"
+        : "text-[color:var(--app-danger)]";
 
   return (
     <div
-      className={`fixed bottom-0 inset-x-0 z-50 border-t border-white/10 bg-ink-950/96 backdrop-blur-md transition-transform duration-300 ${visible ? "translate-y-0" : "translate-y-full"}`}
+      className={`fixed bottom-0 inset-x-0 z-50 border-t border-[color:var(--app-border)] bg-[color:var(--app-modal-surface-strong)] backdrop-blur-md transition-transform duration-300 ${visible ? "translate-y-0" : "translate-y-full"}`}
     >
       <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex flex-wrap items-center gap-3 min-w-0">
-          <p className="text-sm font-medium text-white truncate">{candidateName}</p>
+          <p className="text-sm font-medium text-[color:var(--app-heading)] truncate">{candidateName}</p>
           <span className={`text-sm font-medium ${statusColor}`}>{score.toFixed(1)} / 100</span>
         </div>
 
@@ -63,7 +63,7 @@ export function StickyDecisionBar({
           {nextUnreviewedId && (
             <Link
               href={`/results/${nextUnreviewedId}`}
-              className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm text-slate-100 transition hover:border-brand-300/60 hover:bg-white/[0.08]"
+              className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-sm text-[color:var(--app-text)] transition hover:border-brand-300/60 hover:bg-[color:var(--app-surface-soft)]"
             >
               Next unreviewed -&gt;
             </Link>

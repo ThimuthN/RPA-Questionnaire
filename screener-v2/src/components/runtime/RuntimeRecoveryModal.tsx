@@ -19,13 +19,16 @@ export function RuntimeRecoveryModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/72 p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center p-4 backdrop-blur-sm"
+      style={{ background: "var(--app-modal-overlay)" }}
+    >
       <StagePanel tone="summary" className="w-full max-w-xl space-y-4 text-center">
         <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Recovery step</p>
-        <h3 className="text-2xl text-white">{title}</h3>
-        <p className="text-sm leading-6 text-slate-200">{message}</p>
-        <div className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-left">
-          <ul className="space-y-2 text-sm text-slate-200">
+        <h3 className="text-2xl text-[color:var(--app-heading)]">{title}</h3>
+        <p className="text-sm leading-6 text-[color:var(--app-text)]">{message}</p>
+        <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 text-left">
+          <ul className="space-y-2 text-sm text-[color:var(--app-text)]">
             {facts.map((fact) => (
               <li key={fact}>{fact}</li>
             ))}

@@ -97,11 +97,11 @@ export function ResumePreviewModal({
                     </div>
 
                     <div className="flex-1 overflow-hidden p-3 md:p-5" style={{ background: "var(--app-modal-body)" }}>
-                      <div className="h-full overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-white shadow-[var(--app-shadow)]">
+                      <div className="h-full overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-surface-strong)] shadow-[var(--app-shadow)]">
                         <object data={viewerUrl} type="application/pdf" className="h-full min-h-[70vh] w-full">
-                          <div className="flex h-full min-h-[420px] items-center justify-center bg-slate-50 px-6 text-center">
+                          <div className="flex h-full min-h-[420px] items-center justify-center bg-[color:var(--app-surface-soft)] px-6 text-center">
                             <div className="space-y-3">
-                              <p className="text-sm text-slate-700">Preview is not available in this browser.</p>
+                              <p className="text-sm text-[color:var(--app-text)]">Preview is not available in this browser.</p>
                               <a href={previewUrl} target="_blank" rel="noreferrer">
                                 <Button type="button" variant="secondary">Open PDF</Button>
                               </a>

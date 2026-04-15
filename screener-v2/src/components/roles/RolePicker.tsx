@@ -327,7 +327,7 @@ export function RolePicker({
           {helperText ? <p className="text-xs text-[color:var(--app-muted)]">{helperText}</p> : null}
         </div>
 
-        {error ? <p className="text-sm text-red-200">{error}</p> : null}
+        {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
       </div>
 
       {managerModal}

@@ -22,8 +22,8 @@ export default function CandidatesError({
   return (
     <section className="space-y-4">
       <StagePanel className="space-y-3">
-        <h1 className="text-2xl text-white">Candidates workspace unavailable</h1>
-        <p className="text-sm text-slate-300">{error.message || "Something went wrong while loading candidates."}</p>
+        <h1 className="text-2xl text-[color:var(--app-heading)]">Candidates workspace unavailable</h1>
+        <p className="text-sm text-[color:var(--app-text)]">{error.message || "Something went wrong while loading candidates."}</p>
         <Button type="button" onClick={reset}>
           Retry
         </Button>

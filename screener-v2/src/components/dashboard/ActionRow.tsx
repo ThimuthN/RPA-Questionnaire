@@ -29,8 +29,10 @@ export function ActionRow({
     <StagePanel
       className={cn(
         "p-4",
-        tone === "attention" && "border-amber-300/20 bg-[linear-gradient(180deg,rgba(230,160,25,0.12),rgba(255,255,255,0.05))]",
-        tone === "positive" && "border-emerald-300/20 bg-[linear-gradient(180deg,rgba(32,178,107,0.12),rgba(255,255,255,0.05))]",
+        tone === "attention" &&
+          "border-[color:var(--app-warning)]/20 bg-[linear-gradient(180deg,var(--app-warning-soft),var(--app-surface-soft))]",
+        tone === "positive" &&
+          "border-[color:var(--app-success)]/20 bg-[linear-gradient(180deg,var(--app-success-soft),var(--app-surface-soft))]",
         className
       )}
     >
@@ -38,21 +40,24 @@ export function ActionRow({
         <div className="min-w-0 flex-1 space-y-3">
           {badges ? <div className="flex flex-wrap gap-2">{badges}</div> : null}
           <div className="space-y-1">
-            <p className="text-lg text-white">{title}</p>
-            {subtitle ? <p className="text-sm text-slate-300">{subtitle}</p> : null}
-            {description ? <p className="text-sm leading-6 text-brand-100">{description}</p> : null}
+            <p className="text-lg text-[color:var(--app-heading)]">{title}</p>
+            {subtitle ? <p className="text-sm text-[color:var(--app-text)]">{subtitle}</p> : null}
+            {description ? <p className="text-sm leading-6 text-[color:var(--app-muted)]">{description}</p> : null}
           </div>
-          {meta ? <div className="text-xs text-slate-400">{meta}</div> : null}
+          {meta ? <div className="text-xs text-[color:var(--app-muted)]">{meta}</div> : null}
         </div>
 
         <div className="flex w-full flex-col gap-4 xl:w-[360px] xl:items-end">
           {metrics?.length ? (
             <div className="grid w-full gap-3 sm:grid-cols-2">
               {metrics.map((metric) => (
-                <div key={metric.label} className="rounded-[18px] border border-white/10 bg-black/20 p-3">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{metric.label}</p>
-                  <p className="mt-1 text-base text-white">{metric.value}</p>
-                  {metric.hint ? <p className="mt-1 text-xs text-slate-400">{metric.hint}</p> : null}
+                <div
+                  key={metric.label}
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3"
+                >
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{metric.label}</p>
+                  <p className="mt-1 text-base text-[color:var(--app-heading)]">{metric.value}</p>
+                  {metric.hint ? <p className="mt-1 text-xs text-[color:var(--app-muted)]">{metric.hint}</p> : null}
                 </div>
               ))}
             </div>

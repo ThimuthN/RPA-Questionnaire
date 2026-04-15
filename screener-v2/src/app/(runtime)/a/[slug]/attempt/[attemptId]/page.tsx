@@ -21,7 +21,7 @@ export default async function AttemptRuntimePage({
     return (
       <section className="space-y-4">
         <StagePanel>
-          <h1 className="text-2xl text-white">Attempt Not Found</h1>
+          <h1 className="text-2xl text-[color:var(--app-heading)]">Attempt Not Found</h1>
         </StagePanel>
       </section>
     );
@@ -30,11 +30,13 @@ export default async function AttemptRuntimePage({
     return (
       <section className="space-y-4">
         <StagePanel>
-          <h1 className="text-3xl text-white">{copy.runtime.submittedTitle}</h1>
-          <p className="mt-2 text-slate-300">{copy.runtime.submittedBody}</p>
+          <h1 className="text-3xl text-[color:var(--app-heading)]">{copy.runtime.submittedTitle}</h1>
+          <p className="mt-2 text-[color:var(--app-text)]">{copy.runtime.submittedBody}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link href="/">
-              <button className="rounded-[12px] bg-brand-500 px-4 py-2 text-white">{copy.runtime.finish}</button>
+              <button className="rounded-[12px] bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-4 py-2 text-white shadow-[0_14px_30px_color-mix(in_srgb,var(--app-brand)_28%,transparent)]">
+                {copy.runtime.finish}
+              </button>
             </Link>
           </div>
         </StagePanel>

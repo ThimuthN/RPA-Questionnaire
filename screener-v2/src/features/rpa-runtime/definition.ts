@@ -4,7 +4,7 @@ import { buildRpaRuntimeQuestions, normalizeRpaRuntimeLevel } from "@/features/r
 
 export const rpaRuntimeAddonDefinition = {
   id: "rpa_runtime_exam",
-  label: "RPA Runtime Screener",
+  label: "Lead/Senior RPA Runtime",
   description: "Runtime-heavy RPA screener focused on production judgment, Selenium, and Python automation.",
   accentTone: "teal",
   scoreBarClass: "bg-[linear-gradient(90deg,rgba(18,179,168,0.95),rgba(93,223,205,0.9))]",
@@ -29,7 +29,7 @@ export const rpaRuntimeAddonDefinition = {
     {
       seedKey: "addon-rpa-runtime-default",
       slug: "rpa-runtime",
-      label: "RPA Runtime",
+      label: "Lead/Senior RPA Runtime",
       description:
         "24-question runtime screener with configurable Senior or Lead level focused on production judgment, Selenium, and Python automation.",
       defaultConfig: {
@@ -43,7 +43,7 @@ export const rpaRuntimeAddonDefinition = {
     }
   ],
   buildDurationMinutes: (config) => (String(config.level || "Senior") === "Lead" ? 40 : 36),
-  buildConfigSummary: (config) => `${String(config.level || "Senior")} | RPA runtime, Selenium, Python`,
+  buildConfigSummary: (config) => `${String(config.level || "Senior")} RPA Runtime | Selenium, Python`,
   buildRequiredPercent: (config, fallbackPassPercent) =>
     Math.max(fallbackPassPercent, String(config.level || "Senior") === "Lead" ? 70 : 65),
   resolveItems: (config) => buildRpaRuntimeQuestions(normalizeRpaRuntimeLevel(config.level))

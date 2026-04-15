@@ -58,7 +58,7 @@ export default async function ResultDetailPage({
   if (!result) {
     return (
       <section className="space-y-4">
-        <h1 className="text-3xl text-white">Result not found</h1>
+        <h1 className="text-3xl text-[color:var(--app-heading)]">Result not found</h1>
         <Link href="/results">
           <Button variant="secondary">Back to Results</Button>
         </Link>
@@ -108,12 +108,12 @@ export default async function ResultDetailPage({
       }
     >
       {pageState.updated ? (
-        <div className="mb-5 rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+        <div className="mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
           Updated {pageState.updated} candidate-linked result(s).
         </div>
       ) : null}
       {pageState.error ? (
-        <div className="mb-5 rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+        <div className="mb-5 rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]">
           {pageState.error}
         </div>
       ) : null}
@@ -138,24 +138,24 @@ export default async function ResultDetailPage({
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-5">
             <div className="space-y-3">
-              <h2 className="text-xl text-white">{copy.results.categoryBreakdown}</h2>
+              <h2 className="text-xl text-[color:var(--app-heading)]">{copy.results.categoryBreakdown}</h2>
               <div className="grid gap-3 md:grid-cols-2">
                 {Object.entries(row.breakdownByCategory).map(([key, value]) => (
                   <div
                     key={key}
-                    className="rounded-[18px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4"
+                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-slate-100">{key}</p>
-                      <p className="text-sm text-white">{value.percent.toFixed(1)}%</p>
+                      <p className="font-medium text-[color:var(--app-heading)]">{key}</p>
+                      <p className="text-sm text-[color:var(--app-heading)]">{value.percent.toFixed(1)}%</p>
                     </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--app-surface-muted)]">
                       <div
                         className="h-full rounded-full bg-[linear-gradient(90deg,rgba(47,134,255,1),rgba(18,179,168,0.92))]"
                         style={{ width: `${value.percent}%` }}
                       />
                     </div>
-                    <p className="mt-2 text-sm text-slate-300">
+                    <p className="mt-2 text-sm text-[color:var(--app-text)]">
                       {value.correctCount}/{value.totalCount} correct
                     </p>
                   </div>
@@ -166,10 +166,10 @@ export default async function ResultDetailPage({
           </div>
 
           <div className="space-y-5">
-            <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+            <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
               <div className="space-y-1">
-                <h2 className="text-xl text-white">Candidate context</h2>
-                <p className="text-sm text-slate-300">Bring the candidate state into the review instead of switching screens.</p>
+                <h2 className="text-xl text-[color:var(--app-heading)]">Candidate context</h2>
+                <p className="text-sm text-[color:var(--app-text)]">Bring the candidate state into the review instead of switching screens.</p>
               </div>
               {candidate ? (
                 <div className="mt-4 space-y-4">
@@ -182,8 +182,8 @@ export default async function ResultDetailPage({
                     ) : null}
                     {row.candidateOwner ? <StatusPill label={`Owner ${row.candidateOwner}`} tone="neutral" className="normal-case tracking-normal" /> : null}
                   </div>
-                  <p className="text-sm text-slate-300">{candidate.email}</p>
-                  {candidate.notesSummary ? <p className="text-sm text-brand-100">{candidate.notesSummary}</p> : null}
+                  <p className="text-sm text-[color:var(--app-text)]">{candidate.email}</p>
+                  {candidate.notesSummary ? <p className="text-sm text-[color:var(--app-text)]">{candidate.notesSummary}</p> : null}
                   <div className="grid gap-2 sm:grid-cols-2">
                     <ResultDecisionActions
                       attemptId={attemptId}
@@ -199,27 +199,27 @@ export default async function ResultDetailPage({
                   </div>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-300">This result is not linked to a tracked candidate yet.</p>
+                <p className="mt-4 text-sm text-[color:var(--app-text)]">This result is not linked to a tracked candidate yet.</p>
               )}
             </div>
 
-            <div className="rounded-[22px] border border-white/10 bg-black/20 p-4">
+            <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
               <div className="space-y-1">
-                <h2 className="text-xl text-white">Recent activity</h2>
-                <p className="text-sm text-slate-300">Latest notes and candidate events.</p>
+                <h2 className="text-xl text-[color:var(--app-heading)]">Recent activity</h2>
+                <p className="text-sm text-[color:var(--app-text)]">Latest notes and candidate events.</p>
               </div>
               {activity.length === 0 ? (
-                <p className="mt-4 text-sm text-slate-300">No recent candidate activity available.</p>
+                <p className="mt-4 text-sm text-[color:var(--app-text)]">No recent candidate activity available.</p>
               ) : (
                 <div className="mt-4 space-y-3">
                   {activity.map((item) => (
-                    <div key={item.id} className="rounded-[18px] border border-white/10 bg-white/[0.03] p-3">
+                    <div key={item.id} className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3">
                       <div className="flex flex-wrap gap-2">
                         <StatusPill label={item.kind} tone="neutral" />
                         <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
                       </div>
-                      <p className="mt-2 text-sm text-white">{item.title}</p>
-                      <p className="mt-1 text-sm text-slate-300">{item.detail}</p>
+                      <p className="mt-2 text-sm text-[color:var(--app-heading)]">{item.title}</p>
+                      <p className="mt-1 text-sm text-[color:var(--app-text)]">{item.detail}</p>
                     </div>
                   ))}
                 </div>

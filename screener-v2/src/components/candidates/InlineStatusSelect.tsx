@@ -35,7 +35,7 @@ export function InlineStatusSelect({ candidateId, currentStatus, returnTo }: Inl
         className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold outline-none transition ${toneClass[currentStatus] ?? toneClass.in_progress}`}
       >
         {candidateUiStatusValues.map((status) => (
-          <option key={status} value={status} className="bg-white text-slate-900 dark:bg-slate-900 dark:text-white">
+          <option key={status} value={status} className="bg-[color:var(--app-control-bg-strong)] text-[color:var(--app-text)]">
             {candidateUiStatusLabels[status]}
           </option>
         ))}

@@ -16,12 +16,12 @@ export function SignalMarquee({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]",
+        "relative overflow-hidden rounded-full border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_96%,white),color-mix(in_srgb,var(--app-surface-soft)_94%,var(--app-bg)))] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--app-border)_40%,white)]",
         className
       )}
     >
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-[linear-gradient(90deg,rgba(5,11,22,0.95),transparent)]" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-[linear-gradient(270deg,rgba(5,11,22,0.95),transparent)]" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-20 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--app-surface)_98%,var(--app-bg)),transparent)]" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-20 bg-[linear-gradient(270deg,color-mix(in_srgb,var(--app-surface)_98%,var(--app-bg)),transparent)]" />
       <motion.div
         className="flex min-w-max items-center gap-2 pr-2"
         animate={reduceMotion ? { x: 0 } : { x: ["0%", "-50%"] }}
@@ -34,7 +34,7 @@ export function SignalMarquee({
         {content.map((item, index) => (
           <span
             key={`${item}-${index}`}
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-slate-200"
+            className="inline-flex items-center gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-heading)]"
           >
             <span className="h-1.5 w-1.5 rounded-full bg-brand-300 shadow-[0_0_12px_rgba(138,184,255,0.55)] system-online-dot" />
             {item}

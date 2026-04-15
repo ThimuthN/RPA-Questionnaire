@@ -40,12 +40,12 @@ function AnswerBlock({
           : "border-emerald-400/20 bg-emerald-500/10"
       }`}
     >
-      <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{title}</p>
+      <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">{title}</p>
       <div className="mt-3 space-y-2">
         {(lines.length > 0 ? lines : ["No answer recorded."]).map((line) => (
           <div
             key={`${title}-${line}`}
-            className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm leading-6 text-slate-100"
+            className="rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-sm leading-6 text-[color:var(--app-text)]"
           >
             {line}
           </div>
@@ -93,13 +93,13 @@ export function ResultReviewSections({
                 ) : null}
               </div>
               {exam ? (
-                <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+                <div className="flex flex-wrap gap-2 text-xs text-[color:var(--app-muted)]">
                   <span>Time allocated: {exam.durationMinutes} min</span>
                   <span>Raw score: {exam.percent.toFixed(1)}%</span>
                   <span>Minimum pass: {exam.requiredPercent.toFixed(0)}%</span>
                 </div>
               ) : null}
-              <h2 className="text-2xl text-white">{section.label} Review</h2>
+              <h2 className="text-2xl text-[color:var(--app-heading)]">{section.label} Review</h2>
               {section.description ? (
                 <StructuredPromptContent text={section.description} className="space-y-4" />
               ) : null}
@@ -111,7 +111,7 @@ export function ResultReviewSections({
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[20px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.03))] p-4"
+                    className="rounded-[20px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4"
                   >
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -131,14 +131,14 @@ export function ResultReviewSections({
                             className="normal-case tracking-normal"
                           />
                         </div>
-                        <h3 className="text-xl text-white">{item.title}</h3>
+                        <h3 className="text-xl text-[color:var(--app-heading)]">{item.title}</h3>
                         {item.promptBlocks && item.promptBlocks.length > 0 ? (
                           <StructuredPromptBlocks blocks={item.promptBlocks} className="space-y-4" />
                         ) : item.prompt ? (
                           <StructuredPromptContent text={item.prompt} className="space-y-4" />
                         ) : null}
                         {item.logSnippet ? (
-                          <pre className="overflow-auto rounded-[18px] border border-white/10 bg-black/55 p-4 text-xs leading-6 text-blue-100">
+                          <pre className="overflow-auto rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 text-xs leading-6 text-[color:var(--app-text)]">
                             <code>{item.logSnippet}</code>
                           </pre>
                         ) : null}
@@ -150,9 +150,9 @@ export function ResultReviewSections({
                       </div>
 
                       {item.explanation ? (
-                        <div className="rounded-[18px] border border-white/10 bg-black/20 p-4">
-                          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Explanation</p>
-                          <p className="mt-2 text-sm leading-6 text-slate-200">{item.explanation}</p>
+                        <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Explanation</p>
+                          <p className="mt-2 text-sm leading-6 text-[color:var(--app-text)]">{item.explanation}</p>
                         </div>
                       ) : null}
                     </div>

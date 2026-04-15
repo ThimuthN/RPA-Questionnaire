@@ -17,21 +17,21 @@ const resultDecisionActions: readonly ResultDecisionAction[] = [
     label: "Move forward",
     buttonVariant: "primary",
     barButtonClassName:
-      "rounded-full border border-emerald-400/30 bg-emerald-500/15 px-4 py-2 text-sm text-emerald-100 transition hover:bg-emerald-500/25"
+      "rounded-full border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] px-4 py-2 text-sm text-[color:var(--app-success)] transition hover:brightness-95"
   },
   {
     status: "need_review",
     label: "Keep in review",
     buttonVariant: "secondary",
     barButtonClassName:
-      "rounded-full border border-amber-400/30 bg-amber-500/15 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/25"
+      "rounded-full border border-[color:var(--app-warning)]/30 bg-[color:var(--app-warning-soft)] px-4 py-2 text-sm text-[color:var(--app-warning)] transition hover:brightness-95"
   },
   {
     status: "rejected",
     label: "Reject",
     buttonVariant: "secondary",
     barButtonClassName:
-      "rounded-full border border-red-400/30 bg-red-500/15 px-4 py-2 text-sm text-red-100 transition hover:bg-red-500/25"
+      "rounded-full border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] px-4 py-2 text-sm text-[color:var(--app-danger)] transition hover:brightness-95"
   }
 ];
 

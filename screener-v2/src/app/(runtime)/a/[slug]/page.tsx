@@ -66,7 +66,7 @@ export default async function InviteLandingPage({
           <StagePanel className="space-y-5">
             {isInviteBlockedState(inviteCheck.state) ? (
               <>
-                <p className="text-slate-200">{inviteCheck.message} If you expected access, contact the hiring team.</p>
+                <p className="text-[color:var(--app-text)]">{inviteCheck.message} If you expected access, contact the hiring team.</p>
                 <div className="flex flex-wrap gap-2">
                   <StatusPill label="Unavailable" tone="red" />
                   <StatusPill label="Candidate-safe message" tone="neutral" />
@@ -77,7 +77,7 @@ export default async function InviteLandingPage({
               </>
             ) : (
               <>
-                <p className="text-slate-200">
+                <p className="text-[color:var(--app-text)]">
                   {exams.map((exam) => `${exam.label}${exam.configSummary ? ` (${exam.configSummary})` : ""}`).join(" + ")}.
                   {" "}Pass target: {passTarget}%. Autosave is enabled.
                 </p>
@@ -98,7 +98,7 @@ export default async function InviteLandingPage({
                   <StatusPill label="Autosave on" tone="emerald" />
                 </div>
                 {inviteCheck.state === "passcode_required" ? (
-                  <p className="rounded-[18px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  <p className="rounded-[18px] border border-[color:var(--app-warning)]/30 bg-[color:var(--app-warning-soft)] px-4 py-3 text-sm text-[color:var(--app-warning)]">
                     This assessment is protected by a passcode. Continue to check-in and enter it there.
                   </p>
                 ) : null}

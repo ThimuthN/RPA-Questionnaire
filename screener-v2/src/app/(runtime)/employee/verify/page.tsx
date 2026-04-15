@@ -64,16 +64,16 @@ function EmployeeVerifyContent() {
     <section className="mx-auto max-w-3xl space-y-4">
       <Card className="space-y-4">
         <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Verify and Continue</p>
-        <h1 className="text-3xl text-white">Confirm token</h1>
+        <h1 className="text-3xl text-[color:var(--app-heading)]">Confirm token</h1>
         <StatusPill label={token ? "Token detected" : "Token missing"} tone={token ? "emerald" : "amber"} />
         <input
-          className="rounded-md border border-white/20 bg-white/5 px-3 py-2 text-white"
+          className="rounded-md border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-[color:var(--app-text)]"
           placeholder="Your name"
           value={fullName}
           onChange={(event) => setFullName(event.target.value)}
         />
-        {error ? <p className="text-sm text-red-200">{error}</p> : null}
-        {verified ? <p className="text-sm text-emerald-200">Verified. Launching assessment...</p> : null}
+        {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
+        {verified ? <p className="text-sm text-[color:var(--app-success)]">Verified. Launching assessment...</p> : null}
         <Button onClick={onVerify} disabled={!token || loading}>
           {loading ? "Verifying..." : "Verify and Continue"}
         </Button>
@@ -88,7 +88,7 @@ export default function EmployeeVerifyPage() {
       fallback={
         <section className="space-y-4">
           <Card>
-            <p className="text-slate-200">Preparing verification...</p>
+            <p className="text-[color:var(--app-text)]">Preparing verification...</p>
           </Card>
         </section>
       }

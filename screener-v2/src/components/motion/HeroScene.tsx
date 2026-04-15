@@ -57,9 +57,9 @@ const FLOW_STAGES: FlowStage[] = [
 ];
 
 const STAGE_BADGE_CLASS: Record<FlowStage["id"], string> = {
-  build: "border-brand-300/25 bg-brand-400/12 text-brand-100",
-  run: "border-teal-300/25 bg-teal-400/12 text-teal-50",
-  review: "border-amber-300/25 bg-amber-300/12 text-amber-50"
+  build: "border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] text-[color:var(--pill-blue-text)]",
+  run: "border-[color:var(--pill-teal-border)] bg-[color:var(--pill-teal-bg)] text-[color:var(--pill-teal-text)]",
+  review: "border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] text-[color:var(--pill-amber-text)]"
 };
 
 const STAGE_NODE_CLASS: Record<FlowStage["id"], string> = {
@@ -69,9 +69,9 @@ const STAGE_NODE_CLASS: Record<FlowStage["id"], string> = {
 };
 
 const STAGE_PANEL_CLASS: Record<FlowStage["id"], string> = {
-  build: "border-brand-300/20 bg-brand-400/10 text-brand-100",
-  run: "border-teal-300/20 bg-teal-400/10 text-teal-50",
-  review: "border-amber-300/20 bg-amber-300/10 text-amber-50"
+  build: "border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] text-[color:var(--pill-blue-text)]",
+  run: "border-[color:var(--pill-teal-border)] bg-[color:var(--pill-teal-bg)] text-[color:var(--pill-teal-text)]",
+  review: "border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] text-[color:var(--pill-amber-text)]"
 };
 
 export function HeroScene({ className }: { className?: string }) {
@@ -95,7 +95,7 @@ export function HeroScene({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative isolate overflow-hidden rounded-[36px] border border-white/10 bg-[radial-gradient(circle_at_18%_18%,rgba(138,184,255,0.24),transparent_24%),radial-gradient(circle_at_84%_20%,rgba(18,179,168,0.14),transparent_24%),linear-gradient(180deg,rgba(11,24,46,0.98),rgba(5,11,22,1))] p-6 shadow-[0_28px_120px_rgba(2,8,23,0.45)]",
+        "relative isolate overflow-hidden rounded-[36px] border border-[color:var(--app-border)] bg-[radial-gradient(circle_at_18%_18%,color-mix(in_srgb,var(--blue-300)_28%,transparent),transparent_24%),radial-gradient(circle_at_84%_20%,color-mix(in_srgb,var(--teal-500)_18%,transparent),transparent_24%),linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_95%,white),color-mix(in_srgb,var(--app-surface-soft)_96%,var(--app-bg)))] p-6 shadow-[var(--app-shadow)]",
         className
       )}
       onMouseEnter={() => setIsPaused(true)}
@@ -111,35 +111,35 @@ export function HeroScene({ className }: { className?: string }) {
         });
       }}
     >
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40" />
+      <div className="absolute inset-0 bg-[linear-gradient(color-mix(in_srgb,var(--app-border)_44%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_srgb,var(--app-border)_44%,transparent)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
 
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-80"
         animate={
           reduceMotion
-            ? { background: "radial-gradient(circle at 54% 42%, rgba(138,184,255,0.14), transparent 28%)" }
-            : { background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, rgba(138,184,255,0.18), transparent 28%)` }
+            ? { background: "radial-gradient(circle at 54% 42%, color-mix(in_srgb,var(--blue-300)_22%,transparent), transparent 28%)" }
+            : { background: `radial-gradient(circle at ${pointer.x}% ${pointer.y}%, color-mix(in_srgb,var(--blue-300)_26%,transparent), transparent 28%)` }
         }
         transition={{ duration: reduceMotion ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }}
       />
 
       <motion.div
-        className="absolute left-[8%] top-[14%] h-48 w-48 rounded-full border border-brand-300/12 bg-brand-400/10 blur-2xl"
+        className="absolute left-[8%] top-[14%] h-48 w-48 rounded-full border border-[color:color-mix(in_srgb,var(--blue-300)_18%,transparent)] bg-[color:color-mix(in_srgb,var(--blue-500)_14%,transparent)] blur-2xl"
         animate={reduceMotion ? { opacity: 0.6 } : { opacity: [0.45, 0.8, 0.45], scale: [1, 1.08, 1] }}
         transition={{ duration: reduceMotion ? 0 : 6.5, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute bottom-[10%] right-[8%] h-52 w-52 rounded-full border border-teal-300/10 bg-teal-400/10 blur-2xl"
+        className="absolute bottom-[10%] right-[8%] h-52 w-52 rounded-full border border-[color:color-mix(in_srgb,var(--teal-500)_18%,transparent)] bg-[color:color-mix(in_srgb,var(--teal-500)_14%,transparent)] blur-2xl"
         animate={reduceMotion ? { opacity: 0.4 } : { opacity: [0.35, 0.65, 0.35], scale: [1, 1.06, 1] }}
         transition={{ duration: reduceMotion ? 0 : 7.2, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
       />
 
       <div className="relative z-10 flex min-h-[520px] flex-col gap-6">
         <div className="flex items-center justify-between gap-3">
-          <div className="rounded-full border border-brand-300/20 bg-brand-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-brand-200">
+          <div className="rounded-full border border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-[color:var(--pill-blue-text)]">
             Assessment flow
           </div>
-          <div className="text-right text-[11px] uppercase tracking-[0.22em] text-slate-400">Build. Run. Review.</div>
+          <div className="text-right text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-muted)]">Build. Run. Review.</div>
         </div>
 
         <div className="grid flex-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -147,7 +147,7 @@ export function HeroScene({ className }: { className?: string }) {
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 700" fill="none" aria-hidden="true">
               <motion.path
                 d="M180 530 C 330 380, 470 300, 640 312 S 820 392, 860 470"
-                stroke="rgba(138,184,255,0.26)"
+                stroke="color-mix(in_srgb,var(--blue-300)_34%,transparent)"
                 strokeWidth="1.6"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0.2 }}
@@ -156,7 +156,7 @@ export function HeroScene({ className }: { className?: string }) {
               />
               <motion.path
                 d="M220 220 C 350 210, 430 260, 510 330 S 690 480, 806 450"
-                stroke="rgba(18,179,168,0.22)"
+                stroke="color-mix(in_srgb,var(--teal-500)_28%,transparent)"
                 strokeWidth="1.3"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0.12 }}
@@ -165,7 +165,7 @@ export function HeroScene({ className }: { className?: string }) {
               />
               <motion.path
                 d="M514 146 C 610 170, 680 242, 708 336 S 710 518, 624 588"
-                stroke="rgba(252,211,77,0.16)"
+                stroke="color-mix(in_srgb,var(--amber-500)_22%,transparent)"
                 strokeWidth="1.3"
                 strokeLinecap="round"
                 initial={{ pathLength: 0, opacity: 0.1 }}
@@ -175,7 +175,7 @@ export function HeroScene({ className }: { className?: string }) {
             </svg>
 
             <motion.div
-              className="relative h-[320px] w-[320px] rounded-full border border-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(138,184,255,0.10),rgba(138,184,255,0.03)_44%,transparent_72%)]"
+              className="relative h-[320px] w-[320px] rounded-full border border-[color:var(--app-border)] bg-[radial-gradient(circle_at_50%_50%,color-mix(in_srgb,var(--blue-300)_18%,transparent),color-mix(in_srgb,var(--blue-300)_6%,transparent)_44%,transparent_72%)]"
               animate={
                 reduceMotion
                   ? { scale: 1, rotate: 0 }
@@ -183,14 +183,14 @@ export function HeroScene({ className }: { className?: string }) {
               }
               transition={{ duration: reduceMotion ? 0 : 5.2, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
             >
-              <div className="absolute inset-[14%] rounded-full border border-brand-300/16" />
-              <div className="absolute inset-[28%] rounded-full border border-teal-300/12" />
-              <div className="absolute inset-[42%] rounded-full border border-white/10" />
+              <div className="absolute inset-[14%] rounded-full border border-[color:color-mix(in_srgb,var(--blue-300)_24%,transparent)]" />
+              <div className="absolute inset-[28%] rounded-full border border-[color:color-mix(in_srgb,var(--teal-500)_18%,transparent)]" />
+              <div className="absolute inset-[42%] rounded-full border border-[color:var(--app-border)]" />
 
               <div className="absolute inset-[30%] grid place-items-center">
                 <motion.div
                   className={cn(
-                    "rounded-[26px] border px-5 py-4 text-center shadow-[0_18px_44px_rgba(2,8,23,0.28)] backdrop-blur-xl",
+                    "rounded-[26px] border px-5 py-4 text-center shadow-[var(--app-shadow-soft)] backdrop-blur-xl",
                     STAGE_PANEL_CLASS[activeStage.id]
                   )}
                   key={activeStage.id}
@@ -198,9 +198,9 @@ export function HeroScene({ className }: { className?: string }) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-white/65">{activeStage.kicker}</p>
-                  <p className="mt-2 font-display text-2xl text-white">{activeStage.label}</p>
-                  <p className="mt-2 max-w-[10rem] text-xs leading-6 text-white/72">{activeStage.callout}</p>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--app-muted)]">{activeStage.kicker}</p>
+                  <p className="mt-2 font-display text-2xl text-[color:var(--app-heading)]">{activeStage.label}</p>
+                  <p className="mt-2 max-w-[10rem] text-xs leading-6 text-[color:var(--app-text)]">{activeStage.callout}</p>
                 </motion.div>
               </div>
             </motion.div>
@@ -231,7 +231,9 @@ export function HeroScene({ className }: { className?: string }) {
                   <div
                     className={cn(
                       "absolute rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.22em] backdrop-blur-xl",
-                      isActive ? STAGE_BADGE_CLASS[stage.id] : "border-white/10 bg-white/5 text-slate-300"
+                      isActive
+                        ? STAGE_BADGE_CLASS[stage.id]
+                        : "border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] text-[color:var(--app-muted)]"
                     )}
                     style={{
                       left: `calc(${stage.node.left} - 18px)`,
@@ -245,7 +247,7 @@ export function HeroScene({ className }: { className?: string }) {
             })}
 
             <motion.div
-              className="absolute h-4 w-4 rounded-full bg-white shadow-[0_0_28px_rgba(255,255,255,0.75)]"
+              className="absolute h-4 w-4 rounded-full bg-[color:var(--app-surface)] shadow-[0_0_28px_color-mix(in_srgb,var(--blue-300)_46%,transparent)]"
               animate={
                 reduceMotion
                   ? { left: activeStage.node.left, top: activeStage.node.top, scale: 1 }
@@ -260,7 +262,7 @@ export function HeroScene({ className }: { className?: string }) {
           </div>
 
           <motion.div
-            className="relative overflow-hidden rounded-[30px] border border-white/10 bg-black/[0.18] p-5 shadow-[0_18px_44px_rgba(2,8,23,0.24)] backdrop-blur-xl"
+            className="relative overflow-hidden rounded-[30px] border border-[color:var(--app-border)] bg-[color:color-mix(in_srgb,var(--app-surface)_94%,transparent)] p-5 shadow-[var(--app-shadow-soft)] backdrop-blur-xl"
             key={activeStage.id}
             initial={reduceMotion ? false : { opacity: 0, x: 14 }}
             animate={{ opacity: 1, x: 0 }}
@@ -278,15 +280,15 @@ export function HeroScene({ className }: { className?: string }) {
                     {activeStage.kicker}
                   </span>
                 </div>
-                <h3 className="text-3xl leading-[1.02] text-white">{activeStage.title}</h3>
-                <p className="text-sm leading-7 text-slate-300">{activeStage.body}</p>
+                <h3 className="text-3xl leading-[1.02] text-[color:var(--app-heading)]">{activeStage.title}</h3>
+                <p className="text-sm leading-7 text-[color:var(--app-text)]">{activeStage.body}</p>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {activeStage.chips.map((chip) => (
                   <div
                     key={chip}
-                    className="rounded-[20px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100"
+                    className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3 text-sm text-[color:var(--app-heading)]"
                   >
                     {chip}
                   </div>
@@ -297,15 +299,15 @@ export function HeroScene({ className }: { className?: string }) {
                 {activeStage.metrics.map((metric) => (
                   <div
                     key={metric}
-                    className="rounded-[22px] border border-white/[0.08] bg-white/5 px-4 py-4"
+                    className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-4"
                   >
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-slate-400">System outcome</p>
-                    <p className="mt-2 text-base text-white">{metric}</p>
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--app-muted)]">System outcome</p>
+                    <p className="mt-2 text-base text-[color:var(--app-heading)]">{metric}</p>
                   </div>
                 ))}
               </div>
 
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+              <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--app-muted)]">
                 Move around the field to shift the light. Choose a stage to focus the system.
               </p>
             </div>
@@ -324,19 +326,19 @@ export function HeroScene({ className }: { className?: string }) {
                 className={cn(
                   "rounded-[24px] border px-4 py-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
                   isActive
-                    ? "border-white/[0.18] bg-white/10 shadow-[0_16px_30px_rgba(2,8,23,0.24)]"
-                    : "border-white/[0.08] bg-black/[0.12] hover:border-white/[0.14] hover:bg-white/[0.06]"
+                    ? "border-[color:var(--app-border-strong)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]"
+                    : "border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]"
                 )}
                 aria-pressed={isActive}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-slate-400">{stage.kicker}</p>
-                    <p className="mt-2 text-lg text-white">{stage.label}</p>
+                    <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--app-muted)]">{stage.kicker}</p>
+                    <p className="mt-2 text-lg text-[color:var(--app-heading)]">{stage.label}</p>
                   </div>
                   <div className={cn("h-2.5 w-2.5 rounded-full", STAGE_NODE_CLASS[stage.id])} />
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{stage.callout}</p>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--app-text)]">{stage.callout}</p>
               </button>
             );
           })}
