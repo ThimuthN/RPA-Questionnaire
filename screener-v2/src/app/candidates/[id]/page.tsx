@@ -43,9 +43,9 @@ function currentUiStatus(candidate: CandidateData) {
 }
 
 function nextPrompt(candidate: CandidateData) {
-  if (!candidate.resumes.length) return "No resume uploaded yet.";
-  if (candidate.currentFocus) return `Current stage: ${candidate.currentFocus}`;
-  return "Update the next stage when the candidate progresses.";
+  if (!candidate.resumes.length) return "Add a resume if you need one for review.";
+  if (candidate.currentFocus) return candidate.currentFocus;
+  return "Set the next stage when you're ready.";
 }
 
 function latestAssessmentSummary(candidate: CandidateData) {
@@ -53,7 +53,7 @@ function latestAssessmentSummary(candidate: CandidateData) {
   if (!latest) {
     return {
       title: "No assessment yet",
-      detail: "This candidate can move through the lifecycle without an exam."
+      detail: "No exam linked."
     };
   }
 
@@ -80,7 +80,7 @@ function latestAssessmentSummary(candidate: CandidateData) {
 
   return {
     title: "Sent",
-    detail: "Assessment linked to this candidate."
+    detail: "Assessment sent"
   };
 }
 
@@ -151,11 +151,6 @@ export default async function CandidateDetailPage({
   const resumeDownloadUrl = currentResume
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}&download=1`
     : null;
-  const screenerMilestone = candidate.milestones.find((milestone) => milestone.type === "screener");
-  const canSendScreener = Boolean(
-    screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
-  );
-  const hasAssessmentSupport = canSendScreener || Boolean(latest?.attemptId);
   const activityFeed = buildCandidateActivityFeed(candidate).slice(0, 8);
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
@@ -195,9 +190,9 @@ export default async function CandidateDetailPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Candidate lifecycle</p>
-              <h2 className="text-3xl text-[color:var(--app-heading)]">Decision and next step</h2>
+              <h2 className="text-3xl text-[color:var(--app-heading)]">Current decision</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                Keep the candidate state, owner, and next move clear in one place.
+                Track where things stand and what should happen next.
               </p>
             </div>
 
@@ -263,7 +258,7 @@ export default async function CandidateDetailPage({
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision status</p>
                 <h3 className="text-xl text-[color:var(--app-heading)]">Set the candidate decision</h3>
-                <p className="text-sm text-[color:var(--app-muted)]">Choose the status and keep one short reason with the next step.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">Set the status and leave a short note about what comes next.</p>
               </div>
               <ChoicePills
                 name="uiStatus"
@@ -291,13 +286,13 @@ export default async function CandidateDetailPage({
           </div>
         </StagePanel>
 
-        <div className="grid gap-7 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_340px]">
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate journey</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Track the lifecycle here. Assessment steps are optional support, not the whole story.
+                  Follow the process from first review to final decision.
                 </p>
               </div>
               <CandidateMilestoneTimeline
@@ -309,46 +304,15 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="space-y-6 xl:pt-1">
-            {hasAssessmentSupport ? (
-              <section className="space-y-4">
-                <div className="space-y-1">
-                  <h2 className="text-2xl text-[color:var(--app-heading)]">Assessment support</h2>
-                  <p className="text-sm text-[color:var(--app-muted)]">Use this only when an assessment is part of this candidate&apos;s journey.</p>
-                </div>
-                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <p className="text-sm text-[color:var(--app-heading)]">{latestAssessmentState.title}</p>
-                      <p className="text-sm text-[color:var(--app-muted)]">{latestAssessmentState.detail}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {canSendScreener && screenerMilestone ? (
-                        <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                          <Button>Send assessment</Button>
-                        </Link>
-                      ) : null}
-                      {latest?.attemptId && typeof latest.finalPercent === "number" ? (
-                        <Link href={`/results/${latest.attemptId}` as Route}>
-                          <Button variant="secondary">View result</Button>
-                        </Link>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </section>
-            ) : null}
-
             <section id="resume" className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Resume</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Upload, replace, or download the candidate&apos;s resume here.</p>
+                <h2 className="text-xl text-[color:var(--app-heading)]">Resume</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Keep the latest resume here.</p>
               </div>
 
-              <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
-
-              {currentResume ? (
-                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                  <div className="space-y-3">
+              <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                {currentResume ? (
+                  <>
                     <div className="flex flex-wrap gap-2">
                       <StatusPill label="Current" tone="blue" />
                       <StatusPill label="PDF" tone="neutral" />
@@ -357,15 +321,10 @@ export default async function CandidateDetailPage({
                       <p className="text-sm text-[color:var(--app-heading)]">{currentResume.fileName}</p>
                       <p className="text-xs text-[color:var(--app-muted)]">
                         {Math.max(1, Math.round(currentResume.sizeBytes / 1024))} KB | Uploaded{" "}
-                        {new Date(currentResume.uploadedAt).toLocaleString()}
+                        {new Date(currentResume.uploadedAt).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <a href={resumeDownloadUrl ?? "#"} target="_blank" rel="noreferrer">
-                        <Button type="button" variant="secondary">
-                          Download PDF
-                        </Button>
-                      </a>
                       {resumePreviewUrl ? (
                         <ResumePreviewModal
                           fileName={currentResume.fileName}
@@ -373,10 +332,29 @@ export default async function CandidateDetailPage({
                           downloadUrl={resumeDownloadUrl}
                         />
                       ) : null}
+                      <a href={resumeDownloadUrl ?? "#"} target="_blank" rel="noreferrer">
+                        <Button type="button" variant="secondary">
+                          Download PDF
+                        </Button>
+                      </a>
                     </div>
+                  </>
+                ) : (
+                  <div className="space-y-1">
+                    <p className="text-sm text-[color:var(--app-heading)]">No resume yet</p>
+                    <p className="text-sm text-[color:var(--app-muted)]">Upload one when you need it.</p>
                   </div>
-                </div>
-              ) : null}
+                )}
+
+                <details open={!currentResume} className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
+                  <summary className="cursor-pointer list-none text-sm font-medium text-[color:var(--app-heading)] [&::-webkit-details-marker]:hidden">
+                    {currentResume ? "Replace resume" : "Upload resume"}
+                  </summary>
+                  <div className="mt-4 border-t border-[color:var(--app-border)] pt-4">
+                    <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
+                  </div>
+                </details>
+              </div>
             </section>
 
             <section className="border-t border-[color:var(--app-border)] pt-5">

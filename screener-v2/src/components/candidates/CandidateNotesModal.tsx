@@ -55,11 +55,11 @@ export function CandidateNotesModal({
       <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Notes</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Keep the page focused and open detailed notes only when you need them.</p>
+            <h2 className="text-xl text-[color:var(--app-heading)]">Notes</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">Latest notes for this candidate.</p>
           </div>
           <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-            Open notes
+            View notes
           </Button>
         </div>
 
@@ -119,7 +119,7 @@ export function CandidateNotesModal({
                         </div>
                         <div>
                           <h3 className="text-xl text-[color:var(--app-heading)]">Candidate notes</h3>
-                          <p className="text-sm text-[color:var(--app-muted)]">Add review notes here without crowding the main candidate screen.</p>
+                          <p className="text-sm text-[color:var(--app-muted)]">Add notes and keep the full history in one place.</p>
                         </div>
                       </div>
                       <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
@@ -131,7 +131,7 @@ export function CandidateNotesModal({
                       <form action={`/api/candidates/${candidateId}/notes`} method="post" className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                         <div className="space-y-1">
                           <h4 className="text-lg text-[color:var(--app-heading)]">Add note</h4>
-                          <p className="text-sm text-[color:var(--app-muted)]">Keep it short and action-oriented.</p>
+                          <p className="text-sm text-[color:var(--app-muted)]">Keep it short and useful.</p>
                         </div>
 
                         <div className="grid gap-2">

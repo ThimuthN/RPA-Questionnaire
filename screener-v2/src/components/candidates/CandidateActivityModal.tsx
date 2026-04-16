@@ -46,11 +46,11 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
       <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Recent activity</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Open the full feed when you need detail.</p>
+            <h2 className="text-xl text-[color:var(--app-heading)]">Recent activity</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">Latest updates for this candidate.</p>
           </div>
           <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-            Open activity
+            View activity
           </Button>
         </div>
 
@@ -99,7 +99,7 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
                         </div>
                         <div>
                           <h3 className="text-xl text-[color:var(--app-heading)]">Recent activity</h3>
-                          <p className="text-sm text-[color:var(--app-muted)]">Notes, results, resumes, and milestone changes in one place.</p>
+                          <p className="text-sm text-[color:var(--app-muted)]">Notes, resumes, milestones, and other updates.</p>
                         </div>
                       </div>
                       <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
