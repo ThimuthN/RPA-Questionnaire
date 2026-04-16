@@ -5,16 +5,9 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import type { CandidateActivityItem } from "@/lib/candidates/workspace";
 
-type ActivityItem = {
-  id: string;
-  kind: string;
-  at: string;
-  title: string;
-  detail: string;
-};
-
-export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
+export function ResultActivityModal({ items }: { items: CandidateActivityItem[] }) {
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -46,8 +39,8 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
       <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Recent activity</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Open the full feed when you need detail.</p>
+            <h2 className="text-xl text-[color:var(--app-heading)]">Recent activity</h2>
+            <p className="text-sm text-[color:var(--app-text)]">Open the full candidate feed only when you need detail.</p>
           </div>
           <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
             Open activity
@@ -62,10 +55,10 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
         {latestItem ? (
           <div className="space-y-2">
             <p className="text-sm text-[color:var(--app-heading)]">{latestItem.title}</p>
-            <p className="text-sm leading-6 text-[color:var(--app-muted)]">{latestItem.detail}</p>
+            <p className="text-sm leading-6 text-[color:var(--app-text)]">{latestItem.detail}</p>
           </div>
         ) : (
-          <p className="text-sm text-[color:var(--app-muted)]">No activity yet.</p>
+          <p className="text-sm text-[color:var(--app-text)]">No recent candidate activity available.</p>
         )}
       </div>
 
@@ -75,7 +68,10 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
               {open ? (
                 <motion.div
                   className="fixed inset-0 z-[999] flex items-center justify-center overflow-y-auto p-4 md:p-6"
-                  style={{ background: "radial-gradient(circle at top, color-mix(in srgb, var(--app-brand) 14%, transparent), transparent 24%), var(--app-modal-overlay)" }}
+                  style={{
+                    background:
+                      "radial-gradient(circle at top, color-mix(in srgb, var(--app-brand) 14%, transparent), transparent 24%), var(--app-modal-overlay)"
+                  }}
                   initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
                   animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(10px)" }}
                   exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
@@ -91,15 +87,18 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
                     transition={{ duration: reduceMotion ? 0.14 : 0.28, ease: [0.22, 1, 0.36, 1] }}
                     onClick={(event) => event.stopPropagation()}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--app-border)] px-5 py-4 md:px-6 md:py-5" style={{ background: "var(--app-modal-header)" }}>
+                    <div
+                      className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--app-border)] px-5 py-4 md:px-6 md:py-5"
+                      style={{ background: "var(--app-modal-header)" }}
+                    >
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           <StatusPill label="Activity feed" tone="blue" />
                           <StatusPill label={`${items.length} events`} tone="neutral" />
                         </div>
                         <div>
-                          <h3 className="text-xl text-[color:var(--app-heading)]">Recent activity</h3>
-                          <p className="text-sm text-[color:var(--app-muted)]">Notes, results, resumes, and milestone changes in one place.</p>
+                          <h3 className="text-xl text-[color:var(--app-heading)]">Candidate activity</h3>
+                          <p className="text-sm text-[color:var(--app-muted)]">Notes, milestones, resumes, and results in one place.</p>
                         </div>
                       </div>
                       <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
@@ -109,7 +108,7 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
 
                     <div className="max-h-[70vh] space-y-3 overflow-y-auto p-4 md:p-5" style={{ background: "var(--app-modal-body)" }}>
                       {items.length === 0 ? (
-                        <p className="text-sm text-[color:var(--app-muted)]">No activity yet.</p>
+                        <p className="text-sm text-[color:var(--app-muted)]">No recent candidate activity available.</p>
                       ) : (
                         items.map((item, index) => (
                           <motion.div
@@ -119,14 +118,12 @@ export function CandidateActivityModal({ items }: { items: ActivityItem[] }) {
                             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                             transition={{ duration: reduceMotion ? 0 : 0.24, delay: reduceMotion ? 0 : index * 0.04 }}
                           >
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap gap-2">
                               <StatusPill label={item.kind} tone="neutral" />
                               <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
                             </div>
                             <p className="mt-3 text-sm text-[color:var(--app-heading)]">{item.title}</p>
-                            <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-[color:var(--app-muted)]">
-                              {item.detail}
-                            </p>
+                            <p className="mt-1 text-sm leading-6 text-[color:var(--app-text)]">{item.detail}</p>
                           </motion.div>
                         ))
                       )}

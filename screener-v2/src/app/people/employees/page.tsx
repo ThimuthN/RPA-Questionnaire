@@ -37,6 +37,12 @@ function statusTone(status: string): "neutral" | "emerald" | "teal" {
   return "neutral";
 }
 
+function reviewTone(reviewState?: string): "neutral" | "emerald" | "amber" {
+  if (reviewState === "reviewed") return "emerald";
+  if (reviewState === "flagged") return "amber";
+  return "neutral";
+}
+
 function contextLabel(value: string) {
   return value
     .split("_")
@@ -88,7 +94,7 @@ export default async function PeopleEmployeesPage({
         tone="page"
         eyebrow="People"
         title="Employees"
-        subtitle="Track assessments, certifications, and recent results."
+        subtitle="Monitor internal assessments and certifications."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="employees" />
@@ -149,6 +155,15 @@ export default async function PeopleEmployeesPage({
                   </Button>
                 </Link>
               </form>
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-1">
+                <Link href={buildHref(query, { reviewState: "unreviewed", page: "1" })}>
+                  <Button type="button" variant="ghost">Needs review</Button>
+                </Link>
+                <Link href={buildHref(query, { contextType: "certification", page: "1" })}>
+                  <Button type="button" variant="ghost">Certifications</Button>
+                </Link>
+              </div>
             </div>
           </StaggerItem>
 
@@ -171,52 +186,55 @@ export default async function PeopleEmployeesPage({
             <StaggerItem>
               <div className={tableShellClassName}>
                 <div className="overflow-x-auto">
-                  <table className="min-w-[1120px] w-full table-fixed text-left">
+                  <table className="min-w-[920px] w-full table-fixed text-left">
                     <thead className={tableHeadClassName}>
                       <tr>
-                        <th className="w-[16%] px-4 py-3 font-medium">Name</th>
-                        <th className="w-[20%] px-4 py-3 font-medium">Email</th>
-                        <th className="w-[15%] px-4 py-3 font-medium">Role / ID</th>
-                        <th className="w-[16%] px-4 py-3 font-medium">Assessment</th>
-                        <th className="w-[15%] px-4 py-3 font-medium">Latest result</th>
+                        <th className="w-[25%] px-4 py-3 font-medium">Employee</th>
+                        <th className="w-[29%] px-4 py-3 font-medium">Latest assessment</th>
+                        <th className="w-[24%] px-4 py-3 font-medium">Latest result</th>
                         <th className="w-[8%] px-4 py-3 font-medium">Completed</th>
-                        <th className="w-[10%] px-4 py-3 font-medium">Submitted</th>
-                        <th className="w-[12%] px-4 py-3 font-medium text-right">Actions</th>
+                        <th className="w-[14%] px-4 py-3 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {page.rows.map((employee) => (
                         <tr key={employee.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
                           <td className={tableCellClassName}>
-                            <div>
+                            <div className="space-y-1">
                               <p className="font-medium text-[color:var(--app-heading)]">{employee.fullName}</p>
-                              <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
-                                {employee.latestReviewState ? contextLabel(employee.latestReviewState) : contextLabel(employee.latestStatus)}
+                              <p className="truncate text-xs text-[color:var(--app-muted)]" title={employee.email}>
+                                {employee.email}
                               </p>
                             </div>
                           </td>
-                          <td className={tableCellClassName}>{employee.email}</td>
                           <td className={tableCellClassName}>
-                            <div>
-                              <p>{contextLabel(employee.latestContextType)}</p>
-                              <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
-                                {employee.employeeId || "ID not set"}
+                            <div className="space-y-1">
+                              <p className="text-[color:var(--app-heading)]">{employee.latestAssessmentLabel ?? "No assessment yet"}</p>
+                              <p className="text-xs text-[color:var(--app-muted)]">
+                                {contextLabel(employee.latestContextType)}
+                                {employee.employeeId ? ` | ID ${employee.employeeId}` : ""}
                               </p>
                             </div>
                           </td>
-                          <td className={tableCellClassName}>{employee.latestAssessmentLabel ?? "Not attached"}</td>
                           <td className={tableCellClassName}>
-                            <div className="flex items-center gap-2 whitespace-nowrap">
-                              <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
-                              <span className="text-xs text-[color:var(--app-muted)]">
-                                {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "In progress"}
-                              </span>
+                            <div className="space-y-2">
+                              <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
+                                <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
+                                {employee.latestReviewState ? (
+                                  <StatusPill label={contextLabel(employee.latestReviewState)} tone={reviewTone(employee.latestReviewState)} />
+                                ) : null}
+                              </div>
+                              <p className="text-sm text-[color:var(--app-text)]">
+                                {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "No score yet"}
+                              </p>
+                              <p className="text-xs text-[color:var(--app-muted)]">
+                                {employee.latestSubmittedAt
+                                  ? `Submitted ${new Date(employee.latestSubmittedAt).toLocaleDateString()}`
+                                  : "Not submitted yet"}
+                              </p>
                             </div>
                           </td>
                           <td className={tableCellClassName}>{employee.completedCount}</td>
-                          <td className={tableCellClassName}>
-                            {employee.latestSubmittedAt ? new Date(employee.latestSubmittedAt).toLocaleDateString() : "-"}
-                          </td>
                           <td className={tableCellClassName}>
                             <div className="flex justify-end whitespace-nowrap">
                               {employee.latestAttemptId ? (
@@ -224,7 +242,9 @@ export default async function PeopleEmployeesPage({
                                   View result
                                 </Link>
                               ) : (
-                                <span className="text-xs text-[color:var(--app-muted)]">-</span>
+                                <Link href="/employee" className={inlineActionClassName}>
+                                  Open access
+                                </Link>
                               )}
                             </div>
                           </td>

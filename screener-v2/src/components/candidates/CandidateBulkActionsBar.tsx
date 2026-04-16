@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import {
   candidateUiStatusLabels,
@@ -9,43 +9,23 @@ import {
 } from "@/lib/candidates/types";
 
 export function CandidateBulkActionsBar({
-  formId,
+  selectedCount,
+  onClearSelection,
+  onSelectAll,
   defaultStatus = "need_review"
 }: {
-  formId: string;
+  selectedCount: number;
+  onClearSelection: () => void;
+  onSelectAll: () => void;
   defaultStatus?: CandidateUiStatus;
 }) {
-  const [selectedCount, setSelectedCount] = useState(0);
   const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note">("assign_owner");
-
-  useEffect(() => {
-    const form = document.getElementById(formId);
-    if (!form) return;
-
-    const syncSelected = () => {
-      const checked = form.querySelectorAll<HTMLInputElement>('input[name="candidateId"]:checked').length;
-      setSelectedCount(checked);
-    };
-
-    syncSelected();
-    form.addEventListener("change", syncSelected);
-    return () => form.removeEventListener("change", syncSelected);
-  }, [formId]);
 
   const helperText = useMemo(() => {
     if (action === "assign_owner") return "Assign an owner to the selected candidates.";
     if (action === "set_ui_status") return "Set the next hiring status for the selected candidates.";
     return "Add one note to every selected candidate.";
   }, [action]);
-
-  function clearSelection() {
-    const form = document.getElementById(formId);
-    if (!form) return;
-    form.querySelectorAll<HTMLInputElement>('input[name="candidateId"]:checked').forEach((input) => {
-      input.checked = false;
-    });
-    setSelectedCount(0);
-  }
 
   if (selectedCount === 0) return null;
 
@@ -61,14 +41,18 @@ export function CandidateBulkActionsBar({
           </div>
           <p className="text-sm text-[color:var(--app-muted)]">{helperText}</p>
         </div>
-        <Button type="button" variant="ghost" onClick={clearSelection}>
-          Clear selection
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" onClick={onSelectAll}>
+            Select all on page
+          </Button>
+          <Button type="button" variant="ghost" onClick={onClearSelection}>
+            Clear selection
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-[200px_minmax(0,1fr)_auto]">
         <select
-          form={formId}
           name="action"
           value={action}
           onChange={(event) => setAction(event.target.value as typeof action)}
@@ -81,7 +65,6 @@ export function CandidateBulkActionsBar({
 
         {action === "assign_owner" ? (
           <input
-            form={formId}
             name="owner"
             placeholder="Owner"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
@@ -90,7 +73,6 @@ export function CandidateBulkActionsBar({
 
         {action === "set_ui_status" ? (
           <select
-            form={formId}
             name="status"
             defaultValue={defaultStatus}
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
@@ -105,14 +87,13 @@ export function CandidateBulkActionsBar({
 
         {action === "add_note" ? (
           <input
-            form={formId}
             name="noteBody"
             placeholder="Add one note to all selected candidates"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
           />
         ) : null}
 
-        <Button type="submit" form={formId}>
+        <Button type="submit">
           Apply
         </Button>
       </div>

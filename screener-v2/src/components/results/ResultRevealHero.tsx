@@ -14,6 +14,10 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   const integrityRisk = row.integrity.tabHiddenCount * 2 + row.integrity.copyCount + row.integrity.pasteCount;
   const score = useMotionValue(reduceMotion ? row.finalPercent : 0);
   const rounded = useTransform(score, (value) => value.toFixed(1));
+  const examRows = row.exams
+    .map((exam) => row.examBreakdown[exam.instanceId])
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+    .sort((left, right) => left.order - right.order);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -47,22 +51,34 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
             {row.candidateEmail ? <p className="text-sm text-[color:var(--app-muted)]">{row.candidateEmail}</p> : null}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:max-w-3xl">
-            <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Result status</p>
-              <p className="mt-3 text-xl text-[color:var(--app-heading)]">{status}</p>
-              <p className="mt-1 text-xs text-[color:var(--app-text)]">
-                Final score {row.finalPercent.toFixed(1)} / 100 against a {row.passPercent}% target.
-              </p>
-            </div>
-            <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Integrity signals</p>
-              <p className="mt-3 text-xl text-[color:var(--app-heading)]">
-                {row.integrity.tabHiddenCount + row.integrity.copyCount + row.integrity.pasteCount}
-              </p>
-              <p className="mt-1 text-xs text-[color:var(--app-text)]">
-                Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
-              </p>
+          <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 xl:max-w-3xl">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Addon results</p>
+            <div className="mt-3 space-y-3">
+              {examRows.map((exam, index) => (
+                <div
+                  key={exam.instanceId}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-3"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">
+                      {`Addon ${index + 1}`} {exam.label ? `- ${exam.label}` : ""}
+                    </p>
+                    <p className="text-xs text-[color:var(--app-muted)]">
+                      Marks {exam.weightedMarksEarned.toFixed(1)} / {exam.weightedMarksPossible}
+                    </p>
+                  </div>
+                  <StatusPill label={exam.pass ? "Pass" : "Fail"} tone={exam.pass ? "emerald" : "red"} />
+                </div>
+              ))}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-brand-300/25 bg-brand-500/10 px-3 py-3">
+                <div className="min-w-0 space-y-1">
+                  <p className="text-sm font-medium text-[color:var(--app-heading)]">Final result</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">
+                    Marks {row.finalPercent.toFixed(1)} / 100
+                  </p>
+                </div>
+                <StatusPill label={status} tone={tone} />
+              </div>
             </div>
           </div>
         </div>

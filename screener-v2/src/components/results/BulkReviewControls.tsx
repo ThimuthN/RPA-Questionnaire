@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { resultReviewStateValues, type ResultReviewState } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import {
@@ -36,46 +36,24 @@ const noteTypeLabels: Record<(typeof candidateNoteTypeValues)[number], string> =
   general: "General"
 };
 
-function countSelected(form: HTMLFormElement | null) {
-  if (!form) return 0;
-  return Array.from(
-    form.querySelectorAll<HTMLInputElement>('input[name="attemptId"][type="checkbox"]')
-  ).filter((input) => input.checked).length;
-}
-
-function setAllSelected(form: HTMLFormElement | null, checked: boolean) {
-  if (!form) return 0;
-  const inputs = Array.from(
-    form.querySelectorAll<HTMLInputElement>('input[name="attemptId"][type="checkbox"]')
-  );
-  for (const input of inputs) {
-    input.checked = checked;
-  }
-  return checked ? inputs.length : 0;
-}
-
-export function BulkReviewControls({ formId }: { formId: string }) {
+export function BulkReviewControls({
+  selectedCount,
+  onSelectAll,
+  onClearSelection
+}: {
+  selectedCount: number;
+  onSelectAll: () => void;
+  onClearSelection: () => void;
+}) {
   const [action, setAction] = useState<"set_review_state" | "assign_owner" | "set_ui_status" | "add_note">("set_review_state");
-  const [selectedCount, setSelectedCount] = useState(0);
+  if (selectedCount === 0) {
+    return null;
+  }
 
-  useEffect(() => {
-    const form = document.getElementById(formId) as HTMLFormElement | null;
-    if (!form) return;
+  const selectionLabel =
+    selectedCount === 1 ? "1 result selected." : `${selectedCount} results selected.`;
 
-    const sync = () => setSelectedCount(countSelected(form));
-    sync();
-    form.addEventListener("change", sync);
-    return () => form.removeEventListener("change", sync);
-  }, [formId]);
-
-  const selectionLabel = useMemo(() => {
-    if (selectedCount === 0) return "No results selected.";
-    if (selectedCount === 1) return "1 result selected.";
-    return `${selectedCount} results selected.`;
-  }, [selectedCount]);
-
-  const submitLabel =
-    selectedCount > 0 ? `Apply to ${selectedCount} selected` : "Select results to apply";
+  const submitLabel = `Apply to ${selectedCount} selected`;
 
   return (
     <div className="space-y-4">
@@ -90,20 +68,14 @@ export function BulkReviewControls({ formId }: { formId: string }) {
           <Button
             type="button"
             variant="secondary"
-            onClick={() => {
-              const form = document.getElementById(formId) as HTMLFormElement | null;
-              setSelectedCount(setAllSelected(form, true));
-            }}
+            onClick={onSelectAll}
           >
             Select all on page
           </Button>
           <Button
             type="button"
             variant="secondary"
-            onClick={() => {
-              const form = document.getElementById(formId) as HTMLFormElement | null;
-              setSelectedCount(setAllSelected(form, false));
-            }}
+            onClick={onClearSelection}
           >
             Clear selection
           </Button>
@@ -180,7 +152,7 @@ export function BulkReviewControls({ formId }: { formId: string }) {
 
         <div className="grid gap-2">
           <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Apply</span>
-          <Button type="submit" disabled={selectedCount === 0}>
+          <Button type="submit">
             {submitLabel}
           </Button>
         </div>

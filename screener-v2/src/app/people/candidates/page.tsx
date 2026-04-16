@@ -1,16 +1,13 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { FileText } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { PersistedTableState } from "@/components/workspace/PersistedTableState";
-import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
-import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
+import { CandidateWorkspaceTable } from "@/components/candidates/CandidateWorkspaceTable";
 import { CandidateCsvImportModal } from "@/components/candidates/CandidateCsvImportModal";
-import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
@@ -55,6 +52,16 @@ function messageTone(type: "success" | "error") {
     : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
 }
 
+function NoticeBanner({
+  tone,
+  children
+}: {
+  tone: "success" | "error";
+  children: React.ReactNode;
+}) {
+  return <div className={messageTone(tone)}>{children}</div>;
+}
+
 function buildHref(params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
   const next = new URLSearchParams(params.toString());
   for (const [key, value] of Object.entries(overrides)) {
@@ -66,42 +73,6 @@ function buildHref(params: URLSearchParams, overrides: Record<string, string | u
 
 function filterFieldClassName() {
   return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
-}
-
-const tableShellClassName =
-  "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
-
-const tableHeadClassName =
-  "bg-[color:var(--app-surface-soft)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
-
-const tableCellClassName =
-  "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
-
-const actionPillPrimaryClassName =
-  "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-2.5 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_28%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
-
-const actionPillSecondaryClassName =
-  "inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2.5 py-2 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
-
-const actionIconPillClassName =
-  "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-brand-strong)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-brand)]";
-
-function contextualAction(candidate: Awaited<ReturnType<typeof listCandidateWorkspacePage>>["rows"][number]) {
-  if (candidate.latestAssessment?.attemptId) {
-    return {
-      href: `/results/${candidate.latestAssessment.attemptId}` as Route,
-      label: "Result"
-    };
-  }
-
-  if (candidate.latestAssessmentStatus === "none") {
-    return {
-      href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Send"
-    };
-  }
-
-  return null;
 }
 
 export default async function PeopleCandidatesPage({
@@ -164,17 +135,17 @@ export default async function PeopleCandidatesPage({
           transientKeys={[...transientBannerKeys]}
         />
         <StaggerGroup className="space-y-5" delay={0.04}>
-          {params.deleted ? <StaggerItem><div className={messageTone("success")}>Candidate deleted.</div></StaggerItem> : null}
-          {params.updated ? <StaggerItem><div className={messageTone("success")}>Updated {params.updated} candidate(s).</div></StaggerItem> : null}
+          {params.deleted ? <StaggerItem><NoticeBanner tone="success">Candidate deleted.</NoticeBanner></StaggerItem> : null}
+          {params.updated ? <StaggerItem><NoticeBanner tone="success">Updated {params.updated} candidate(s).</NoticeBanner></StaggerItem> : null}
           {params.imported ? (
             <StaggerItem>
-              <div className={messageTone("success")}>
+              <NoticeBanner tone="success">
                 Imported {params.imported} candidate(s).
                 {params.skipped ? ` Skipped ${params.skipped} duplicate email(s).` : ""}
-              </div>
+              </NoticeBanner>
             </StaggerItem>
           ) : null}
-          {params.error ? <StaggerItem><div className={messageTone("error")}>{params.error}</div></StaggerItem> : null}
+          {params.error ? <StaggerItem><NoticeBanner tone="error">{params.error}</NoticeBanner></StaggerItem> : null}
 
           <StaggerItem>
             <div className="space-y-4">
@@ -293,110 +264,7 @@ export default async function PeopleCandidatesPage({
             </StaggerItem>
           ) : (
             <StaggerItem>
-              <form id="candidate-bulk-form" action="/api/candidates/bulk" method="post" className="space-y-4">
-                <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-                <CandidateBulkActionsBar formId="candidate-bulk-form" />
-
-                <div className={tableShellClassName}>
-                  <div className="overflow-x-auto lg:overflow-visible">
-                    <table className="w-full table-fixed text-left">
-                      <thead className={tableHeadClassName}>
-                        <tr>
-                          <th className="w-12 px-4 py-3 font-medium">
-                            <span className="sr-only">Select</span>
-                          </th>
-                          <th className="w-[24%] px-4 py-3 font-medium">Name</th>
-                          <th className="w-[13%] px-4 py-3 font-medium">Owner</th>
-                          <th className="w-[19%] px-4 py-3 font-medium">Status</th>
-                          <th className="w-[16%] px-4 py-3 font-medium">Assessment</th>
-                          <th className="w-[8%] px-4 py-3 font-medium">Updated</th>
-                          <th className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {page.rows.map((candidate) => (
-                          <tr key={candidate.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
-                            <td className={tableCellClassName}>
-                              <input
-                                type="checkbox"
-                                name="candidateId"
-                                value={candidate.id}
-                                className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400"
-                              />
-                            </td>
-                            <td className={tableCellClassName}>
-                              <div className="space-y-0.5">
-                                <p className="font-medium text-[color:var(--app-heading)]">{candidate.fullName}</p>
-                                <p className="text-xs text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
-                                {candidate.roleDepartment ? (
-                                  <p className="text-xs text-[color:var(--app-muted)]">{candidate.roleDepartment}</p>
-                                ) : null}
-                              </div>
-                            </td>
-                            <td className={tableCellClassName}>
-                              <span>{candidate.hrOwner || "Unassigned"}</span>
-                            </td>
-                            <td className={tableCellClassName}>
-                              <div className="space-y-2">
-                                <InlineStatusSelect
-                                  candidateId={candidate.id}
-                                  currentStatus={candidate.uiStatus}
-                                  returnTo={currentPathAndQuery}
-                                />
-                                <p className="text-xs text-[color:var(--app-muted)]">
-                                  {candidate.currentFocus || candidateStageLabels[candidate.stage]}
-                                </p>
-                              </div>
-                            </td>
-                            <td className={tableCellClassName}>
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2 whitespace-nowrap">
-                                  <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
-                                  {typeof candidate.latestAssessment?.finalPercent === "number" ? (
-                                    <span className="text-xs text-[color:var(--app-muted)]">
-                                      {candidate.latestAssessment.finalPercent.toFixed(1)} / 100
-                                    </span>
-                                  ) : null}
-                                </div>
-                              </div>
-                            </td>
-                            <td className={tableCellClassName}>
-                              <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
-                            </td>
-                            <td className={tableCellClassName}>
-                              <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                                {(() => {
-                                  const action = contextualAction(candidate);
-                                  return action ? (
-                                    <Link href={action.href} className={actionPillPrimaryClassName}>
-                                      {action.label}
-                                    </Link>
-                                  ) : null;
-                                })()}
-                                {candidate.hasResume && candidate.latestResumeStorageKey ? (
-                                  <a
-                                    href={`/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={actionIconPillClassName}
-                                    title="Open CV"
-                                    aria-label="Open CV"
-                                  >
-                                    <FileText className="h-4 w-4" />
-                                  </a>
-                                ) : null}
-                                <Link href={`/candidates/${candidate.id}`} className={actionPillSecondaryClassName}>
-                                  Profile
-                                </Link>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </form>
+              <CandidateWorkspaceTable rows={page.rows} currentPathAndQuery={currentPathAndQuery} />
             </StaggerItem>
           )}
 

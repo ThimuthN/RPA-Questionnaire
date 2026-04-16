@@ -23,6 +23,25 @@ function statusMeta(status: ResultReviewItem["status"]) {
   }
 }
 
+function itemPreview(item: ResultReviewItem, mode: "result" | "answer_key") {
+  const candidatePreview = item.candidateAnswerLines.find((line) => line.trim().length > 0);
+  const expectedPreview = item.expectedAnswerLines.find((line) => line.trim().length > 0);
+
+  if (mode === "result") {
+    return candidatePreview || expectedPreview || "Open this item to review the full answer.";
+  }
+
+  return expectedPreview || "Open this item to review the answer key.";
+}
+
+function openByDefault(item: ResultReviewItem, mode: "result" | "answer_key") {
+  if (mode === "answer_key") {
+    return false;
+  }
+
+  return item.status !== "correct";
+}
+
 function AnswerBlock({
   title,
   lines,
@@ -99,33 +118,60 @@ export function ResultReviewSections({
               {section.items.map((item) => {
                 const status = statusMeta(item.status);
                 return (
-                  <div
+                  <details
                     key={item.id}
-                    className="rounded-[20px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4"
+                    open={openByDefault(item, mode)}
+                    className="group rounded-[20px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] px-4 py-4"
                   >
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {mode === "result" ? (
-                            <StatusPill label={status.label} tone={status.tone} />
-                          ) : null}
-                          <StatusPill label={item.formatLabel} tone="neutral" />
-                          {item.category ? (
-                            <StatusPill
-                              label={item.category}
-                              tone="neutral"
-                              className="normal-case tracking-normal"
-                            />
-                          ) : null}
-                          {mode === "result" ? (
-                            <StatusPill
-                              label={`${item.pointsEarned}/${item.pointsPossible} pts`}
-                              tone="neutral"
-                              className="normal-case tracking-normal"
-                            />
-                          ) : null}
+                    <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {mode === "result" ? (
+                              <StatusPill label={status.label} tone={status.tone} />
+                            ) : null}
+                            <StatusPill label={item.formatLabel} tone="neutral" />
+                            {item.category ? (
+                              <StatusPill
+                                label={item.category}
+                                tone="neutral"
+                                className="normal-case tracking-normal"
+                              />
+                            ) : null}
+                            {mode === "result" ? (
+                              <StatusPill
+                                label={`${item.pointsEarned}/${item.pointsPossible} pts`}
+                                tone="neutral"
+                                className="normal-case tracking-normal"
+                              />
+                            ) : null}
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-xl text-[color:var(--app-heading)]">{item.title}</h3>
+                            <p className="line-clamp-2 text-sm leading-6 text-[color:var(--app-muted)]">
+                              {itemPreview(item, mode)}
+                            </p>
+                          </div>
                         </div>
-                        <h3 className="text-xl text-[color:var(--app-heading)]">{item.title}</h3>
+                        <span className="mt-1 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)] transition duration-200 group-open:rotate-180">
+                          <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                            <path
+                              d="M5 7.5L10 12.5L15 7.5"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                      </div>
+                    </summary>
+
+                    <div className="mt-4 space-y-4 border-t border-[color:var(--app-border)] pt-4">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <StatusPill label="Question detail" tone="neutral" />
+                        </div>
                         {item.promptBlocks && item.promptBlocks.length > 0 ? (
                           <StructuredPromptBlocks blocks={item.promptBlocks} className="space-y-4" />
                         ) : item.prompt ? (
@@ -154,7 +200,7 @@ export function ResultReviewSections({
                         </div>
                       ) : null}
                     </div>
-                  </div>
+                  </details>
                 );
               })}
             </div>

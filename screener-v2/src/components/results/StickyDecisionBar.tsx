@@ -6,18 +6,12 @@ import { ResultDecisionActions } from "@/components/results/ResultDecisionAction
 
 interface StickyDecisionBarProps {
   attemptId: string;
-  candidateName: string;
-  score: number;
-  resultStatus: "pass" | "review" | "fail";
   hasLinkedCandidate: boolean;
   nextUnreviewedId?: string;
 }
 
 export function StickyDecisionBar({
   attemptId,
-  candidateName,
-  score,
-  resultStatus,
   hasLinkedCandidate,
   nextUnreviewedId
 }: StickyDecisionBarProps) {
@@ -31,22 +25,12 @@ export function StickyDecisionBar({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const statusColor =
-    resultStatus === "pass"
-      ? "text-[color:var(--app-success)]"
-      : resultStatus === "review"
-        ? "text-[color:var(--app-warning)]"
-        : "text-[color:var(--app-danger)]";
-
   return (
     <div
       className={`fixed bottom-0 inset-x-0 z-50 border-t border-[color:var(--app-border)] bg-[color:var(--app-modal-surface-strong)] backdrop-blur-md transition-transform duration-300 ${visible ? "translate-y-0" : "translate-y-full"}`}
     >
       <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-3 min-w-0">
-          <p className="text-sm font-medium text-[color:var(--app-heading)] truncate">{candidateName}</p>
-          <span className={`text-sm font-medium ${statusColor}`}>{score.toFixed(1)} / 100</span>
-        </div>
+        <p className="text-sm text-[color:var(--app-muted)]">Quick decision actions</p>
 
         <div className="flex flex-wrap items-center gap-2">
           {hasLinkedCandidate && (

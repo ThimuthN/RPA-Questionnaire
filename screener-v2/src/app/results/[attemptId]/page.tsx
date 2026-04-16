@@ -8,6 +8,7 @@ import {
   type ResultCandidateLinkTarget
 } from "@/lib/db/repositories";
 import { ResultDecisionActions } from "@/components/results/ResultDecisionActions";
+import { ResultActivityModal } from "@/components/results/ResultActivityModal";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
 import { ResultReviewSections } from "@/components/results/ResultReviewSections";
 import { StickyDecisionBar } from "@/components/results/StickyDecisionBar";
@@ -59,6 +60,21 @@ function linkTargetOptionLabel(target: ResultCandidateLinkTarget) {
 
 function isSuggestedLinkTarget(target: ResultCandidateLinkTarget) {
   return target.matchesParticipantEmail || target.matchesParticipantName;
+}
+
+function NoticeBanner({
+  tone,
+  children
+}: {
+  tone: "success" | "error";
+  children: React.ReactNode;
+}) {
+  const className =
+    tone === "success"
+      ? "mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]"
+      : "mb-5 rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]";
+
+  return <div className={className}>{children}</div>;
 }
 
 export default async function ResultDetailPage({
@@ -130,21 +146,9 @@ export default async function ResultDetailPage({
         </div>
       }
     >
-      {pageState.linked ? (
-        <div className="mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
-          Result linked to the selected candidate milestone.
-        </div>
-      ) : null}
-      {pageState.updated ? (
-        <div className="mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
-          Updated {pageState.updated} candidate-linked result(s).
-        </div>
-      ) : null}
-      {pageState.error ? (
-        <div className="mb-5 rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]">
-          {pageState.error}
-        </div>
-      ) : null}
+      {pageState.linked ? <NoticeBanner tone="success">Result linked to the selected candidate milestone.</NoticeBanner> : null}
+      {pageState.updated ? <NoticeBanner tone="success">Updated {pageState.updated} candidate-linked result(s).</NoticeBanner> : null}
+      {pageState.error ? <NoticeBanner tone="error">{pageState.error}</NoticeBanner> : null}
       <DecisionStage
         hero={<ResultRevealHero row={row} />}
         signals={
@@ -170,7 +174,7 @@ export default async function ResultDetailPage({
             <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
               <div className="space-y-1">
                 <h2 className="text-xl text-[color:var(--app-heading)]">Candidate context</h2>
-                <p className="text-sm text-[color:var(--app-text)]">Bring the candidate state into the review instead of switching screens.</p>
+                <p className="text-sm text-[color:var(--app-text)]">Keep only the candidate context that helps this decision.</p>
               </div>
               {candidate ? (
                 <div className="mt-4 space-y-4">
@@ -183,9 +187,15 @@ export default async function ResultDetailPage({
                     ) : null}
                     {row.candidateOwner ? <StatusPill label={`Owner ${row.candidateOwner}`} tone="neutral" className="normal-case tracking-normal" /> : null}
                   </div>
-                  <p className="text-sm text-[color:var(--app-text)]">{candidate.email}</p>
-                  {candidate.notesSummary ? <p className="text-sm text-[color:var(--app-text)]">{candidate.notesSummary}</p> : null}
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  {candidate.notesSummary ? (
+                    <div className="space-y-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision summary</p>
+                      <p className="text-sm leading-6 text-[color:var(--app-text)]">{candidate.notesSummary}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[color:var(--app-text)]">This result is linked and ready for a decision.</p>
+                  )}
+                  <div className="grid gap-2 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2">
                     <ResultDecisionActions
                       attemptId={attemptId}
                       renderAction={(action) => (
@@ -243,37 +253,39 @@ export default async function ResultDetailPage({
                   ) : null}
 
                   {selectTargets.length > 0 ? (
-                    <form
-                      action={`/api/results/${attemptId}/link`}
-                      method="post"
-                      className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4"
-                    >
-                      <input type="hidden" name="returnTo" value={`/results/${attemptId}#link-candidate`} />
-                      <div className="space-y-1">
+                    <details className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
+                      <summary className="cursor-pointer list-none space-y-1 [&::-webkit-details-marker]:hidden">
                         <h3 className="text-base text-[color:var(--app-heading)]">
                           {suggestedTargets.length > 0 ? "Other candidate milestones" : "Link to candidate milestone"}
                         </h3>
                         <p className="text-sm text-[color:var(--app-text)]">
-                          Choose the candidate step that should own this result.
+                          Choose a different candidate step only if the suggested match is not the right one.
                         </p>
-                      </div>
-                      <label className="grid gap-2">
-                        <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Candidate milestone</span>
-                        <select
-                          name="milestoneId"
-                          required
-                          defaultValue={selectTargets[0]?.milestoneId ?? ""}
-                          className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        >
-                          {selectTargets.map((target) => (
-                            <option key={target.milestoneId} value={target.milestoneId}>
-                              {linkTargetOptionLabel(target)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <Button type="submit">Link result</Button>
-                    </form>
+                      </summary>
+                      <form
+                        action={`/api/results/${attemptId}/link`}
+                        method="post"
+                        className="mt-4 space-y-3 border-t border-[color:var(--app-border)] pt-4"
+                      >
+                        <input type="hidden" name="returnTo" value={`/results/${attemptId}#link-candidate`} />
+                        <label className="grid gap-2">
+                          <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Candidate milestone</span>
+                          <select
+                            name="milestoneId"
+                            required
+                            defaultValue={selectTargets[0]?.milestoneId ?? ""}
+                            className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                          >
+                            {selectTargets.map((target) => (
+                              <option key={target.milestoneId} value={target.milestoneId}>
+                                {linkTargetOptionLabel(target)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <Button type="submit">Link result</Button>
+                      </form>
+                    </details>
                   ) : null}
 
                   {linkOptions?.canLink && linkOptions.targets.length === 0 && linkOptions.reason ? (
@@ -285,36 +297,12 @@ export default async function ResultDetailPage({
               )}
             </div>
 
-            <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-              <div className="space-y-1">
-                <h2 className="text-xl text-[color:var(--app-heading)]">Recent activity</h2>
-                <p className="text-sm text-[color:var(--app-text)]">Latest notes and candidate events.</p>
-              </div>
-              {activity.length === 0 ? (
-                <p className="mt-4 text-sm text-[color:var(--app-text)]">No recent candidate activity available.</p>
-              ) : (
-                <div className="mt-4 space-y-3">
-                  {activity.map((item) => (
-                    <div key={item.id} className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3">
-                      <div className="flex flex-wrap gap-2">
-                        <StatusPill label={item.kind} tone="neutral" />
-                        <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
-                      </div>
-                      <p className="mt-2 text-sm text-[color:var(--app-heading)]">{item.title}</p>
-                      <p className="mt-1 text-sm text-[color:var(--app-text)]">{item.detail}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ResultActivityModal items={activity} />
           </div>
         </div>
       </DecisionStage>
       <StickyDecisionBar
         attemptId={attemptId}
-        candidateName={row.candidateName || `Attempt ${attemptId.slice(0, 12)}`}
-        score={row.finalPercent}
-        resultStatus={row.pass ? "pass" : row.borderline ? "review" : "fail"}
         hasLinkedCandidate={!!candidate}
         nextUnreviewedId={nextUnreviewedId ?? undefined}
       />

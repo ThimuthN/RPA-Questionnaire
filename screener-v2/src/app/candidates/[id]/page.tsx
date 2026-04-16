@@ -1,13 +1,10 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
-import {
-  CandidateAssessmentPill,
-  CandidateNoteTypePill,
-  CandidateUiStatusPill
-} from "@/components/candidates/CandidatePills";
+import { CandidateUiStatusPill } from "@/components/candidates/CandidatePills";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
+import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
@@ -18,12 +15,7 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
-import {
-  candidateNoteTypeLabels,
-  candidateNoteTypeValues,
-  candidateUiStatusLabels,
-  candidateUiStatusValues
-} from "@/lib/candidates/types";
+import { candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
@@ -56,13 +48,60 @@ function nextPrompt(candidate: CandidateData) {
   return "Update the next stage when the candidate progresses.";
 }
 
-function resultTone(status: ReturnType<typeof currentAssessmentStatus>) {
-  return status === "passed" ? "emerald" : status === "review" ? "amber" : status === "failed" ? "red" : "neutral";
+function latestAssessmentSummary(candidate: CandidateData) {
+  const latest = latestAssessment(candidate);
+  if (!latest) {
+    return {
+      title: "No assessment yet",
+      detail: "This candidate can move through the lifecycle without an exam."
+    };
+  }
+
+  if (typeof latest.finalPercent === "number") {
+    return {
+      title: `${latest.finalPercent.toFixed(1)} / 100`,
+      detail: latest.submittedAt ? `Completed ${compactDate(latest.submittedAt)}` : "Assessment completed"
+    };
+  }
+
+  if (latest.submittedAt) {
+    return {
+      title: "Submitted",
+      detail: `Completed ${compactDate(latest.submittedAt)}`
+    };
+  }
+
+  if (latest.startedAt) {
+    return {
+      title: "In progress",
+      detail: `Started ${compactDate(latest.startedAt)}`
+    };
+  }
+
+  return {
+    title: "Sent",
+    detail: "Assessment linked to this candidate."
+  };
 }
 
 function compactDate(value?: string | Date | null) {
   if (!value) return null;
   return new Date(value).toLocaleDateString();
+}
+
+function NoticeBanner({
+  tone,
+  children
+}: {
+  tone: "success" | "error";
+  children: React.ReactNode;
+}) {
+  const className =
+    tone === "success"
+      ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
+      : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
+
+  return <div className={className}>{children}</div>;
 }
 
 function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
@@ -103,9 +142,9 @@ export default async function CandidateDetailPage({
 
   const pageState = await searchParams;
   const uiStatus = currentUiStatus(candidate);
-  const screener = currentAssessmentStatus(candidate);
   const latest = latestAssessment(candidate);
   const currentResume = candidate.resumes[0] ?? null;
+  const latestAssessmentState = latestAssessmentSummary(candidate);
   const resumePreviewUrl = currentResume
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}`
     : null;
@@ -116,12 +155,16 @@ export default async function CandidateDetailPage({
   const canSendScreener = Boolean(
     screenerMilestone && screenerMilestone.mode === "platform" && !screenerMilestone.assessment
   );
+  const hasAssessmentSupport = canSendScreener || Boolean(latest?.attemptId);
   const activityFeed = buildCandidateActivityFeed(candidate).slice(0, 8);
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
       <CandidateUiStatusPill status={uiStatus} />
-      <CandidateAssessmentPill status={screener} />
       {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
+      {candidate.hrOwner ? (
+        <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
+      ) : null}
+      <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
     </div>
   );
 
@@ -140,40 +183,30 @@ export default async function CandidateDetailPage({
     >
       <div className="space-y-5">
         {pageState.created || pageState.updated || pageState.noteAdded || pageState.resumeUploaded || pageState.error ? (
-          <StagePanel tone="summary" className="space-y-2">
-            {pageState.created || pageState.updated ? <p className="text-sm text-[color:var(--app-success)]">Candidate saved.</p> : null}
-            {pageState.noteAdded ? <p className="text-sm text-[color:var(--app-success)]">Note added.</p> : null}
-            {pageState.resumeUploaded ? <p className="text-sm text-[color:var(--app-success)]">Resume uploaded.</p> : null}
-            {pageState.error ? <p className="text-sm text-[color:var(--app-danger)]">{pageState.error}</p> : null}
-          </StagePanel>
+          <div className="space-y-2">
+            {pageState.created || pageState.updated ? <NoticeBanner tone="success">Candidate saved.</NoticeBanner> : null}
+            {pageState.noteAdded ? <NoticeBanner tone="success">Note added.</NoticeBanner> : null}
+            {pageState.resumeUploaded ? <NoticeBanner tone="success">Resume uploaded.</NoticeBanner> : null}
+            {pageState.error ? <NoticeBanner tone="error">{pageState.error}</NoticeBanner> : null}
+          </div>
         ) : null}
 
         <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_16%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Hiring decision</p>
-              <h2 className="text-3xl text-[color:var(--app-heading)]">Decision</h2>
+              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Candidate lifecycle</p>
+              <h2 className="text-3xl text-[color:var(--app-heading)]">Decision and next step</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                Record the current decision, key reason, and next step.
+                Keep the candidate state, owner, and next move clear in one place.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {canSendScreener && screenerMilestone ? (
-                <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                  <Button>Send assessment</Button>
-                </Link>
-              ) : null}
-              {latest?.attemptId && typeof latest.finalPercent === "number" ? (
-                <Link href={`/results/${latest.attemptId}` as Route}>
-                  <Button variant="secondary">View result</Button>
-                </Link>
-              ) : null}
               <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
               <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                 <ConfirmSubmitButton
                   variant="danger"
-                  confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked screener data.`}
+                  confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data.`}
                 >
                   Delete candidate
                 </ConfirmSubmitButton>
@@ -185,49 +218,38 @@ export default async function CandidateDetailPage({
             <div className="min-w-0 space-y-4">
               {outcomeBadges}
 
-              <div className="space-y-4 rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <div className="space-y-3">
-                  <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Candidate details</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
-                      <p className="break-all text-sm text-[color:var(--app-text)]">{candidate.email}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
-                      <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
-                      <p className="text-sm text-[color:var(--app-text)]">{candidate.hrOwner || "No owner assigned"}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Current stage</p>
-                      <p className="text-sm text-[color:var(--app-brand)]">{candidate.currentFocus || "No active stage yet"}</p>
-                    </div>
-                  </div>
+              <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
+                  <p className="break-all text-sm text-[color:var(--app-text)]">{candidate.email}</p>
                 </div>
-                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-[0.9fr_1fr_1.1fr]">
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Latest result</p>
-                    <p className="text-lg text-[color:var(--app-heading)]">
-                      {latest?.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "No result"}
-                    </p>
-                    <p className="text-xs text-[color:var(--app-muted)]">
-                      {latest?.submittedAt ? `Submitted ${compactDate(latest.submittedAt)}` : "No assessment submitted yet"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
-                    <p className="text-sm text-[color:var(--app-heading)]">{currentResume ? "Attached" : "Missing"}</p>
-                    <p className="break-all text-xs leading-5 text-[color:var(--app-muted)]">
-                      {currentResume ? currentResume.fileName : "Upload to unlock full review context"}
-                    </p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next prompt</p>
-                    <p className="text-sm text-[color:var(--app-text)]">{nextPrompt(candidate)}</p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
+                  <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
+                  <p className="text-sm text-[color:var(--app-text)]">{candidate.hrOwner || "No owner assigned"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Current stage</p>
+                  <p className="text-sm text-[color:var(--app-brand)]">{candidate.currentFocus || "No active stage yet"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Latest assessment</p>
+                  <p className="text-lg text-[color:var(--app-heading)]">{latestAssessmentState.title}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">{latestAssessmentState.detail}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
+                  <p className="text-sm text-[color:var(--app-heading)]">{currentResume ? "Attached" : "Missing"}</p>
+                  <p className="break-all text-xs leading-5 text-[color:var(--app-muted)]">
+                    {currentResume ? currentResume.fileName : "Upload to add review context"}
+                  </p>
+                </div>
+                <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next step</p>
+                  <p className="text-sm text-[color:var(--app-text)]">{nextPrompt(candidate)}</p>
                 </div>
               </div>
             </div>
@@ -235,7 +257,7 @@ export default async function CandidateDetailPage({
             <form
               action={`/api/candidates/${candidate.id}`}
               method="post"
-              className="min-w-0 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5"
+              className="min-w-0 space-y-4 border-t border-[color:var(--app-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
             >
               <HiddenCandidateFields candidate={candidate} />
               <div className="space-y-2">
@@ -273,9 +295,9 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Hiring stages</h2>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate journey</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Open the stage you are working on. Completed and inactive stages stay collapsed.
+                  Track the lifecycle here. Assessment steps are optional support, not the whole story.
                 </p>
               </div>
               <CandidateMilestoneTimeline
@@ -284,59 +306,39 @@ export default async function CandidateDetailPage({
                 hasResume={Boolean(currentResume)}
               />
             </div>
-
-            <div className="border-t border-[color:var(--app-border)] pt-5">
-              <CandidateActivityModal items={activityFeed} />
-            </div>
           </div>
 
           <div className="space-y-6 xl:pt-1">
-            <section className="space-y-4">
-              <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Assessment result</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">View the latest assessment result and next action.</p>
-              </div>
-              {latest?.attemptId ? (
-                <div className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                  <div className="flex flex-wrap gap-2">
-                    <CandidateAssessmentPill status={screener} />
-                    <StatusPill
-                      label={latest.finalPercent != null ? `${latest.finalPercent.toFixed(1)} / 100` : "Awaiting score"}
-                      tone="blue"
-                    />
-                    <StatusPill label={screener.replace("_", " ")} tone={resultTone(screener)} />
-                  </div>
-                  <p className="text-sm text-[color:var(--app-muted)]">
-                    {latest.submittedAt
-                      ? `Submitted ${new Date(latest.submittedAt).toLocaleString()}`
-                      : latest.startedAt
-                        ? `In progress since ${new Date(latest.startedAt).toLocaleString()}`
-                        : `Linked on ${new Date(latest.createdAt).toLocaleString()}`}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={`/results/${latest.attemptId}` as Route}>
-                      <Button variant="secondary">Open result</Button>
-                    </Link>
-                    {canSendScreener && screenerMilestone ? (
-                      <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                        <Button>Send another assessment</Button>
-                      </Link>
-                    ) : null}
-                  </div>
+            {hasAssessmentSupport ? (
+              <section className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-2xl text-[color:var(--app-heading)]">Assessment support</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">Use this only when an assessment is part of this candidate&apos;s journey.</p>
                 </div>
-              ) : (
                 <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                  <p className="text-sm text-[color:var(--app-muted)]">No assessment result yet.</p>
-                  {canSendScreener && screenerMilestone ? (
-                    <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
-                      <Button className="mt-3">Send assessment</Button>
-                    </Link>
-                  ) : null}
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <p className="text-sm text-[color:var(--app-heading)]">{latestAssessmentState.title}</p>
+                      <p className="text-sm text-[color:var(--app-muted)]">{latestAssessmentState.detail}</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {canSendScreener && screenerMilestone ? (
+                        <Link href={`/create-test?candidateId=${candidate.id}&milestoneId=${screenerMilestone.id}` as Route}>
+                          <Button>Send assessment</Button>
+                        </Link>
+                      ) : null}
+                      {latest?.attemptId && typeof latest.finalPercent === "number" ? (
+                        <Link href={`/results/${latest.attemptId}` as Route}>
+                          <Button variant="secondary">View result</Button>
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </section>
+              </section>
+            ) : null}
 
-            <section id="resume" className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
+            <section id="resume" className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-2xl text-[color:var(--app-heading)]">Resume</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">Upload, replace, or download the candidate&apos;s resume here.</p>
@@ -377,62 +379,21 @@ export default async function CandidateDetailPage({
               ) : null}
             </section>
 
-            <section className="space-y-5 border-t border-[color:var(--app-border)] pt-5">
-              <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Notes</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Add interview and review notes here.</p>
-              </div>
+            <section className="border-t border-[color:var(--app-border)] pt-5">
+              <CandidateNotesModal
+                candidateId={candidate.id}
+                notes={candidate.notes.map((note) => ({
+                  id: note.id,
+                  type: note.type,
+                  body: note.body,
+                  createdAt: note.createdAt,
+                  author: note.createdByName || note.createdByEmail
+                }))}
+              />
+            </section>
 
-              <form action={`/api/candidates/${candidate.id}/notes`} method="post" className="space-y-4">
-                <div className="grid gap-2">
-                  <span className="text-sm text-[color:var(--app-text)]">Type</span>
-                  <ChoicePills
-                    name="type"
-                    idPrefix="candidate-note-type"
-                    defaultValue="general"
-                    required
-                    options={candidateNoteTypeValues.map((value) => ({
-                      value,
-                      label: candidateNoteTypeLabels[value]
-                    }))}
-                  />
-                </div>
-
-                <label className="grid gap-1">
-                  <span className="text-sm text-[color:var(--app-text)]">Note</span>
-                  <textarea
-                    name="body"
-                    rows={4}
-                    required
-                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
-
-                <Button type="submit">Add note</Button>
-              </form>
-
-              {candidate.notes.length === 0 ? (
-                <p className="text-sm text-[color:var(--app-muted)]">No notes yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {candidate.notes.map((note) => {
-                    const author = note.createdByName || note.createdByEmail;
-
-                    return (
-                      <div key={note.id} className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                        <div className="flex flex-wrap gap-2">
-                          <CandidateNoteTypePill type={note.type} />
-                          <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
-                          {author ? (
-                            <StatusPill label={`by ${author}`} tone="neutral" className="normal-case tracking-normal" />
-                          ) : null}
-                        </div>
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">{note.body}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <section className="border-t border-[color:var(--app-border)] pt-5">
+              <CandidateActivityModal items={activityFeed} />
             </section>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import {
@@ -21,6 +22,32 @@ import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
 
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
+
+const timelineNodeClassNames = {
+  complete:
+    "border-transparent bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-success)_78%,white),color-mix(in_srgb,var(--app-brand)_32%,var(--app-success)))] text-white shadow-[0_16px_32px_color-mix(in_srgb,var(--app-success)_22%,transparent)]",
+  active:
+    "border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_18px_36px_color-mix(in_srgb,var(--app-brand)_24%,transparent)]",
+  pending:
+    "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
+} as const;
+
+function isMilestoneComplete(status: CandidateMilestoneRecord["status"]) {
+  return status === "done" || status === "skipped";
+}
+
+function defaultActiveMilestoneId(milestones: CandidateMilestoneRecord[], hasResume: boolean) {
+  const inProgress = milestones.find((milestone) => milestone.status === "in_progress");
+  if (inProgress) {
+    return inProgress.id;
+  }
+
+  const nextActionable = milestones.find(
+    (milestone) =>
+      !isMilestoneComplete(milestone.status) && !(milestone.type === "registration" && hasResume)
+  );
+  return nextActionable?.id ?? milestones[0]?.id ?? "";
+}
 
 function derivedResult(milestone: CandidateMilestoneRecord) {
   if (milestone.mode === "manual") {
@@ -150,57 +177,49 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
   }
 
   return (
-    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
-      <div className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <CandidateAssessmentPill status={milestone.assessment.status} />
-          {result ? (
-            <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
-          ) : null}
-          {typeof milestone.assessment.finalPercent === "number" ? (
-            <StatusPill label={`${milestone.assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
-          ) : null}
-        </div>
+    <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
+      <div className="flex flex-wrap gap-2">
+        <CandidateAssessmentPill status={milestone.assessment.status} />
+        {result ? (
+          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+        ) : null}
+        {typeof milestone.assessment.finalPercent === "number" ? (
+          <StatusPill label={`${milestone.assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
+        ) : null}
+      </div>
 
-        <p className="text-sm text-[color:var(--app-text)]">
-          {milestone.assessment.inviteSlug
-            ? `Linked to ${milestone.assessment.inviteSlug.toUpperCase()}.`
-            : "Linked to an assessment."}
-        </p>
-
-        <div className="grid gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Invite code</p>
-            <p className="text-sm text-[color:var(--app-heading)]">{inviteCode || "Not available"}</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Created</p>
-            <p className="text-sm text-[color:var(--app-heading)]">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
-          </div>
-          <div className="space-y-1 md:col-span-2">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Share path</p>
-            <p className="break-all text-sm text-[color:var(--app-text)]">
-              {shareHref ? shareHref : "Available after the assessment is created."}
-            </p>
-          </div>
+      <div className="grid gap-3 text-sm md:grid-cols-2">
+        <div className="space-y-1">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Invite code</p>
+          <p className="text-[color:var(--app-heading)]">{inviteCode || "Not available"}</p>
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          {shareHref ? (
-            <a href={shareHref} target="_blank" rel="noreferrer">
-              <Button type="button" variant="secondary">
-                Open share page
-              </Button>
-            </a>
-          ) : null}
-          {resultHref ? (
-            <Link href={resultHref}>
-              <Button type="button" variant="secondary">
-                View result
-              </Button>
-            </Link>
-          ) : null}
+        <div className="space-y-1">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Created</p>
+          <p className="text-[color:var(--app-heading)]">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
         </div>
+        <div className="space-y-1 md:col-span-2">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Share path</p>
+          <p className="break-all text-[color:var(--app-text)]">
+            {shareHref ? shareHref : "Available after the assessment is created."}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {shareHref ? (
+          <a href={shareHref} target="_blank" rel="noreferrer">
+            <Button type="button" variant="secondary">
+              Open share page
+            </Button>
+          </a>
+        ) : null}
+        {resultHref ? (
+          <Link href={resultHref}>
+            <Button type="button" variant="secondary">
+              View result
+            </Button>
+          </Link>
+        ) : null}
       </div>
     </div>
   );
@@ -214,24 +233,31 @@ function AttachExistingTest({
   milestoneId: string;
 }) {
   return (
-    <form
-      action={`/api/candidates/${candidateId}/milestones/${milestoneId}`}
-      method="post"
-      className="grid gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4 md:grid-cols-[1fr_1fr_auto] md:items-end"
-    >
-      <input type="hidden" name="action" value="link_existing" />
-      <label className="grid gap-1">
-        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Attempt ID</span>
-        <input name="attemptId" className={fieldClassName} />
-      </label>
-      <label className="grid gap-1">
-        <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Invite slug</span>
-        <input name="inviteSlug" className={fieldClassName} />
-      </label>
-      <Button type="submit" variant="secondary">
-        Link assessment
-      </Button>
-    </form>
+    <details className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3">
+      <summary className="cursor-pointer list-none text-sm text-[color:var(--app-text)] [&::-webkit-details-marker]:hidden">
+        <span className="font-medium text-[color:var(--app-heading)]">Attach an existing assessment</span>
+        <span className="ml-2 text-[color:var(--app-muted)]">Use this only when this lifecycle step already has an assessment elsewhere.</span>
+      </summary>
+
+      <form
+        action={`/api/candidates/${candidateId}/milestones/${milestoneId}`}
+        method="post"
+        className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
+      >
+        <input type="hidden" name="action" value="link_existing" />
+        <label className="grid gap-1">
+          <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Attempt ID</span>
+          <input name="attemptId" className={fieldClassName} />
+        </label>
+        <label className="grid gap-1">
+          <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Invite slug</span>
+          <input name="inviteSlug" className={fieldClassName} />
+        </label>
+        <Button type="submit" variant="secondary">
+          Link assessment
+        </Button>
+      </form>
+    </details>
   );
 }
 
@@ -254,7 +280,7 @@ function TestMilestoneCard({
         {isPlatform ? <input type="hidden" name="result" value="" /> : null}
 
         <div className="flex flex-wrap gap-2">
-          <StatusPill label={selectedMode === "platform" ? "In-platform assessment" : "External assessment"} tone="neutral" />
+          <StatusPill label={selectedMode === "platform" ? "In platform" : "External"} tone="neutral" />
           {milestone.date ? (
             <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
           ) : null}
@@ -262,7 +288,7 @@ function TestMilestoneCard({
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
           <div className="grid gap-1.5">
-            <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Assessment type</span>
+            <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Step format</span>
             <ChoicePills
               name="mode"
               idPrefix={`milestone-mode-${milestone.id}`}
@@ -279,12 +305,12 @@ function TestMilestoneCard({
         </div>
 
         {isPlatform ? (
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="secondary">
-              {saveButtonLabel(milestone.type, selectedMode)}
-            </Button>
-            {!milestone.assessment ? (
-              <Link href={sendHref}>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" variant="secondary">
+                {saveButtonLabel(milestone.type, selectedMode)}
+              </Button>
+              {!milestone.assessment ? (
+                <Link href={sendHref}>
                 <Button type="button">Create assessment</Button>
               </Link>
             ) : null}
@@ -355,6 +381,34 @@ function TestMilestoneCard({
       ) : null}
     </div>
   );
+}
+
+function MilestonePanelContent({
+  candidateId,
+  milestone,
+  hasResume
+}: {
+  candidateId: string;
+  milestone: CandidateMilestoneRecord;
+  hasResume: boolean;
+}) {
+  if (milestone.type === "registration") {
+    return hasResume ? (
+      <p className="text-sm text-[color:var(--app-text)]">Resume attached.</p>
+    ) : (
+      <Link href={`/candidates/${candidateId}#resume` as Route}>
+        <Button type="button" variant="secondary">
+          Add resume
+        </Button>
+      </Link>
+    );
+  }
+
+  if (milestone.type === "screener" || milestone.type === "advanced_test") {
+    return <TestMilestoneCard candidateId={candidateId} milestone={milestone} />;
+  }
+
+  return <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />;
 }
 
 function DocumentationMilestoneCard({
@@ -438,87 +492,134 @@ export function CandidateMilestoneTimeline({
   milestones: CandidateMilestoneRecord[];
   hasResume: boolean;
 }) {
+  const reduceMotion = useReducedMotion();
+  const [activeMilestoneId, setActiveMilestoneId] = useState(() =>
+    defaultActiveMilestoneId(milestones, hasResume)
+  );
+
+  useEffect(() => {
+    if (milestones.some((milestone) => milestone.id === activeMilestoneId)) {
+      return;
+    }
+
+    setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
+  }, [activeMilestoneId, hasResume, milestones]);
+
+  const activeMilestone =
+    milestones.find((milestone) => milestone.id === activeMilestoneId) ?? milestones[0] ?? null;
+
+  if (!activeMilestone) {
+    return null;
+  }
+
   return (
-    <div className="relative space-y-0">
-      <div className="absolute bottom-6 left-4 top-4 hidden w-px bg-[linear-gradient(to_bottom,color-mix(in_srgb,var(--app-brand)_28%,transparent),color-mix(in_srgb,var(--app-border)_88%,transparent),transparent)] sm:block" />
-      {milestones.map((milestone, index) => {
-        const result = derivedResult(milestone);
-        const hasActivity = Boolean(
-          milestone.assessment ||
-            milestone.notes?.trim() ||
-            milestone.date ||
-            typeof milestone.score === "number" ||
-            result
-        );
-        const compactByDefault =
-          milestone.status !== "in_progress" &&
-          (milestone.status === "done" ||
-            milestone.status === "skipped" ||
-            (milestone.status === "not_started" && !hasActivity) ||
-            (milestone.type === "registration" && hasResume));
+    <div className="space-y-5">
+      <div className="overflow-x-auto pb-2">
+        <div className="min-w-[720px] px-1">
+          <div className="flex items-start">
+            {milestones.map((milestone, index) => {
+              const result = derivedResult(milestone);
+              const isActive = milestone.id === activeMilestone.id;
+              const isComplete = isMilestoneComplete(milestone.status);
+              const segmentFilled = isMilestoneComplete(milestone.status);
+              const nodeState = isComplete ? "complete" : isActive ? "active" : "pending";
 
-        return (
-          <details
-            key={milestone.id}
-            open={!compactByDefault}
-            className="group relative ml-0 border-t border-[color:var(--app-border)] py-4 first:border-t-0 sm:pl-14"
-          >
-            <summary className="list-none cursor-pointer [&::-webkit-details-marker]:hidden">
-              <div className="flex items-start gap-3">
-                <div className="hidden sm:block">
-                  <div className="absolute left-0 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-brand)_18%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_94%,white))] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]">
-                    {index + 1}
-                  </div>
-                </div>
+              return (
+                <div key={milestone.id} className="flex min-w-0 flex-1 items-start">
+                  <button
+                    type="button"
+                    onClick={() => setActiveMilestoneId(milestone.id)}
+                    className="group flex w-40 shrink-0 flex-col items-center text-center"
+                  >
+                    <span
+                      className={`relative flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition duration-300 ${timelineNodeClassNames[nodeState]}`}
+                    >
+                      {isActive ? (
+                        <span className="absolute inset-[-6px] rounded-full border border-[color:var(--app-brand)]/35" />
+                      ) : null}
+                      <span className="relative z-[1]">{isComplete ? "✓" : index + 1}</span>
+                    </span>
+                    <span className="mt-3 text-sm font-medium text-[color:var(--app-heading)]">{milestone.title}</span>
+                    <span className="mt-1 max-w-[10rem] text-xs leading-5 text-[color:var(--app-muted)]">
+                      {stepSummary(milestone, hasResume)}
+                    </span>
+                    <span className="mt-2 flex flex-wrap justify-center gap-2">
+                      <CandidateMilestoneStatusPill status={milestone.status} />
+                      {result ? (
+                        <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+                      ) : null}
+                    </span>
+                  </button>
 
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1.5">
-                      <div className="flex flex-wrap gap-2">
-                        <CandidateMilestoneTypePill type={milestone.type} />
-                        <CandidateMilestoneStatusPill status={milestone.status} />
-                        {result ? (
-                          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
-                        ) : null}
-                        {milestone.assessment?.status === "in_progress" ? (
-                          <CandidateAssessmentPill status={milestone.assessment.status} />
-                        ) : null}
-                      </div>
-
-                      <div className="space-y-1">
-                        <h3 className="text-lg text-[color:var(--app-heading)]">{milestone.title}</h3>
-                        <p className="text-sm text-[color:var(--app-text)]">{stepSummary(milestone, hasResume)}</p>
+                  {index < milestones.length - 1 ? (
+                    <div className="mt-5 flex min-w-[72px] flex-1 items-center px-2">
+                      <div className="relative h-[4px] w-full overflow-hidden rounded-full bg-[color:var(--app-border)]">
+                        <motion.div
+                          className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(135deg,var(--app-brand),color-mix(in_srgb,var(--app-success)_68%,var(--app-brand)))]"
+                          initial={reduceMotion ? false : { scaleX: 0 }}
+                          animate={{ scaleX: segmentFilled ? 1 : 0 }}
+                          transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
+                          style={{ width: "100%", transformOrigin: "left center" }}
+                        />
                       </div>
                     </div>
-
-                    <span className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)] transition duration-200 group-open:rotate-180">
-                      <ChevronIcon />
-                    </span>
-                  </div>
+                  ) : null}
                 </div>
-              </div>
-            </summary>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
-            <div className="mt-4 rounded-[24px] bg-[color:var(--app-surface-soft)] p-4 ring-1 ring-[color:var(--app-border)]">
-              {milestone.type === "registration" ? (
-                hasResume ? (
-                  <p className="text-sm text-[color:var(--app-text)]">Resume attached.</p>
-                ) : (
-                  <Link href={`/candidates/${candidateId}#resume` as Route}>
-                    <Button type="button" variant="secondary">
-                      Add resume
-                    </Button>
-                  </Link>
-                )
-              ) : milestone.type === "screener" || milestone.type === "advanced_test" ? (
-                <TestMilestoneCard candidateId={candidateId} milestone={milestone} />
-              ) : (
-                <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />
-              )}
+      <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface-soft)_92%,white),color-mix(in_srgb,var(--app-surface)_94%,black))] p-5 shadow-[var(--app-shadow-soft)]">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <CandidateMilestoneTypePill type={activeMilestone.type} />
+                <CandidateMilestoneStatusPill status={activeMilestone.status} />
+                {derivedResult(activeMilestone) ? (
+                  <StatusPill
+                    label={candidateMilestoneResultLabels[derivedResult(activeMilestone) ?? "review"]}
+                    tone={resultTone(derivedResult(activeMilestone))}
+                  />
+                ) : null}
+                {activeMilestone.assessment?.status === "in_progress" ? (
+                  <CandidateAssessmentPill status={activeMilestone.assessment.status} />
+                ) : null}
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-xl text-[color:var(--app-heading)]">{activeMilestone.title}</h3>
+                <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
+                  {stepSummary(activeMilestone, hasResume)}
+                </p>
+              </div>
             </div>
-          </details>
-        );
-      })}
+
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)]">
+              <ChevronIcon />
+            </span>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeMilestone.id}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="border-t border-[color:var(--app-border)] pt-4"
+            >
+              <MilestonePanelContent
+                candidateId={candidateId}
+                milestone={activeMilestone}
+                hasResume={hasResume}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 }
