@@ -28,9 +28,6 @@ import { getCandidateDetail } from "@/lib/db/candidates";
 export const dynamic = "force-dynamic";
 
 function getSignals(row: ResultSummary) {
-  const entries = Object.entries(row.breakdownByCategory).sort((a, b) => b[1].percent - a[1].percent);
-  const best = entries[0];
-  const weakest = entries[entries.length - 1];
   const band = confidenceBand(row.finalPercent, row.passPercent, row.integrity, row.borderline);
   const confidence =
     band === "high"
@@ -44,8 +41,6 @@ function getSignals(row: ResultSummary) {
       : `Tabs hidden ${row.integrity.tabHiddenCount}, copy/cut ${row.integrity.copyCount}, paste ${row.integrity.pasteCount}`;
 
   return {
-    strength: best ? `${best[0]} (${best[1].percent.toFixed(1)}%)` : "No category data yet",
-    risk: weakest ? `${weakest[0]} (${weakest[1].percent.toFixed(1)}%)` : "No category risk",
     confidence,
     integrity
   };
@@ -154,10 +149,8 @@ export default async function ResultDetailPage({
         hero={<ResultRevealHero row={row} />}
         signals={
           <>
-            <SignalCard label={copy.results.topStrength} value={signals.strength} tone="emerald" />
-            <SignalCard label={copy.results.mainRisk} value={signals.risk} tone="amber" />
             <SignalCard label={copy.results.confidence} value={signals.confidence} tone="blue" />
-            <SignalCard label="Integrity" value={signals.integrity} tone="amber" className="md:col-span-2" />
+            <SignalCard label="Integrity" value={signals.integrity} tone="amber" />
             {scoreContext.label ? (
               <SignalCard
                 label="Role benchmark"
@@ -170,31 +163,6 @@ export default async function ResultDetailPage({
       >
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-5">
-            <div className="space-y-3">
-              <h2 className="text-xl text-[color:var(--app-heading)]">{copy.results.categoryBreakdown}</h2>
-              <div className="grid gap-3 md:grid-cols-2">
-                {Object.entries(row.breakdownByCategory).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="font-medium text-[color:var(--app-heading)]">{key}</p>
-                      <p className="text-sm text-[color:var(--app-heading)]">{value.percent.toFixed(1)}%</p>
-                    </div>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-[color:var(--app-surface-muted)]">
-                      <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,rgba(47,134,255,1),rgba(18,179,168,0.92))]"
-                        style={{ width: `${value.percent}%` }}
-                      />
-                    </div>
-                    <p className="mt-2 text-sm text-[color:var(--app-text)]">
-                      {value.correctCount}/{value.totalCount} correct
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
             <ResultReviewSections sections={result.reviewSections} examBreakdown={row.examBreakdown} />
           </div>
 

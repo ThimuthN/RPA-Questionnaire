@@ -14,10 +14,6 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
   const integrityRisk = row.integrity.tabHiddenCount * 2 + row.integrity.copyCount + row.integrity.pasteCount;
   const score = useMotionValue(reduceMotion ? row.finalPercent : 0);
   const rounded = useTransform(score, (value) => value.toFixed(1));
-  const examRows = row.exams
-    .map((exam) => row.examBreakdown[exam.instanceId])
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
-    .sort((a, b) => a.order - b.order);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -51,7 +47,14 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
             {row.candidateEmail ? <p className="text-sm text-[color:var(--app-muted)]">{row.candidateEmail}</p> : null}
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:max-w-3xl">
+            <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Result status</p>
+              <p className="mt-3 text-xl text-[color:var(--app-heading)]">{status}</p>
+              <p className="mt-1 text-xs text-[color:var(--app-text)]">
+                Final score {row.finalPercent.toFixed(1)} / 100 against a {row.passPercent}% target.
+              </p>
+            </div>
             <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Integrity signals</p>
               <p className="mt-3 text-xl text-[color:var(--app-heading)]">
@@ -61,27 +64,6 @@ export function ResultRevealHero({ row }: { row: ResultSummary }) {
                 Tabs hidden {row.integrity.tabHiddenCount} | Copy/Cut {row.integrity.copyCount} | Paste {row.integrity.pasteCount}
               </p>
             </div>
-            {examRows.map((exam) => (
-              <div
-                key={exam.instanceId}
-                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-4"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusPill label={`#${exam.order + 1}`} tone="neutral" />
-                  <StatusPill label={exam.label} tone="blue" />
-                  <StatusPill label={exam.pass ? "Passed gate" : "Missed gate"} tone={exam.pass ? "emerald" : "red"} />
-                </div>
-                <p className="mt-3 text-xl text-[color:var(--app-heading)]">
-                  {exam.weightedMarksEarned.toFixed(1)}/{exam.weightedMarksPossible}
-                </p>
-                <p className="mt-1 text-sm text-[color:var(--app-text)]">{exam.percent.toFixed(1)}% raw score</p>
-                {exam.configSummary ? (
-                  <p className="mt-2 text-xs text-[color:var(--app-text)]">Config: {exam.configSummary}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-[color:var(--app-muted)]">Time allocated: {exam.durationMinutes} min</p>
-                <p className="mt-1 text-xs text-[color:var(--app-muted)]">Minimum pass: {exam.requiredPercent.toFixed(0)}%</p>
-              </div>
-            ))}
           </div>
         </div>
 

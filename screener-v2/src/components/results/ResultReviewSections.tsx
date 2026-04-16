@@ -86,21 +86,7 @@ export function ResultReviewSections({
                     className="normal-case tracking-normal"
                   />
                 ) : null}
-                {exam ? (
-                  <StatusPill
-                    label={`${exam.weightedMarksEarned.toFixed(1)}/${exam.weightedMarksPossible} marks`}
-                    tone="emerald"
-                    className="normal-case tracking-normal"
-                  />
-                ) : null}
               </div>
-              {exam ? (
-                <div className="flex flex-wrap gap-2 text-xs text-[color:var(--app-muted)]">
-                  <span>Time allocated: {exam.durationMinutes} min</span>
-                  <span>Raw score: {exam.percent.toFixed(1)}%</span>
-                  <span>Minimum pass: {exam.requiredPercent.toFixed(0)}%</span>
-                </div>
-              ) : null}
               <h2 className="text-2xl text-[color:var(--app-heading)]">
                 {section.label} {mode === "result" ? "Review" : "Answer Key"}
               </h2>
