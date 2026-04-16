@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
-import { getDetailedResult, getNextUnreviewedAttemptId, getScoreContextForAttempt } from "@/lib/db/repositories";
+import {
+  getDetailedResult,
+  getNextUnreviewedAttemptId,
+  getResultCandidateLinkOptions,
+  getScoreContextForAttempt,
+  type ResultCandidateLinkTarget
+} from "@/lib/db/repositories";
 import { ResultDecisionActions } from "@/components/results/ResultDecisionActions";
 import { ResultRevealHero } from "@/components/results/ResultRevealHero";
 import { ResultReviewSections } from "@/components/results/ResultReviewSections";
@@ -14,6 +20,7 @@ import { copy } from "@/lib/design/copy";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { confidenceBand } from "@/lib/assessment-engine/thresholds";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
+import { candidateMilestoneTypeLabels } from "@/lib/candidates/milestones";
 import { candidateStageLabels, candidateUiStatusLabels } from "@/lib/candidates/types";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
@@ -44,12 +51,27 @@ function getSignals(row: ResultSummary) {
   };
 }
 
+function linkTargetOptionLabel(target: ResultCandidateLinkTarget) {
+  const parts = [
+    target.candidateName,
+    target.candidateEmail,
+    target.candidateRoleLabel,
+    candidateMilestoneTypeLabels[target.milestoneType as keyof typeof candidateMilestoneTypeLabels] ?? target.milestoneTitle
+  ].filter(Boolean);
+
+  return parts.join(" | ");
+}
+
+function isSuggestedLinkTarget(target: ResultCandidateLinkTarget) {
+  return target.matchesParticipantEmail || target.matchesParticipantName;
+}
+
 export default async function ResultDetailPage({
   params,
   searchParams
 }: {
   params: Promise<{ attemptId: string }>;
-  searchParams: Promise<{ updated?: string; error?: string }>;
+  searchParams: Promise<{ linked?: string; updated?: string; error?: string }>;
 }) {
   const { attemptId } = await params;
   await requirePageSession(`/results/${attemptId}`);
@@ -67,12 +89,18 @@ export default async function ResultDetailPage({
   }
   const row = result.summary;
   const signals = getSignals(row);
-  const [candidate, nextUnreviewedId, scoreContext] = await Promise.all([
+  const [candidate, nextUnreviewedId, scoreContext, linkOptions] = await Promise.all([
     row.candidateId ? getCandidateDetail(row.candidateId) : Promise.resolve(null),
     getNextUnreviewedAttemptId(attemptId),
-    getScoreContextForAttempt(attemptId, row.finalPercent)
+    getScoreContextForAttempt(attemptId, row.finalPercent),
+    row.candidateId ? Promise.resolve(null) : getResultCandidateLinkOptions(attemptId)
   ]);
   const activity = candidate ? buildCandidateActivityFeed(candidate).slice(0, 5) : [];
+  const suggestedTargets = linkOptions?.targets.filter(isSuggestedLinkTarget).slice(0, 3) ?? [];
+  const suggestedTargetIds = new Set(suggestedTargets.map((target) => target.milestoneId));
+  const remainingTargets =
+    linkOptions?.targets.filter((target) => !suggestedTargetIds.has(target.milestoneId)) ?? [];
+  const selectTargets = suggestedTargets.length > 0 ? remainingTargets : linkOptions?.targets ?? [];
 
   return (
     <SceneShell
@@ -107,6 +135,11 @@ export default async function ResultDetailPage({
         </div>
       }
     >
+      {pageState.linked ? (
+        <div className="mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
+          Result linked to the selected candidate milestone.
+        </div>
+      ) : null}
       {pageState.updated ? (
         <div className="mb-5 rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]">
           Updated {pageState.updated} candidate-linked result(s).
@@ -199,7 +232,88 @@ export default async function ResultDetailPage({
                   </div>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-[color:var(--app-text)]">This result is not linked to a tracked candidate yet.</p>
+                <div id="link-candidate" className="mt-4 space-y-4">
+                  <p className="text-sm text-[color:var(--app-text)]">This result is not linked to a tracked candidate yet.</p>
+
+                  {linkOptions && !linkOptions.canLink ? (
+                    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 text-sm text-[color:var(--app-text)]">
+                      {linkOptions.reason || "This result cannot be linked from here yet."}
+                    </div>
+                  ) : null}
+
+                  {suggestedTargets.length > 0 ? (
+                    <div className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
+                      <div className="space-y-1">
+                        <h3 className="text-base text-[color:var(--app-heading)]">Suggested matches</h3>
+                        <p className="text-sm text-[color:var(--app-text)]">These candidates match the participant details on this result.</p>
+                      </div>
+                      <div className="space-y-3">
+                        {suggestedTargets.map((target) => (
+                          <form
+                            key={target.milestoneId}
+                            action={`/api/results/${attemptId}/link`}
+                            method="post"
+                            className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3"
+                          >
+                            <input type="hidden" name="milestoneId" value={target.milestoneId} />
+                            <input type="hidden" name="returnTo" value={`/results/${attemptId}#link-candidate`} />
+                            <div className="min-w-0 space-y-1">
+                              <p className="text-sm font-medium text-[color:var(--app-heading)]">{target.candidateName}</p>
+                              <p className="text-sm text-[color:var(--app-text)]">
+                                {target.candidateEmail}{" "}
+                                {target.candidateRoleLabel ? `| ${target.candidateRoleLabel}` : ""}
+                              </p>
+                              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
+                                {candidateMilestoneTypeLabels[target.milestoneType as keyof typeof candidateMilestoneTypeLabels] ?? target.milestoneTitle}
+                              </p>
+                            </div>
+                            <Button type="submit">Link</Button>
+                          </form>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {selectTargets.length > 0 ? (
+                    <form
+                      action={`/api/results/${attemptId}/link`}
+                      method="post"
+                      className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4"
+                    >
+                      <input type="hidden" name="returnTo" value={`/results/${attemptId}#link-candidate`} />
+                      <div className="space-y-1">
+                        <h3 className="text-base text-[color:var(--app-heading)]">
+                          {suggestedTargets.length > 0 ? "Other candidate milestones" : "Link to candidate milestone"}
+                        </h3>
+                        <p className="text-sm text-[color:var(--app-text)]">
+                          Choose the candidate step that should own this result.
+                        </p>
+                      </div>
+                      <label className="grid gap-2">
+                        <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Candidate milestone</span>
+                        <select
+                          name="milestoneId"
+                          required
+                          defaultValue={selectTargets[0]?.milestoneId ?? ""}
+                          className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                        >
+                          {selectTargets.map((target) => (
+                            <option key={target.milestoneId} value={target.milestoneId}>
+                              {linkTargetOptionLabel(target)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <Button type="submit">Link result</Button>
+                    </form>
+                  ) : null}
+
+                  {linkOptions?.canLink && linkOptions.targets.length === 0 && linkOptions.reason ? (
+                    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 text-sm text-[color:var(--app-text)]">
+                      {linkOptions.reason}
+                    </div>
+                  ) : null}
+                </div>
               )}
             </div>
 

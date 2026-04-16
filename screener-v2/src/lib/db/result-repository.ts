@@ -4,6 +4,7 @@ import {
   mapAttempt,
   mapParticipant
 } from "@/lib/db/runtime-repository";
+import { attachExistingAssessmentToMilestone } from "@/lib/db/candidates";
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
 import { syncCandidateAssessmentLatestAttemptInTx } from "@/lib/db/candidate-assessment-links";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
@@ -39,11 +40,49 @@ export interface ResultWorkspacePage {
   };
 }
 
+export interface ResultCandidateLinkTarget {
+  milestoneId: string;
+  milestoneTitle: string;
+  milestoneType: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  candidateOwner?: string;
+  candidateRoleLabel?: string;
+  matchesParticipantEmail: boolean;
+  matchesParticipantName: boolean;
+}
+
+export interface ResultCandidateLinkOptions {
+  canLink: boolean;
+  reason?: string;
+  targets: ResultCandidateLinkTarget[];
+}
+
 type ResultWorkspaceQuery = ResultsWorkspaceFilters & {
   page?: number;
   pageSize?: number;
   attemptIds?: string[];
 };
+
+function compareLinkTargets(
+  left: ResultCandidateLinkTarget,
+  right: ResultCandidateLinkTarget
+) {
+  if (left.matchesParticipantEmail !== right.matchesParticipantEmail) {
+    return left.matchesParticipantEmail ? -1 : 1;
+  }
+  if (left.matchesParticipantName !== right.matchesParticipantName) {
+    return left.matchesParticipantName ? -1 : 1;
+  }
+  if (left.candidateName !== right.candidateName) {
+    return left.candidateName.localeCompare(right.candidateName);
+  }
+  if (left.milestoneTitle !== right.milestoneTitle) {
+    return left.milestoneTitle.localeCompare(right.milestoneTitle);
+  }
+  return left.milestoneId.localeCompare(right.milestoneId);
+}
 
 export async function listResults() {
   const resultRows = await prisma.result.findMany({
@@ -411,6 +450,162 @@ export async function getDetailedResult(
     summary,
     reviewSections: buildReviewSections(attempt)
   };
+}
+
+export async function getResultCandidateLinkOptions(
+  attemptId: string
+): Promise<ResultCandidateLinkOptions> {
+  const [attempt, existingLink] = await Promise.all([
+    prisma.attempt.findUnique({
+      where: { id: attemptId },
+      select: {
+        id: true,
+        inviteId: true,
+        participant: {
+          select: {
+            fullName: true,
+            email: true
+          }
+        }
+      }
+    }),
+    prisma.candidateAssessmentAttempt.findUnique({
+      where: { attemptId },
+      select: { attemptId: true }
+    })
+  ]);
+
+  if (!attempt) {
+    return {
+      canLink: false,
+      reason: "Result attempt not found.",
+      targets: []
+    };
+  }
+
+  if (existingLink) {
+    return {
+      canLink: false,
+      reason: "This result is already linked to a candidate workflow record.",
+      targets: []
+    };
+  }
+
+  if (!attempt.inviteId) {
+    return {
+      canLink: false,
+      reason: "Only invite-backed assessments can be linked to candidate workflow records.",
+      targets: []
+    };
+  }
+
+  const participantEmail = attempt.participant.email.trim().toLowerCase();
+  const participantName = attempt.participant.fullName.trim().toLowerCase();
+  const milestones = await prisma.candidateMilestone.findMany({
+    where: {
+      mode: "platform",
+      OR: [
+        { candidateAssessmentId: null },
+        {
+          candidateAssessment: {
+            OR: [
+              { attemptId },
+              {
+                attemptHistory: {
+                  some: {
+                    attemptId
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    select: {
+      id: true,
+      title: true,
+      type: true,
+      candidate: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          hrOwner: true,
+          role: {
+            select: {
+              label: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const targets = milestones
+    .map((milestone) => {
+      const candidateEmail = milestone.candidate.email.trim().toLowerCase();
+      const candidateName = milestone.candidate.fullName.trim().toLowerCase();
+
+      return {
+        milestoneId: milestone.id,
+        milestoneTitle: milestone.title,
+        milestoneType: milestone.type,
+        candidateId: milestone.candidate.id,
+        candidateName: milestone.candidate.fullName,
+        candidateEmail: milestone.candidate.email,
+        candidateOwner: milestone.candidate.hrOwner ?? undefined,
+        candidateRoleLabel: milestone.candidate.role?.label ?? undefined,
+        matchesParticipantEmail: candidateEmail.length > 0 && candidateEmail === participantEmail,
+        matchesParticipantName: candidateName.length > 0 && candidateName === participantName
+      } satisfies ResultCandidateLinkTarget;
+    })
+    .sort(compareLinkTargets);
+
+  return {
+    canLink: true,
+    reason: targets.length === 0 ? "No open platform milestones are available for linking." : undefined,
+    targets
+  };
+}
+
+export async function linkResultToCandidateMilestone(input: {
+  attemptId: string;
+  milestoneId: string;
+  createdById?: string;
+}) {
+  const existingLink = await prisma.candidateAssessmentAttempt.findUnique({
+    where: { attemptId: input.attemptId },
+    select: { attemptId: true }
+  });
+
+  if (existingLink) {
+    throw new Error("This result is already linked to a candidate workflow record.");
+  }
+
+  const milestone = await prisma.candidateMilestone.findUnique({
+    where: { id: input.milestoneId },
+    select: {
+      id: true,
+      candidateId: true,
+      mode: true
+    }
+  });
+
+  if (!milestone) {
+    throw new Error("Candidate milestone not found.");
+  }
+
+  if (milestone.mode !== "platform") {
+    throw new Error("Only platform milestones can be linked to assessment results.");
+  }
+
+  await attachExistingAssessmentToMilestone({
+    candidateId: milestone.candidateId,
+    milestoneId: milestone.id,
+    attemptId: input.attemptId,
+    createdById: input.createdById
+  });
 }
 
 export async function getScoreContextForAttempt(

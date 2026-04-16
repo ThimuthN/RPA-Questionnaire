@@ -483,7 +483,7 @@ export default async function ResultsPage({
                               </p>
                             </div>
                           ) : (
-                            <p className="text-sm text-[color:var(--app-muted)]">None</p>
+                            <p className="text-sm text-[color:var(--app-muted)]">Not linked yet</p>
                           )}
                         </td>
                         <td className={resultsTableCellClassName}>
@@ -503,7 +503,11 @@ export default async function ResultsPage({
                               <Link href={`/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
                                 Profile
                               </Link>
-                            ) : null}
+                            ) : (
+                              <Link href={`/results/${row.attemptId}#link-candidate`} className={actionPillSecondaryClassName}>
+                                Link
+                              </Link>
+                            )}
                             <Link href={toggleCompare(query, row.attemptId)} className={actionPillSecondaryClassName}>
                               {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
                             </Link>
