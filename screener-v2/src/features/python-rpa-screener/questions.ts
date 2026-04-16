@@ -2,22 +2,6 @@ import type { PromptBlock, Question } from "@/lib/assessment-engine/types";
 
 export type PythonRpaScreenerLevel = "Senior" | "Lead";
 
-function paragraph(text: string): PromptBlock {
-  return { type: "paragraph", text };
-}
-
-function prompt(text: string): PromptBlock {
-  return { type: "prompt", text };
-}
-
-function table(headers: string[], rows: string[][]): PromptBlock {
-  return { type: "table", headers, rows };
-}
-
-function list(heading: string, items: string[]): PromptBlock {
-  return { type: "list", heading, items, style: "plain" };
-}
-
 function sharedProps(args: {
   id: string;
   category: string;
@@ -171,12 +155,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q1",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Uncertain completion",
-    promptBlocks: [
-      paragraph(
-        "A bot clicks Submit, then the portal times out. Duplicate posting is possible if the transaction already completed. What is the best next action?"
-      )
-    ],
+    prompt: "A submit times out and duplicate posting is possible. What is the best next action?",
     options: [
       "Retry the transaction once, then escalate if it fails again",
       "Refresh the page and repeat the submit step",
@@ -191,15 +170,12 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q2",
     category: "Failure handling",
     difficulty: 3,
-    prompt: "Failure classification",
-    promptBlocks: [
-      paragraph("Which failure should usually be treated as non-retriable at the transaction level?")
-    ],
+    prompt: "Which of these failures should usually stop automatic retry for that item?",
     options: [
-      "Temporary network timeout while loading a page",
-      "Session expired during navigation",
-      "Business rule rejection from the target system",
-      "Stale element after a grid refresh"
+      "A page load times out before any action is taken",
+      "A session expires during navigation",
+      "The target system rejects the transaction based on business rules",
+      "A stale element appears after the grid refreshes"
     ],
     correctAnswer: "C",
     explanation: "A business rule rejection is usually terminal for that transaction rather than something to retry automatically.",
@@ -209,12 +185,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q3",
     category: "Queue design",
     difficulty: 4,
-    prompt: "Queue boundary design",
-    promptBlocks: [
-      paragraph(
-        "An invoice has 30 line items. If line 28 fails, the first 27 successful updates should not be repeated. What design is best?"
-      )
-    ],
+    prompt: "If line 28 fails, the first 27 successful updates must not repeat. What design is best?",
     options: [
       "Keep one queue item per invoice and restart the full item on any failure",
       "Split work so completed line-item progress can be preserved safely",
@@ -229,12 +200,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q4",
     category: "Architecture",
     difficulty: 3,
-    prompt: "Headless-first design",
-    promptBlocks: [
-      paragraph(
-        "A process currently scrapes a portal UI for data that is also available through a supported API. What is the best design direction?"
-      )
-    ],
+    prompt: "A bot reads data from the UI, but the same data is available from a supported API. What is the best design direction?",
     options: [
       "Keep the UI flow because it is already working",
       "Use the API for the data retrieval and isolate UI automation only where still required",
@@ -249,8 +215,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q5",
     category: "Code review",
     difficulty: 4,
-    prompt: "Code review - retry misuse",
-    promptBlocks: [paragraph("What is the biggest design flaw?")],
+    prompt: "The following is a snapshot from a Python automation script. What is the biggest design flaw?",
     options: [
       "time.sleep(2) should be replaced with an explicit wait",
       "The loop may repeat external side effects after partial success",
@@ -276,13 +241,12 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q6",
     category: "Security and configuration",
     difficulty: 2,
-    prompt: "Code review - config/secrets",
-    promptBlocks: [paragraph("What is the main issue?")],
+    prompt: "The following is a snapshot from a Python automation script being prepared for production use. What is the main issue?",
     options: [
-      "Constants should use camelCase",
-      "These values should be externalized to config / environment or secrets storage",
-      "MAX_RETRY must always be 5",
-      "BASE_URL should be a class variable instead"
+      "Keep the values in code, but restrict repository access to the delivery team",
+      "Move the values to config / environment or approved secrets storage",
+      "Leave the endpoint in code and externalize only the API key",
+      "Keep the values in source for now and rotate them more frequently"
     ],
     correctAnswer: "B",
     explanation: "Production URLs and API keys should not be hardcoded in source code.",
@@ -295,13 +259,12 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q7",
     category: "Security and data access",
     difficulty: 3,
-    prompt: "Code review - injection safety",
-    promptBlocks: [paragraph("What is the main problem?")],
+    prompt: "The following is a snapshot from a Python automation script that builds a database query from incoming input. What is the main problem?",
     options: [
-      "The query should use double quotes",
-      "The SQL is too long for one line",
-      "External input is being injected into SQL directly",
-      "claim_id should be cast to str first"
+      "Validate the input format and keep the same query construction",
+      "Escape the input before building the SQL string",
+      "Use parameterized execution instead of injecting input into SQL directly",
+      "Move the query into a helper so the logic is easier to reuse"
     ],
     correctAnswer: "C",
     explanation: "Concatenating untrusted input into SQL is an injection risk.",
@@ -315,8 +278,7 @@ const seniorQuestions: Question[] = [
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "Log interpretation - stale element",
-    promptBlocks: [paragraph("What is the most likely cause?")],
+    prompt: "The following runtime log was captured during an unattended run. What is the most likely issue?",
     options: [
       "The login session expired before the click",
       "The row reference was captured before the grid finished re-rendering",
@@ -339,8 +301,7 @@ const seniorQuestions: Question[] = [
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "Log interpretation - blocked click",
-    promptBlocks: [paragraph("What is the best conclusion?")],
+    prompt: "The following runtime log was captured during an unattended run. What is the best conclusion?",
     options: [
       "The selector is invalid",
       "The click happened before the UI was fully ready",
@@ -362,13 +323,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q10",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Before replaying",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph(
-        "A timeout occurs after clicking Submit. Which actions are appropriate before deciding to replay?"
-      )
-    ],
+    prompt: "A submit times out. Which checks should happen before deciding what to do next? Select all that apply.",
     options: [
       "Search the target system using transaction identifiers",
       "Check for persisted confirmation or reference numbers",
@@ -384,11 +339,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q11",
     category: "Testing",
     difficulty: 3,
-    prompt: "Strong test expectations",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph("Which are strong expectations for testing Python RPA code?")
-    ],
+    prompt: 'A team says its Python automation is "well tested." Which expectations are strongest for production-grade testing? Select all that apply.',
     options: [
       "Edge cases should be explicitly tested",
       "Tests should be deterministic and not depend on live external services",
@@ -404,17 +355,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q12",
     category: "Failure handling",
     difficulty: 3,
-    prompt: "Match failure to handling class",
-    promptBlocks: [
-      table(
-        ["Situation", "Handling class"],
-        [
-          ["1. Validation error shown before submit", "a. Business exception"],
-          ["2. Timeout immediately after submit click", "b. Completion uncertain"],
-          ["3. Session expired before any external action", "c. Retriable technical failure"]
-        ]
-      )
-    ],
+    prompt: "Match each situation to the best handling.",
     leftItems: [
       "1. Validation error shown before submit",
       "2. Timeout immediately after submit click",
@@ -433,45 +374,27 @@ const seniorQuestions: Question[] = [
     explanation: "Each scenario maps to a distinct handling class based on whether the external side effect is safe to retry.",
     rationale: "Tests correct exception classification."
   }),
-  matchingQuestion({
+  choiceQuestion({
     id: "python_rpa_senior_q13",
-    category: "Controls",
-    difficulty: 2,
-    prompt: "Match risk to best control",
-    promptBlocks: [
-      table(
-        ["Risk", "Best control"],
-        [
-          ["1. File may still be writing", "a. Readiness signal"],
-          ["2. Grid rows change order after refresh", "b. Stable business-key locator"],
-          ["3. Hardcoded production URL in code", "c. Externalized config"]
-        ]
-      )
+    category: "File integrity",
+    difficulty: 3,
+    prompt:
+      "An inbound file has the required columns, but the row count is far lower than normal and the control total does not match the handoff summary. What is the best next action?",
+    options: [
+      "Process the file because the structure is valid and let downstream checks catch issues",
+      "Hold the file, capture evidence, and route it through the agreed exception path",
+      "Retry the pickup after a short delay in case the file was still being finalized",
+      "Process only the rows that pass local validation and isolate the rest"
     ],
-    leftItems: [
-      "1. File may still be writing",
-      "2. Grid rows change order after refresh",
-      "3. Hardcoded production URL in code"
-    ],
-    rightItems: [
-      "a. Readiness signal",
-      "b. Stable business-key locator",
-      "c. Externalized config"
-    ],
-    correctPairs: {
-      "1. File may still be writing": "a. Readiness signal",
-      "2. Grid rows change order after refresh": "b. Stable business-key locator",
-      "3. Hardcoded production URL in code": "c. Externalized config"
-    },
-    explanation: "The best control depends on the specific risk being contained.",
-    rationale: "Tests fit-for-purpose control selection."
+    correctAnswer: "B",
+    explanation: "Mismatched counts and totals should stop unattended processing until the file is reviewed through the agreed exception path.",
+    rationale: "Tests data-integrity judgment beyond basic schema validation."
   }),
   orderingQuestion({
     id: "python_rpa_senior_q14",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Safe replay sequence",
-    promptBlocks: [prompt("Put these steps in the best order after a submit timeout:")],
+    prompt: "After a submit timeout, what is the best order of actions?",
     items: [
       "Search the target system for evidence",
       "Decide whether replay is safe",
@@ -486,8 +409,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q15",
     category: "File ingestion",
     difficulty: 2,
-    prompt: "File ingestion sequence",
-    promptBlocks: [prompt("Put these steps in the best order before processing an inbound file:")],
+    prompt: "Before processing an inbound file, what is the best order of checks?",
     items: [
       "Check readiness signal",
       "Validate required columns",
@@ -502,17 +424,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q16",
     category: "Scenario mapping",
     difficulty: 3,
-    prompt: "Scenario mapping - next action",
-    promptBlocks: [
-      table(
-        ["Scenario", "Best next action"],
-        [
-          ["1. Session expired before submit", "a. Rebuild session and retry from a verified safe point"],
-          ["2. Validation error after entering data", "b. Route as business exception with evidence"],
-          ["3. Timeout after submit click", "c. Verify completion state before replay"]
-        ]
-      )
-    ],
+    prompt: "Match each scenario to the best next action.",
     leftItems: [
       "1. Session expired before submit",
       "2. Validation error after entering data",
@@ -535,21 +447,11 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q17",
     category: "Code quality",
     difficulty: 2,
-    prompt: "Scenario mapping - code quality",
-    promptBlocks: [
-      table(
-        ["Situation", "Best improvement"],
-        [
-          ["1. main.py contains all business logic", "a. Move business logic into modules and keep main as orchestration only"],
-          ["2. Class creates its own DB and email dependencies", "b. Inject dependencies instead of hardcoding them"],
-          ["3. Same helper copied across three projects", "c. Promote reusable logic into a shared utility/module"]
-        ]
-      )
-    ],
+    prompt: "Match each codebase situation to the best improvement.",
     leftItems: [
       "1. main.py contains all business logic",
-      "2. Class creates its own DB and email dependencies",
-      "3. Same helper copied across three projects"
+      "2. A class creates its own DB and email dependencies",
+      "3. The same helper is copied across three projects"
     ],
     rightItems: [
       "a. Move business logic into modules and keep main as orchestration only",
@@ -559,45 +461,74 @@ const seniorQuestions: Question[] = [
     correctPairs: {
       "1. main.py contains all business logic":
         "a. Move business logic into modules and keep main as orchestration only",
-      "2. Class creates its own DB and email dependencies":
+      "2. A class creates its own DB and email dependencies":
         "b. Inject dependencies instead of hardcoding them",
-      "3. Same helper copied across three projects": "c. Promote reusable logic into a shared utility/module"
+      "3. The same helper is copied across three projects":
+        "c. Promote reusable logic into a shared utility/module"
     },
     explanation: "The best improvement depends on the structural problem being addressed.",
     rationale: "Tests pragmatic code-quality judgment."
   }),
-  matchingQuestion({
+  choiceQuestion({
     id: "python_rpa_senior_q18",
-    category: "Security and compliance",
+    category: "Observability",
+    difficulty: 3,
+    prompt:
+      'A Python bot fails after posting one of several transactions. The logs only show "started", "working", and "failed", with no transaction ID or last confirmed step. What is the biggest weakness?',
+    options: [
+      "The logs are too high-level to support safe recovery decisions",
+      "The script should log less often to reduce noise in production",
+      "The failure should have been handled by a global exception wrapper",
+      "Screenshots are missing, which matters more than transaction-level logs"
+    ],
+    correctAnswer: "A",
+    explanation: "Support needs transaction-level evidence to decide whether work already completed and what can be replayed safely.",
+    rationale: "Tests recovery-oriented observability."
+  }),
+  choiceQuestion({
+    id: "python_rpa_senior_q19",
+    category: "Input validation",
     difficulty: 2,
-    prompt: "Scenario mapping - security/compliance",
-    promptBlocks: [
-      table(
-        ["Situation", "Best response"],
-        [
-          ["1. API key hardcoded in source", "a. Move to env / secrets manager"],
-          ["2. PHI included in an error email draft", "b. Remove PHI and follow secure-sharing rules"],
-          ["3. Raw password written to logs", "c. Mask/omit sensitive data entirely"]
-        ]
-      )
+    prompt: "A required amount field contains `(1,250.00)`. What matters most?",
+    options: [
+      "The column exists",
+      "The value is parsed and validated correctly",
+      "The file opens",
+      "The target system can reject it"
     ],
-    leftItems: [
-      "1. API key hardcoded in source",
-      "2. PHI included in an error email draft",
-      "3. Raw password written to logs"
+    correctAnswer: "B",
+    explanation: "Presence alone is not enough; unattended processing depends on correct parsing and validation of the business value.",
+    rationale: "Tests input validation beyond schema presence."
+  }),
+  choiceQuestion({
+    id: "python_rpa_senior_q20",
+    category: "Observability",
+    difficulty: 2,
+    prompt: "Support cannot tell which record may already have posted. What is most important?",
+    options: [
+      "More screenshots",
+      "A stable transaction ID in logs and recovery steps",
+      "Longer retry delays",
+      "Separate log files per run"
     ],
-    rightItems: [
-      "a. Move to env / secrets manager",
-      "b. Remove PHI and follow secure-sharing rules",
-      "c. Mask/omit sensitive data entirely"
+    correctAnswer: "B",
+    explanation: "A stable transaction identifier is what ties logs, recovery actions, and target-system evidence back to the specific record.",
+    rationale: "Tests transaction correlation."
+  }),
+  choiceQuestion({
+    id: "python_rpa_senior_q21",
+    category: "Error handling",
+    difficulty: 2,
+    prompt: "Which pattern is worst in production code?",
+    options: [
+      'except Exception: logger.error("failed")',
+      "except TimeoutError: retry()",
+      "except ValueError as exc: raise InputError(...) from exc",
+      "except Exception: pass"
     ],
-    correctPairs: {
-      "1. API key hardcoded in source": "a. Move to env / secrets manager",
-      "2. PHI included in an error email draft": "b. Remove PHI and follow secure-sharing rules",
-      "3. Raw password written to logs": "c. Mask/omit sensitive data entirely"
-    },
-    explanation: "Each issue needs the response that removes the specific security or compliance risk.",
-    rationale: "Tests basic security and compliance handling."
+    correctAnswer: "D",
+    explanation: "Bare exception swallowing creates silent failures with no safe recovery path.",
+    rationale: "Tests awareness of silent-failure risk."
   })
 ];
 
@@ -606,12 +537,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q1",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Uncertain completion",
-    promptBlocks: [
-      paragraph(
-        "A bot clicks Submit, then the portal times out. Duplicate posting is possible if the transaction already completed. What is the best next action?"
-      )
-    ],
+    prompt: "A submit times out and duplicate posting is possible. What is the best next action?",
     options: [
       "Retry the transaction once, then escalate if it fails again",
       "Refresh the page and repeat the submit step",
@@ -626,15 +552,12 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q2",
     category: "Failure handling",
     difficulty: 3,
-    prompt: "Failure classification",
-    promptBlocks: [
-      paragraph("Which failure should usually be treated as non-retriable at the transaction level?")
-    ],
+    prompt: "Which of these failures should usually stop automatic retry for that item?",
     options: [
-      "Temporary network timeout while loading a page",
-      "Session expired during navigation",
-      "Business rule rejection from the target system",
-      "Stale element after a grid refresh"
+      "A page load times out before any action is taken",
+      "A session expires during navigation",
+      "The target system rejects the transaction based on business rules",
+      "A stale element appears after the grid refreshes"
     ],
     correctAnswer: "C",
     explanation: "Business-rule rejections are usually terminal for the transaction, not candidates for automatic retry.",
@@ -644,12 +567,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q3",
     category: "Queue design",
     difficulty: 4,
-    prompt: "Queue boundary design",
-    promptBlocks: [
-      paragraph(
-        "An invoice has 30 line items. If line 28 fails, the first 27 successful updates should not be repeated. What design is best?"
-      )
-    ],
+    prompt: "If line 28 fails, the first 27 successful updates must not repeat. What design is best?",
     options: [
       "Keep one queue item per invoice and restart the full item on any failure",
       "Split work so completed line-item progress can be preserved safely",
@@ -664,8 +582,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q4",
     category: "Code review",
     difficulty: 4,
-    prompt: "Code review - retry misuse",
-    promptBlocks: [paragraph("What is the biggest design flaw?")],
+    prompt: "The following is a snapshot from a Python automation script. What is the biggest design flaw?",
     options: [
       "time.sleep(2) should be replaced with an explicit wait",
       "The loop may repeat external side effects after partial success",
@@ -691,13 +608,12 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q5",
     category: "Security and data access",
     difficulty: 3,
-    prompt: "Code review - injection safety",
-    promptBlocks: [paragraph("What is the main problem?")],
+    prompt: "The following is a snapshot from a Python automation script that builds a database query from incoming input. What is the main problem?",
     options: [
-      "The query should use double quotes",
-      "The SQL is too long for one line",
-      "External input is being injected into SQL directly",
-      "claim_id should be cast to str first"
+      "Validate the input format and keep the same query construction",
+      "Escape the input before building the SQL string",
+      "Use parameterized execution instead of injecting input into SQL directly",
+      "Move the query into a helper so the logic is easier to reuse"
     ],
     correctAnswer: "C",
     explanation: "Leads should still flag direct SQL injection risk immediately.",
@@ -711,8 +627,7 @@ const leadQuestions: Question[] = [
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "Log interpretation - blocked click",
-    promptBlocks: [paragraph("What is the best conclusion?")],
+    prompt: "The following runtime log was captured during an unattended run. What is the best conclusion?",
     options: [
       "The selector is invalid",
       "The click happened before the UI was fully ready",
@@ -734,13 +649,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q7",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Before replaying",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph(
-        "A timeout occurs after clicking Submit. Which actions are appropriate before deciding to replay?"
-      )
-    ],
+    prompt: "A submit times out. Which checks should happen before deciding what to do next? Select all that apply.",
     options: [
       "Search the target system using transaction identifiers",
       "Check for persisted confirmation or reference numbers",
@@ -756,12 +665,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q8",
     category: "Governance",
     difficulty: 4,
-    prompt: "Unsafe replay request",
-    promptBlocks: [
-      paragraph(
-        "A stakeholder wants automatic retry on every timeout after Submit because backlog is increasing. Completion state is uncertain and duplicates have financial impact. What should the lead do?"
-      )
-    ],
+    prompt: "A stakeholder wants all submit timeouts retried automatically. What should the lead do?",
     options: [
       "Approve one retry per item and monitor results",
       "Pause automatic replay until safe completion checks are defined",
@@ -776,12 +680,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q9",
     category: "Architecture",
     difficulty: 4,
-    prompt: "Architecture under UI fragility",
-    promptBlocks: [
-      paragraph(
-        "A process uses UI for login, search, submit, and status polling. Submit and status polling are now available through audited APIs. What is the strongest recommendation?"
-      )
-    ],
+    prompt: "A process still uses UI for several steps, but submit and status checks are now available by API. What is the strongest recommendation?",
     options: [
       "Keep the whole flow in UI until a full redesign is funded",
       "Move submit and status checks to API while retaining only necessary UI steps",
@@ -796,12 +695,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q10",
     category: "Release judgment",
     difficulty: 4,
-    prompt: "Release decision under unresolved risk",
-    promptBlocks: [
-      paragraph(
-        "A release fixes a flaky click issue, but replay after uncertain completion is still unsafe. The business wants it deployed today. What is the best decision?"
-      )
-    ],
+    prompt: "A visible defect is fixed, but unsafe replay is still unresolved. What is the best release decision?",
     options: [
       "Release now because the most visible defect was fixed",
       "Release only if unsafe paths are blocked or routed to controlled handling",
@@ -816,12 +710,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q11",
     category: "Operating model",
     difficulty: 3,
-    prompt: "Temporary operating model",
-    promptBlocks: [
-      paragraph(
-        "After a system change, pre-processing still works well, but final submit is unreliable and duplicate risk exists. What is the best temporary model?"
-      )
-    ],
+    prompt: "Pre-processing is stable, but final submit is unreliable. What is the best temporary model?",
     options: [
       "Keep the bot fully unattended to preserve throughput",
       "Stop the process completely until a new version is ready",
@@ -836,15 +725,14 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q12",
     category: "Code review",
     difficulty: 4,
-    prompt: "Code review risk",
-    promptBlocks: [paragraph("Which code-review finding should concern a lead the most?")],
+    prompt: "Which review finding should concern a lead the most from a production-risk perspective?",
     options: [
-      "One helper function is longer than team standards",
+      "A retry wrapper is used around all portal actions, including submit",
+      "Important failures are logged without transaction IDs",
       "A decorator retries all exceptions around non-idempotent actions",
-      "One module has repeated imports",
-      "Variable names are inconsistent across files"
+      "One module still has repeated imports"
     ],
-    correctAnswer: "B",
+    correctAnswer: "C",
     explanation: "Retrying all exceptions around non-idempotent work is the highest-risk flaw here.",
     rationale: "Tests production-risk prioritization in code review."
   }),
@@ -852,12 +740,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q13",
     category: "Architecture",
     difficulty: 3,
-    prompt: "Shared framework boundary",
-    promptBlocks: [
-      paragraph(
-        "Five automations use the same portal, but only two share the same recovery model and transaction lifecycle. What should be shared?"
-      )
-    ],
+    prompt: "Several automations use the same portal, but not the same recovery model. What should actually be shared?",
     options: [
       "A single end-to-end reusable workflow for the portal",
       "Only locator files and no common behavior",
@@ -872,17 +755,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q14",
     category: "Incident analysis",
     difficulty: 4,
-    prompt: "Incident interpretation",
-    promptBlocks: [
-      list("Incident details", [
-        '17 queue items failed with "Unknown error"',
-        "Screenshots captured at random steps",
-        "No external reference IDs in logs",
-        "Support replayed 9 items manually",
-        "3 duplicates found next morning"
-      ]),
-      paragraph("What is the strongest conclusion?")
-    ],
+    prompt: "Unknown failures, weak evidence, and duplicates followed manual replay. What is the strongest conclusion?",
     options: [
       "The VM needs more CPU",
       "The main issue is missing observability and replay controls",
@@ -897,12 +770,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q15",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "Completion-uncertain policy",
-    promptBlocks: [
-      paragraph(
-        "A portal sometimes returns HTTP 500 after submit, but the transaction may already be committed in the backend. What policy is best?"
-      )
-    ],
+    prompt: "A post-submit HTTP 500 may still mean the transaction committed. What policy is best?",
     options: [
       "Treat all HTTP 500s as retriable",
       "Treat all HTTP 500s as business failures",
@@ -917,12 +785,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q16",
     category: "Supportability",
     difficulty: 3,
-    prompt: "Support model ownership",
-    promptBlocks: [
-      paragraph(
-        'An automation generates many "unknown error" failures. Screenshots are inconsistent and logs do not show transaction reference numbers. What should the lead prioritize first?'
-      )
-    ],
+    prompt: "Failures are hard to diagnose and support cannot replay safely. What should the lead prioritize first?",
     options: [
       "Increase support staffing",
       "Improve failure classification and replay-relevant observability",
@@ -937,14 +800,10 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q17",
     category: "Architecture and controls",
     difficulty: 4,
-    prompt: "Strong lead responses",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph("A process is growing more fragile after UI changes. Which lead responses are strong?")
-    ],
+    prompt: "A process is becoming more fragile after UI changes. Which lead responses are strongest? Select all that apply.",
     options: [
       "Reassess whether some steps should move to API or service integration",
-      "Add global sleep statements to stabilize the framework",
+      "Add broader wait coverage across the framework while a longer-term fix is discussed",
       "Revisit locator strategy and transaction boundaries",
       "Define retriable, terminal, and completion-uncertain failure classes",
       "Ask support to keep replaying failed items until backlog drops"
@@ -953,129 +812,82 @@ const leadQuestions: Question[] = [
     explanation: "Strong responses reduce fragility and clarify control models rather than adding global sleeps or unsafe replay pressure.",
     rationale: "Tests lead-level responses to growing UI fragility."
   }),
-  multiSelectQuestion({
+  choiceQuestion({
     id: "python_rpa_lead_q18",
-    category: "File ingestion",
+    category: "Checkpointing",
     difficulty: 3,
-    prompt: "Minimum controls before unattended ingestion",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph("Which controls are the strongest minimum set before unattended file ingestion?")
-    ],
+    prompt:
+      "A bot crashes mid-batch after updating several records. On restart, it only knows the batch name because progress was stored in memory. What is the strongest improvement?",
     options: [
-      "Readiness signal or handoff rule",
-      "Required-field/schema validation",
-      "Control totals or count checks when available",
-      "Automatic retry of malformed rows",
-      "Clear exception routing for failed records"
+      "Increase retry count so the restarted batch is more likely to finish",
+      "Persist item-level checkpoint state at a verified safe boundary",
+      "Capture screenshots before each record update",
+      "Route restarted batches to manual review unless the batch is very small"
     ],
-    correctAnswer: ["A", "B", "C", "E"],
-    explanation: "Unattended ingestion needs readiness, validation, integrity checks, and clear exception routing.",
-    rationale: "Tests minimum control expectations for unattended ingestion."
+    correctAnswer: "B",
+    explanation: "Restart safety depends on persisted item-level checkpoint state, not memory-only progress.",
+    rationale: "Tests checkpoint design for unattended runs."
   }),
-  multiSelectQuestion({
+  choiceQuestion({
     id: "python_rpa_lead_q19",
-    category: "Engineering standards",
+    category: "Prioritization",
     difficulty: 3,
-    prompt: "Strong engineering hygiene",
-    promptBlocks: [
-      paragraph("Select all that apply."),
-      paragraph("Which practices should a lead expect from a production Python RPA team?")
-    ],
+    prompt:
+      "Two production issues appear at the same time. One bot is creating duplicate financial postings; another internal reporting bot is down for one department with a manual workaround. What should the lead contain first?",
     options: [
-      "Exact dependency pinning and no preview packages in production",
-      "Config/secrets externalized from source code",
-      "Deterministic tests with mocked external dependencies",
-      "Hardcoded URLs allowed if documented in README",
-      "Linting / static analysis must pass before merge"
+      "The reporting bot, because the number of user complaints is higher",
+      "The duplicate-posting bot, because active financial impact is still occurring",
+      "The easier rollback first, then reassess the second issue",
+      "The reporting bot first, then the posting issue once communications are sent"
     ],
-    correctAnswer: ["A", "B", "C", "E"],
-    explanation: "Production hygiene includes pinned dependencies, externalized config, deterministic tests, and enforced quality gates.",
-    rationale: "Tests lead expectations for engineering discipline."
+    correctAnswer: "B",
+    explanation: "Active duplicate financial impact should be contained before a reporting outage that already has a manual workaround.",
+    rationale: "Tests lead prioritization under competing incidents."
   }),
-  matchingQuestion({
+  choiceQuestion({
     id: "python_rpa_lead_q20",
-    category: "Containment",
+    category: "Locator strategy",
     difficulty: 3,
-    prompt: "Match issue to containment action",
-    promptBlocks: [
-      table(
-        ["Issue", "Containment action"],
-        [
-          ["1. Completion state uncertain after submit timeout", "a. Block replay until verification is performed"],
-          ["2. File may still be writing when picked up", "b. Enforce readiness signal before ingestion"],
-          ["3. Grid rows change order after refresh", "c. Use stable business-key selection"]
-        ]
-      )
+    prompt:
+      "A dynamic claims grid changes row order and regenerates element IDs after every refresh. What is the strongest locator strategy?",
+    options: [
+      "Filter the grid first, then click the first visible matching row",
+      "Re-read the regenerated IDs after each refresh and keep using them",
+      "Anchor selection to a stable business value near the intended action",
+      "Use a longer XPath that follows the current column layout more precisely"
     ],
-    leftItems: [
-      "1. Completion state uncertain after submit timeout",
-      "2. File may still be writing when picked up",
-      "3. Grid rows change order after refresh"
-    ],
-    rightItems: [
-      "a. Block replay until verification is performed",
-      "b. Enforce readiness signal before ingestion",
-      "c. Use stable business-key selection"
-    ],
-    correctPairs: {
-      "1. Completion state uncertain after submit timeout":
-        "a. Block replay until verification is performed",
-      "2. File may still be writing when picked up": "b. Enforce readiness signal before ingestion",
-      "3. Grid rows change order after refresh": "c. Use stable business-key selection"
-    },
-    explanation: "Each issue needs the containment action that removes immediate operational risk.",
-    rationale: "Tests containment mapping."
+    correctAnswer: "C",
+    explanation: "Stable business values survive reordering and regenerated element IDs better than positional or generated selectors.",
+    rationale: "Tests robust locator strategy in dynamic UIs."
   }),
-  matchingQuestion({
+  choiceQuestion({
     id: "python_rpa_lead_q21",
-    category: "Architecture and design",
+    category: "Supportability",
     difficulty: 4,
-    prompt: "Match structural issue to best fix",
-    promptBlocks: [
-      table(
-        ["Structural issue", "Best fix"],
-        [
-          ["1. Repeated UI submit failures on a step already available by API", "a. Move submit to API if controls allow"],
-          ["2. Duplicates caused by replay after uncertain completion", "b. Add completion verification before replay"],
-          ["3. Shared helpers hide business logic and swallow exceptions", "c. Separate framework utilities from process-specific control flow"]
-        ]
-      )
+    prompt:
+      'A production bot keeps failing at the submit step. The shared framework catches the exception, logs "submit failed," and moves on, but support cannot tell which transactions may already have been posted. What is the strongest fix?',
+    options: [
+      "Add more screenshots around the submit step",
+      "Retry failed submits automatically after a delay",
+      "Capture transaction identity and external-state evidence before routing recovery decisions",
+      "Move submit logic into a separate shared helper"
     ],
-    leftItems: [
-      "1. Repeated UI submit failures on a step already available by API",
-      "2. Duplicates caused by replay after uncertain completion",
-      "3. Shared helpers hide business logic and swallow exceptions"
-    ],
-    rightItems: [
-      "a. Move submit to API if controls allow",
-      "b. Add completion verification before replay",
-      "c. Separate framework utilities from process-specific control flow"
-    ],
-    correctPairs: {
-      "1. Repeated UI submit failures on a step already available by API":
-        "a. Move submit to API if controls allow",
-      "2. Duplicates caused by replay after uncertain completion":
-        "b. Add completion verification before replay",
-      "3. Shared helpers hide business logic and swallow exceptions":
-        "c. Separate framework utilities from process-specific control flow"
-    },
-    explanation: "Each structural issue has a strongest design fix tied to the failure mode.",
-    rationale: "Tests structural judgment at lead level."
+    correctAnswer: "C",
+    explanation: "Support needs transaction identity plus external-state evidence before anyone can make safe recovery decisions.",
+    rationale: "Tests recovery-oriented observability design."
   }),
   orderingQuestion({
     id: "python_rpa_lead_q22",
     category: "Incident response",
     difficulty: 4,
-    prompt: "Incident-response order",
-    promptBlocks: [prompt("Put these lead actions in the best order during an unsafe replay incident:")],
+    prompt: "During an unsafe replay incident, what is the best order of lead actions?",
     items: [
-      "Block unsafe replay paths",
       "Gather evidence and determine impact scope",
+      "Block unsafe replay paths",
       "Define a temporary operating model",
       "Approve a long-term design fix"
     ],
-    correctOrder: [1, 0, 2, 3],
+    correctOrder: [0, 1, 2, 3],
     explanation: "Scope and evidence come first, then immediate containment, then the temporary model, then the long-term fix.",
     rationale: "Tests lead incident sequencing."
   }),
@@ -1083,15 +895,14 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q23",
     category: "Release judgment",
     difficulty: 4,
-    prompt: "Release gating order",
-    promptBlocks: [prompt("Put these steps in the best order before releasing a risky automation fix:")],
+    prompt: "Before approving deployment of a risky automation fix, what is the best order of steps?",
     items: [
-      "Define rollback or containment path",
       "Confirm the unsafe scenario is addressed or isolated",
+      "Define rollback or containment path",
       "Communicate support handling expectations",
       "Approve deployment"
     ],
-    correctOrder: [1, 0, 2, 3],
+    correctOrder: [0, 1, 2, 3],
     explanation: "First confirm the risk is addressed or isolated, then define containment, communicate support expectations, and only then approve deployment.",
     rationale: "Tests disciplined release gating."
   }),
@@ -1099,17 +910,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q24",
     category: "Stakeholder management",
     difficulty: 3,
-    prompt: "Scenario mapping - stakeholder request",
-    promptBlocks: [
-      table(
-        ["Stakeholder request", "Best lead response"],
-        [
-          ['1. "Retry all submit timeouts automatically"', "a. Require safe completion checks before enabling replay"],
-          ['2. "Process the file even if it may still be uploading"', "b. Require ingestion controls before unattended use"],
-          ['3. "Keep full payloads and credentials in logs for debugging"', "c. Keep logs useful but sanitized"]
-        ]
-      )
-    ],
+    prompt: "Match each stakeholder request to the best lead response.",
     leftItems: [
       '1. "Retry all submit timeouts automatically"',
       '2. "Process the file even if it may still be uploading"',
@@ -1134,17 +935,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q25",
     category: "Architecture and standards",
     difficulty: 3,
-    prompt: "Scenario mapping - architecture and team standards",
-    promptBlocks: [
-      table(
-        ["Situation", "Best lead response"],
-        [
-          ["1. Main script contains orchestration, DB logic, UI logic, and email logic together", "a. Split by concern and keep orchestration thin"],
-          ["2. Class creates its own DB and email clients internally", "b. Move to dependency injection for testability"],
-          ["3. Team wants to use an unpinned preview package in production", "c. Reject until stable, pinned dependency control exists"]
-        ]
-      )
-    ],
+    prompt: "Match each architecture or team-standard situation to the best lead response.",
     leftItems: [
       "1. Main script contains orchestration, DB logic, UI logic, and email logic together",
       "2. Class creates its own DB and email clients internally",
@@ -1165,6 +956,96 @@ const leadQuestions: Question[] = [
     },
     explanation: "The best lead response depends on the architectural or standards risk in each case.",
     rationale: "Tests architectural and standards judgment."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q26",
+    category: "Input validation",
+    difficulty: 2,
+    prompt: "A required amount field contains `(1,250.00)`. What matters most?",
+    options: [
+      "The column exists",
+      "The value is parsed and validated correctly",
+      "The file opens",
+      "The target system can reject it"
+    ],
+    correctAnswer: "B",
+    explanation: "A required field still needs correct parsing and validation before unattended posting can be trusted.",
+    rationale: "Tests input-validation depth."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q27",
+    category: "Observability",
+    difficulty: 2,
+    prompt: "Support cannot tell which record may already have posted. What is most important?",
+    options: [
+      "More screenshots",
+      "A stable transaction ID in logs and recovery steps",
+      "Longer retry delays",
+      "Separate log files per run"
+    ],
+    correctAnswer: "B",
+    explanation: "Without a stable transaction identifier, support cannot tie evidence and recovery decisions back to a specific record.",
+    rationale: "Tests transaction correlation."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q28",
+    category: "Error handling",
+    difficulty: 2,
+    prompt: "Which pattern is worst in production code?",
+    options: [
+      'except Exception: logger.error("failed")',
+      "except TimeoutError: retry()",
+      "except ValueError as exc: raise InputError(...) from exc",
+      "except Exception: pass"
+    ],
+    correctAnswer: "D",
+    explanation: "Silently swallowing exceptions is the least safe pattern because it hides failures completely.",
+    rationale: "Tests awareness of silent-failure risk."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q29",
+    category: "Testability",
+    difficulty: 2,
+    prompt: "What most improves testability?",
+    options: [
+      "Creating DB and email clients inside the class",
+      "Passing dependencies into the class",
+      "Adding more comments",
+      "Splitting one function into two"
+    ],
+    correctAnswer: "B",
+    explanation: "Passing dependencies in makes external effects easier to control and mock in tests.",
+    rationale: "Tests dependency-injection judgment."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q30",
+    category: "Testing",
+    difficulty: 2,
+    prompt: "A bot passed a few manual runs. What is still required before release?",
+    options: [
+      "Deterministic tests for core logic",
+      "More support coverage",
+      "A README warning",
+      "Higher retry count"
+    ],
+    correctAnswer: "A",
+    explanation: "A few successful manual runs do not replace deterministic tests for core logic before release.",
+    rationale: "Tests release-readiness discipline."
+  }),
+  choiceQuestion({
+    id: "python_rpa_lead_q31",
+    category: "Security",
+    difficulty: 2,
+    prompt: "What should never appear in logs?",
+    options: [
+      "Retry count",
+      "Record ID",
+      "API key or password",
+      "Start timestamp"
+    ],
+    correctAnswer: "C",
+    explanation: "Sensitive credentials should never be written to logs.",
+    rationale: "Tests logging hygiene for sensitive data."
   })
 ];
 
