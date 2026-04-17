@@ -96,7 +96,7 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
 
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
   if (type === "screener" || type === "advanced_test") {
-    return mode === "platform" ? "Save changes" : "Save notes";
+    return mode === "platform" ? "Save step" : "Save notes";
   }
 
   return "Save";
@@ -120,7 +120,7 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
       }
     }
 
-    return "No assessment linked yet.";
+    return "No assessment yet.";
   }
 
   if (milestone.result && milestone.result !== "review") {
@@ -254,7 +254,7 @@ function AttachExistingTest({
           <input name="inviteSlug" className={fieldClassName} />
         </label>
         <Button type="submit" variant="secondary">
-          Link assessment
+          Attach assessment
         </Button>
       </form>
     </details>
@@ -305,12 +305,12 @@ function TestMilestoneCard({
         </div>
 
         {isPlatform ? (
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" variant="secondary">
-                {saveButtonLabel(milestone.type, selectedMode)}
-              </Button>
-              {!milestone.assessment ? (
-                <Link href={sendHref}>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" variant="secondary">
+              {saveButtonLabel(milestone.type, selectedMode)}
+            </Button>
+            {!milestone.assessment ? (
+              <Link href={sendHref}>
                 <Button type="button">Create assessment</Button>
               </Link>
             ) : null}
@@ -537,7 +537,21 @@ export function CandidateMilestoneTimeline({
                       {isActive ? (
                         <span className="absolute inset-[-6px] rounded-full border border-[color:var(--app-brand)]/35" />
                       ) : null}
-                      <span className="relative z-[1]">{isComplete ? "✓" : index + 1}</span>
+                      <span className="relative z-[1]">
+                        {isComplete ? (
+                          <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
+                            <path
+                              d="M5 10.5L8.2 13.7L15 6.8"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : (
+                          index + 1
+                        )}
+                      </span>
                     </span>
                     <span className="mt-3 text-sm font-medium text-[color:var(--app-heading)]">{milestone.title}</span>
                     <span className="mt-1 max-w-[10rem] text-xs leading-5 text-[color:var(--app-muted)]">
@@ -623,3 +637,4 @@ export function CandidateMilestoneTimeline({
     </div>
   );
 }
+
