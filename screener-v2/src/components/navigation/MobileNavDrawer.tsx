@@ -38,7 +38,7 @@ export function MobileNavDrawer({
             <AppLogo compact />
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Workspace</p>
-              <p className="text-lg text-[color:var(--app-heading)]">{viewer?.name || viewer?.email || "Assessment Hub"}</p>
+              <p className="text-lg text-[color:var(--app-heading)]">{viewer?.name || viewer?.email || "Northstar"}</p>
               {viewer ? <p className="text-sm text-[color:var(--app-muted)]">{viewer.role}</p> : null}
             </div>
           </div>
