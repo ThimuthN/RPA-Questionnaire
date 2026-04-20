@@ -197,18 +197,24 @@ html[data-theme="dark"] {
 .northstar-asset {
   user-select: none;
   -webkit-user-drag: none;
-  filter: brightness(0) saturate(100%);
+  filter: none;
 }
 
 .northstar-mark-shell {
   backdrop-filter: blur(14px);
 }
 
+html[data-theme="light"] .northstar-mark-shell {
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.26), transparent 42%),
+    color-mix(in srgb, var(--app-header-surface) 92%, white);
+}
+
 html[data-theme="dark"] .northstar-asset {
   filter:
     brightness(0) invert(1)
-    drop-shadow(0 0 10px rgba(121, 203, 255, 0.18))
-    drop-shadow(0 0 20px rgba(255, 214, 124, 0.1));
+    drop-shadow(0 0 10px rgba(121, 203, 255, 0.16))
+    drop-shadow(0 0 18px rgba(255, 214, 124, 0.08));
 }
 
 select,

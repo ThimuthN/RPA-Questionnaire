@@ -5,7 +5,7 @@ function NorthstarCompactMark() {
   return (
     <div className="northstar-mark-shell relative h-[38px] w-[38px] overflow-hidden rounded-[14px] border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] shadow-[var(--app-shadow-soft)]">
       <Image
-        src="/brand/northstar-icon-source.png"
+        src="/brand/northstar-icon-clean.png"
         alt="Northstar"
         fill
         sizes="38px"
@@ -18,12 +18,12 @@ function NorthstarCompactMark() {
 
 function NorthstarWordmark() {
   return (
-    <div className="relative h-[34px] w-[220px] overflow-hidden max-[380px]:w-[190px]">
+    <div className="relative h-[32px] w-[220px] overflow-hidden max-[380px]:w-[190px]">
       <Image
-        src="/brand/northstar-logo-source.png"
+        src="/brand/northstar-logo-clean.png"
         alt="Northstar"
         width={220}
-        height={64}
+        height={48}
         sizes="220px"
         className="northstar-asset block h-auto w-full max-w-none"
         priority

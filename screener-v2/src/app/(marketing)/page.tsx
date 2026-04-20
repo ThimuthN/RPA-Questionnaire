@@ -53,8 +53,8 @@ export default async function MarketingHomePage() {
       <SceneShell
         variant="create"
         eyebrow="Northstar"
-        title="Track people, progress, and decisions."
-        subtitle="Bring hiring, internal growth, reviews, and outcomes into one place."
+        title="Tracking people, progress, and decisions."
+        subtitle="A clearer place to follow people, reviews, and next steps."
         utility={
           session ? (
             <div className="flex flex-wrap gap-2">
@@ -78,11 +78,11 @@ export default async function MarketingHomePage() {
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Track. Review. Decide.</p>
                   <div className="max-w-lg space-y-3">
-                    <h2 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl">Track every</h2>
+                    <h2 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl">Keep every</h2>
                     <div className="font-display text-5xl leading-[0.94] sm:text-6xl">
                       <TypedWordCycle
                         prefix=""
-                        words={["trajectory.", "review.", "decision."]}
+                        words={["trajectory.", "review.", "goal.", "decision."]}
                         className="text-white"
                       />
                     </div>
@@ -107,7 +107,7 @@ export default async function MarketingHomePage() {
               </StaggerItem>
               <StaggerItem>
                 <p className="max-w-lg text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
-                  Northstar keeps candidates, employees, reviews, and next steps connected without turning the process into admin work.
+                  Northstar keeps candidates, employees, reviews, standards, and next steps connected without turning the process into admin work.
                 </p>
               </StaggerItem>
               <StaggerItem>
