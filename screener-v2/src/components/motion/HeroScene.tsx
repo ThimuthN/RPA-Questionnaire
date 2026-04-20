@@ -20,37 +20,37 @@ type FlowStage = {
 const FLOW_STAGES: FlowStage[] = [
   {
     id: "build",
-    label: "Build",
-    kicker: "Design the signal",
-    title: "Shape the assessment around the role, not around admin work.",
-    body: "Choose the sections, pacing, and pass target up front so the screener starts with structure instead of guesswork.",
-    callout: "Create a clean blueprint in minutes.",
-    chips: ["Role-based setup", "Pass targets visible"],
-    metrics: ["Structure first", "Ready to share"],
+    label: "Track",
+    kicker: "Bring the right context together",
+    title: "Keep people, roles, and progress connected from the start.",
+    body: "Candidate history, role expectations, notes, and next steps stay in one working view instead of being scattered across tools.",
+    callout: "Start from context, not cleanup.",
+    chips: ["People and roles linked", "History stays visible"],
+    metrics: ["Less handoff noise", "Shared context"],
     node: { left: "23%", top: "64%" },
-    caption: "Blueprint"
+    caption: "Context"
   },
   {
     id: "run",
-    label: "Run",
-    kicker: "Keep the runtime calm",
-    title: "Give candidates a focused flow that feels clear from start to finish.",
-    body: "The system keeps timing, navigation, and autosave working quietly in the background so attention stays on the work.",
-    callout: "The experience stays fast, steady, and easy to follow.",
-    chips: ["Autosave active", "Navigation stays simple"],
-    metrics: ["Low friction", "Live progress"],
+    label: "Evaluate",
+    kicker: "Run the review clearly",
+    title: "Handle assessments, audits, and check-ins in one guided flow.",
+    body: "Different evaluation steps can live in the same system, so reviewers keep the evidence together while the process stays easy to follow.",
+    callout: "The process stays focused and easy to run.",
+    chips: ["Flexible evaluation steps", "Goals and reviews aligned"],
+    metrics: ["Cleaner handoffs", "Consistent review"],
     node: { left: "48%", top: "34%" },
-    caption: "Runtime"
+    caption: "Review"
   },
   {
     id: "review",
-    label: "Review",
-    kicker: "Turn answers into decisions",
-    title: "Bring scores, flags, and judgment into one review-ready view.",
-    body: "When submissions come in, the important signals surface quickly so reviewers can see what matters without digging around.",
-    callout: "Move from finished attempt to confident decision faster.",
-    chips: ["Signals surfaced", "Results easy to scan"],
-    metrics: ["Faster review", "Clear outcome"],
+    label: "Decide",
+    kicker: "Move with confidence",
+    title: "Turn signals, notes, and outcomes into the next decision.",
+    body: "Results, reviewer input, and progress history surface together so the next step feels clear instead of buried in follow-up work.",
+    callout: "Go from review to action faster.",
+    chips: ["Evidence stays connected", "Next steps stay clear"],
+    metrics: ["Faster decisions", "Clear direction"],
     node: { left: "78%", top: "52%" },
     caption: "Decision"
   }
@@ -137,9 +137,9 @@ export function HeroScene({ className }: { className?: string }) {
       <div className="relative z-10 flex min-h-[520px] flex-col gap-6">
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-full border border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-[color:var(--pill-blue-text)]">
-            Assessment flow
+            Northstar flow
           </div>
-          <div className="text-right text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-muted)]">Build. Run. Review.</div>
+          <div className="text-right text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-muted)]">Track. Review. Decide.</div>
         </div>
 
         <div className="grid flex-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -308,7 +308,7 @@ export function HeroScene({ className }: { className?: string }) {
               </div>
 
               <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--app-muted)]">
-                Move around the field to shift the light. Choose a stage to focus the system.
+                Move around the field to shift the light. Choose a stage to focus the view.
               </p>
             </div>
           </motion.div>

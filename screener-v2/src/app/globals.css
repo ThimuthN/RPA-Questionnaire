@@ -194,6 +194,23 @@ html[data-theme="dark"] {
   color-scheme: dark;
 }
 
+.northstar-asset {
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: brightness(0) saturate(100%);
+}
+
+.northstar-mark-shell {
+  backdrop-filter: blur(14px);
+}
+
+html[data-theme="dark"] .northstar-asset {
+  filter:
+    brightness(0) invert(1)
+    drop-shadow(0 0 10px rgba(121, 203, 255, 0.18))
+    drop-shadow(0 0 20px rgba(255, 214, 124, 0.1));
+}
+
 select,
 option,
 optgroup {
