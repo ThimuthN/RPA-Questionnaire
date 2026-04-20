@@ -30,8 +30,8 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
     : [{ href: "/live" as Route, label: copy.nav.run, icon: RadioTower }];
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="hidden items-center gap-1.5 rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] p-1 text-sm text-[color:var(--app-scene-text)] backdrop-blur-md md:flex">
+    <div className="flex items-center gap-2 xl:gap-3">
+      <div className="hidden items-center gap-1 rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] p-1 text-[13px] text-[color:var(--app-scene-text)] backdrop-blur-md md:flex">
         {items.map((item) => {
           const Icon = item.icon;
           const href = item.href as string;
@@ -49,7 +49,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
               key={item.href}
               href={item.href}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+                "inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent xl:px-3",
                 active
                   ? "bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_32%,transparent),color-mix(in_srgb,var(--app-brand-strong)_18%,transparent))] text-[color:var(--app-scene-heading)]"
                   : "text-[color:var(--app-scene-text)] hover:bg-[color:var(--app-header-surface-hover)] hover:text-[color:var(--app-scene-heading)]"
@@ -75,7 +75,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
       </div>
 
       {viewer ? (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 xl:gap-2">
           <div className="hidden rounded-full border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] px-3 py-1.5 text-sm text-[color:var(--app-scene-text)] md:block">
             {viewer.name || viewer.email}
           </div>

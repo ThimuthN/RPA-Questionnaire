@@ -20,6 +20,7 @@ export function SceneShell({
   eyebrow,
   subtitle,
   utility,
+  hideHeader = false,
   tone = "scene",
   className,
   children
@@ -29,6 +30,7 @@ export function SceneShell({
   eyebrow: string;
   subtitle?: string;
   utility?: ReactNode;
+  hideHeader?: boolean;
   tone?: SceneTone;
   className?: string;
 }>) {
@@ -52,42 +54,44 @@ export function SceneShell({
         </>
       ) : null}
 
-      <header
-        className={cn(
-          "relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end",
-          tone === "scene" ? "mb-8" : "mb-6"
-        )}
-      >
-        <div className="space-y-3">
-          <p
-            className={cn(
-              "text-[11px] uppercase tracking-[0.28em]",
-              tone === "scene" ? "text-brand-300" : "text-[color:var(--app-brand)]"
-            )}
-          >
-            {eyebrow}
-          </p>
-          <h1
-            className={cn(
-              "max-w-3xl font-display text-4xl leading-[0.96] md:text-5xl",
-              tone === "scene" ? "text-[color:var(--app-scene-heading)]" : "text-[color:var(--app-heading)]"
-            )}
-          >
-            {title}
-          </h1>
-          {subtitle ? (
+      {!hideHeader ? (
+        <header
+          className={cn(
+            "relative z-10 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,auto)] lg:items-end",
+            tone === "scene" ? "mb-8" : "mb-6"
+          )}
+        >
+          <div className="space-y-3">
             <p
               className={cn(
-                "max-w-2xl text-sm leading-6",
-                tone === "scene" ? "text-[color:var(--app-scene-text)]" : "text-[color:var(--app-muted)]"
+                "text-[11px] uppercase tracking-[0.28em]",
+                tone === "scene" ? "text-brand-300" : "text-[color:var(--app-brand)]"
               )}
             >
-              {subtitle}
+              {eyebrow}
             </p>
-          ) : null}
-        </div>
-        {utility ? <div className="relative z-10 flex flex-wrap items-center gap-2 lg:justify-self-end">{utility}</div> : null}
-      </header>
+            <h1
+              className={cn(
+                "max-w-3xl font-display text-4xl leading-[0.96] md:text-5xl",
+                tone === "scene" ? "text-[color:var(--app-scene-heading)]" : "text-[color:var(--app-heading)]"
+              )}
+            >
+              {title}
+            </h1>
+            {subtitle ? (
+              <p
+                className={cn(
+                  "max-w-2xl text-sm leading-6",
+                  tone === "scene" ? "text-[color:var(--app-scene-text)]" : "text-[color:var(--app-muted)]"
+                )}
+              >
+                {subtitle}
+              </p>
+            ) : null}
+          </div>
+          {utility ? <div className="relative z-10 flex flex-wrap items-center gap-2 lg:justify-self-end">{utility}</div> : null}
+        </header>
+      ) : null}
 
       <div className="relative z-10">{children}</div>
     </section>
