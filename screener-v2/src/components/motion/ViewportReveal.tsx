@@ -17,12 +17,12 @@ export function ViewportReveal({
       initial={
         reduceMotion
           ? { opacity: 1 }
-          : { opacity: 0, y: 34, scale: 0.982, filter: "blur(12px)", clipPath: "inset(0 0 24% 0 round 28px)" }
+          : { opacity: 0, y: 34, scale: 0.982, filter: "blur(12px)" }
       }
       whileInView={
         reduceMotion
           ? { opacity: 1 }
-          : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", clipPath: "inset(0 0 0% 0 round 28px)" }
+          : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
       }
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: reduceMotion ? 0 : 0.65, delay: reduceMotion ? 0 : delay, ease: [0.22, 1, 0.36, 1] }}
