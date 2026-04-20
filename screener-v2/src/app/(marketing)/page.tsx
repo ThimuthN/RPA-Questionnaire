@@ -17,7 +17,6 @@ import { ViewportReveal } from "@/components/motion/ViewportReveal";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
-import { StagePanel } from "@/components/scene/StagePanel";
 import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
@@ -63,11 +62,11 @@ export default async function MarketingHomePage() {
                   <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Tracking trajectory</p>
                 </div>
                 <div className="max-w-4xl space-y-3">
-                  <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl">Track every</h1>
+                  <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl">Track people.</h1>
                   <div className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl" aria-hidden="true">
                     <TypedWordCycle
                       prefix=""
-                      words={["candidate.", "review.", "goal.", "decision."]}
+                      words={["Review clearly.", "Follow progress.", "Decide faster."]}
                       className="text-white"
                     />
                   </div>
@@ -76,7 +75,7 @@ export default async function MarketingHomePage() {
             </StaggerItem>
             <StaggerItem>
               <p className="max-w-2xl text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
-                Northstar helps teams track people, run reviews, and move with the full picture in view.
+                Northstar keeps people, reviews, and next steps in one place so teams can move faster with less back-and-forth.
               </p>
             </StaggerItem>
             <StaggerItem>
@@ -106,75 +105,75 @@ export default async function MarketingHomePage() {
           </StaggerGroup>
 
           <ViewportReveal delay={0.06}>
-            <StagePanel className="space-y-6">
+            <section className="relative overflow-hidden px-1 py-2">
+              <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(138,184,255,0.95),transparent)]" />
               <div className="space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">How it works</p>
                 <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
-                  <ScrambleReveal text="From signal to next step." className="text-scramble-glow" />
+                  <ScrambleReveal text="See what matters. Decide what is next." className="text-scramble-glow" />
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
-                  Northstar keeps the person, the review, and the decision in one working flow.
+                  Keep the person, the review, and the next move in one working flow.
                 </p>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
                 {[
-                  ["01", "Track", "Start with the role, history, and ownership already in view.", "text-brand-300"],
+                  ["01", "Track", "Keep the person, the role, and the history together from the start.", "text-brand-300"],
                   ["02", "Review", "Run assessments, audits, and check-ins without splitting the work.", "text-teal-300"],
-                  ["03", "Decide", "Keep results, notes, and next steps together when it is time to move.", "text-amber-300"]
+                  ["03", "Decide", "Use the full picture to move, hold, or follow up.", "text-amber-300"]
                 ].map(([step, label, body, tone], index) => (
                   <ViewportReveal key={step} delay={0.08 + index * 0.06}>
-                    <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-5 shadow-[var(--app-shadow-soft)]">
+                    <div className="border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0 first:md:border-l-0 first:md:pl-0">
                       <div className="flex items-center justify-between gap-3">
                         <p className={`text-[11px] uppercase tracking-[0.24em] ${tone}`}>{label}</p>
-                        <span className="grid h-7 w-7 place-items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[10px] text-[color:var(--app-heading)]">
-                          {step}
-                        </span>
+                        <span className="text-[11px] text-[color:var(--app-muted)]">{step}</span>
                       </div>
-                      <p className="mt-4 text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
+                      <p className="mt-4 max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
                     </div>
                   </ViewportReveal>
                 ))}
               </div>
-            </StagePanel>
+            </section>
           </ViewportReveal>
 
           <ViewportReveal delay={0.08}>
-            <StagePanel className="space-y-6">
+            <section className="relative overflow-hidden px-1 py-2">
+              <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(18,179,168,0.8),transparent)]" />
               <div className="space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Where it fits</p>
                 <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
-                  <ScrambleReveal text="Built for hiring and growth." className="text-scramble-glow" />
+                  <ScrambleReveal text="One system for hiring and growth." className="text-scramble-glow" />
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
-                  Use the same system for candidates, employees, and the reviews that guide movement.
+                  Use the same system for candidates, employees, and the reviews that guide progress.
                 </p>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
                 {[
-                  ["People", "Keep candidates and employees tied to the right role, owner, and history."],
-                  ["Reviews", "Bring assessments, audits, and check-ins into the same working trail."],
-                  ["Progress", "Follow goals, movement, and next steps without losing the full picture."]
-                ].map(([title, body]) => (
-                  <div
-                    key={title}
-                    className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5 shadow-[var(--app-shadow-soft)]"
-                  >
-                    <h3 className="text-2xl text-[color:var(--app-heading)]">{title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
-                  </div>
+                  ["People", "Track candidates and employees with the right role, owner, and history."],
+                  ["Reviews", "Keep assessments, audits, and check-ins tied to the person they belong to."],
+                  ["Progress", "Follow goals, movement, and next steps without losing context."]
+                ].map(([title, body], index) => (
+                  <ViewportReveal key={title} delay={0.08 + index * 0.06}>
+                    <div className="border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0 first:md:border-l-0 first:md:pl-0">
+                      <h3 className="text-2xl text-[color:var(--app-heading)]">{title}</h3>
+                      <p className="mt-3 max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
+                    </div>
+                  </ViewportReveal>
                 ))}
               </div>
-            </StagePanel>
+            </section>
           </ViewportReveal>
 
           {session && candidateWorkspace && resultWorkspace ? (
             <StaggerGroup className="space-y-5" delay={0.12}>
               <StaggerItem>
-                <StagePanel tone="summary" className="py-4">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <section className="relative overflow-hidden px-1 py-2">
+                  <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(255,255,255,0.45),transparent)]" />
+                  <div className="space-y-3">
                     <div className="space-y-1">
                       <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Workspace overview</p>
-                      <p className="text-sm text-[color:var(--app-text)]">
+                      <p className="max-w-3xl text-sm leading-7 text-[color:var(--app-text)]">
                         {candidateWorkspace.summary.needsResume} need setup, {candidateWorkspace.summary.readyForReview} are ready for review, and {candidateWorkspace.summary.stalled} are stalled.
                       </p>
                     </div>
@@ -187,7 +186,7 @@ export default async function MarketingHomePage() {
                       />
                     </div>
                   </div>
-                </StagePanel>
+                </section>
               </StaggerItem>
 
               {candidateWorkspace.total === 0 && resultWorkspace.total === 0 ? (
@@ -199,9 +198,9 @@ export default async function MarketingHomePage() {
                 </StaggerItem>
               ) : null}
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-5 border-t border-[color:var(--app-border)] pt-6 md:grid-cols-3 md:gap-8">
                 <StaggerItem hover>
-                  <StagePanel className="space-y-3">
+                  <section className="space-y-3 border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0 first:md:border-l-0 first:md:pl-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <BriefcaseBusiness className="h-4 w-4 text-amber-300" />
@@ -209,13 +208,13 @@ export default async function MarketingHomePage() {
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.needsResume)} tone="amber" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-3xl text-[color:var(--app-heading)]" />
-                    <p className="text-sm text-[color:var(--app-muted)]">People who still need the basics in place before review can move.</p>
-                  </StagePanel>
+                    <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-4xl text-[color:var(--app-heading)]" />
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">People who still need the basics in place before review can move.</p>
+                  </section>
                 </StaggerItem>
 
                 <StaggerItem hover>
-                  <StagePanel className="space-y-3">
+                  <section className="space-y-3 border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-brand-300" />
@@ -223,13 +222,13 @@ export default async function MarketingHomePage() {
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-3xl text-[color:var(--app-heading)]" />
-                    <p className="text-sm text-[color:var(--app-muted)]">Reviews or submitted work waiting on a decision.</p>
-                  </StagePanel>
+                    <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-4xl text-[color:var(--app-heading)]" />
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Reviews or submitted work waiting on a decision.</p>
+                  </section>
                 </StaggerItem>
 
                 <StaggerItem hover>
-                  <StagePanel className="space-y-3">
+                  <section className="space-y-3 border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Clock3 className="h-4 w-4 text-rose-300" />
@@ -237,15 +236,15 @@ export default async function MarketingHomePage() {
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
                     </div>
-                    <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-3xl text-[color:var(--app-heading)]" />
-                    <p className="text-sm text-[color:var(--app-muted)]">Work that has been quiet for too long and needs attention.</p>
-                  </StagePanel>
+                    <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-4xl text-[color:var(--app-heading)]" />
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Work that has been quiet for too long and needs attention.</p>
+                  </section>
                 </StaggerItem>
               </div>
 
-              <div className="grid gap-4 xl:grid-cols-2">
+              <div className="grid gap-8 border-t border-[color:var(--app-border)] pt-6 xl:grid-cols-2">
                 <StaggerItem>
-                  <StagePanel className="space-y-4">
+                  <section className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1">
                         <h2 className="text-2xl text-[color:var(--app-heading)]">Open work</h2>
@@ -261,7 +260,7 @@ export default async function MarketingHomePage() {
                           <StaggerItem key={candidate.id} hover>
                             <Link
                               href={`/candidates/${candidate.id}`}
-                              className="block rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-muted)]"
+                              className="block border-t border-[color:var(--app-border)] pt-4 transition hover:translate-x-[2px]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="space-y-1">
@@ -286,11 +285,11 @@ export default async function MarketingHomePage() {
                         description="New candidates or review work will show up here when something needs action."
                       />
                     )}
-                  </StagePanel>
+                  </section>
                 </StaggerItem>
 
                 <StaggerItem>
-                  <StagePanel className="space-y-4">
+                  <section className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="space-y-1">
                         <h2 className="text-2xl text-[color:var(--app-heading)]">Recent results</h2>
@@ -306,7 +305,7 @@ export default async function MarketingHomePage() {
                           <StaggerItem key={row.attemptId} hover>
                             <Link
                               href={`/results/${row.attemptId}`}
-                              className="block rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-muted)]"
+                              className="block border-t border-[color:var(--app-border)] pt-4 transition hover:translate-x-[2px]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div className="space-y-1">
@@ -331,7 +330,7 @@ export default async function MarketingHomePage() {
                         description="Completed reviews and results will show up here with status and outcome."
                       />
                     )}
-                  </StagePanel>
+                  </section>
                 </StaggerItem>
               </div>
             </StaggerGroup>

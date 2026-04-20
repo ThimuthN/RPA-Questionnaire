@@ -9,7 +9,7 @@ function NorthstarCompactMark() {
         alt="Northstar"
         fill
         sizes="40px"
-        className="northstar-asset object-contain p-1.5"
+        className="northstar-asset northstar-icon-asset object-contain p-1.5"
         priority
       />
     </div>
@@ -26,11 +26,11 @@ function NorthstarWordmark() {
           width={248}
           height={50}
           sizes="248px"
-          className="northstar-asset block h-full w-full object-contain object-center"
+          className="northstar-asset northstar-logo-asset block h-full w-full object-contain object-center"
           priority
         />
       </div>
-      <p className="text-[10px] uppercase tracking-[0.22em] text-[color:var(--app-scene-muted)]/90">
+      <p className="northstar-tagline text-[10px] uppercase tracking-[0.22em]">
         Tracking trajectory
       </p>
     </div>

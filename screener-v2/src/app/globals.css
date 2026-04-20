@@ -206,8 +206,23 @@ html[data-theme="dark"] {
 
 html[data-theme="light"] .northstar-mark-shell {
   background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.26), transparent 42%),
-    color-mix(in srgb, var(--app-header-surface) 92%, white);
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(15, 36, 58, 0.12));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 10px 24px rgba(19, 45, 66, 0.16);
+}
+
+html[data-theme="light"] .northstar-logo-asset,
+html[data-theme="light"] .northstar-icon-asset {
+  filter:
+    brightness(0) invert(1)
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.08))
+    drop-shadow(0 0 20px rgba(9, 30, 46, 0.2));
+}
+
+html[data-theme="light"] .northstar-tagline {
+  color: rgba(235, 245, 252, 0.76);
 }
 
 html[data-theme="dark"] .northstar-asset {
@@ -215,6 +230,10 @@ html[data-theme="dark"] .northstar-asset {
     brightness(0) invert(1)
     drop-shadow(0 0 10px rgba(121, 203, 255, 0.16))
     drop-shadow(0 0 18px rgba(255, 214, 124, 0.08));
+}
+
+html[data-theme="dark"] .northstar-tagline {
+  color: color-mix(in srgb, var(--app-scene-muted) 88%, white 12%);
 }
 
 select,
