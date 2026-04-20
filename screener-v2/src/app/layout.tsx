@@ -27,10 +27,10 @@ const fontMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Assessment Hub",
-    template: "%s | Assessment Hub"
+    default: "Northstar",
+    template: "%s | Northstar"
   },
-  description: "A polished workspace for creating, running, and reviewing technical assessments.",
+  description: "A workspace for tracking people, reviews, progress, and decisions in one place.",
   icons: {
     icon: "/icon.svg"
   }
@@ -42,7 +42,7 @@ export const viewport: Viewport = {
 
 const themeInitScript = `
   try {
-    const savedTheme = localStorage.getItem("assessment-hub-theme");
+    const savedTheme = localStorage.getItem("northstar-theme") || localStorage.getItem("assessment-hub-theme");
     document.documentElement.dataset.theme = savedTheme === "dark" ? "dark" : "light";
   } catch {
     document.documentElement.dataset.theme = "light";
@@ -62,7 +62,7 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)]">
           <header className="sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl">
-            <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3">
+            <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3.5">
               <Link href="/" className="transition hover:opacity-95">
                 <AppLogo />
               </Link>

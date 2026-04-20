@@ -53,13 +53,12 @@ export default async function MarketingHomePage() {
       <SceneShell
         variant="create"
         eyebrow="Northstar"
-        title="Tracking people, progress, and decisions."
-        subtitle="A clearer place to follow people, reviews, and next steps."
+        title={<span className="sr-only">Northstar</span>}
         utility={
           session ? (
             <div className="flex flex-wrap gap-2">
               <Link href="/candidates">
-                <Button>Candidates</Button>
+                <Button>People</Button>
               </Link>
               <Link href="/results">
                 <Button variant="secondary">Results</Button>
@@ -72,17 +71,17 @@ export default async function MarketingHomePage() {
         }
       >
         <StaggerGroup className="space-y-8">
-          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
+          <div className="grid gap-8 lg:grid-cols-[0.84fr_1.16fr] lg:items-center">
             <StaggerGroup className="space-y-6" delay={0.04}>
               <StaggerItem>
                 <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Track. Review. Decide.</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">People. Progress. Decisions.</p>
                   <div className="max-w-lg space-y-3">
-                    <h2 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl">Keep every</h2>
-                    <div className="font-display text-5xl leading-[0.94] sm:text-6xl">
+                    <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl">Keep every</h1>
+                    <div className="font-display text-5xl leading-[0.94] sm:text-6xl" aria-hidden="true">
                       <TypedWordCycle
                         prefix=""
-                        words={["trajectory.", "review.", "goal.", "decision."]}
+                        words={["candidate.", "review.", "goal.", "decision."]}
                         className="text-white"
                       />
                     </div>
@@ -107,7 +106,7 @@ export default async function MarketingHomePage() {
               </StaggerItem>
               <StaggerItem>
                 <p className="max-w-lg text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
-                  Northstar keeps candidates, employees, reviews, standards, and next steps connected without turning the process into admin work.
+                  Northstar keeps people, reviews, goals, and next steps connected without turning the work into admin overhead.
                 </p>
               </StaggerItem>
               <StaggerItem>
@@ -118,7 +117,7 @@ export default async function MarketingHomePage() {
               </StaggerItem>
             </StaggerGroup>
             <StaggerItem>
-              <HeroScene className="min-h-[560px]" />
+              <HeroScene />
             </StaggerItem>
           </div>
 
@@ -126,20 +125,20 @@ export default async function MarketingHomePage() {
             <StagePanel className="overflow-hidden">
               <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
                 <div className="space-y-3">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Track. Review. Decide.</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">How it works</p>
                   <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
-                    <ScrambleReveal text="One workspace, start to finish." className="text-scramble-glow" />
+                    <ScrambleReveal text="One clear flow from first review to next step." className="text-scramble-glow" />
                   </h2>
                   <p className="max-w-md text-sm leading-7 text-[color:var(--app-muted)]">
-                    Keep context, evaluation, and the next decision in the same working flow.
+                    Keep the person, the review, and the decision in the same place.
                   </p>
                 </div>
                 <div className="relative space-y-5">
                   <div className="absolute left-[18px] top-2 bottom-2 w-px bg-[linear-gradient(180deg,rgba(138,184,255,0.55),rgba(18,179,168,0.45),rgba(255,196,87,0.32))]" />
                   {[
-                    ["01", "Track", "Bring people, roles, and notes together.", "Keep the important context visible from the first step.", "text-brand-300"],
-                    ["02", "Evaluate", "Run reviews in a clear flow.", "Use assessments, audits, and check-ins without splitting the process across tools.", "text-teal-300"],
-                    ["03", "Decide", "Keep evidence close to the next step.", "Results, notes, and progress stay connected when it is time to move.", "text-amber-300"]
+                    ["01", "Track", "Keep people, roles, and history together.", "Start with the right context instead of piecing it together later.", "text-brand-300"],
+                    ["02", "Review", "Run checks in the same working flow.", "Use assessments, audits, and check-ins without splitting the process across tools.", "text-teal-300"],
+                    ["03", "Decide", "Move with the full picture in view.", "Results, notes, and progress stay close when it is time to act.", "text-amber-300"]
                   ].map(([step, label, title, body, tone], index) => (
                     <ViewportReveal key={step} delay={0.08 + index * 0.06}>
                       <div className="relative rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-5 pl-12 shadow-[var(--app-shadow-soft)]">
@@ -159,65 +158,34 @@ export default async function MarketingHomePage() {
 
           <ViewportReveal delay={0.08}>
             <StagePanel className="space-y-6">
-              <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Built for real teams</p>
-                    <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
-                      <ScrambleReveal text="Keep the process clear." className="text-scramble-glow" />
-                    </h2>
-                    <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
-                      Northstar keeps hiring, internal growth, audits, and progression work in one system instead of splitting it across disconnected tools.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    <StatusPill label="Shared standards" tone="blue" />
-                    <StatusPill label="Clear review" tone="emerald" />
-                    <StatusPill label="Connected history" tone="amber" />
-                  </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Where it fits</p>
+                  <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
+                    <ScrambleReveal text="Use the same system across hiring and internal growth." className="text-scramble-glow" />
+                  </h2>
+                  <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
+                    Northstar works when you need to track people, run reviews, and keep the next decision moving.
+                  </p>
                 </div>
-                <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5 shadow-[var(--app-shadow-soft)]">
-                  <div className="space-y-2">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Across the organization</p>
-                    <h3 className="text-3xl leading-[0.98] text-[color:var(--app-heading)]">Hiring, growth, and audits.</h3>
-                    <p className="text-sm leading-7 text-[color:var(--app-muted)]">
-                      Use the same workspace to track candidates, employees, reviews, role expectations, and goals.
-                    </p>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <StatusPill label="Hiring" tone="blue" />
-                    <StatusPill label="Internal growth" tone="emerald" />
-                    <StatusPill label="Audits" tone="amber" />
-                    <StatusPill label="Goal tracking" tone="purple" />
-                  </div>
+                <div className="grid gap-4 md:grid-cols-3">
+                  {[
+                    ["People", "Candidates and employees stay in one system with history, ownership, and context."],
+                    ["Reviews", "Assessments, audits, and check-ins stay connected instead of living in separate tools."],
+                    ["Progress", "Roles, goals, and next steps stay visible as people move forward."]
+                  ].map(([title, body]) => (
+                    <div
+                      key={title}
+                      className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5 shadow-[var(--app-shadow-soft)]"
+                    >
+                      <h3 className="text-2xl text-[color:var(--app-heading)]">{title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-[color:var(--app-muted)]">{body}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </StagePanel>
           </ViewportReveal>
-
-          {!session ? (
-          <ViewportReveal delay={0.1}>
-            <StagePanel className="space-y-5 text-center">
-              <div className="space-y-2">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">See Northstar in motion</p>
-                <h2 className="text-3xl text-[color:var(--app-heading)] sm:text-4xl">
-                  <ScrambleReveal text="Start with one clear workspace." className="text-scramble-glow" />
-                </h2>
-              </div>
-              <div className="flex flex-wrap justify-center gap-3">
-                <Link href={workspaceHref}>
-                  <Button className="gap-2">
-                    Open workspace
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/run-test">
-                  <Button variant="secondary">View demo</Button>
-                </Link>
-              </div>
-            </StagePanel>
-          </ViewportReveal>
-          ) : null}
 
           {session && candidateWorkspace && resultWorkspace ? (
             <StaggerGroup className="space-y-5" delay={0.12}>

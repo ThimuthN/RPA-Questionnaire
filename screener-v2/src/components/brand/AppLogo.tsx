@@ -18,14 +18,14 @@ function NorthstarCompactMark() {
 
 function NorthstarWordmark() {
   return (
-    <div className="relative h-[32px] w-[220px] overflow-hidden max-[380px]:w-[190px]">
+    <div className="relative hidden h-[42px] w-[250px] overflow-hidden lg:block xl:w-[250px] max-[1220px]:w-[205px]">
       <Image
         src="/brand/northstar-logo-clean.png"
         alt="Northstar"
-        width={220}
-        height={48}
-        sizes="220px"
-        className="northstar-asset block h-auto w-full max-w-none"
+        width={250}
+        height={53}
+        sizes="250px"
+        className="northstar-asset block h-full w-full object-contain object-left"
         priority
       />
     </div>
@@ -40,7 +40,7 @@ export function AppLogo({
   compact?: boolean;
 }) {
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div className={cn("flex shrink-0 items-center gap-3 min-[1221px]:min-w-[295px]", className)}>
       <NorthstarCompactMark />
       {!compact ? <NorthstarWordmark /> : null}
     </div>

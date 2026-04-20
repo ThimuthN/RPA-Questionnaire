@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 
 type Theme = "light" | "dark";
 
-const STORAGE_KEY = "assessment-hub-theme";
+const STORAGE_KEY = "northstar-theme";
+const LEGACY_STORAGE_KEY = "assessment-hub-theme";
 
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
@@ -20,7 +21,7 @@ export function ThemeToggle() {
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const saved = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_STORAGE_KEY);
     const nextTheme: Theme = saved === "dark" ? "dark" : "light";
     applyTheme(nextTheme);
     setTheme(nextTheme);
@@ -47,6 +48,7 @@ export function ThemeToggle() {
       applyTheme(nextTheme);
       setTheme(nextTheme);
       window.localStorage.setItem(STORAGE_KEY, nextTheme);
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY);
     }, 220);
 
     schedule(() => {

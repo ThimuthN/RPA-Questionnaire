@@ -22,8 +22,8 @@ const FLOW_STAGES: FlowStage[] = [
     id: "build",
     label: "Track",
     kicker: "Bring the right context together",
-    title: "Keep people, roles, and progress connected from the start.",
-    body: "Candidate history, role expectations, notes, and next steps stay in one working view instead of being scattered across tools.",
+    title: "Keep people, roles, and progress connected.",
+    body: "Context stays in one place, so the next step starts with the right information.",
     callout: "Start from context, not cleanup.",
     chips: ["People and roles linked", "History stays visible"],
     metrics: ["Less handoff noise", "Shared context"],
@@ -34,8 +34,8 @@ const FLOW_STAGES: FlowStage[] = [
     id: "run",
     label: "Evaluate",
     kicker: "Run the review clearly",
-    title: "Handle assessments, audits, and check-ins in one guided flow.",
-    body: "Different evaluation steps can live in the same system, so reviewers keep the evidence together while the process stays easy to follow.",
+    title: "Run reviews in one guided flow.",
+    body: "Assessments, audits, and check-ins can live in the same process without splitting the work.",
     callout: "The process stays focused and easy to run.",
     chips: ["Flexible evaluation steps", "Goals and reviews aligned"],
     metrics: ["Cleaner handoffs", "Consistent review"],
@@ -46,8 +46,8 @@ const FLOW_STAGES: FlowStage[] = [
     id: "review",
     label: "Decide",
     kicker: "Move with confidence",
-    title: "Turn signals, notes, and outcomes into the next decision.",
-    body: "Results, reviewer input, and progress history surface together so the next step feels clear instead of buried in follow-up work.",
+    title: "Turn signals and notes into the next decision.",
+    body: "Results and reviewer input stay close, so decisions are easier to make and easier to explain.",
     callout: "Go from review to action faster.",
     chips: ["Evidence stays connected", "Next steps stay clear"],
     metrics: ["Faster decisions", "Clear direction"],
@@ -134,7 +134,7 @@ export function HeroScene({ className }: { className?: string }) {
         transition={{ duration: reduceMotion ? 0 : 7.2, repeat: reduceMotion ? 0 : Number.POSITIVE_INFINITY, ease: "easeInOut" }}
       />
 
-      <div className="relative z-10 flex min-h-[520px] flex-col gap-6">
+      <div className="relative z-10 flex min-h-[440px] flex-col gap-5">
         <div className="flex items-center justify-between gap-3">
           <div className="rounded-full border border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-[color:var(--pill-blue-text)]">
             Northstar flow
@@ -142,8 +142,8 @@ export function HeroScene({ className }: { className?: string }) {
           <div className="text-right text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-scene-muted)]">Track. Review. Decide.</div>
         </div>
 
-        <div className="grid flex-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="relative flex min-h-[340px] items-center justify-center">
+        <div className="grid flex-1 gap-5 xl:grid-cols-[1.18fr_0.82fr] xl:items-center">
+          <div className="relative flex min-h-[280px] items-center justify-center">
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 1000 700" fill="none" aria-hidden="true">
               <motion.path
                 d="M180 530 C 330 380, 470 300, 640 312 S 820 392, 860 470"
@@ -175,7 +175,7 @@ export function HeroScene({ className }: { className?: string }) {
             </svg>
 
             <motion.div
-              className="relative h-[320px] w-[320px] rounded-full border border-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(138,184,255,0.18),rgba(138,184,255,0.06)_44%,transparent_72%)]"
+              className="relative h-[270px] w-[270px] rounded-full border border-white/10 bg-[radial-gradient(circle_at_50%_50%,rgba(138,184,255,0.18),rgba(138,184,255,0.06)_44%,transparent_72%)] sm:h-[300px] sm:w-[300px]"
               animate={
                 reduceMotion
                   ? { scale: 1, rotate: 0 }
@@ -190,7 +190,7 @@ export function HeroScene({ className }: { className?: string }) {
               <div className="absolute inset-[30%] grid place-items-center">
                 <motion.div
                   className={cn(
-                    "rounded-[26px] border px-5 py-4 text-center shadow-[0_18px_40px_rgba(4,12,28,0.22)] backdrop-blur-xl",
+                    "rounded-[24px] border px-4 py-3 text-center shadow-[0_18px_40px_rgba(4,12,28,0.22)] backdrop-blur-xl",
                     STAGE_PANEL_CLASS[activeStage.id]
                   )}
                   key={activeStage.id}
@@ -199,8 +199,8 @@ export function HeroScene({ className }: { className?: string }) {
                   transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <p className="text-[10px] uppercase tracking-[0.3em] text-[color:var(--app-scene-muted)]">{activeStage.kicker}</p>
-                  <p className="mt-2 font-display text-2xl text-[color:var(--app-scene-heading)]">{activeStage.label}</p>
-                  <p className="mt-2 max-w-[10rem] text-xs leading-6 text-[color:var(--app-scene-text)]">{activeStage.callout}</p>
+                  <p className="mt-2 font-display text-xl text-[color:var(--app-scene-heading)]">{activeStage.label}</p>
+                  <p className="mt-1 max-w-[9rem] text-[11px] leading-5 text-[color:var(--app-scene-text)]">{activeStage.callout}</p>
                 </motion.div>
               </div>
             </motion.div>
@@ -262,14 +262,14 @@ export function HeroScene({ className }: { className?: string }) {
           </div>
 
           <motion.div
-            className="relative overflow-hidden rounded-[30px] border border-white/10 bg-[rgba(9,17,31,0.66)] p-5 shadow-[0_18px_40px_rgba(4,12,28,0.22)] backdrop-blur-xl"
+            className="relative max-w-[380px] overflow-hidden rounded-[28px] border border-white/10 bg-[rgba(9,17,31,0.66)] p-5 shadow-[0_18px_40px_rgba(4,12,28,0.22)] backdrop-blur-xl xl:justify-self-end"
             key={activeStage.id}
             initial={reduceMotion ? false : { opacity: 0, x: 14 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: reduceMotion ? 0 : 0.4, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
@@ -280,41 +280,27 @@ export function HeroScene({ className }: { className?: string }) {
                     {activeStage.kicker}
                   </span>
                 </div>
-                <h3 className="text-3xl leading-[1.02] text-[color:var(--app-scene-heading)]">{activeStage.title}</h3>
-                <p className="text-sm leading-7 text-[color:var(--app-scene-text)]">{activeStage.body}</p>
+                <h3 className="text-2xl leading-[1.06] text-[color:var(--app-scene-heading)]">{activeStage.title}</h3>
+                <p className="text-sm leading-6 text-[color:var(--app-scene-text)]">{activeStage.body}</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
                 {activeStage.chips.map((chip) => (
                   <div
                     key={chip}
-                    className="rounded-[20px] border border-white/10 bg-[rgba(255,255,255,0.05)] px-4 py-3 text-sm text-[color:var(--app-scene-heading)]"
+                    className="rounded-[18px] border border-white/10 bg-[rgba(255,255,255,0.05)] px-4 py-3 text-sm text-[color:var(--app-scene-heading)]"
                   >
                     {chip}
                   </div>
                 ))}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {activeStage.metrics.map((metric) => (
-                  <div
-                    key={metric}
-                    className="rounded-[22px] border border-white/10 bg-[rgba(255,255,255,0.05)] px-4 py-4"
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-[color:var(--app-scene-muted)]">System outcome</p>
-                    <p className="mt-2 text-base text-[color:var(--app-scene-heading)]">{metric}</p>
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-xs uppercase tracking-[0.24em] text-[color:var(--app-scene-muted)]">
-                Move around the field to shift the light. Choose a stage to focus the view.
-              </p>
+              <p className="text-xs uppercase tracking-[0.22em] text-[color:var(--app-scene-muted)]">{activeStage.metrics.join(" · ")}</p>
             </div>
           </motion.div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           {FLOW_STAGES.map((stage, index) => {
             const isActive = activeIndex === index;
 
@@ -338,7 +324,7 @@ export function HeroScene({ className }: { className?: string }) {
                   </div>
                   <div className={cn("h-2.5 w-2.5 rounded-full", STAGE_NODE_CLASS[stage.id])} />
                 </div>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--app-scene-text)]">{stage.callout}</p>
+                <p className="mt-2 text-sm leading-5 text-[color:var(--app-scene-text)]">{stage.callout}</p>
               </button>
             );
           })}
