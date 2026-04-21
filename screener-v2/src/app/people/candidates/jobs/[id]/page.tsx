@@ -11,6 +11,7 @@ import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getJobPosting } from "@/lib/db/jobs";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
+import { listRoleCatalog } from "@/lib/roles/catalog";
 
 function applicationTone(status: string): "neutral" | "blue" | "amber" | "emerald" {
   if (status === "under_review") return "amber";
@@ -30,6 +31,7 @@ export default async function EditJobPostingPage({
   await requirePageSession(`/people/candidates/jobs/${id}`);
   const pageState = await searchParams;
   const job = await getJobPosting(id);
+  const roles = await listRoleCatalog(true);
 
   if (!job) {
     notFound();
@@ -73,6 +75,13 @@ export default async function EditJobPostingPage({
               submitLabel="Save job"
               cancelHref="/people/candidates/jobs"
               job={job}
+              roleOptions={roles.map((role) => ({
+                id: role.id,
+                label: role.label,
+                department: role.department,
+                isActive: role.isActive,
+                coreBasisRoleId: role.coreBasisRoleId
+              }))}
             />
           </StagePanel>
 

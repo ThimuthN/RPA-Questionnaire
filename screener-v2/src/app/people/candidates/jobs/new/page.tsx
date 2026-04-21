@@ -6,6 +6,7 @@ import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
+import { listRoleCatalog } from "@/lib/roles/catalog";
 
 export default async function NewJobPostingPage({
   searchParams
@@ -14,6 +15,7 @@ export default async function NewJobPostingPage({
 }) {
   await requirePageSession("/people/candidates/jobs/new");
   const pageState = await searchParams;
+  const roles = await listRoleCatalog(true);
 
   return (
     <SceneShell
@@ -43,6 +45,13 @@ export default async function NewJobPostingPage({
             action="/api/jobs"
             submitLabel="Create job"
             cancelHref="/people/candidates/jobs"
+            roleOptions={roles.map((role) => ({
+              id: role.id,
+              label: role.label,
+              department: role.department,
+              isActive: role.isActive,
+              coreBasisRoleId: role.coreBasisRoleId
+            }))}
           />
         </StagePanel>
       </div>

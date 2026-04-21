@@ -2,19 +2,21 @@ import Link from "next/link";
 import type { Route } from "next";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
-import { RolePicker } from "@/components/roles/RolePicker";
+import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
 import type { JobPostingListItem } from "@/lib/jobs/types";
 
 export function JobPostingForm({
   action,
   submitLabel,
   cancelHref,
-  job
+  job,
+  roleOptions = []
 }: {
   action: string;
   submitLabel: string;
   cancelHref: Route;
   job?: JobPostingListItem | null;
+  roleOptions?: RolePickerOption[];
 }) {
   const defaultRole =
     job?.roleId && job.roleLabel
@@ -42,6 +44,7 @@ export function JobPostingForm({
         name="roleId"
         label="Role"
         defaultValue={defaultRole}
+        initialOptions={roleOptions}
         placeholder="Optional"
         helperText="Link this job to a saved role if you have one."
       />

@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 type CandidatesView = "pipeline" | "applicants" | "jobs";
 
 const items: Array<{ key: CandidatesView; label: string; href: Route }> = [
-  { key: "pipeline", label: "Pipeline", href: "/people/candidates" as Route },
+  { key: "jobs", label: "Jobs", href: "/people/candidates/jobs" as Route },
   { key: "applicants", label: "Applicants", href: "/people/candidates/applicants" as Route },
-  { key: "jobs", label: "Jobs", href: "/people/candidates/jobs" as Route }
+  { key: "pipeline", label: "Pipeline", href: "/people/candidates" as Route }
 ];
 
 export function CandidatesViewSwitch({ current }: { current: CandidatesView }) {

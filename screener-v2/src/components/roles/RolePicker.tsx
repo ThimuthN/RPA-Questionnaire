@@ -33,6 +33,7 @@ export function RolePicker({
   label,
   value,
   defaultValue,
+  initialOptions,
   placeholder = "Select role",
   helperText,
   onChange,
@@ -43,14 +44,16 @@ export function RolePicker({
   label?: string;
   value?: RolePickerOption | null;
   defaultValue?: RolePickerOption | null;
+  initialOptions?: RolePickerOption[];
   placeholder?: string;
   helperText?: string;
   onChange?: (next: RolePickerOption | null) => void;
   className?: string;
   layout?: "inline" | "stacked";
 }) {
-  const [options, setOptions] = useState<RolePickerOption[]>([]);
-  const [loading, setLoading] = useState(true);
+  const hasInitialOptions = (initialOptions?.length ?? 0) > 0;
+  const [options, setOptions] = useState<RolePickerOption[]>(initialOptions ?? []);
+  const [loading, setLoading] = useState(!hasInitialOptions);
   const [mounted, setMounted] = useState(false);
   const [internalValue, setInternalValue] = useState<RolePickerOption | null>(defaultValue ?? null);
   const [managerOpen, setManagerOpen] = useState(false);
@@ -58,8 +61,10 @@ export function RolePicker({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadRoles() {
-    setLoading(true);
+  async function loadRoles({ keepCurrentOptions = false }: { keepCurrentOptions?: boolean } = {}) {
+    if (!keepCurrentOptions) {
+      setLoading(true);
+    }
     try {
       const response = await fetch("/api/roles", { cache: "no-store" });
       const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[]; message?: string };
@@ -77,8 +82,8 @@ export function RolePicker({
   }
 
   useEffect(() => {
-    void loadRoles();
-  }, []);
+    void loadRoles({ keepCurrentOptions: hasInitialOptions });
+  }, [hasInitialOptions]);
 
   useEffect(() => {
     setMounted(true);
