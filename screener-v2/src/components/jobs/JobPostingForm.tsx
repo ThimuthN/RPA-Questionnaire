@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { useState, type FormEvent } from "react";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
@@ -27,9 +31,39 @@ export function JobPostingForm({
           coreBasisRoleId: (job.roleCoreBasisRoleId as RoleId | undefined) ?? "Associate"
         }
       : null;
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const form = event.currentTarget;
+      const response = await fetch(action, {
+        method: "POST",
+        body: new FormData(form)
+      });
+
+      if (response.redirected) {
+        window.location.assign(response.url);
+        return;
+      }
+
+      const data = (await response.json().catch(() => null)) as { message?: string } | null;
+      setSubmitError(data?.message || "Could not save the job right now.");
+    } catch {
+      setSubmitError("Could not save the job right now.");
+    } finally {
+      setSubmitting(false);
+      router.refresh();
+    }
+  }
 
   return (
-    <form action={action} method="post" className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Job title</span>
         <input
@@ -94,13 +128,17 @@ export function JobPostingForm({
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Saving..." : submitLabel}
+        </Button>
         <Link href={cancelHref}>
           <Button type="button" variant="secondary">
             Cancel
           </Button>
         </Link>
       </div>
+
+      {submitError ? <p className="text-sm text-[color:var(--app-danger)]">{submitError}</p> : null}
     </form>
   );
 }
