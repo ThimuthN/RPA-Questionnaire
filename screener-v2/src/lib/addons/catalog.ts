@@ -57,12 +57,21 @@ function asInputJson(value: Record<string, unknown> | undefined): Prisma.InputJs
   return (value ?? {}) as Prisma.InputJsonValue;
 }
 
+function asAddonCatalogCreateData(value: Record<string, unknown>) {
+  return value as unknown as Prisma.AddonCatalogUncheckedCreateInput;
+}
+
+function asAddonCatalogUpdateData(value: Record<string, unknown>) {
+  return value as unknown as Prisma.AddonCatalogUncheckedUpdateInput;
+}
+
 function mapAddon(row: {
   id: string;
   slug: string;
   label: string;
   description: string;
-  engineType: string;
+  engineType?: string;
+  assessmentTypeId?: string;
   defaultConfigJson: unknown;
   defaultDurationMinutes: number;
   defaultRequiredPercent: number;
@@ -75,7 +84,7 @@ function mapAddon(row: {
     slug: row.slug,
     label: row.label,
     description: row.description,
-    engineType: row.engineType as ExamDefinitionId,
+    engineType: (row.engineType ?? row.assessmentTypeId) as ExamDefinitionId,
     defaultConfig: asRecord(row.defaultConfigJson),
     defaultDurationMinutes: row.defaultDurationMinutes,
     defaultRequiredPercent: row.defaultRequiredPercent,
@@ -103,7 +112,8 @@ function mapPreset(row: {
       slug: string;
       label: string;
       description: string;
-      engineType: string;
+      engineType?: string;
+      assessmentTypeId?: string;
       defaultConfigJson: unknown;
       defaultDurationMinutes: number;
       defaultRequiredPercent: number;
@@ -192,7 +202,7 @@ export async function createAddonCatalogEntry(input: {
   }
 
   const created = await prisma.addonCatalog.create({
-    data: {
+    data: asAddonCatalogCreateData({
       slug,
       label,
       description: input.description.trim(),
@@ -203,7 +213,7 @@ export async function createAddonCatalogEntry(input: {
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
       isActive: input.isActive ?? true,
       sortOrder: await nextAddonSortOrder()
-    }
+    })
   });
 
   return mapAddon(created);
@@ -241,7 +251,7 @@ export async function updateAddonCatalogEntry(
 
   const updated = await prisma.addonCatalog.update({
     where: { id },
-    data: {
+    data: asAddonCatalogUpdateData({
       slug,
       label,
       description: input.description.trim(),
@@ -251,7 +261,7 @@ export async function updateAddonCatalogEntry(
       defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(input.defaultRequiredPercent))),
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
       isActive: input.isActive ?? true
-    }
+    })
   });
 
   return mapAddon(updated);
