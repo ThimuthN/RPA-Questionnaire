@@ -23,19 +23,26 @@ export function RichTextField({
   helperText?: string;
 }) {
   const editorRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const id = useId();
-  const [value, setValue] = useState(initialValue?.trim() || "");
   const [empty, setEmpty] = useState(!(initialValue?.trim()));
 
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== (initialValue?.trim() || "")) {
-      editorRef.current.innerHTML = initialValue?.trim() || "";
+    const nextValue = initialValue?.trim() || "";
+
+    if (editorRef.current && editorRef.current.innerHTML !== nextValue) {
+      editorRef.current.innerHTML = nextValue;
+    }
+    if (inputRef.current && inputRef.current.value !== nextValue) {
+      inputRef.current.value = nextValue;
     }
   }, [initialValue]);
 
   function syncValue() {
     const nextValue = editorRef.current?.innerHTML ?? "";
-    setValue(nextValue);
+    if (inputRef.current) {
+      inputRef.current.value = nextValue;
+    }
     setEmpty((editorRef.current?.textContent || "").trim().length === 0);
   }
 
@@ -50,7 +57,7 @@ export function RichTextField({
       <label className="text-sm text-[color:var(--app-text)]" htmlFor={id}>
         {label}
       </label>
-      <input type="hidden" name={name} value={value} />
+      <textarea ref={inputRef} name={name} defaultValue={initialValue?.trim() || ""} className="hidden" readOnly />
 
       <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3">
         <div className="mb-3 flex flex-wrap gap-2 border-b border-[color:var(--app-border)] pb-3">
