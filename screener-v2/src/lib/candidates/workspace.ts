@@ -27,7 +27,7 @@ export interface CandidateWorkspaceItem extends CandidateListItem {
 export interface CandidateActivityItem {
   id: string;
   at: string;
-  kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone";
+  kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone" | "application";
   title: string;
   detail: string;
 }
@@ -236,6 +236,16 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
         detail: `${assessment.finalPercent.toFixed(1)} / 100`
       });
     }
+  }
+
+  for (const application of candidate.applications) {
+    items.push({
+      id: `${application.id}-application`,
+      at: application.createdAt,
+      kind: "application",
+      title: "Application received",
+      detail: application.jobTitle
+    });
   }
 
   for (const milestone of candidate.milestones) {

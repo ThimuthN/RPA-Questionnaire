@@ -22,6 +22,7 @@ import { listRoleCatalog, resolveOrCreateRoleCatalogEntry } from "@/lib/roles/ca
 import type {
   CandidateAssessmentStatus,
   CandidateFinalDecision,
+  CandidateIntakeBucket,
   CandidateNextAction,
   CandidateNoteType,
   CandidateScreeningStatus,
@@ -30,6 +31,7 @@ import type {
 } from "@/lib/candidates/types";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { linkCandidateAssessmentAttemptInTx } from "@/lib/db/candidate-assessment-links";
+import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import { cuidLike } from "@/lib/tokens/token-service";
 import { logError } from "@/lib/server/logger";
 
@@ -47,6 +49,7 @@ export interface CandidateRecord {
   batchId?: string;
   resumeSource?: string;
   hrOwner?: string;
+  intakeBucket: CandidateIntakeBucket;
   stage: CandidateStage;
   finalDecision: CandidateFinalDecision;
   nextAction: CandidateNextAction;
@@ -95,6 +98,19 @@ export interface CandidateAssessmentRecord {
   borderline?: boolean;
 }
 
+export interface CandidateApplicationRecord {
+  id: string;
+  candidateId: string;
+  jobPostingId: string;
+  jobSlug: string;
+  jobTitle: string;
+  roleLabel?: string;
+  roleDepartment?: string;
+  status: CandidateApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CandidateMilestoneRecord {
   id: string;
   candidateId: string;
@@ -125,6 +141,7 @@ export interface CandidateDetail extends CandidateRecord {
   resumes: CandidateResumeRecord[];
   notes: CandidateNoteRecord[];
   assessments: CandidateAssessmentRecord[];
+  applications: CandidateApplicationRecord[];
   milestones: CandidateMilestoneRecord[];
   currentFocus?: string;
 }
@@ -132,6 +149,8 @@ export interface CandidateDetail extends CandidateRecord {
 export interface CandidateWorkspaceFilters {
   q?: string;
   roleId?: string;
+  intakeBucket?: CandidateIntakeBucket;
+  jobId?: string;
   status?: CandidateUiStatus;
   stage?: CandidateStage;
   owner?: string;
@@ -175,6 +194,7 @@ function mapCandidate(row: {
   batchId: string | null;
   resumeSource: string | null;
   hrOwner: string | null;
+  intakeBucket: string;
   stage: string;
   finalDecision: string;
   nextAction: string;
@@ -197,12 +217,40 @@ function mapCandidate(row: {
     batchId: row.batchId ?? undefined,
     resumeSource: row.resumeSource ?? undefined,
     hrOwner: row.hrOwner ?? undefined,
+    intakeBucket: row.intakeBucket as CandidateIntakeBucket,
     stage: row.stage as CandidateStage,
     finalDecision: row.finalDecision as CandidateFinalDecision,
     nextAction: row.nextAction as CandidateNextAction,
     screeningStatus: (row.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
     notesSummary: row.notesSummary ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString()
+  };
+}
+
+function mapApplication(row: {
+  id: string;
+  candidateId: string;
+  jobPostingId: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  jobPosting: {
+    slug: string;
+    title: string;
+    role: { label: string; department: string | null } | null;
+  };
+}): CandidateApplicationRecord {
+  return {
+    id: row.id,
+    candidateId: row.candidateId,
+    jobPostingId: row.jobPostingId,
+    jobSlug: row.jobPosting.slug,
+    jobTitle: row.jobPosting.title,
+    roleLabel: row.jobPosting.role?.label ?? undefined,
+    roleDepartment: row.jobPosting.role?.department ?? undefined,
+    status: row.status as CandidateApplicationStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString()
   };
@@ -434,6 +482,7 @@ export async function createCandidate(input: {
   batchId?: string;
   resumeSource?: string;
   hrOwner?: string;
+  intakeBucket?: CandidateIntakeBucket;
   stage?: CandidateStage;
   finalDecision?: CandidateFinalDecision;
   nextAction?: CandidateNextAction;
@@ -466,6 +515,7 @@ export async function createCandidate(input: {
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
+        intakeBucket: input.intakeBucket ?? "pipeline",
         stage: input.stage ?? "new",
         finalDecision: input.finalDecision ?? "in_process",
         nextAction: input.nextAction ?? "none",
@@ -1103,11 +1153,15 @@ export async function findExistingCandidateByEmail(email: string) {
 
 export async function listCandidates(filters?: {
   roleId?: string;
+  intakeBucket?: CandidateIntakeBucket;
   stage?: CandidateStage;
   finalDecision?: CandidateFinalDecision;
   assessmentStatus?: CandidateAssessmentStatus;
 }) {
   const rows = await prisma.candidate.findMany({
+    where: {
+      intakeBucket: filters?.intakeBucket
+    },
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {
@@ -1214,6 +1268,7 @@ export async function listCandidateWorkspacePage(
   filters: CandidateWorkspaceFilters = {}
 ): Promise<CandidateWorkspacePage> {
   const candidates = await listCandidates({
+    intakeBucket: filters.intakeBucket,
     roleId: filters.roleId,
     stage: filters.stage,
     assessmentStatus: filters.assessmentStatus
@@ -1275,6 +1330,21 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       },
       notes: {
         orderBy: { createdAt: "desc" }
+      },
+      applications: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          jobPosting: {
+            include: {
+              role: {
+                select: {
+                  label: true,
+                  department: true
+                }
+              }
+            }
+          }
+        }
       },
       assessments: {
         orderBy: { createdAt: "desc" },
@@ -1370,6 +1440,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
     resumes: row.resumes.map(mapResume),
     notes: row.notes.map((note) => mapNote(note, note.createdById ? authorsById.get(note.createdById) ?? null : null)),
     assessments,
+    applications: row.applications.map(mapApplication),
     milestones,
     currentFocus: currentFocusFromMilestones(milestones)
   };

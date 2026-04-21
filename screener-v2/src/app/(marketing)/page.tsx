@@ -41,8 +41,8 @@ export default async function MarketingHomePage() {
   const primaryHeroLabel = session ? "Open workspace" : "See the workspace";
   const secondaryHeroLabel = session ? "Open results" : "Watch demo";
   const [candidateWorkspace, resultWorkspace] = session
-    ? await Promise.all([
-        listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),
+      ? await Promise.all([
+        listCandidateWorkspacePage({ intakeBucket: "pipeline", sort: "inbox", pageSize: 5 }),
         listResultWorkspacePage({ pageSize: 5 })
       ])
     : [null, null];

@@ -19,6 +19,7 @@ import { candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidat
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
+import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
 
 export const dynamic = "force-dynamic";
 
@@ -43,9 +44,23 @@ function currentUiStatus(candidate: CandidateData) {
 }
 
 function nextPrompt(candidate: CandidateData) {
+  if (candidate.intakeBucket === "applicant") {
+    return "Review the application and move them into the pipeline when you're ready.";
+  }
   if (!candidate.resumes.length) return "Add a resume if you need one for review.";
   if (candidate.currentFocus) return candidate.currentFocus;
   return "Set the next stage when you're ready.";
+}
+
+function primaryApplication(candidate: CandidateData) {
+  return candidate.applications.find((application) => isActiveApplicationStatus(application.status)) ?? candidate.applications[0] ?? null;
+}
+
+function applicationTone(status: string): "neutral" | "blue" | "amber" | "emerald" {
+  if (status === "under_review") return "amber";
+  if (status === "moved_to_pipeline") return "emerald";
+  if (status === "closed") return "blue";
+  return "neutral";
 }
 
 function latestAssessmentSummary(candidate: CandidateData) {
@@ -143,6 +158,7 @@ export default async function CandidateDetailPage({
   const pageState = await searchParams;
   const uiStatus = currentUiStatus(candidate);
   const latest = latestAssessment(candidate);
+  const activeApplication = primaryApplication(candidate);
   const currentResume = candidate.resumes[0] ?? null;
   const latestAssessmentState = latestAssessmentSummary(candidate);
   const resumePreviewUrl = currentResume
@@ -159,6 +175,7 @@ export default async function CandidateDetailPage({
       {candidate.hrOwner ? (
         <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
       ) : null}
+      <StatusPill label={candidate.intakeBucket === "applicant" ? "Applicant" : "Pipeline"} tone={candidate.intakeBucket === "applicant" ? "amber" : "blue"} />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
     </div>
   );
@@ -171,7 +188,7 @@ export default async function CandidateDetailPage({
       title={candidate.fullName}
       subtitle={candidate.roleLabel || candidate.email}
       utility={
-        <Link href={"/candidates" as Route}>
+        <Link href={(candidate.intakeBucket === "applicant" ? "/people/candidates/applicants" : "/candidates") as Route}>
           <Button variant="secondary">Back to candidates</Button>
         </Link>
       }
@@ -197,6 +214,13 @@ export default async function CandidateDetailPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
+              {candidate.intakeBucket === "applicant" && activeApplication ? (
+                <form action={`/api/candidate-applications/${activeApplication.id}`} method="post">
+                  <input type="hidden" name="action" value="promote" />
+                  <input type="hidden" name="returnTo" value={`/candidates/${candidate.id}` as Route} />
+                  <Button type="submit">Move to pipeline</Button>
+                </form>
+              ) : null}
               <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
               <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                 <ConfirmSubmitButton
@@ -304,6 +328,43 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="space-y-6 xl:pt-1">
+            <section className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-xl text-[color:var(--app-heading)]">Applications</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Keep the linked job history here.</p>
+              </div>
+
+              <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                {candidate.applications.length === 0 ? (
+                  <p className="text-sm text-[color:var(--app-muted)]">No job applications recorded yet.</p>
+                ) : (
+                  candidate.applications.map((application) => (
+                    <div
+                      key={application.id}
+                      className="space-y-2 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusPill
+                          label={candidateApplicationStatusLabels[application.status]}
+                          tone={applicationTone(application.status)}
+                        />
+                        <StatusPill
+                          label={new Date(application.createdAt).toLocaleDateString()}
+                          tone="neutral"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-[color:var(--app-heading)]">{application.jobTitle}</p>
+                        <p className="text-xs text-[color:var(--app-muted)]">
+                          {application.roleLabel || "No role linked"}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
             <section id="resume" className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-xl text-[color:var(--app-heading)]">Resume</h2>

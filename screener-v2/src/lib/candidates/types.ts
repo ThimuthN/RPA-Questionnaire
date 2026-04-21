@@ -71,6 +71,10 @@ export const candidateUiStatusValues = [
 
 export type CandidateUiStatus = (typeof candidateUiStatusValues)[number];
 
+export const candidateIntakeBucketValues = ["pipeline", "applicant"] as const;
+
+export type CandidateIntakeBucket = (typeof candidateIntakeBucketValues)[number];
+
 export const candidateStageLabels: Record<CandidateStage, string> = {
   new: "New",
   screening: "Screening",
@@ -130,6 +134,11 @@ export const candidateUiStatusLabels: Record<CandidateUiStatus, string> = {
   rejected: "Rejected"
 };
 
+export const candidateIntakeBucketLabels: Record<CandidateIntakeBucket, string> = {
+  pipeline: "Pipeline",
+  applicant: "Applicants"
+};
+
 export const resumeSourceOptions = [
   "LinkedIn",
   "Referral",
@@ -161,4 +170,8 @@ export function isCandidateAssessmentStatus(value: string): value is CandidateAs
 
 export function isCandidateUiStatus(value: string): value is CandidateUiStatus {
   return (candidateUiStatusValues as readonly string[]).includes(value);
+}
+
+export function isCandidateIntakeBucket(value: string): value is CandidateIntakeBucket {
+  return (candidateIntakeBucketValues as readonly string[]).includes(value);
 }

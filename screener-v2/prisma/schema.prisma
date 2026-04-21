@@ -123,6 +123,7 @@ model RoleCatalog {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   candidates      Candidate[]
+  jobPostings     JobPosting[]
 
   @@index([isActive, sortOrder])
   @@index([label, department])
@@ -222,6 +223,7 @@ model Candidate {
   batchId            String?
   resumeSource       String?
   hrOwner            String?
+  intakeBucket       String   @default("pipeline")
   stage              String   @default("new")
   finalDecision      String   @default("in_process")
   nextAction         String   @default("none")
@@ -235,8 +237,10 @@ model Candidate {
   assessments        CandidateAssessment[]
   notes              CandidateNote[]
   milestones         CandidateMilestone[]
+  applications       CandidateApplication[]
   @@index([roleId])
   @@index([stage, updatedAt])
+  @@index([intakeBucket, updatedAt])
 }
 
 model CandidateResume {
@@ -314,4 +318,37 @@ model CandidateMilestone {
   candidateAssessment  CandidateAssessment? @relation(fields: [candidateAssessmentId], references: [id], onDelete: SetNull)
 
   @@index([candidateId, sortOrder])
+}
+
+model JobPosting {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  roleId      String?
+  summary     String
+  description String
+  isPublished Boolean  @default(false)
+  isOpen      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  role        RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  applications CandidateApplication[]
+
+  @@index([roleId])
+  @@index([isPublished, isOpen, updatedAt])
+}
+
+model CandidateApplication {
+  id           String   @id @default(cuid())
+  candidateId  String
+  jobPostingId String
+  status       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobPostingId])
+  @@index([candidateId, createdAt])
+  @@index([jobPostingId, status, createdAt])
 }

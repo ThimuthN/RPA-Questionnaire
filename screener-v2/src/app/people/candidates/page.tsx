@@ -8,6 +8,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { PersistedTableState } from "@/components/workspace/PersistedTableState";
 import { CandidateWorkspaceTable } from "@/components/candidates/CandidateWorkspaceTable";
 import { CandidateCsvImportModal } from "@/components/candidates/CandidateCsvImportModal";
+import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
@@ -94,6 +95,7 @@ export default async function PeopleCandidatesPage({
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
   await requirePageSession(nextPath);
   const page = await listCandidateWorkspacePage({
+    intakeBucket: "pipeline",
     q: params.q?.trim() || undefined,
     roleId: params.roleId?.trim() || undefined,
     status: candidateUiStatusValues.includes(params.status as CandidateUiStatus)
@@ -135,6 +137,9 @@ export default async function PeopleCandidatesPage({
           transientKeys={[...transientBannerKeys]}
         />
         <StaggerGroup className="space-y-5" delay={0.04}>
+          <StaggerItem>
+            <CandidatesViewSwitch current="pipeline" />
+          </StaggerItem>
           {params.deleted ? <StaggerItem><NoticeBanner tone="success">Candidate deleted.</NoticeBanner></StaggerItem> : null}
           {params.updated ? <StaggerItem><NoticeBanner tone="success">Updated {params.updated} candidate(s).</NoticeBanner></StaggerItem> : null}
           {params.imported ? (
