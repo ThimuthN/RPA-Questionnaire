@@ -1,9 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
-import {
-  addCandidateNote,
-  createCandidate,
-  findExistingCandidateByEmail
-} from "@/lib/db/candidates";
+import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import type { CandidateIntakeBucket } from "@/lib/candidates/types";
 import {
@@ -11,8 +7,10 @@ import {
   isActiveApplicationStatus,
   type CandidateApplicationListItem,
   type CandidateApplicationStatus,
+  type JobPostingDetail,
   type JobPostingListItem
 } from "@/lib/jobs/types";
+import { mapCandidate } from "@/lib/db/candidates";
 
 type JobPostingRow = {
   id: string;
@@ -65,6 +63,7 @@ function mapApplication(row: {
   id: string;
   candidateId: string;
   status: string;
+  coverNote: string | null;
   createdAt: Date;
   updatedAt: Date;
   candidate: {
@@ -94,6 +93,7 @@ function mapApplication(row: {
     jobSlug: row.jobPosting.slug,
     jobTitle: row.jobPosting.title,
     roleLabel: row.jobPosting.role?.label ?? undefined,
+    coverNote: row.coverNote ?? undefined,
     appliedAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     status: row.status as CandidateApplicationStatus
@@ -186,14 +186,51 @@ export async function getJobPosting(jobId: string) {
         }
       },
       applications: {
-        select: {
-          status: true
+        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+        take: 5,
+        include: {
+          candidate: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              hrOwner: true,
+              intakeBucket: true,
+              _count: {
+                select: {
+                  resumes: true
+                }
+              }
+            }
+          },
+          jobPosting: {
+            include: {
+              role: {
+                select: {
+                  label: true,
+                  department: true
+                }
+              }
+            }
+          }
         }
       }
     }
   });
 
-  return row ? mapJobPosting(row) : null;
+  if (!row) {
+    return null;
+  }
+
+  return {
+    ...mapJobPosting({
+      ...row,
+      applications: row.applications.map((application) => ({
+        status: application.status
+      }))
+    }),
+    recentApplications: row.applications.map(mapApplication)
+  } satisfies JobPostingDetail;
 }
 
 async function uniqueJobSlug(title: string, excludeId?: string) {
@@ -384,6 +421,67 @@ export async function listApplicantWorkspacePage(filters: {
   };
 }
 
+export async function getApplicantReviewDetail(applicationId: string) {
+  const row = await prisma.candidateApplication.findUnique({
+    where: { id: applicationId },
+    include: {
+      candidate: {
+        include: {
+          resumes: {
+            orderBy: { uploadedAt: "desc" },
+            take: 1
+          },
+          role: {
+            select: {
+              label: true,
+              department: true,
+              coreBasisRoleId: true
+            }
+          }
+        }
+      },
+      jobPosting: {
+        include: {
+          role: {
+            select: {
+              label: true,
+              department: true,
+              coreBasisRoleId: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  const latestResume = row.candidate.resumes[0] ?? null;
+
+  return {
+    id: row.id,
+    status: row.status as CandidateApplicationStatus,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    candidate: mapCandidate(row.candidate),
+    job: mapJobPosting({
+      ...row.jobPosting,
+      applications: []
+    }),
+    latestResume: latestResume
+      ? {
+          fileName: latestResume.fileName,
+          storageKey: latestResume.storageKey,
+          sizeBytes: latestResume.sizeBytes,
+          uploadedAt: latestResume.uploadedAt.toISOString()
+        }
+      : null,
+    applicationNote: row.coverNote?.trim() || ""
+  };
+}
+
 export async function createCandidateApplicationFromPublicSubmission(input: {
   jobSlug: string;
   fullName: string;
@@ -466,17 +564,10 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
     data: {
       candidateId: existingCandidate.id,
       jobPostingId: job.id,
-      status: "submitted"
+      status: "submitted",
+      coverNote: input.coverNote?.trim() || null
     }
   });
-
-  if (input.coverNote?.trim()) {
-    await addCandidateNote({
-      candidateId: existingCandidate.id,
-      type: "general",
-      body: `Application note for ${job.title}\n\n${input.coverNote.trim()}`
-    });
-  }
 
   return {
     status: "created" as const,
@@ -489,6 +580,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
 export async function updateCandidateApplicationLifecycle(input: {
   applicationId: string;
   action: "review" | "promote" | "close";
+  hrOwner?: string;
 }) {
   const fields = candidateUiStatusToStoredFields("in_progress");
 
@@ -512,6 +604,15 @@ export async function updateCandidateApplicationLifecycle(input: {
           status: "under_review"
         }
       });
+
+      if (input.hrOwner?.trim()) {
+        await tx.candidate.update({
+          where: { id: application.candidateId },
+          data: {
+            hrOwner: input.hrOwner.trim()
+          }
+        });
+      }
     }
 
     if (input.action === "close") {
@@ -534,6 +635,7 @@ export async function updateCandidateApplicationLifecycle(input: {
       await tx.candidate.update({
         where: { id: application.candidateId },
         data: {
+          hrOwner: input.hrOwner?.trim() || undefined,
           intakeBucket: "pipeline",
           stage: fields.stage,
           finalDecision: fields.finalDecision,

@@ -5,6 +5,7 @@ import { updateCandidateApplicationLifecycle } from "@/lib/db/jobs";
 
 const actionSchema = z.object({
   action: z.enum(["review", "promote", "close"]),
+  hrOwner: z.string().optional(),
   returnTo: z.string().optional()
 });
 
@@ -23,7 +24,8 @@ export async function POST(
     const body = actionSchema.parse(Object.fromEntries((await request.formData()).entries()));
     const application = await updateCandidateApplicationLifecycle({
       applicationId: id,
-      action: body.action
+      action: body.action,
+      hrOwner: body.hrOwner
     });
 
     const redirectTo = body.returnTo?.trim() || `/candidates/${application.candidateId}`;

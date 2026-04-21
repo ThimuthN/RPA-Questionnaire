@@ -35,6 +35,10 @@ export type JobPostingListItem = {
   applicantCount: number;
 };
 
+export type JobPostingDetail = JobPostingListItem & {
+  recentApplications: CandidateApplicationListItem[];
+};
+
 export type CandidateApplicationListItem = {
   id: string;
   candidateId: string;
@@ -47,6 +51,7 @@ export type CandidateApplicationListItem = {
   jobSlug: string;
   jobTitle: string;
   roleLabel?: string;
+  coverNote?: string;
   appliedAt: string;
   updatedAt: string;
   status: CandidateApplicationStatus;

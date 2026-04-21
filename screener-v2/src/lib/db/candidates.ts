@@ -183,7 +183,7 @@ async function findCandidateByEmail(email: string) {
   });
 }
 
-function mapCandidate(row: {
+export function mapCandidate(row: {
   id: string;
   fullName: string;
   email: string;

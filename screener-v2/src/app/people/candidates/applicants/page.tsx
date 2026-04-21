@@ -155,7 +155,7 @@ export default async function CandidateApplicantsPage({
                     <th className="w-[10%] px-4 py-3 font-medium">Resume</th>
                     <th className="w-[12%] px-4 py-3 font-medium">Status</th>
                     <th className="w-[10%] px-4 py-3 font-medium">Owner</th>
-                    <th className="w-[14%] px-4 py-3 font-medium text-right">Actions</th>
+                    <th className="w-[14%] px-4 py-3 font-medium text-right">Review</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -183,27 +183,11 @@ export default async function CandidateApplicantsPage({
                       <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{row.candidateOwner || "Unassigned"}</td>
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <form action={`/api/candidate-applications/${row.id}`} method="post">
-                            <input type="hidden" name="action" value="review" />
-                            <input type="hidden" name="returnTo" value={`/candidates/${row.candidateId}` as Route} />
-                            <Button type="submit" variant="ghost" className="px-3 py-2 text-xs">
-                              Review
+                          <Link href={`/people/candidates/applicants/${row.id}` as Route}>
+                            <Button type="button" className="px-3 py-2 text-xs">
+                              Open review
                             </Button>
-                          </form>
-                          <form action={`/api/candidate-applications/${row.id}`} method="post">
-                            <input type="hidden" name="action" value="promote" />
-                            <input type="hidden" name="returnTo" value={nextPath} />
-                            <Button type="submit" className="px-3 py-2 text-xs">
-                              Move to pipeline
-                            </Button>
-                          </form>
-                          <form action={`/api/candidate-applications/${row.id}`} method="post">
-                            <input type="hidden" name="action" value="close" />
-                            <input type="hidden" name="returnTo" value={nextPath} />
-                            <Button type="submit" variant="secondary" className="px-3 py-2 text-xs">
-                              Close
-                            </Button>
-                          </form>
+                          </Link>
                         </div>
                       </td>
                     </tr>

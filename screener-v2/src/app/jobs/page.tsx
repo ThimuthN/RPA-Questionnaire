@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
+import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { listPublicJobPostings } from "@/lib/db/jobs";
@@ -15,9 +16,15 @@ export default async function PublicJobsPage() {
       tone="page"
       eyebrow="Northstar jobs"
       title="Open roles"
-      subtitle="Apply without logging in."
+      subtitle="Find the role that fits and apply in a few minutes."
     >
       <div className="space-y-6">
+        <div className="flex flex-wrap gap-2">
+          <StatusPill label={`${jobs.length} open role${jobs.length === 1 ? "" : "s"}`} tone="blue" />
+          <StatusPill label="No login required" tone="emerald" />
+          <StatusPill label="Resume optional" tone="neutral" />
+        </div>
+
         {jobs.length === 0 ? (
           <StagePanel className="space-y-3">
             <h2 className="text-2xl text-[color:var(--app-heading)]">No openings right now</h2>
@@ -28,15 +35,17 @@ export default async function PublicJobsPage() {
             {jobs.map((job) => (
               <StagePanel key={job.id} tone="open" className="space-y-4">
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-brand)]">
-                    {job.roleDepartment || "Open role"}
-                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {job.roleDepartment ? <StatusPill label={job.roleDepartment} tone="neutral" /> : null}
+                    {job.roleLabel ? <StatusPill label={job.roleLabel} tone="blue" /> : <StatusPill label="Open role" tone="blue" />}
+                  </div>
                   <h2 className="text-2xl text-[color:var(--app-heading)]">{job.title}</h2>
                   <p className="text-sm text-[color:var(--app-muted)]">{job.summary}</p>
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Applications are open now</p>
                   <Link href={`/jobs/${job.slug}`}>
-                    <Button>Apply</Button>
+                    <Button>View role</Button>
                   </Link>
                 </div>
               </StagePanel>

@@ -94,7 +94,7 @@ export default async function CandidateJobsPage({
                     <th className="w-[14%] px-4 py-3 font-medium">Applicants</th>
                     <th className="w-[16%] px-4 py-3 font-medium">Status</th>
                     <th className="w-[12%] px-4 py-3 font-medium">Updated</th>
-                    <th className="w-[14%] px-4 py-3 font-medium text-right">Actions</th>
+                    <th className="w-[14%] px-4 py-3 font-medium text-right">Open</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -107,7 +107,17 @@ export default async function CandidateJobsPage({
                         </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{job.roleLabel || "No role"}</td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{job.applicantCount}</td>
+                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">
+                        <Link
+                          href={{
+                            pathname: "/people/candidates/applicants",
+                            query: { jobId: job.id }
+                          }}
+                          className="text-[color:var(--app-brand)] hover:underline"
+                        >
+                          {job.applicantCount}
+                        </Link>
+                      </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-2">
                           <StatusPill label={job.isPublished ? "Published" : "Draft"} tone={job.isPublished ? "emerald" : "neutral"} />
@@ -119,21 +129,9 @@ export default async function CandidateJobsPage({
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          <form action={`/api/jobs/${job.id}`} method="post">
-                            <input type="hidden" name="action" value="toggle_published" />
-                            <Button type="submit" variant="ghost" className="px-3 py-2 text-xs">
-                              {job.isPublished ? "Unpublish" : "Publish"}
-                            </Button>
-                          </form>
-                          <form action={`/api/jobs/${job.id}`} method="post">
-                            <input type="hidden" name="action" value="toggle_open" />
-                            <Button type="submit" variant="ghost" className="px-3 py-2 text-xs">
-                              {job.isOpen ? "Close" : "Open"}
-                            </Button>
-                          </form>
                           <Link href={`/people/candidates/jobs/${job.id}` as Route}>
-                            <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
-                              Edit
+                            <Button type="button" className="px-3 py-2 text-xs">
+                              Open
                             </Button>
                           </Link>
                         </div>
