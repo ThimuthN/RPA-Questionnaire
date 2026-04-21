@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { getJobPosting, updateJobPosting } from "@/lib/db/jobs";
+import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
 
 const updateJobSchema = z.object({
   title: z.string().min(2).optional(),
@@ -23,6 +24,7 @@ export async function POST(
   }
 
   const { id } = await params;
+  const wantsJson = request.headers.get("accept")?.includes("application/json");
 
   try {
     const body = updateJobSchema.parse(Object.fromEntries((await request.formData()).entries()));
@@ -43,6 +45,9 @@ export async function POST(
       });
       const url = new URL("/people/candidates/jobs", request.url);
       url.searchParams.set("updated", "1");
+      if (wantsJson) {
+        return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
+      }
       return NextResponse.redirect(url, 303);
     }
 
@@ -57,28 +62,44 @@ export async function POST(
       });
       const url = new URL("/people/candidates/jobs", request.url);
       url.searchParams.set("updated", "1");
+      if (wantsJson) {
+        return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
+      }
       return NextResponse.redirect(url, 303);
     }
 
     if (!body.title || !body.summary || !body.description) {
       throw new Error("Job details are required.");
     }
+    const description = sanitizeJobDescriptionHtml(body.description);
+    if (jobDescriptionTextContent(description).length < 20) {
+      throw new Error("Description should be at least 20 characters.");
+    }
 
     await updateJobPosting(id, {
       title: body.title,
       roleId: body.roleId,
       summary: body.summary,
-      description: body.description,
+      description,
       isPublished: body.isPublished === "on",
       isOpen: body.isOpen === "on"
     });
 
     const url = new URL(`/people/candidates/jobs/${id}`, request.url);
     url.searchParams.set("updated", "1");
+    if (wantsJson) {
+      return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
+    }
     return NextResponse.redirect(url, 303);
   } catch (error) {
     const url = new URL(`/people/candidates/jobs/${id}`, request.url);
     url.searchParams.set("error", error instanceof Error ? error.message : "Could not update job.");
+    if (request.headers.get("accept")?.includes("application/json")) {
+      return NextResponse.json(
+        { ok: false, message: error instanceof Error ? error.message : "Could not update job.", next: `${url.pathname}${url.search}` },
+        { status: 400 }
+      );
+    }
     return NextResponse.redirect(url, 303);
   }
 }

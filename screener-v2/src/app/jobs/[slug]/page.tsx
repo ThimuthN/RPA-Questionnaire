@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
+import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -66,7 +67,7 @@ export default async function PublicJobDetailPage({
               <h2 className="text-2xl text-[color:var(--app-heading)]">About the role</h2>
               <p className="text-sm text-[color:var(--app-muted)]">Review the context first, then apply on the right.</p>
             </div>
-            <div className="whitespace-pre-wrap text-sm leading-7 text-[color:var(--app-text)]">{job.description}</div>
+            <JobDescriptionContent html={job.description} />
           </div>
         </StagePanel>
 

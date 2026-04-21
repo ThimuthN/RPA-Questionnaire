@@ -4,6 +4,7 @@ import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
+import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { JobPostingForm } from "@/components/jobs/JobPostingForm";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
@@ -184,6 +185,14 @@ export default async function EditJobPostingPage({
                   </Link>
                 </div>
               )}
+            </StagePanel>
+
+            <StagePanel className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-xl text-[color:var(--app-heading)]">Public description</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Preview the formatted description exactly as applicants will read it.</p>
+              </div>
+              <JobDescriptionContent html={job.description} />
             </StagePanel>
           </div>
         </div>

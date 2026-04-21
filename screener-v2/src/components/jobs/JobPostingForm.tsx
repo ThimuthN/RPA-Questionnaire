@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import type { Route } from "next";
-import { useRouter } from "next/navigation";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
+import { RichTextField } from "@/components/jobs/RichTextField";
 import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
 import type { JobPostingListItem } from "@/lib/jobs/types";
 
@@ -31,7 +31,6 @@ export function JobPostingForm({
           coreBasisRoleId: (job.roleCoreBasisRoleId as RoleId | undefined) ?? "Associate"
         }
       : null;
-  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -44,21 +43,26 @@ export function JobPostingForm({
       const form = event.currentTarget;
       const response = await fetch(action, {
         method: "POST",
+        headers: {
+          Accept: "application/json"
+        },
         body: new FormData(form)
       });
 
-      if (response.redirected) {
-        window.location.assign(response.url);
+      const data = (await response.json().catch(() => null)) as
+        | { ok?: boolean; next?: string; message?: string }
+        | null;
+
+      if (response.ok && data?.ok && data.next) {
+        window.location.assign(data.next);
         return;
       }
 
-      const data = (await response.json().catch(() => null)) as { message?: string } | null;
       setSubmitError(data?.message || "Could not save the job right now.");
     } catch {
       setSubmitError("Could not save the job right now.");
     } finally {
       setSubmitting(false);
-      router.refresh();
     }
   }
 
@@ -94,17 +98,13 @@ export function JobPostingForm({
         />
       </label>
 
-      <label className="grid gap-1">
-        <span className="text-sm text-[color:var(--app-text)]">Description</span>
-        <textarea
-          name="description"
-          rows={8}
-          required
-          defaultValue={job?.description ?? ""}
-          placeholder="Describe the work, expectations, and what the applicant should know."
-          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-        />
-      </label>
+      <RichTextField
+        name="description"
+        label="Description"
+        initialValue={job?.description ?? ""}
+        placeholder="Describe the work, expectations, and what the applicant should know."
+        helperText="Paste formatted text here. Bold, italic, headings, quotes, and lists are supported."
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
