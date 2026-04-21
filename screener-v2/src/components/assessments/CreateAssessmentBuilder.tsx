@@ -30,6 +30,10 @@ import {
   examPanelClass,
   examScoreBarClass
 } from "@/lib/exams/catalog";
+import {
+  buildRequestErrorMessage,
+  fetchJsonWithTimeout
+} from "@/lib/http/client";
 import { integrityPresetMeta } from "@/lib/integrity/policy";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +46,7 @@ interface CreateInviteSuccess extends InviteCredentials {
 interface CreateInviteError {
   ok: false;
   message?: string;
+  requestId?: string;
 }
 
 type WizardStep = "select" | "customize" | "calibrate" | "share";
@@ -456,7 +461,9 @@ export function CreateAssessmentBuilder({
     setError("");
     setInvite(null);
     try {
-      const response = await fetch("/api/invites/create", {
+      const { response, data } = await fetchJsonWithTimeout<CreateInviteSuccess | CreateInviteError>(
+        "/api/invites/create",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -487,10 +494,10 @@ export function CreateAssessmentBuilder({
           withPasscode: true,
           maxAttempts: 1
         })
-      });
+      }
+      );
 
-      const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
-      if (data.ok) {
+      if (response.ok && data?.ok) {
         setInvite({
           entryUrl: data.entryUrl,
           token: data.token,
@@ -502,9 +509,9 @@ export function CreateAssessmentBuilder({
         return;
       }
 
-      setError(data.message || "Could not generate access. Review the setup and try again.");
-    } catch {
-      setError("Could not generate access. Check your connection and try again.");
+      setError(buildRequestErrorMessage(data, "Could not generate access. Review the setup and try again."));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not generate access. Check your connection and try again.");
     } finally {
       setLoading(false);
     }

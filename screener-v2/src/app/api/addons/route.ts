@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
 import { addonUpsertSchema } from "@/lib/addons/api-schema";
 import { createAddonCatalogEntry, listAddonCatalog } from "@/lib/addons/catalog";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 export async function GET(request: Request) {
   const auth = await requireApiSession();
@@ -20,6 +25,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.addons.create");
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
@@ -40,8 +46,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, addon });
   } catch (error) {
+    logRouteError("addon_create_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not create add-on." },
+      {
+        ok: false,
+        message: messageFromError(error, "Could not create add-on."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

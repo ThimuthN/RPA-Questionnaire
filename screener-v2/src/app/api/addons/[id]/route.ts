@@ -2,8 +2,14 @@ import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
 import { addonUpsertSchema } from "@/lib/addons/api-schema";
 import { updateAddonCatalogEntry } from "@/lib/addons/catalog";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
+  const logContext = createRequestLogContext(request, "api.addons.update");
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
@@ -25,8 +31,14 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
 
     return NextResponse.json({ ok: true, addon });
   } catch (error) {
+    logRouteError("addon_update_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not update add-on." },
+      {
+        ok: false,
+        message: messageFromError(error, "Could not update add-on."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

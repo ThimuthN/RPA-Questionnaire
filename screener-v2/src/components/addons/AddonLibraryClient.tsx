@@ -18,6 +18,10 @@ import {
   getAddonAssessmentTypeMeta,
   orderedAddonAssessmentTypes
 } from "@/lib/addons/assessment-types";
+import {
+  buildRequestErrorMessage,
+  fetchJsonWithTimeout
+} from "@/lib/http/client";
 
 type AddonFormState = {
   label: string;
@@ -168,16 +172,16 @@ export function AddonLibraryClient({
     setMessage(null);
 
     try {
-      const response = await fetch(editingAddonId ? `/api/addons/${editingAddonId}` : "/api/addons", {
+      const { response, data } = await fetchJsonWithTimeout<
+        | { ok: true; addon: AddonCatalogEntry }
+        | { ok: false; message?: string; requestId?: string }
+      >(editingAddonId ? `/api/addons/${editingAddonId}` : "/api/addons", {
         method: editingAddonId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(addonForm)
       });
-      const data = (await response.json()) as
-        | { ok: true; addon: AddonCatalogEntry }
-        | { ok: false; message?: string };
-      if (!data.ok) {
-        throw new Error(data.message || "Could not save add-on.");
+      if (!response.ok || !data?.ok) {
+        throw new Error(buildRequestErrorMessage(data, "Could not save add-on."));
       }
 
       setAddons((current) => {
@@ -219,16 +223,16 @@ export function AddonLibraryClient({
           weightOverride: item.weightOverride.trim() ? Number(item.weightOverride) : undefined
         }))
       };
-      const response = await fetch(editingPresetId ? `/api/addon-presets/${editingPresetId}` : "/api/addon-presets", {
+      const { response, data } = await fetchJsonWithTimeout<
+        | { ok: true; preset: AssessmentPresetEntry }
+        | { ok: false; message?: string; requestId?: string }
+      >(editingPresetId ? `/api/addon-presets/${editingPresetId}` : "/api/addon-presets", {
         method: editingPresetId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
-      const data = (await response.json()) as
-        | { ok: true; preset: AssessmentPresetEntry }
-        | { ok: false; message?: string };
-      if (!data.ok) {
-        throw new Error(data.message || "Could not save preset.");
+      if (!response.ok || !data?.ok) {
+        throw new Error(buildRequestErrorMessage(data, "Could not save preset."));
       }
 
       setPresets((current) => {

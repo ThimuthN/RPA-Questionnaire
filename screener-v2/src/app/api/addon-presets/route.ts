@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { createAssessmentPreset, listAssessmentPresets } from "@/lib/addons/catalog";
+import {
+  createRequestLogContext,
+  logRouteError,
+  messageFromError
+} from "@/lib/server/logger";
 
 const presetSchema = z.object({
   label: z.string().min(2),
@@ -36,6 +41,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const logContext = createRequestLogContext(request, "api.addonPresets.create");
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
@@ -52,8 +58,14 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true, preset });
   } catch (error) {
+    logRouteError("addon_preset_create_failed", logContext, error);
+
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not create preset." },
+      {
+        ok: false,
+        message: messageFromError(error, "Could not create preset."),
+        requestId: logContext.requestId
+      },
       { status: 400 }
     );
   }

@@ -10,6 +10,10 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import type { IntegrityPresetId } from "@/lib/assessment-engine/types";
 import { copy } from "@/lib/design/copy";
+import {
+  buildRequestErrorMessage,
+  fetchJsonWithTimeout
+} from "@/lib/http/client";
 import { cn } from "@/lib/utils";
 
 type RunMode = "join_link" | "test_id" | "live_call" | "employee";
@@ -23,6 +27,7 @@ interface CreateInviteSuccess extends InviteCredentials {
 interface CreateInviteError {
   ok: false;
   message?: string;
+  requestId?: string;
 }
 
 const modeMeta: Record<
@@ -134,7 +139,9 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
     setError("");
     setLiveInvite(null);
     try {
-      const response = await fetch("/api/invites/create", {
+      const { response, data } = await fetchJsonWithTimeout<CreateInviteSuccess | CreateInviteError>(
+        "/api/invites/create",
+        {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -149,9 +156,9 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           withPasscode: true,
           maxAttempts: 1
         })
-      });
-      const data = (await response.json()) as CreateInviteSuccess | CreateInviteError;
-      if (data.ok) {
+      }
+      );
+      if (response.ok && data?.ok) {
         setLiveInvite({
           entryUrl: data.entryUrl,
           token: data.token,
@@ -159,10 +166,10 @@ function RunTestContent({ canManageAccess }: { canManageAccess: boolean }) {
           slug: data.slug
         });
       } else {
-        setError(data.message || "Could not generate live session. Please try again.");
+        setError(buildRequestErrorMessage(data, "Could not generate live session. Please try again."));
       }
-    } catch {
-      setError("Could not generate live session. Check your connection and try again.");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not generate live session. Check your connection and try again.");
     } finally {
       setLoading(false);
     }
