@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       isOpen: body.isOpen === "on"
     });
 
-    const url = new URL(`/people/candidates/jobs/${job.id}`, request.url);
+    const url = new URL("/people/candidates/jobs", request.url);
     url.searchParams.set("created", "1");
     if (wantsJson) {
       return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
 import type { Route } from "next";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
@@ -31,43 +30,9 @@ export function JobPostingForm({
           coreBasisRoleId: (job.roleCoreBasisRoleId as RoleId | undefined) ?? "Associate"
         }
       : null;
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState("");
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitting(true);
-    setSubmitError("");
-
-    try {
-      const form = event.currentTarget;
-      const response = await fetch(action, {
-        method: "POST",
-        headers: {
-          Accept: "application/json"
-        },
-        body: new FormData(form)
-      });
-
-      const data = (await response.json().catch(() => null)) as
-        | { ok?: boolean; next?: string; message?: string }
-        | null;
-
-      if (response.ok && data?.ok && data.next) {
-        window.location.assign(data.next);
-        return;
-      }
-
-      setSubmitError(data?.message || "Could not save the job right now.");
-    } catch {
-      setSubmitError("Could not save the job right now.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form action={action} method="post" className="space-y-4">
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Job title</span>
         <input
@@ -128,17 +93,13 @@ export function JobPostingForm({
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Saving..." : submitLabel}
-        </Button>
+        <Button type="submit">{submitLabel}</Button>
         <Link href={cancelHref}>
           <Button type="button" variant="secondary">
             Cancel
           </Button>
         </Link>
       </div>
-
-      {submitError ? <p className="text-sm text-[color:var(--app-danger)]">{submitError}</p> : null}
     </form>
   );
 }
