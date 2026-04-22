@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, Blocks, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
+import { Activity, Blocks, BriefcaseBusiness, ClipboardList, Menu, RadioTower, Users2 } from "lucide-react";
 import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
 import { cn } from "@/lib/utils";
 import { copy } from "@/lib/design/copy";
@@ -19,6 +19,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
   const items: NavItem[] = viewer
     ? [
         { href: "/people/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
+        { href: "/jobs" as Route, label: copy.nav.jobs, icon: BriefcaseBusiness },
         { href: "/addons" as Route, label: copy.nav.addons, icon: Blocks },
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
         { href: "/results", label: copy.nav.results, icon: Activity },
@@ -27,7 +28,10 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }]
           : [])
       ]
-    : [{ href: "/live" as Route, label: copy.nav.run, icon: RadioTower }];
+    : [
+        { href: "/jobs" as Route, label: copy.nav.jobs, icon: BriefcaseBusiness },
+        { href: "/live" as Route, label: copy.nav.run, icon: RadioTower }
+      ];
 
   return (
     <div className="flex items-center gap-2 xl:gap-3">
@@ -37,6 +41,7 @@ export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" 
           const href = item.href as string;
           const active =
             pathname === href ||
+            (href === "/jobs" && pathname.startsWith("/jobs")) ||
             (href === "/results" && pathname.startsWith("/results/")) ||
             (href === "/people/candidates" &&
               (pathname.startsWith("/people") || pathname.startsWith("/candidates"))) ||

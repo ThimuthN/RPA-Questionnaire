@@ -58,6 +58,7 @@ export function MobileNavDrawer({
             const href = item.href as string;
             const active =
               pathname === href ||
+              (href === "/jobs" && pathname.startsWith("/jobs")) ||
               (href === "/results" && pathname.startsWith("/results/")) ||
               (href === "/people/candidates" &&
                 (pathname.startsWith("/people") || pathname.startsWith("/candidates"))) ||

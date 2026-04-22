@@ -3,6 +3,7 @@ export const copy = {
     addons: "Add-ons",
     create: "Assessments",
     candidates: "People",
+    jobs: "Careers",
     run: "Live sessions",
     results: "Results",
     users: "Users"
