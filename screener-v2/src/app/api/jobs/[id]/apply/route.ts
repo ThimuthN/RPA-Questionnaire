@@ -18,9 +18,9 @@ const publicApplySchema = z.object({
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { slug } = await params;
+  const { id: slug } = await params;
 
   try {
     const formData = await request.formData();
