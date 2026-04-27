@@ -45,6 +45,12 @@ export type PromptBlock =
       text: string;
     }
   | {
+      type: "image";
+      src: string;
+      alt: string;
+      caption?: string;
+    }
+  | {
       type: "list";
       heading?: string;
       items: string[];

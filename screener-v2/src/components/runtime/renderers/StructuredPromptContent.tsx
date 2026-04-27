@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { PromptBlock } from "@/lib/assessment-engine/types";
 
 interface StructuredPromptContentProps {
@@ -104,6 +105,28 @@ export function StructuredPromptBlocks({
             <p key={`block-${index}`} className="text-sm font-semibold leading-6 text-[color:var(--app-heading)]">
               {block.text}
             </p>
+          );
+        }
+
+        if (block.type === "image") {
+          return (
+            <figure
+              key={`block-${index}`}
+              className="overflow-hidden rounded-3xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)]"
+            >
+              <Image
+                src={block.src}
+                alt={block.alt}
+                width={1200}
+                height={800}
+                className="w-full object-contain"
+              />
+              {block.caption ? (
+                <figcaption className="px-4 py-3 text-sm text-[color:var(--app-muted)]">
+                  {block.caption}
+                </figcaption>
+              ) : null}
+            </figure>
           );
         }
 
