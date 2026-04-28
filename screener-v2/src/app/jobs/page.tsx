@@ -13,10 +13,44 @@ const updatedAtFormatter = new Intl.DateTimeFormat("en", {
   year: "numeric"
 });
 
-export default async function PublicJobsPage() {
-  const jobs = await listPublicJobPostings();
+export default async function PublicJobsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ q?: string; department?: string; sort?: string }>;
+}) {
+  const params = await searchParams;
+  const allJobs = await listPublicJobPostings();
+  const departments = Array.from(new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))).slice(0, 6) as string[];
+  const jobs = params.q || params.department || params.sort
+    ? await listPublicJobPostings({
+        q: params.q?.trim(),
+        department: params.department?.trim(),
+        sort:
+          params.sort === "updated_asc" || params.sort === "title_asc"
+            ? params.sort
+            : "updated_desc"
+      })
+    : allJobs;
   const featuredJob = jobs[0] ?? null;
-  const departments = Array.from(new Set(jobs.map((job) => job.roleDepartment).filter(Boolean))).slice(0, 4);
+  const query = new URLSearchParams(
+    Object.entries(params).filter(([_, value]) => typeof value === "string" && value.length > 0)
+  );
+
+  const buildHref = (overrides: Record<string, string | undefined>) => {
+    const next = new URLSearchParams(query.toString());
+
+    for (const [key, value] of Object.entries(overrides)) {
+      if (!value) {
+        next.delete(key);
+      } else {
+        next.set(key, value);
+      }
+    }
+
+    return `/jobs${next.toString() ? `?${next.toString()}` : ""}` as const;
+  };
+
+  const resultsLabel = jobs.length === allJobs.length ? `${jobs.length} roles` : `Showing ${jobs.length} of ${allJobs.length} roles`;
 
   return (
     <SceneShell
@@ -162,6 +196,68 @@ export default async function PublicJobsPage() {
                   </div>
                 </div>
               </div>
+            </StagePanel>
+
+            <StagePanel className="space-y-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Public job board</p>
+                  <p className="text-2xl font-semibold text-[color:var(--app-heading)]">{resultsLabel}</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={buildHref({ department: undefined })} className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-2 text-sm text-[color:var(--app-text)] transition hover:border-brand-300/60">
+                    All departments
+                  </Link>
+                  {departments.map((department) => (
+                    <Link
+                      key={department}
+                      href={buildHref({ department })}
+                      className={`rounded-full px-3 py-2 text-sm transition ${
+                        params.department === department
+                          ? "border border-brand-300 bg-brand-400/10 text-brand-200"
+                          : "border border-[color:var(--app-border)] bg-[color:var(--app-surface)] text-[color:var(--app-text)] hover:border-brand-300/60"
+                      }`}
+                    >
+                      {department}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+              <form className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_1fr_1fr_auto]">
+                <input
+                  name="q"
+                  defaultValue={params.q ?? ""}
+                  placeholder="Search jobs, teams, or skills"
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+                />
+                <select
+                  name="department"
+                  defaultValue={params.department ?? ""}
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+                >
+                  <option value="">All departments</option>
+                  {departments.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  name="sort"
+                  defaultValue={params.sort ?? "updated_desc"}
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+                >
+                  <option value="updated_desc">Most recent</option>
+                  <option value="updated_asc">Oldest</option>
+                  <option value="title_asc">A-Z title</option>
+                </select>
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-[18px] bg-brand-500 px-4 py-3 text-sm font-medium text-white transition hover:bg-brand-400"
+                >
+                  Filter
+                </button>
+              </form>
             </StagePanel>
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">

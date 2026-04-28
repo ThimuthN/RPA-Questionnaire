@@ -100,13 +100,46 @@ function mapApplication(row: {
   };
 }
 
-export async function listPublicJobPostings() {
+type ListPublicJobPostingsFilters = {
+  q?: string;
+  department?: string;
+  sort?: "updated_desc" | "updated_asc" | "title_asc";
+};
+
+export async function listPublicJobPostings(filters: ListPublicJobPostingsFilters = {}) {
+  const query = filters.q?.trim();
+  const where = {
+    isPublished: true,
+    isOpen: true,
+    ...(filters.department
+      ? {
+          role: {
+            department: filters.department
+          }
+        }
+      : {}),
+    ...(query
+      ? {
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { summary: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+            { role: { label: { contains: query, mode: "insensitive" } } }
+          ]
+        }
+      : {})
+  };
+
+  const orderBy =
+    filters.sort === "updated_asc"
+      ? [{ updatedAt: "asc" }, { title: "asc" }]
+      : filters.sort === "title_asc"
+      ? [{ title: "asc" }, { updatedAt: "desc" }]
+      : [{ updatedAt: "desc" }, { title: "asc" }];
+
   const rows = await prisma.jobPosting.findMany({
-    where: {
-      isPublished: true,
-      isOpen: true
-    },
-    orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
+    where,
+    orderBy,
     include: {
       role: {
         select: {

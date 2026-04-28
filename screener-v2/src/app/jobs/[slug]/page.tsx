@@ -108,6 +108,9 @@ export default async function PublicJobDetailPage({
                     <p className="text-sm leading-6 text-[color:var(--app-muted)]">
                       Read the full description, complete the application card, and submit in one pass.
                     </p>
+                    <p className="text-sm text-[color:var(--app-text)]">
+                      {job.applicantCount > 0 ? `${job.applicantCount} application${job.applicantCount === 1 ? "" : "s"} already in review.` : "No applications yet — be one of the first candidates."}
+                    </p>
                   </div>
                 </div>
               </div>
