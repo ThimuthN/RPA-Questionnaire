@@ -20,7 +20,13 @@ export default async function PublicJobDetailPage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ applied?: string; alreadyApplied?: string; resumeError?: string; error?: string }>;
+  searchParams: Promise<{
+    applied?: string;
+    alreadyApplied?: string;
+    resumeError?: string;
+    error?: string;
+    applicationId?: string;
+  }>;
 }) {
   const { slug } = await params;
   const pageState = await searchParams;
@@ -190,6 +196,23 @@ export default async function PublicJobDetailPage({
                   {pageState.resumeError ? " The resume upload did not finish, so only the application details were saved." : ""}
                 </p>
               </div>
+              {pageState.applicationId ? (
+                <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  <p className="font-medium">Application reference</p>
+                  <p>{pageState.applicationId}</p>
+                  <p className="mt-2 text-[color:var(--app-foreground-muted)]">
+                    Use this reference with your email to check status.
+                  </p>
+                  <p className="mt-3">
+                    <a
+                      href={`/jobs/application-status?applicationId=${encodeURIComponent(pageState.applicationId ?? "")}`}
+                      className="text-sm font-medium text-white underline"
+                    >
+                      Check application status
+                    </a>
+                  </p>
+                </div>
+              ) : null}
               <p className="text-sm text-emerald-50/90">If there is a fit, the team will move you forward from the same review workflow.</p>
             </div>
           ) : null}

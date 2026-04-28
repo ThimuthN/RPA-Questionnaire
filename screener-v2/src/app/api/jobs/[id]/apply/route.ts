@@ -49,6 +49,7 @@ export async function POST(
 
     if (submission.status === "duplicate") {
       url.searchParams.set("alreadyApplied", "1");
+      url.searchParams.set("applicationId", submission.applicationId);
       return NextResponse.redirect(url, 303);
     }
 
@@ -84,6 +85,7 @@ export async function POST(
     }
 
     url.searchParams.set("applied", "1");
+    url.searchParams.set("applicationId", submission.applicationId);
     return NextResponse.redirect(url, 303);
   } catch (error) {
     const url = new URL(`/jobs/${slug}`, request.url);

@@ -515,6 +515,48 @@ export async function getApplicantReviewDetail(applicationId: string) {
   };
 }
 
+export async function getPublicApplicationStatus(applicationId: string, email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  const row = await prisma.candidateApplication.findFirst({
+    where: {
+      id: applicationId,
+      candidate: {
+        email: normalizedEmail
+      }
+    },
+    include: {
+      candidate: {
+        select: {
+          fullName: true,
+          email: true,
+          phone: true
+        }
+      },
+      jobPosting: {
+        select: {
+          title: true,
+          slug: true
+        }
+      }
+    }
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    applicationId: row.id,
+    status: row.status as CandidateApplicationStatus,
+    appliedAt: row.createdAt.toISOString(),
+    candidateName: row.candidate.fullName,
+    candidateEmail: row.candidate.email,
+    candidatePhone: row.candidate.phone ?? undefined,
+    jobTitle: row.jobPosting.title,
+    jobSlug: row.jobPosting.slug
+  };
+}
+
 export async function createCandidateApplicationFromPublicSubmission(input: {
   jobSlug: string;
   fullName: string;
@@ -566,6 +608,16 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       }
       existingCandidate = await findExistingCandidateByEmail(normalizedEmail);
     }
+  } else {
+    await prisma.candidate.update({
+      where: { id: existingCandidate.id },
+      data: {
+        fullName: input.fullName.trim(),
+        phone: input.phone?.trim() || undefined,
+        roleId: job.roleId ?? undefined,
+        positionAppliedFor: job.title
+      }
+    });
   }
 
   if (!existingCandidate) {
