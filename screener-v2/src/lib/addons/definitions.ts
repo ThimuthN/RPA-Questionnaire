@@ -7,6 +7,8 @@ import { generalCapabilityAddonDefinition } from "@/features/general-capability/
 import { appliedLogicAddonDefinition } from "@/features/logic-reasoning/definition";
 import { practicalAddonDefinition } from "@/features/practical/definition";
 import { pythonRpaScreenerAddonDefinition } from "@/features/python-rpa-screener/definition";
+import { pythonSeniorExamAddonDefinition } from "@/features/python-senior-exam/definition";
+import { pythonLeadExamAddonDefinition } from "@/features/python-lead-exam/definition";
 import { imageAnalysisAddonDefinition } from "@/features/image-analysis/definition";
 import { rcmAddonDefinition } from "@/features/rcm/definition";
 import { rpaRuntimeAddonDefinition } from "@/features/rpa-runtime/definition";
@@ -48,6 +50,8 @@ export const orderedAddonDefinitions = [
   core2AddonDefinition,
   rpaRuntimeAddonDefinition,
   pythonRpaScreenerAddonDefinition,
+  pythonSeniorExamAddonDefinition,
+  pythonLeadExamAddonDefinition,
   imageAnalysisAddonDefinition,
   practicalAddonDefinition,
   appliedLogicAddonDefinition,
