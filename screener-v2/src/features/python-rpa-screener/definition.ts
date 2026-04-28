@@ -30,11 +30,11 @@ export const pythonRpaScreenerAddonDefinition = {
   },
   libraryEntries: [
     {
-      seedKey: "addon-python-rpa-screener-default",
-      slug: "python-rpa-lead-senior-screener",
-      label: "Python RPA Lead/Senior Screener",
+      seedKey: "addon-python-rpa-screener-senior",
+      slug: "python-rpa-senior-screener",
+      label: "Python RPA Senior Screener",
       description:
-        "18-question Senior or 25-question Lead Python RPA screener covering replay safety, Selenium, code review, and operational standards.",
+        "21-question Senior Python RPA screener covering replay safety, Selenium diagnosis, testing, and operational judgment.",
       defaultConfig: {
         level: "Senior"
       },
@@ -43,6 +43,21 @@ export const pythonRpaScreenerAddonDefinition = {
       defaultWeight: 100,
       isActive: true,
       sortOrder: 8
+    },
+    {
+      seedKey: "addon-python-rpa-screener-lead",
+      slug: "python-rpa-lead-screener",
+      label: "Python RPA Lead Screener",
+      description:
+        "31-question Lead Python RPA screener with governance, replay control, Selenium diagnostics, and production-risk judgment.",
+      defaultConfig: {
+        level: "Lead"
+      },
+      defaultDurationMinutes: 40,
+      defaultRequiredPercent: 70,
+      defaultWeight: 100,
+      isActive: true,
+      sortOrder: 9
     }
   ],
   buildDurationMinutes: (config) => (String(config.level || "Senior") === "Lead" ? 40 : 30),
