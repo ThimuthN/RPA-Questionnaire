@@ -50,5 +50,6 @@ function deriveCatalogSeed(
 }
 
 export const addonCatalogSeeds: AddonCatalogSeed[] = orderedAddonDefinitions.flatMap((definition) =>
-  (definition.libraryEntries ?? []).map((entry) => deriveCatalogSeed(definition, entry))
+  ("libraryEntries" in definition ? definition.libraryEntries : [])?.map((entry) => deriveCatalogSeed(definition, entry)) ??
+  []
 );

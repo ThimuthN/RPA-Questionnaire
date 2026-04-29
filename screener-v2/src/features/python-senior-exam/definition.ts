@@ -3,7 +3,7 @@ import { buildSeniorPythonExamQuestions } from "@/features/python-senior-exam/qu
 
 export const pythonSeniorExamAddonDefinition = {
   id: "python_senior_exam",
-  label: "Python Senior Exam",
+  label: "Senior Python Exam",
   description:
     "21-question comprehensive Python automation exam covering replay safety, Selenium diagnostics, code review, and operational judgment for Senior-level roles.",
   accentTone: "teal",
@@ -17,7 +17,7 @@ export const pythonSeniorExamAddonDefinition = {
     {
       seedKey: "addon-python-senior-exam-default",
       slug: "python-senior-exam",
-      label: "Python Senior Exam",
+      label: "Senior Python Exam",
       description: "21-question Senior Python automation exam covering replay safety, code review, and operational judgment.",
       defaultConfig: {},
       defaultDurationMinutes: 30,
@@ -28,7 +28,7 @@ export const pythonSeniorExamAddonDefinition = {
     }
   ],
   buildDurationMinutes: () => 30,
-  buildConfigSummary: () => "Python Senior Exam | Safety, Selenium, Code Review",
+  buildConfigSummary: () => "Senior Python Exam | Safety, Selenium, Code Review",
   buildRequiredPercent: (_, fallbackPassPercent) => Math.max(fallbackPassPercent, 65),
   resolveItems: () => buildSeniorPythonExamQuestions()
 } satisfies AddonDefinitionRegistration;

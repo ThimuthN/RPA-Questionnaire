@@ -3,7 +3,7 @@ import { buildLeadPythonExamQuestions } from "@/features/python-lead-exam/questi
 
 export const pythonLeadExamAddonDefinition = {
   id: "python_lead_exam",
-  label: "Python Lead Exam",
+  label: "Lead Python Exam",
   description:
     "31-question comprehensive Python automation exam covering governance, replay controls, Selenium diagnostics, and production-risk judgment for Lead-level roles.",
   accentTone: "teal",
@@ -17,7 +17,7 @@ export const pythonLeadExamAddonDefinition = {
     {
       seedKey: "addon-python-lead-exam-default",
       slug: "python-lead-exam",
-      label: "Python Lead Exam",
+      label: "Lead Python Exam",
       description: "31-question Lead Python automation exam covering governance, replay control, and production-risk judgment.",
       defaultConfig: {},
       defaultDurationMinutes: 40,
@@ -28,7 +28,7 @@ export const pythonLeadExamAddonDefinition = {
     }
   ],
   buildDurationMinutes: () => 40,
-  buildConfigSummary: () => "Python Lead Exam | Governance, Control, Risk",
+  buildConfigSummary: () => "Lead Python Exam | Governance, Control, Risk",
   buildRequiredPercent: (_, fallbackPassPercent) => Math.max(fallbackPassPercent, 70),
   resolveItems: () => buildLeadPythonExamQuestions()
 } satisfies AddonDefinitionRegistration;

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
 import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
@@ -108,7 +109,7 @@ type ListPublicJobPostingsFilters = {
 
 export async function listPublicJobPostings(filters: ListPublicJobPostingsFilters = {}) {
   const query = filters.q?.trim();
-  const where = {
+  const where: Prisma.JobPostingWhereInput = {
     isPublished: true,
     isOpen: true,
     ...(filters.department
@@ -130,7 +131,7 @@ export async function listPublicJobPostings(filters: ListPublicJobPostingsFilter
       : {})
   };
 
-  const orderBy =
+  const orderBy: Prisma.JobPostingOrderByWithRelationInput[] =
     filters.sort === "updated_asc"
       ? [{ updatedAt: "asc" }, { title: "asc" }]
       : filters.sort === "title_asc"

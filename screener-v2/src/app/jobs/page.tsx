@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { ArrowRight, BriefcaseBusiness, Building2, FileText, UserRoundSearch } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
@@ -47,7 +48,7 @@ export default async function PublicJobsPage({
       }
     }
 
-    return `/jobs${next.toString() ? `?${next.toString()}` : ""}` as const;
+    return `/jobs${next.toString() ? `?${next.toString()}` : ""}` as Route;
   };
 
   const resultsLabel = jobs.length === allJobs.length ? `${jobs.length} roles` : `Showing ${jobs.length} of ${allJobs.length} roles`;

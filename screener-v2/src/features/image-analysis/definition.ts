@@ -24,7 +24,7 @@ export const imageAnalysisAddonDefinition = {
       defaultRequiredPercent: 65,
       defaultWeight: 100,
       isActive: true,
-      sortOrder: 9
+      sortOrder: 12
     }
   ],
   buildDurationMinutes: () => 45,
