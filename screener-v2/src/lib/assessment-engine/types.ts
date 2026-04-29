@@ -28,9 +28,11 @@ export type ExamDefinitionId = RegistryExamDefinitionId;
 
 export type QuestionFormatId =
   | "single_select"
+  | "code_review"
   | "multi_select"
   | "ordering"
   | "matching"
+  | "scenario_mapping"
   | "fill_blank_constrained"
   | "log_analysis_single_select"
   | "trace_execution"
@@ -117,6 +119,7 @@ export interface FillBlankQuestion extends QuestionBase {
 
 export type Question =
   | (SingleLikeQuestion & { format: "single_select" })
+  | (SingleLikeQuestion & { format: "code_review" })
   | (SingleLikeQuestion & { format: "best_next_step" })
   | (SingleLikeQuestion & { format: "log_analysis_single_select" })
   | (SingleLikeQuestion & { format: "trace_execution" })
@@ -124,6 +127,7 @@ export type Question =
   | (SingleLikeQuestion & { format: "multi_select" })
   | (OrderingQuestion & { format: "ordering" })
   | (MatchingQuestion & { format: "matching" })
+  | (MatchingQuestion & { format: "scenario_mapping" })
   | (FillBlankQuestion & { format: "fill_blank_constrained" });
 
 export interface CompositeOption {

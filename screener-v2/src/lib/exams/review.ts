@@ -11,9 +11,11 @@ import type { PracticalSubtask } from "@/features/practical/packs";
 
 const reviewFormatLabels: Record<string, string> = {
   single_select: "Single select",
+  code_review: "Code review",
   multi_select: "Multi select",
   ordering: "Ordering",
   matching: "Matching",
+  scenario_mapping: "Scenario mapping",
   fill_blank_constrained: "Fill in the blank",
   log_analysis_single_select: "Log analysis",
   trace_execution: "Trace execution",
@@ -107,6 +109,7 @@ function pairLines(
 function coreCandidateAnswerLines(question: Question, answer: unknown) {
   switch (question.format) {
     case "single_select":
+    case "code_review":
     case "best_next_step":
     case "log_analysis_single_select":
     case "trace_execution":
@@ -117,6 +120,7 @@ function coreCandidateAnswerLines(question: Question, answer: unknown) {
     case "ordering":
       return orderedItemLines(question.items ?? [], answer);
     case "matching":
+    case "scenario_mapping":
       return pairLines(
         question.leftItems ?? [],
         answer && typeof answer === "object" ? (answer as Record<string, string>) : {},
@@ -134,6 +138,7 @@ function coreCandidateAnswerLines(question: Question, answer: unknown) {
 function coreExpectedAnswerLines(question: Question) {
   switch (question.format) {
     case "single_select":
+    case "code_review":
     case "best_next_step":
     case "log_analysis_single_select":
     case "trace_execution":
@@ -143,6 +148,7 @@ function coreExpectedAnswerLines(question: Question) {
     case "ordering":
       return orderedItemLines(question.items ?? [], question.correctOrder ?? []);
     case "matching":
+    case "scenario_mapping":
       return pairLines(question.leftItems ?? [], question.correctPairs ?? {}, (value) => value);
     case "fill_blank_constrained":
       return (question.acceptedAnswers ?? []).map(String);

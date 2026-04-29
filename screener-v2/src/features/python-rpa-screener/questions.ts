@@ -34,7 +34,12 @@ function choiceQuestion(args: {
   difficulty: 2 | 3 | 4;
   format?: Extract<
     Question["format"],
-    "single_select" | "best_next_step" | "log_analysis_single_select" | "trace_execution" | "case_triage"
+    | "single_select"
+    | "code_review"
+    | "best_next_step"
+    | "log_analysis_single_select"
+    | "trace_execution"
+    | "case_triage"
   >;
   prompt: string;
   promptBlocks?: PromptBlock[];
@@ -124,6 +129,7 @@ function matchingQuestion(args: {
   id: string;
   category: string;
   difficulty: 2 | 3 | 4;
+  format?: Extract<Question["format"], "matching" | "scenario_mapping">;
   prompt: string;
   promptBlocks?: PromptBlock[];
   leftItems: string[];
@@ -137,7 +143,7 @@ function matchingQuestion(args: {
       id: args.id,
       category: args.category,
       difficulty: args.difficulty,
-      format: "matching",
+      format: args.format ?? "matching",
       prompt: args.prompt,
       explanation: args.explanation,
       rationale: args.rationale,
@@ -155,12 +161,13 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q1",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "A submit times out and duplicate posting is possible. What is the best next action?",
+    prompt:
+      "A payment is submitted in a system. After clicking Submit, the screen times out. The payment may still have gone through in the background. Retrying right away could create a duplicate payment. What should be done next?",
     options: [
-      "Retry the transaction once, then escalate if it fails again",
-      "Refresh the page and repeat the submit step",
-      "Verify completion state using external identifiers before replaying",
-      "Route the item for manual review without checking target-system state"
+      "Retry once, then escalate if it fails again",
+      "Refresh the page and submit again",
+      "Check whether the payment already went through before trying again",
+      "Send it for manual review immediately without checking"
     ],
     correctAnswer: "C",
     explanation: "The safest next step is to verify whether the first submit already completed before any replay.",
@@ -185,12 +192,13 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q3",
     category: "Queue design",
     difficulty: 4,
-    prompt: "If line 28 fails, the first 27 successful updates must not repeat. What design is best?",
+    prompt:
+      "An invoice is processed line by line. The process fails at line 28, but lines 1 to 27 may already have been completed. If the process runs again, those completed lines must not be repeated. What is the best design?",
     options: [
-      "Keep one queue item per invoice and restart the full item on any failure",
-      "Split work so completed line-item progress can be preserved safely",
-      "Keep one queue item and increase retry count for line-item failures",
-      "Route all partial-failure invoices directly to manual handling"
+      "Restart the whole invoice from the beginning every time",
+      "Design it so completed lines are saved and not repeated on retry",
+      "Keep the same design and just increase retries",
+      "Send every partial failure to manual review"
     ],
     correctAnswer: "B",
     explanation: "The boundary should preserve proven progress so completed line items are not replayed.",
@@ -215,7 +223,9 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q5",
     category: "Code review",
     difficulty: 4,
-    prompt: "The following is a snapshot from a Python automation script. What is the biggest design flaw?",
+    format: "code_review",
+    prompt:
+      "Python snippet:\nfor _ in range(3):\n    try:\n        login()\n        open_case(case_id)\n        submit_adjustment(case_id, amount)\n        mark_success(case_id)\n        break\n    except Exception:\n        time.sleep(2)\n\nWhat is the biggest design flaw?",
     options: [
       "time.sleep(2) should be replaced with an explicit wait",
       "The loop may repeat external side effects after partial success",
@@ -224,24 +234,15 @@ const seniorQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "Retrying a block that may already have caused an external side effect can create duplicates or corrupted state.",
-    rationale: "Tests recognition of replay-unsafe retry logic.",
-    logSnippet: [
-      "for _ in range(3):",
-      "    try:",
-      "        login()",
-      "        open_case(case_id)",
-      "        submit_adjustment(case_id, amount)",
-      "        mark_success(case_id)",
-      "        break",
-      "    except Exception:",
-      "        time.sleep(2)"
-    ].join("\n")
+    rationale: "Tests recognition of replay-unsafe retry logic."
   }),
   choiceQuestion({
     id: "python_rpa_senior_q6",
     category: "Security and configuration",
     difficulty: 2,
-    prompt: "The following is a snapshot from a Python automation script being prepared for production use. What is the main issue?",
+    format: "code_review",
+    prompt:
+      "Python snippet prepared for production:\nBASE_URL = 'https://prod.portal.local'\nAPI_KEY = 'sk-live-123'\nMAX_RETRY = 3\n\nWhat is the main issue?",
     options: [
       "Keep the values in code, but restrict repository access to the delivery team",
       "Move the values to config / environment or approved secrets storage",
@@ -250,16 +251,15 @@ const seniorQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "Production URLs and API keys should not be hardcoded in source code.",
-    rationale: "Tests configuration and secrets hygiene.",
-    logSnippet: ['BASE_URL = "https://prod.portal.local"', 'API_KEY = "sk-live-123"', "MAX_RETRY = 3"].join(
-      "\n"
-    )
+    rationale: "Tests configuration and secrets hygiene."
   }),
   choiceQuestion({
     id: "python_rpa_senior_q7",
     category: "Security and data access",
     difficulty: 3,
-    prompt: "The following is a snapshot from a Python automation script that builds a database query from incoming input. What is the main problem?",
+    format: "code_review",
+    prompt:
+      "Python snippet:\nquery = f\"SELECT * FROM claims WHERE claim_id = '{claim_id}'\"\ncursor.execute(query)\n\nWhat is the main problem?",
     options: [
       "Validate the input format and keep the same query construction",
       "Escape the input before building the SQL string",
@@ -268,17 +268,15 @@ const seniorQuestions: Question[] = [
     ],
     correctAnswer: "C",
     explanation: "Concatenating untrusted input into SQL is an injection risk.",
-    rationale: "Tests secure query handling.",
-    logSnippet: [`query = f"SELECT * FROM claims WHERE claim_id = '{claim_id}'"`, "cursor.execute(query)"].join(
-      "\n"
-    )
+    rationale: "Tests secure query handling."
   }),
   choiceQuestion({
     id: "python_rpa_senior_q8",
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "The following runtime log was captured during an unattended run. What is the most likely issue?",
+    prompt:
+      "Runtime log:\n10:14:21 Search results loaded\n10:14:22 Found 8 rows\n10:14:22 Clicking selected row\n10:14:22 StaleElementReferenceException\n10:14:23 Grid refreshed after sort completed\n\nWhat is the most likely issue?",
     options: [
       "The login session expired before the click",
       "The row reference was captured before the grid finished re-rendering",
@@ -287,21 +285,15 @@ const seniorQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "The stale element followed a grid refresh, so the row reference was likely captured before the DOM settled.",
-    rationale: "Tests runtime diagnosis from Selenium artifacts.",
-    logSnippet: [
-      "10:14:21 Search results loaded",
-      "10:14:22 Found 8 rows",
-      "10:14:22 Clicking selected row",
-      "10:14:22 StaleElementReferenceException",
-      "10:14:23 Grid refreshed after sort completed"
-    ].join("\n")
+    rationale: "Tests runtime diagnosis from Selenium artifacts."
   }),
   choiceQuestion({
     id: "python_rpa_senior_q9",
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "The following runtime log was captured during an unattended run. What is the best conclusion?",
+    prompt:
+      "Runtime log:\n11:08:10 Button located: Submit\n11:08:10 element_to_be_clickable passed\n11:08:10 Click attempted\n11:08:10 ElementClickInterceptedException\n11:08:11 Screenshot shows loading mask over form\n\nWhat is the best conclusion?",
     options: [
       "The selector is invalid",
       "The click happened before the UI was fully ready",
@@ -310,26 +302,20 @@ const seniorQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "A loading mask intercepting the click means the UI was not truly ready for interaction.",
-    rationale: "Tests diagnosis of intercepted clicks.",
-    logSnippet: [
-      "11:08:10 Button located: Submit",
-      "11:08:10 element_to_be_clickable passed",
-      "11:08:10 Click attempted",
-      "11:08:10 ElementClickInterceptedException",
-      "11:08:11 Screenshot shows loading mask over form"
-    ].join("\n")
+    rationale: "Tests diagnosis of intercepted clicks."
   }),
   multiSelectQuestion({
     id: "python_rpa_senior_q10",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "A submit times out. Which checks should happen before deciding what to do next? Select all that apply.",
+    prompt:
+      "A claim is submitted through a web system. The screen times out, but the claim may still have been submitted in the background. Before deciding whether to retry or stop, what should be checked? Select all that apply.",
     options: [
-      "Search the target system using transaction identifiers",
-      "Check for persisted confirmation or reference numbers",
-      "Re-run immediately to protect SLA",
-      "Review logs and screenshots for post-submit evidence",
-      "Mark success because the click happened"
+      "Search the target system using the claim or transaction ID",
+      "Check whether a confirmation number was created",
+      "Retry immediately to save time",
+      "Review logs or screenshots for proof of what happened",
+      "Mark it successful because the submit button was clicked"
     ],
     correctAnswer: ["A", "B", "D"],
     explanation: "Replay decisions should use external-state checks and supporting evidence, not assumptions or SLA pressure.",
@@ -339,7 +325,8 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q11",
     category: "Testing",
     difficulty: 3,
-    prompt: 'A team says its Python automation is "well tested." Which expectations are strongest for production-grade testing? Select all that apply.',
+    prompt:
+      "A team says its Python automation is 'well tested.' Which expectations are strongest for production-grade testing? Select all that apply.",
     options: [
       "Edge cases should be explicitly tested",
       "Tests should be deterministic and not depend on live external services",
@@ -396,10 +383,10 @@ const seniorQuestions: Question[] = [
     difficulty: 4,
     prompt: "After a submit timeout, what is the best order of actions?",
     items: [
-      "Search the target system for evidence",
-      "Decide whether replay is safe",
-      "Collect logs, screenshots, and reference data",
-      "Classify the outcome as success, failure, or uncertain"
+      "1. Search the target system for evidence",
+      "2. Decide whether replay is safe",
+      "3. Collect logs, screenshots, and reference data",
+      "4. Classify the outcome as success, failure, or uncertain"
     ],
     correctOrder: [2, 0, 3, 1],
     explanation: "Collect evidence first, search for completion signals, classify the state, then decide whether replay is safe.",
@@ -411,10 +398,10 @@ const seniorQuestions: Question[] = [
     difficulty: 2,
     prompt: "Before processing an inbound file, what is the best order of checks?",
     items: [
-      "Check readiness signal",
-      "Validate required columns",
-      "Confirm control totals or record counts if available",
-      "Enqueue transactions"
+      "1. Check readiness signal",
+      "2. Validate required columns",
+      "3. Confirm control totals or record counts if available",
+      "4. Enqueue transactions"
     ],
     correctOrder: [0, 1, 2, 3],
     explanation: "The file should be proven ready and valid before work is enqueued.",
@@ -424,6 +411,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q16",
     category: "Scenario mapping",
     difficulty: 3,
+    format: "scenario_mapping",
     prompt: "Match each scenario to the best next action.",
     leftItems: [
       "1. Session expired before submit",
@@ -447,6 +435,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q17",
     category: "Code quality",
     difficulty: 2,
+    format: "scenario_mapping",
     prompt: "Match each codebase situation to the best improvement.",
     leftItems: [
       "1. main.py contains all business logic",
@@ -474,7 +463,7 @@ const seniorQuestions: Question[] = [
     category: "Observability",
     difficulty: 3,
     prompt:
-      'A Python bot fails after posting one of several transactions. The logs only show "started", "working", and "failed", with no transaction ID or last confirmed step. What is the biggest weakness?',
+      "A Python bot fails after posting one of several transactions. The logs only show 'started', 'working', and 'failed', with no transaction ID or last confirmed step. What is the biggest weakness?",
     options: [
       "The logs are too high-level to support safe recovery decisions",
       "The script should log less often to reduce noise in production",
@@ -489,7 +478,7 @@ const seniorQuestions: Question[] = [
     id: "python_rpa_senior_q19",
     category: "Input validation",
     difficulty: 2,
-    prompt: "A required amount field contains `(1,250.00)`. What matters most?",
+    prompt: "A required amount field contains (1,250.00). What matters most?",
     options: [
       "The column exists",
       "The value is parsed and validated correctly",
@@ -521,7 +510,7 @@ const seniorQuestions: Question[] = [
     difficulty: 2,
     prompt: "Which pattern is worst in production code?",
     options: [
-      'except Exception: logger.error("failed")',
+      "except Exception: logger.error('failed')",
       "except TimeoutError: retry()",
       "except ValueError as exc: raise InputError(...) from exc",
       "except Exception: pass"
@@ -537,12 +526,13 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q1",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "A submit times out and duplicate posting is possible. What is the best next action?",
+    prompt:
+      "A payment is submitted in a system. After clicking Submit, the screen times out. The payment may still have gone through in the background. Retrying right away could create a duplicate payment. What should be done next?",
     options: [
-      "Retry the transaction once, then escalate if it fails again",
-      "Refresh the page and repeat the submit step",
-      "Verify completion state using external identifiers before replaying",
-      "Route the item for manual review without checking target-system state"
+      "Retry once, then escalate if it fails again",
+      "Refresh the page and submit again",
+      "Check whether the payment already went through before trying again",
+      "Send it for manual review immediately without checking"
     ],
     correctAnswer: "C",
     explanation: "A lead should still expect external-state verification before any replay under uncertain completion.",
@@ -567,12 +557,13 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q3",
     category: "Queue design",
     difficulty: 4,
-    prompt: "If line 28 fails, the first 27 successful updates must not repeat. What design is best?",
+    prompt:
+      "An invoice is processed line by line. The process fails at line 28, but lines 1 to 27 may already have been completed. If the process runs again, those completed lines must not be repeated. What is the best design?",
     options: [
-      "Keep one queue item per invoice and restart the full item on any failure",
-      "Split work so completed line-item progress can be preserved safely",
-      "Keep one queue item and increase retry count for line-item failures",
-      "Route all partial-failure invoices directly to manual handling"
+      "Restart the whole invoice from the beginning every time",
+      "Design it so completed lines are saved and not repeated on retry",
+      "Keep the same design and just increase retries",
+      "Send every partial failure to manual review"
     ],
     correctAnswer: "B",
     explanation: "The design should preserve safe progress rather than replay proven work.",
@@ -582,7 +573,9 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q4",
     category: "Code review",
     difficulty: 4,
-    prompt: "The following is a snapshot from a Python automation script. What is the biggest design flaw?",
+    format: "code_review",
+    prompt:
+      "Python snippet:\nfor _ in range(3):\n    try:\n        login()\n        open_case(case_id)\n        submit_adjustment(case_id, amount)\n        mark_success(case_id)\n        break\n    except Exception:\n        time.sleep(2)\n\nWhat is the biggest design flaw?",
     options: [
       "time.sleep(2) should be replaced with an explicit wait",
       "The loop may repeat external side effects after partial success",
@@ -591,24 +584,15 @@ const leadQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "Leads should recognize replay-unsafe retries as the most serious flaw here.",
-    rationale: "Carries over critical code-review judgment on non-idempotent retries.",
-    logSnippet: [
-      "for _ in range(3):",
-      "    try:",
-      "        login()",
-      "        open_case(case_id)",
-      "        submit_adjustment(case_id, amount)",
-      "        mark_success(case_id)",
-      "        break",
-      "    except Exception:",
-      "        time.sleep(2)"
-    ].join("\n")
+    rationale: "Carries over critical code-review judgment on non-idempotent retries."
   }),
   choiceQuestion({
     id: "python_rpa_lead_q5",
     category: "Security and data access",
     difficulty: 3,
-    prompt: "The following is a snapshot from a Python automation script that builds a database query from incoming input. What is the main problem?",
+    format: "code_review",
+    prompt:
+      "Python snippet:\nquery = f\"SELECT * FROM claims WHERE claim_id = '{claim_id}'\"\ncursor.execute(query)\n\nWhat is the main problem?",
     options: [
       "Validate the input format and keep the same query construction",
       "Escape the input before building the SQL string",
@@ -617,17 +601,15 @@ const leadQuestions: Question[] = [
     ],
     correctAnswer: "C",
     explanation: "Leads should still flag direct SQL injection risk immediately.",
-    rationale: "Carries over secure input-handling expectations.",
-    logSnippet: [`query = f"SELECT * FROM claims WHERE claim_id = '{claim_id}'"`, "cursor.execute(query)"].join(
-      "\n"
-    )
+    rationale: "Carries over secure input-handling expectations."
   }),
   choiceQuestion({
     id: "python_rpa_lead_q6",
     category: "Selenium diagnostics",
     difficulty: 3,
     format: "log_analysis_single_select",
-    prompt: "The following runtime log was captured during an unattended run. What is the best conclusion?",
+    prompt:
+      "Runtime log:\n11:08:10 Button located: Submit\n11:08:10 element_to_be_clickable passed\n11:08:10 Click attempted\n11:08:10 ElementClickInterceptedException\n11:08:11 Screenshot shows loading mask over form\n\nWhat is the best conclusion?",
     options: [
       "The selector is invalid",
       "The click happened before the UI was fully ready",
@@ -636,26 +618,20 @@ const leadQuestions: Question[] = [
     ],
     correctAnswer: "B",
     explanation: "The artifact shows a readiness problem, not a selector or authentication issue.",
-    rationale: "Carries over required Selenium runtime diagnosis.",
-    logSnippet: [
-      "11:08:10 Button located: Submit",
-      "11:08:10 element_to_be_clickable passed",
-      "11:08:10 Click attempted",
-      "11:08:10 ElementClickInterceptedException",
-      "11:08:11 Screenshot shows loading mask over form"
-    ].join("\n")
+    rationale: "Carries over required Selenium runtime diagnosis."
   }),
   multiSelectQuestion({
     id: "python_rpa_lead_q7",
     category: "Completion safety",
     difficulty: 4,
-    prompt: "A submit times out. Which checks should happen before deciding what to do next? Select all that apply.",
+    prompt:
+      "A claim is submitted through a web system. The screen times out, but the claim may still have been submitted in the background. Before deciding whether to retry or stop, what should be checked? Select all that apply.",
     options: [
-      "Search the target system using transaction identifiers",
-      "Check for persisted confirmation or reference numbers",
-      "Re-run immediately to protect SLA",
-      "Review logs and screenshots for post-submit evidence",
-      "Mark success because the click happened"
+      "Search the target system using the claim or transaction ID",
+      "Check whether a confirmation number was created",
+      "Retry immediately to save time",
+      "Review logs or screenshots for proof of what happened",
+      "Mark it successful because the submit button was clicked"
     ],
     correctAnswer: ["A", "B", "D"],
     explanation: "Leads should still require target-system checks and evidence before replaying uncertain transactions.",
@@ -710,12 +686,13 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q11",
     category: "Operating model",
     difficulty: 3,
-    prompt: "Pre-processing is stable, but final submit is unreliable. What is the best temporary model?",
+    prompt:
+      "A bot handles claims. The early steps work well, but the final submit step is unreliable and may fail or create duplicates. Until that final step is fixed, what is the best temporary approach?",
     options: [
-      "Keep the bot fully unattended to preserve throughput",
-      "Stop the process completely until a new version is ready",
-      "Automate safe steps and route uncertain completion to manual review",
-      "Run the bot twice and compare outputs"
+      "Keep the bot fully unattended so work continues faster",
+      "Stop the whole process until the fix is ready",
+      "Let the bot do the safe steps, then send the final uncertain step for manual review",
+      "Run the bot twice and compare the results"
     ],
     correctAnswer: "C",
     explanation: "A temporary model should preserve safe automation while containing the unsafe completion step.",
@@ -865,7 +842,7 @@ const leadQuestions: Question[] = [
     category: "Supportability",
     difficulty: 4,
     prompt:
-      'A production bot keeps failing at the submit step. The shared framework catches the exception, logs "submit failed," and moves on, but support cannot tell which transactions may already have been posted. What is the strongest fix?',
+      "A production bot keeps failing at the submit step. The shared framework catches the exception, logs 'submit failed,' and moves on, but support cannot tell which transactions may already have been posted. What is the strongest fix?",
     options: [
       "Add more screenshots around the submit step",
       "Retry failed submits automatically after a delay",
@@ -882,10 +859,10 @@ const leadQuestions: Question[] = [
     difficulty: 4,
     prompt: "During an unsafe replay incident, what is the best order of lead actions?",
     items: [
-      "Gather evidence and determine impact scope",
-      "Block unsafe replay paths",
-      "Define a temporary operating model",
-      "Approve a long-term design fix"
+      "1. Gather evidence and determine impact scope",
+      "2. Block unsafe replay paths",
+      "3. Define a temporary operating model",
+      "4. Approve a long-term design fix"
     ],
     correctOrder: [0, 1, 2, 3],
     explanation: "Scope and evidence come first, then immediate containment, then the temporary model, then the long-term fix.",
@@ -897,10 +874,10 @@ const leadQuestions: Question[] = [
     difficulty: 4,
     prompt: "Before approving deployment of a risky automation fix, what is the best order of steps?",
     items: [
-      "Confirm the unsafe scenario is addressed or isolated",
-      "Define rollback or containment path",
-      "Communicate support handling expectations",
-      "Approve deployment"
+      "1. Confirm the unsafe scenario is addressed or isolated",
+      "2. Define rollback or containment path",
+      "3. Communicate support handling expectations",
+      "4. Approve deployment"
     ],
     correctOrder: [0, 1, 2, 3],
     explanation: "First confirm the risk is addressed or isolated, then define containment, communicate support expectations, and only then approve deployment.",
@@ -910,11 +887,12 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q24",
     category: "Stakeholder management",
     difficulty: 3,
+    format: "scenario_mapping",
     prompt: "Match each stakeholder request to the best lead response.",
     leftItems: [
-      '1. "Retry all submit timeouts automatically"',
-      '2. "Process the file even if it may still be uploading"',
-      '3. "Keep full payloads and credentials in logs for debugging"'
+      "1. Retry all submit timeouts automatically",
+      "2. Process the file even if it may still be uploading",
+      "3. Keep full payloads and credentials in logs for debugging"
     ],
     rightItems: [
       "a. Require safe completion checks before enabling replay",
@@ -922,11 +900,9 @@ const leadQuestions: Question[] = [
       "c. Keep logs useful but sanitized"
     ],
     correctPairs: {
-      '1. "Retry all submit timeouts automatically"':
-        "a. Require safe completion checks before enabling replay",
-      '2. "Process the file even if it may still be uploading"':
-        "b. Require ingestion controls before unattended use",
-      '3. "Keep full payloads and credentials in logs for debugging"': "c. Keep logs useful but sanitized"
+      "1. Retry all submit timeouts automatically": "a. Require safe completion checks before enabling replay",
+      "2. Process the file even if it may still be uploading": "b. Require ingestion controls before unattended use",
+      "3. Keep full payloads and credentials in logs for debugging": "c. Keep logs useful but sanitized"
     },
     explanation: "The best lead response sets boundaries around safety, ingestion controls, and sanitized observability.",
     rationale: "Tests stakeholder-response mapping."
@@ -935,6 +911,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q25",
     category: "Architecture and standards",
     difficulty: 3,
+    format: "scenario_mapping",
     prompt: "Match each architecture or team-standard situation to the best lead response.",
     leftItems: [
       "1. Main script contains orchestration, DB logic, UI logic, and email logic together",
@@ -961,7 +938,7 @@ const leadQuestions: Question[] = [
     id: "python_rpa_lead_q26",
     category: "Input validation",
     difficulty: 2,
-    prompt: "A required amount field contains `(1,250.00)`. What matters most?",
+    prompt: "A required amount field contains (1,250.00). What matters most?",
     options: [
       "The column exists",
       "The value is parsed and validated correctly",
@@ -993,7 +970,7 @@ const leadQuestions: Question[] = [
     difficulty: 2,
     prompt: "Which pattern is worst in production code?",
     options: [
-      'except Exception: logger.error("failed")',
+      "except Exception: logger.error('failed')",
       "except TimeoutError: retry()",
       "except ValueError as exc: raise InputError(...) from exc",
       "except Exception: pass"

@@ -12,11 +12,25 @@ import { singleSelectDef } from "@/lib/question-types/single-select";
 import { traceExecutionDef } from "@/lib/question-types/trace-execution";
 import type { QuestionTypeDef } from "@/lib/question-types/types";
 
+const codeReviewDef: QuestionTypeDef<any, number, { lines: string[] }> = {
+  ...singleSelectDef,
+  type: "code_review",
+  runtimeLabel: "Code review"
+};
+
+const scenarioMappingDef: QuestionTypeDef<any, Record<string, string>, { lines: string[] }> = {
+  ...matchingDef,
+  type: "scenario_mapping",
+  runtimeLabel: "Scenario mapping"
+};
+
 export const questionRegistry: Record<QuestionFormatId, QuestionTypeDef<any, any, any>> = {
   single_select: singleSelectDef,
+  code_review: codeReviewDef,
   multi_select: multiSelectDef,
   ordering: orderingDef,
   matching: matchingDef,
+  scenario_mapping: scenarioMappingDef,
   fill_blank_constrained: fillBlankDef,
   log_analysis_single_select: logAnalysisDef,
   trace_execution: traceExecutionDef,
@@ -30,6 +44,7 @@ export const registeredQuestionFormatIds = Object.keys(questionRegistry).sort() 
 
 export const formatAliasMap: Record<string, QuestionFormatId> = {
   single_choice: "single_select",
+  code_review_single_choice: "code_review",
   log_analysis_single_choice: "log_analysis_single_select",
   match_pairs: "matching",
   fill_in_blank_constrained: "fill_blank_constrained"

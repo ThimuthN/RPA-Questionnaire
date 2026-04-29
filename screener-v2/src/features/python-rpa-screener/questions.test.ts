@@ -28,11 +28,13 @@ describe("python rpa screener question sets", () => {
     );
 
     expect(formatCounts).toEqual({
+      code_review: 3,
       log_analysis_single_select: 2,
-      matching: 3,
+      matching: 1,
       multi_select: 2,
       ordering: 2,
-      single_select: 12
+      scenario_mapping: 2,
+      single_select: 9
     });
   });
 
@@ -48,11 +50,12 @@ describe("python rpa screener question sets", () => {
     );
 
     expect(formatCounts).toEqual({
+      code_review: 2,
       log_analysis_single_select: 1,
-      matching: 2,
       multi_select: 2,
       ordering: 2,
-      single_select: 24
+      scenario_mapping: 2,
+      single_select: 22
     });
   });
 

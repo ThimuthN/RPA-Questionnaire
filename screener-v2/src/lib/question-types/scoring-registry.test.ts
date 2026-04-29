@@ -15,11 +15,13 @@ describe("question scoring registry", () => {
     expect(Object.keys(questionScoringRegistry).sort()).toEqual([
       "best_next_step",
       "case_triage",
+      "code_review",
       "fill_blank_constrained",
       "log_analysis_single_select",
       "matching",
       "multi_select",
       "ordering",
+      "scenario_mapping",
       "single_select",
       "trace_execution"
     ]);

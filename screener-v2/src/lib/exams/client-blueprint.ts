@@ -18,6 +18,7 @@ function sanitizeCoreQuestion(question: Question): Question {
         rationale: ""
       };
     case "matching":
+    case "scenario_mapping":
       return {
         ...question,
         correctPairs: {},
