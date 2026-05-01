@@ -64,7 +64,7 @@ export default async function RootLayout({
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
           <WorkspaceRail viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
           <div className="min-w-0 flex-1">
-            <header className="sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">
+            <header className="northstar-ribbon-shell sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">
               <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5">
                 <Link href="/" className="transition hover:opacity-95">
                   <AppLogo compact />

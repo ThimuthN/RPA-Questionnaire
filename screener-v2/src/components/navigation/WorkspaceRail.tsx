@@ -37,7 +37,7 @@ export function WorkspaceRail({
   return (
     <aside
       className={cn(
-        "hidden md:flex md:sticky md:top-0 md:h-screen md:flex-col md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
+        "northstar-ribbon-shell hidden md:flex md:sticky md:top-0 md:h-screen md:flex-col md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
         collapsed ? "md:w-[92px]" : "md:w-[280px]"
       )}
     >
