@@ -35,11 +35,15 @@ export function WorkspaceRail({
   }, [collapsed]);
 
   return (
-    <div className={cn("hidden md:block md:shrink-0", collapsed ? "md:w-[92px]" : "md:w-[280px]")}>
+    <div
+      className={cn(
+        "northstar-ribbon-shell hidden md:block md:shrink-0 md:self-stretch md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
+        collapsed ? "md:w-[92px]" : "md:w-[280px]"
+      )}
+    >
       <aside
         className={cn(
-          "northstar-ribbon-shell fixed inset-y-0 left-0 z-20 hidden h-screen max-h-screen md:flex md:flex-col md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
-          collapsed ? "md:w-[92px]" : "md:w-[280px]"
+          "hidden md:sticky md:top-0 md:flex md:h-screen md:max-h-screen md:flex-col"
         )}
       >
         <div className="flex h-full min-h-full flex-col gap-6 px-4 py-5">
@@ -52,7 +56,7 @@ export function WorkspaceRail({
                 type="button"
                 aria-label="Collapse sidebar"
                 onClick={() => setCollapsed(true)}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:bg-[color:var(--app-surface-soft)]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10 text-[color:var(--app-scene-text)] shadow-[var(--app-shadow-soft)] transition hover:bg-white/18 hover:text-white"
               >
                 <PanelLeftClose className="h-4 w-4" />
               </button>
@@ -62,7 +66,7 @@ export function WorkspaceRail({
                 type="button"
                 aria-label="Expand sidebar"
                 onClick={() => setCollapsed(false)}
-                className="absolute left-1/2 top-20 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:bg-[color:var(--app-surface-soft)]"
+                className="absolute left-1/2 top-20 inline-flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/16 bg-white/10 text-[color:var(--app-scene-text)] shadow-[var(--app-shadow-soft)] transition hover:bg-white/18 hover:text-white"
               >
                 <PanelLeftOpen className="h-4 w-4" />
               </button>
@@ -86,7 +90,7 @@ export function WorkspaceRail({
                       collapsed ? "justify-center px-0 py-3" : "gap-3 px-4 py-3",
                       active
                         ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
-                        : "border-transparent text-[color:var(--app-muted)] hover:border-[color:var(--app-border)] hover:bg-[color:var(--app-surface)] hover:text-[color:var(--app-heading)]"
+                        : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/18 hover:bg-white/10 hover:text-white"
                     )}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
