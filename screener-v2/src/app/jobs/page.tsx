@@ -59,7 +59,7 @@ export default async function PublicJobsPage({
       tone="page"
       eyebrow="Northstar careers"
       title="Find your next role at Northstar"
-      subtitle="Browse open positions, review the role details, and apply from the same page with a clean public application flow."
+      subtitle="Browse open roles, check the details, and apply online."
     >
       <div className="space-y-6">
         {jobs.length === 0 ? (
@@ -78,11 +78,10 @@ export default async function PublicJobsPage({
                   </div>
                   <div className="space-y-3">
                     <h2 className="max-w-3xl text-4xl font-display leading-[1.02] text-[color:var(--app-heading)] md:text-[3.35rem]">
-                      Explore public openings and apply without bouncing between pages.
+                      Explore open roles and apply in one place.
                     </h2>
                     <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)] md:text-[15px]">
-                      The experience is built to feel familiar: review the role, scan the essentials, and submit one
-                      clean application directly from the job page.
+                      Open a role, read the essentials, and send your application from the same page.
                     </p>
                   </div>
 
@@ -97,7 +96,7 @@ export default async function PublicJobsPage({
                       <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                         Application flow
                       </p>
-                      <p className="mt-2 text-base text-[color:var(--app-heading)]">Direct from each role page</p>
+                      <p className="mt-2 text-base text-[color:var(--app-heading)]">Apply from the role page</p>
                     </div>
                     <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                       <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
@@ -151,28 +150,27 @@ export default async function PublicJobsPage({
                       <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                         Candidate experience
                       </p>
-                      <h3 className="text-2xl text-[color:var(--app-heading)]">A clear, modern apply flow</h3>
+                      <h3 className="text-2xl text-[color:var(--app-heading)]">Simple online application</h3>
                       <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                        Everything candidates need is surfaced up front so the role page feels more like a polished
-                        hiring platform than an internal tool.
+                        Candidates can review the role and apply without extra steps.
                       </p>
                     </div>
                     <div className="space-y-3">
                       {[
                         {
                           icon: FileText,
-                          title: "Read the role quickly",
-                          body: "Each listing leads to a dedicated page with the core details and full description."
+                          title: "View role details",
+                          body: "Each role has its own page with the key details and full description."
                         },
                         {
                           icon: UserRoundSearch,
-                          title: "Apply in one place",
-                          body: "Candidates can share contact details, upload a resume, and leave a note in one form."
+                          title: "Apply online",
+                          body: "Add your details, upload a resume, and send your application in one form."
                         },
                         {
                           icon: Building2,
-                          title: "Stay on the brand page",
-                          body: "The whole public flow lives under Northstar without extra redirects or log-in steps."
+                          title: "Stay on Northstar",
+                          body: "The full application flow stays on the Northstar careers site."
                         }
                       ].map((item) => {
                         const Icon = item.icon;
@@ -304,14 +302,14 @@ export default async function PublicJobsPage({
 
                       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--app-border)] pt-4">
                         <div className="space-y-1">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">Dedicated role page</p>
+                          <p className="text-sm font-medium text-[color:var(--app-heading)]">Role page</p>
                           <p className="text-sm text-[color:var(--app-muted)]">
-                            Review the details first, then apply from the same screen.
+                            View the job details and apply from the same page.
                           </p>
                         </div>
                         <Link href={`/jobs/${job.slug}`}>
                           <Button>
-                            View details
+                            View role
                             <ArrowRight className="h-4 w-4" />
                           </Button>
                         </Link>
@@ -326,11 +324,10 @@ export default async function PublicJobsPage({
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                     Careers overview
                   </p>
-                  <h3 className="text-2xl text-[color:var(--app-heading)]">Apply through a clean public workflow</h3>
+                  <h3 className="text-2xl text-[color:var(--app-heading)]">Simple hiring page</h3>
                 </div>
                 <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                  The board is designed to be shareable. Send candidates here, let them open a role, and keep the
-                  application experience simple and focused.
+                  Share this page with candidates so they can open a role and apply online.
                 </p>
                 <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
                   <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
@@ -338,10 +335,9 @@ export default async function PublicJobsPage({
                     <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
                   </div>
                   <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Best way to share</p>
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">How to share</p>
                     <p className="mt-2 text-sm leading-6 text-[color:var(--app-muted)]">
-                      Send candidates to the full careers page or directly to a specific role link when you already know
-                      the opening.
+                      Share the careers page or send a direct role link.
                     </p>
                   </div>
                 </div>

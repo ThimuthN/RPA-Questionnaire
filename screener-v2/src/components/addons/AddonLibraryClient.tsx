@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import type {
   AddonCatalogEntry,
@@ -123,7 +122,6 @@ export function AddonLibraryClient({
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
 }) {
-  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
   const [showInactive, setShowInactive] = useState(false);
@@ -315,6 +313,14 @@ export function AddonLibraryClient({
     setEditingPresetId(preset.id);
     setPresetForm(presetToForm(preset));
     setPresetModalOpen(true);
+  }
+
+  function openAddonReview(addonId: string) {
+    if (!addonId) {
+      return;
+    }
+
+    window.location.assign(`/addons/${addonId}/review`);
   }
 
   function closePresetEditor() {
@@ -510,7 +516,7 @@ export function AddonLibraryClient({
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => router.push(`/addons/${editingAddonId}/review`)}
+                    onClick={() => openAddonReview(editingAddonId)}
                   >
                     Review
                   </Button>
@@ -662,7 +668,7 @@ export function AddonLibraryClient({
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => router.push(`/addons/${editingAddonId}/review`)}
+                    onClick={() => openAddonReview(editingAddonId)}
                   >
                     Review
                   </Button>

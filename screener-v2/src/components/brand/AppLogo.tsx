@@ -45,9 +45,13 @@ export function AppLogo({
   compact?: boolean;
 }) {
   return (
-    <div className={cn("flex shrink-0 items-center gap-3 min-[1080px]:min-w-[300px]", className)}>
-      <NorthstarCompactMark />
-      {!compact ? <NorthstarWordmark /> : null}
+    <div
+      className={cn(
+        compact ? "flex shrink-0 items-center" : "flex shrink-0 items-center min-[1080px]:min-w-[248px]",
+        className
+      )}
+    >
+      {compact ? <NorthstarCompactMark /> : <NorthstarWordmark />}
     </div>
   );
 }

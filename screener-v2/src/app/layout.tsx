@@ -3,6 +3,7 @@ import Link from "next/link";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
+import { WorkspaceRail } from "@/components/navigation/WorkspaceRail";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { getAppSession } from "@/lib/auth/app-session";
 import "./globals.css";
@@ -60,16 +61,19 @@ export default async function RootLayout({
     <html lang="en" data-theme="light" suppressHydrationWarning>
       <body className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} bg-[color:var(--app-bg)] text-[color:var(--app-text)]`}>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)]">
-          <header className="sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl">
-            <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5 xl:gap-6">
-              <Link href="/" className="transition hover:opacity-95">
-                <AppLogo />
-              </Link>
-              <MainNav viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
-            </nav>
-          </header>
-          <main className="mx-auto w-full max-w-7xl px-4 py-8 md:py-10">{children}</main>
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
+          <WorkspaceRail viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
+          <div className="min-w-0 flex-1">
+            <header className="sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">
+              <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5">
+                <Link href="/" className="transition hover:opacity-95">
+                  <AppLogo compact />
+                </Link>
+                <MainNav viewer={session ? { email: session.email, name: session.name, role: session.role } : null} />
+              </nav>
+            </header>
+            <main className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-10">{children}</main>
+          </div>
           <ThemeToggle />
         </div>
       </body>

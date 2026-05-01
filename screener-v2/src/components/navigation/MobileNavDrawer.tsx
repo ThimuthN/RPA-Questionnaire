@@ -5,6 +5,7 @@ import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
 import { X } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { isNavItemActive } from "@/components/navigation/nav-config";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -55,18 +56,7 @@ export function MobileNavDrawer({
         <div className="mt-6 space-y-2">
           {items.map((item) => {
             const Icon = item.icon;
-            const href = item.href as string;
-            const active =
-              pathname === href ||
-              (href === "/jobs" && pathname.startsWith("/jobs")) ||
-              (href === "/results" && pathname.startsWith("/results/")) ||
-              (href === "/people/candidates" &&
-                (pathname.startsWith("/people") || pathname.startsWith("/candidates"))) ||
-              (href === "/addons" && pathname.startsWith("/addons")) ||
-              (href === "/assessments" &&
-                (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
-              (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
-              (href === "/users" && pathname.startsWith("/users"));
+            const active = isNavItemActive(pathname, item.href as string);
 
             return (
               <Link
