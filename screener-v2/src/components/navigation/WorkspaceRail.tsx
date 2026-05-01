@@ -38,11 +38,11 @@ export function WorkspaceRail({
     <div className={cn("hidden md:block md:shrink-0", collapsed ? "md:w-[92px]" : "md:w-[280px]")}>
       <aside
         className={cn(
-          "northstar-ribbon-shell fixed inset-y-0 left-0 z-20 hidden md:flex md:flex-col md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
+          "northstar-ribbon-shell fixed inset-y-0 left-0 z-20 hidden h-screen max-h-screen md:flex md:flex-col md:border-r md:border-[color:var(--app-border)] md:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_86%,white),var(--app-surface-soft))] md:backdrop-blur-xl",
           collapsed ? "md:w-[92px]" : "md:w-[280px]"
         )}
       >
-        <div className="flex h-full min-h-0 flex-col gap-6 px-4 py-5">
+        <div className="flex h-full min-h-full flex-col gap-6 px-4 py-5">
           <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between gap-3")}>
             <Link href="/" className="transition hover:opacity-95">
               <AppLogo compact={collapsed} />
@@ -96,7 +96,7 @@ export function WorkspaceRail({
               })}
             </nav>
 
-            <div className="mt-4 border-t border-[color:var(--app-border)] pt-4">
+            <div className="mt-auto -mx-4 border-t border-[color:var(--app-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.09))] px-4 pb-5 pt-4 backdrop-blur-md">
               {viewer ? (
                 <div className="space-y-3">
                   <div
