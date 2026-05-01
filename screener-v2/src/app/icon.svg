@@ -1,23 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
-    <radialGradient id="a" cx="32%" cy="28%" r="82%">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="22%" stop-color="#b9d5ff"/>
-      <stop offset="56%" stop-color="#2f86ff"/>
-      <stop offset="100%" stop-color="#050b16"/>
+    <radialGradient id="bgGlow" cx="30%" cy="24%" r="86%">
+      <stop offset="0%" stop-color="#8ab8ff" stop-opacity=".42"/>
+      <stop offset="42%" stop-color="#3a7194" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#173249" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="b" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#9bd4ff"/>
-      <stop offset="100%" stop-color="#12b3a8"/>
+    <linearGradient id="tile" x1="18%" y1="12%" x2="82%" y2="88%">
+      <stop offset="0%" stop-color="#6a92b0"/>
+      <stop offset="48%" stop-color="#3d6c8d"/>
+      <stop offset="100%" stop-color="#214762"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".2"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <rect width="128" height="128" rx="32" fill="#07111f"/>
-  <circle cx="64" cy="64" r="44" fill="none" stroke="#2f86ff" stroke-opacity=".22" stroke-width="4"/>
-  <circle cx="64" cy="64" r="31" fill="none" stroke="#12b3a8" stroke-opacity=".16" stroke-width="4"/>
-  <rect x="31" y="31" width="66" height="66" rx="24" fill="url(#a)"/>
-  <rect x="40" y="40" width="48" height="48" rx="18" fill="#08111f" fill-opacity=".78" stroke="#ffffff" stroke-opacity=".10"/>
-  <circle cx="52" cy="58" r="6" fill="#08111f" stroke="#cfe2ff" stroke-opacity=".18" stroke-width="4"/>
-  <circle cx="76" cy="58" r="6" fill="#08111f" stroke="#cfe2ff" stroke-opacity=".18" stroke-width="4"/>
-  <path d="M51 74c4 6 22 6 26 0" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="64" cy="19" r="10" fill="url(#b)"/>
+  <rect width="128" height="128" rx="32" fill="#122c40"/>
+  <rect width="128" height="128" rx="32" fill="url(#bgGlow)"/>
+  <rect x="18" y="18" width="92" height="92" rx="24" fill="url(#tile)"/>
+  <rect x="18" y="18" width="92" height="92" rx="24" fill="url(#shine)"/>
+  <rect x="18.5" y="18.5" width="91" height="91" rx="23.5" fill="none" stroke="rgba(255,255,255,.16)"/>
+  <g fill="#ffffff">
+    <path d="M26 30 103 93 59 54Z"/>
+    <path d="M55 58 72 18 72 54Z"/>
+    <path d="M61 60 98 45 73 63Z"/>
+    <path d="M60 67 67 111 71 66Z"/>
+  </g>
 </svg>
