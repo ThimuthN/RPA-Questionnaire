@@ -27,7 +27,7 @@ export interface CandidateWorkspaceItem extends CandidateListItem {
 export interface CandidateActivityItem {
   id: string;
   at: string;
-  kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone" | "application";
+  kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone" | "application" | "activity";
   title: string;
   detail: string;
 }
