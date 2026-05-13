@@ -93,7 +93,7 @@ export async function POST(
         body.status,
         body.notes,
         session.userId ?? undefined,
-        session.userName ?? undefined
+        session.name ?? undefined
       );
       return redirectToCandidate(request, id, "updated");
     }
