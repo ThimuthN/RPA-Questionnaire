@@ -156,7 +156,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
                       {LEVEL_LABELS[role.coreBasisRoleId] || role.coreBasisRoleId}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="secondary" size="sm" onClick={() => beginEdit(role)}>
+                      <Button variant="secondary" onClick={() => beginEdit(role)}>
                         Edit
                       </Button>
                     </td>
