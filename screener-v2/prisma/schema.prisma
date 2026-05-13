@@ -238,6 +238,7 @@ model Candidate {
   notes              CandidateNote[]
   milestones         CandidateMilestone[]
   applications       CandidateApplication[]
+  activityEvents     CandidateActivityEvent[]
   @@index([roleId])
   @@index([stage, updatedAt])
   @@index([intakeBucket, updatedAt])
@@ -316,8 +317,41 @@ model CandidateMilestone {
   updatedAt            DateTime @updatedAt
   candidate            Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   candidateAssessment  CandidateAssessment? @relation(fields: [candidateAssessmentId], references: [id], onDelete: SetNull)
+  checks               CandidateMilestoneCheck[]
 
   @@index([candidateId, sortOrder])
+}
+
+model CandidateMilestoneCheck {
+  id          String   @id @default(cuid())
+  milestoneId String
+  type        String
+  status      String
+  notes       String?
+  actorId     String?
+  actorName   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  milestone   CandidateMilestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+
+  @@unique([milestoneId, type])
+  @@index([milestoneId])
+}
+
+model CandidateActivityEvent {
+  id         String   @id @default(cuid())
+  candidateId String
+  actorId    String?
+  actorName  String?
+  event      String
+  entityType String?
+  entityId   String?
+  detail     String?
+  createdAt  DateTime @default(now())
+  candidate  Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
 }
 
 model JobPosting {
