@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type CandidatesView = "pipeline" | "applicants" | "jobs";
 
 const items: Array<{ key: CandidatesView; label: string; href: Route }> = [
-  { key: "jobs", label: "Jobs", href: "/people/candidates/jobs" as Route },
+  { key: "jobs", label: "Roles & Jobs", href: "/people/candidates/jobs" as Route },
   { key: "applicants", label: "Applicants", href: "/people/candidates/applicants" as Route },
   { key: "pipeline", label: "Pipeline", href: "/people/candidates" as Route }
 ];

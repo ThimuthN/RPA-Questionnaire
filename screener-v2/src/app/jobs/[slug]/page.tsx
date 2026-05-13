@@ -6,6 +6,7 @@ import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
+import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,10 @@ export default async function PublicJobDetailPage({
     applicationId?: string;
   }>;
 }) {
+  if (!PUBLIC_JOBS_ENABLED) {
+    notFound();
+  }
+
   const { slug } = await params;
   const pageState = await searchParams;
   const job = await getPublicJobPostingBySlug(slug);

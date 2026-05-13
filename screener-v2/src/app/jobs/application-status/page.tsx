@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicApplicationStatus } from "@/lib/db/jobs";
+import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +14,10 @@ export default async function ApplicationStatusPage({
 }: {
   searchParams: Promise<{ applicationId?: string; email?: string }>
 }) {
+  if (!PUBLIC_JOBS_ENABLED) {
+    notFound();
+  }
+
   const params = await searchParams;
   const applicationId = params.applicationId?.trim();
   const email = params.email?.trim();

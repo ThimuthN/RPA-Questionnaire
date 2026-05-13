@@ -2,6 +2,7 @@ export const candidateMilestoneTypeValues = [
   "registration",
   "screener",
   "interview",
+  "review_round",
   "advanced_test",
   "decision"
 ] as const;
@@ -21,7 +22,7 @@ export const candidateMilestoneModeValues = ["manual", "platform"] as const;
 
 export type CandidateMilestoneMode = (typeof candidateMilestoneModeValues)[number];
 
-export const candidateMilestoneResultValues = ["pass", "fail", "review"] as const;
+export const candidateMilestoneResultValues = ["pass", "fail", "review", "accept", "decline", "on_hold"] as const;
 
 export type CandidateMilestoneResult = (typeof candidateMilestoneResultValues)[number];
 
@@ -29,8 +30,9 @@ export const candidateMilestoneTypeLabels: Record<CandidateMilestoneType, string
   registration: "Registered",
   screener: "Screener",
   interview: "Interview",
+  review_round: "Review round",
   advanced_test: "Advanced test",
-  decision: "Offer / decision"
+  decision: "Decision"
 };
 
 export const candidateMilestoneStatusLabels: Record<CandidateMilestoneStatus, string> = {
@@ -48,7 +50,10 @@ export const candidateMilestoneModeLabels: Record<CandidateMilestoneMode, string
 export const candidateMilestoneResultLabels: Record<CandidateMilestoneResult, string> = {
   pass: "Pass",
   fail: "Fail",
-  review: "Review"
+  review: "Review",
+  accept: "Accept",
+  decline: "Decline",
+  on_hold: "On hold"
 };
 
 export function isCandidateMilestoneType(value: string): value is CandidateMilestoneType {
@@ -91,15 +96,15 @@ export function defaultCandidateMilestones() {
       mode: "manual" as const
     },
     {
-      type: "advanced_test" as const,
-      title: "Advanced test",
+      type: "review_round" as const,
+      title: "Review round",
       status: "not_started" as const,
       sortOrder: 40,
-      mode: "platform" as const
+      mode: "manual" as const
     },
     {
       type: "decision" as const,
-      title: "Offer / decision",
+      title: "Decision",
       status: "not_started" as const,
       sortOrder: 50,
       mode: "manual" as const

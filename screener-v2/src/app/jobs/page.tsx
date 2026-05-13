@@ -5,6 +5,8 @@ import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { listPublicJobPostings } from "@/lib/db/jobs";
+import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
+import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +21,10 @@ export default async function PublicJobsPage({
 }: {
   searchParams: Promise<{ q?: string; department?: string; sort?: string }>;
 }) {
+  if (!PUBLIC_JOBS_ENABLED) {
+    notFound();
+  }
+
   const params = await searchParams;
   const allJobs = await listPublicJobPostings();
   const departments = Array.from(new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))).slice(0, 6) as string[];

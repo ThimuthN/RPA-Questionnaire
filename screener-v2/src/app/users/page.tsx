@@ -1,5 +1,4 @@
 import { Button } from "@/components/primitives/Button";
-import { RolePicker } from "@/components/roles/RolePicker";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { AddUserModal } from "@/components/users/AddUserModal";
@@ -25,22 +24,15 @@ export default async function UsersPage({
       subtitle="Create and update internal access."
     >
       <div className="space-y-4">
-        <StagePanel tone="summary" className="space-y-4">
+        <StagePanel tone="summary">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-2xl text-[color:var(--app-heading)]">Roles</h2>
+              <h2 className="text-2xl text-[color:var(--app-heading)]">Create user</h2>
               <p className="text-sm text-[color:var(--app-muted)]">
-                Add and manage the roles you want to use when registering candidates.
+                Grant access to new team members.
               </p>
             </div>
             <AddUserModal created={params.created} updated={params.updated} error={params.error} />
-          </div>
-          <div className="max-w-xl">
-            <RolePicker
-              label="Role catalog"
-              placeholder="Select a role"
-              helperText="Create, rename, group by department, or deactivate roles."
-            />
           </div>
         </StagePanel>
 

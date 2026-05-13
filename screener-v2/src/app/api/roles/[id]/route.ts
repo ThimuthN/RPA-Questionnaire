@@ -6,7 +6,8 @@ import { updateRoleCatalogEntry } from "@/lib/roles/catalog";
 const updateRoleSchema = z.object({
   label: z.string().min(2),
   department: z.string().trim().max(80).optional().or(z.literal("")),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  coreBasisRoleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).optional()
 });
 
 export async function PUT(
@@ -24,7 +25,8 @@ export async function PUT(
     const role = await updateRoleCatalogEntry(id, {
       label: body.label,
       department: body.department || undefined,
-      isActive: body.isActive
+      isActive: body.isActive,
+      coreBasisRoleId: body.coreBasisRoleId
     });
 
     return NextResponse.json({

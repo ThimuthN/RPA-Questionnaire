@@ -95,7 +95,6 @@ export function EditCandidateInfoModal({
                         <input type="hidden" name="phone" value={candidate.phone || ""} />
                         <input type="hidden" name="batchId" value={candidate.batchId || ""} />
                         <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
-                        <input type="hidden" name="positionAppliedFor" value={selectedRole?.label || ""} />
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <label className="grid gap-1">

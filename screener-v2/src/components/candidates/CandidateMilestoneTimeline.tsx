@@ -95,7 +95,7 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
 }
 
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
-  if (type === "screener" || type === "advanced_test") {
+  if (type === "screener" || type === "advanced_test" || type === "review_round") {
     return mode === "platform" ? "Save step" : "Save notes";
   }
 
@@ -404,7 +404,7 @@ function MilestonePanelContent({
     );
   }
 
-  if (milestone.type === "screener" || milestone.type === "advanced_test") {
+  if (milestone.type === "screener" || milestone.type === "advanced_test" || milestone.type === "review_round") {
     return <TestMilestoneCard candidateId={candidateId} milestone={milestone} />;
   }
 
@@ -450,11 +450,21 @@ function DocumentationMilestoneCard({
           name="result"
           idPrefix={`doc-result-${milestone.id}`}
           defaultValue={milestone.result || ""}
-          options={[
-            { value: "", label: "Not set" },
-            { value: "pass", label: "Pass" },
-            { value: "fail", label: "Fail" }
-          ]}
+          options={
+            milestone.type === "decision"
+              ? [
+                  { value: "", label: "Not set" },
+                  { value: "accept", label: "Accept" },
+                  { value: "decline", label: "Decline" },
+                  { value: "on_hold", label: "On hold" }
+                ]
+              : [
+                  { value: "", label: "Not set" },
+                  { value: "pass", label: "Pass" },
+                  { value: "fail", label: "Fail" },
+                  { value: "review", label: "Review" }
+                ]
+          }
         />
       </div>
 

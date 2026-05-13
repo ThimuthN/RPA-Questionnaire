@@ -1,4 +1,5 @@
 import { del } from "@vercel/blob";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import {
@@ -511,7 +512,7 @@ export async function createCandidate(input: {
         email: normalizedEmail,
         phone: input.phone?.trim() || null,
         roleId: resolvedRole?.id ?? null,
-        positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
+        positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
@@ -591,7 +592,7 @@ export async function updateCandidate(
       email: normalizedEmail,
       phone: input.phone?.trim() || null,
       roleId: resolvedRole?.id ?? null,
-      positionAppliedFor: (resolvedRole?.label ?? input.positionAppliedFor?.trim()) || null,
+      positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
       batchId: input.batchId?.trim() || null,
       resumeSource: input.resumeSource?.trim() || null,
       hrOwner: input.hrOwner?.trim() || null,
@@ -884,6 +885,47 @@ export async function bulkUpdateCandidates(input: {
   return { updatedCount: candidateIds.length };
 }
 
+async function applyMilestoneCascade(
+  candidateId: string,
+  savedMilestoneId: string,
+  newStatus: CandidateMilestoneStatus,
+  tx: Prisma.TransactionClient
+) {
+  const allMilestones = await tx.candidateMilestone.findMany({
+    where: { candidateId },
+    select: { id: true, sortOrder: true, status: true },
+    orderBy: { sortOrder: "asc" }
+  });
+
+  const savedIndex = allMilestones.findIndex((m) => m.id === savedMilestoneId);
+  if (savedIndex === -1) return;
+
+  const earlierNotStartedIds = allMilestones
+    .slice(0, savedIndex)
+    .filter((m) => m.status === "not_started")
+    .map((m) => m.id);
+
+  if (earlierNotStartedIds.length > 0) {
+    await tx.candidateMilestone.updateMany({
+      where: { id: { in: earlierNotStartedIds } },
+      data: { status: "skipped" }
+    });
+  }
+
+  if (newStatus === "done") {
+    const nextMilestone = allMilestones
+      .slice(savedIndex + 1)
+      .find((m) => m.status === "not_started");
+
+    if (nextMilestone) {
+      await tx.candidateMilestone.update({
+        where: { id: nextMilestone.id },
+        data: { status: "in_progress" }
+      });
+    }
+  }
+}
+
 export async function updateCandidateMilestone(
   candidateId: string,
   milestoneId: string,
@@ -903,33 +945,46 @@ export async function updateCandidateMilestone(
       id: milestoneId,
       candidateId
     },
-    select: { id: true }
+    select: { id: true, type: true }
   });
 
   if (!milestone) {
     throw new Error("Milestone not found.");
   }
 
-  const updated = await prisma.candidateMilestone.update({
-    where: { id: milestoneId },
-    data: {
-      title: input.title?.trim(),
-      status: input.status,
-      mode: input.mode,
-      date: input.date ? new Date(input.date) : input.date === "" ? null : undefined,
-      notes: typeof input.notes === "string" ? input.notes.trim() || null : undefined,
-      score: typeof input.score === "number" && Number.isFinite(input.score) ? input.score : input.score === null ? null : undefined,
-      result: input.result ?? undefined,
-      recommendation:
-        typeof input.recommendation === "string" ? input.recommendation.trim() || null : undefined
-    }
-  });
+  let statusToApply = input.status;
+  if (milestone.type === "decision" && input.result && ["accept", "decline"].includes(input.result)) {
+    statusToApply = "done";
+  }
 
-  await prisma.candidate.update({
-    where: { id: candidateId },
-    data: {
-      updatedAt: new Date()
+  const updated = await prisma.$transaction(async (tx) => {
+    const upd = await tx.candidateMilestone.update({
+      where: { id: milestoneId },
+      data: {
+        title: input.title?.trim(),
+        status: statusToApply,
+        mode: input.mode,
+        date: input.date ? new Date(input.date) : input.date === "" ? null : undefined,
+        notes: typeof input.notes === "string" ? input.notes.trim() || null : undefined,
+        score: typeof input.score === "number" && Number.isFinite(input.score) ? input.score : input.score === null ? null : undefined,
+        result: input.result ?? undefined,
+        recommendation:
+          typeof input.recommendation === "string" ? input.recommendation.trim() || null : undefined
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    if (statusToApply) {
+      await applyMilestoneCascade(candidateId, milestoneId, statusToApply, tx);
     }
+
+    return upd;
   });
 
   return mapMilestone(updated);
@@ -952,18 +1007,24 @@ export async function quickUpdateCandidateMilestoneStatus(
     throw new Error("Milestone not found.");
   }
 
-  const updated = await prisma.candidateMilestone.update({
-    where: { id: milestoneId },
-    data: {
-      status
-    }
-  });
+  const updated = await prisma.$transaction(async (tx) => {
+    const upd = await tx.candidateMilestone.update({
+      where: { id: milestoneId },
+      data: {
+        status
+      }
+    });
 
-  await prisma.candidate.update({
-    where: { id: candidateId },
-    data: {
-      updatedAt: new Date()
-    }
+    await tx.candidate.update({
+      where: { id: candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    await applyMilestoneCascade(candidateId, milestoneId, status, tx);
+
+    return upd;
   });
 
   return mapMilestone(updated);
@@ -1017,6 +1078,8 @@ export async function linkCandidateAssessmentToMilestone(input: {
         updatedAt: new Date()
       }
     });
+
+    await applyMilestoneCascade(input.candidateId, input.milestoneId, "in_progress", tx);
   });
 }
 

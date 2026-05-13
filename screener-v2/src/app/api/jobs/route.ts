@@ -6,7 +6,7 @@ import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/job
 
 const jobSchema = z.object({
   title: z.string().min(2),
-  roleId: z.string().optional(),
+  roleId: z.string().min(1, "A role is required."),
   summary: z.string().min(8),
   description: z.string().min(20),
   isPublished: z.string().optional(),

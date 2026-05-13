@@ -41,6 +41,7 @@ interface CreateInviteSuccess extends InviteCredentials {
   ok: true;
   inviteId: string;
   slug: string;
+  roleWarning?: string;
 }
 
 interface CreateInviteError {
@@ -293,6 +294,7 @@ export function CreateAssessmentBuilder({
     null
   );
   const [error, setError] = useState("");
+  const [roleWarning, setRoleWarning] = useState("");
   const [loading, setLoading] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [selectionSource, setSelectionSource] = useState<SelectionSource>(
@@ -459,6 +461,7 @@ export function CreateAssessmentBuilder({
 
     setLoading(true);
     setError("");
+    setRoleWarning("");
     setInvite(null);
     try {
       const { response, data } = await fetchJsonWithTimeout<CreateInviteSuccess | CreateInviteError>(
@@ -505,6 +508,9 @@ export function CreateAssessmentBuilder({
           slug: data.slug,
           inviteId: data.inviteId
         });
+        if ((data as CreateInviteSuccess).roleWarning) {
+          setRoleWarning((data as CreateInviteSuccess).roleWarning);
+        }
         setStep("share");
         return;
       }
@@ -731,53 +737,64 @@ export function CreateAssessmentBuilder({
                       Clear preset
                     </Button>
                   </div>
-                  <div className="flex snap-x gap-3 overflow-x-auto pb-1">
-                    {supportedPresets.map((preset) => {
-                      const active = selectedPresetId === preset.id;
-                      return (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => applyPreset(preset)}
-                          className={`min-w-[280px] snap-start rounded-[22px] border p-4 text-left transition ${
-                            active
-                              ? "border-brand-300/60 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_12%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))] shadow-[0_18px_40px_color-mix(in_srgb,var(--app-brand)_12%,transparent)]"
-                              : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
-                          }`}
-                        >
-                          <div className="flex flex-wrap items-center gap-2">
-                            <StatusPill label="Preset" tone="purple" />
-                            <StatusPill label={`${preset.items.length} add-ons`} tone="neutral" />
-                          </div>
-                          <p
-                            className={cn(
-                              "mt-3 text-xl",
-                              active ? "text-[color:var(--app-heading)]" : "text-[color:var(--app-heading)]",
-                            )}
-                          >
-                            {preset.label}
-                          </p>
-                          <p
-                            className={cn(
-                              "mt-2 text-sm",
-                              active ? "text-[color:var(--app-text)]" : "text-[color:var(--app-muted)]",
-                            )}
-                          >
-                            {preset.description}
-                          </p>
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {preset.items.map((item) => (
-                              <StatusPill
-                                key={item.id}
-                                label={item.addon.label}
-                                tone={getAddonAssessmentTypeMeta(item.addon.assessmentTypeId).tone}
-                                className="normal-case tracking-normal"
-                              />
-                            ))}
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="border-t border-[color:var(--app-border)] pt-2">
+                    <table className="w-full text-left text-sm">
+                      <thead className="border-b border-[color:var(--app-border)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Preset</th>
+                          <th className="px-4 py-3 font-medium">Description</th>
+                          <th className="px-4 py-3 font-medium text-right">Add-ons</th>
+                          <th className="px-4 py-3 font-medium text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {supportedPresets.map((preset) => {
+                          const active = selectedPresetId === preset.id;
+                          return (
+                            <tr
+                              key={preset.id}
+                              className={`border-t border-[color:var(--app-border)] transition ${
+                                active ? "bg-brand-500/10" : "hover:bg-[color:var(--app-table-row-hover)]"
+                              }`}
+                            >
+                              <td className="px-4 py-3 align-top">
+                                <div className="flex items-center gap-2">
+                                  <StatusPill label="Preset" tone="purple" />
+                                  <span className="font-medium text-[color:var(--app-heading)]">{preset.label}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 align-top">
+                                <p className="max-w-xs text-[color:var(--app-muted)]">{preset.description}</p>
+                              </td>
+                              <td className="px-4 py-3 align-top text-right">
+                                <div className="flex flex-wrap justify-end gap-1">
+                                  {preset.items.slice(0, 3).map((item) => (
+                                    <StatusPill
+                                      key={item.id}
+                                      label={item.addon.label}
+                                      tone={getAddonAssessmentTypeMeta(item.addon.assessmentTypeId).tone}
+                                      className="normal-case tracking-normal text-xs"
+                                    />
+                                  ))}
+                                  {preset.items.length > 3 ? (
+                                    <span className="text-xs text-[color:var(--app-muted)]">+{preset.items.length - 3} more</span>
+                                  ) : null}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right align-top">
+                                <Button
+                                  type="button"
+                                  variant={active ? "secondary" : "ghost"}
+                                  onClick={() => applyPreset(preset)}
+                                >
+                                  {active ? "Applied" : "Select"}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : null}
@@ -1151,6 +1168,12 @@ export function CreateAssessmentBuilder({
                 description="Copy the access details and launch the test if needed."
               />
 
+              {roleWarning ? (
+                <div className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-100">
+                  {roleWarning}
+                </div>
+              ) : null}
+
               {invite ? (
                 <div className="space-y-4">
                   <InviteCredentialsPanel invite={invite} testId={testId} openLabel="Launch test" startNow />
@@ -1163,6 +1186,7 @@ export function CreateAssessmentBuilder({
                         setConfiguringExam(null);
                         setInvite(null);
                         setError("");
+                        setRoleWarning("");
                         setStep("select");
                         setLoading(false);
                       }}

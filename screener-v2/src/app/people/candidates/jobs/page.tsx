@@ -4,9 +4,11 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
+import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { requirePageSession } from "@/lib/auth/guards";
 import { listJobPostings } from "@/lib/db/jobs";
+import { listRoleCatalog } from "@/lib/roles/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,7 @@ export default async function CandidateJobsPage({
 }) {
   await requirePageSession("/people/candidates/jobs");
   const pageState = await searchParams;
+  const roles = await listRoleCatalog(true);
   const jobs = await listJobPostings();
 
   return (
@@ -61,7 +64,21 @@ export default async function CandidateJobsPage({
           </div>
         ) : null}
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-5 py-5 shadow-[var(--app-shadow-soft)]">
+          <RoleCatalogSection
+            initialRoles={roles.map((role) => ({
+              id: role.id,
+              label: role.label,
+              department: role.department,
+              isActive: role.isActive,
+              coreBasisRoleId: role.coreBasisRoleId
+            }))}
+          />
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Jobs</h2>
+          <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
             <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Jobs</p>
             <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
@@ -143,6 +160,7 @@ export default async function CandidateJobsPage({
             </div>
           </div>
         )}
+        </div>
       </div>
     </SceneShell>
   );

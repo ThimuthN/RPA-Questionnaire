@@ -5,7 +5,7 @@ import type { Route } from "next";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import { RichTextField } from "@/components/jobs/RichTextField";
-import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
+import type { RolePickerOption } from "@/components/roles/RolePicker";
 import type { JobPostingListItem } from "@/lib/jobs/types";
 
 export function JobPostingForm({
@@ -21,16 +21,6 @@ export function JobPostingForm({
   job?: JobPostingListItem | null;
   roleOptions?: RolePickerOption[];
 }) {
-  const defaultRole =
-    job?.roleId && job.roleLabel
-      ? {
-          id: job.roleId,
-          label: job.roleLabel,
-          department: job.roleDepartment,
-          coreBasisRoleId: (job.roleCoreBasisRoleId as RoleId | undefined) ?? "Associate"
-        }
-      : null;
-
   return (
     <form action={action} method="post" className="space-y-4">
       <label className="grid gap-1">
@@ -43,14 +33,27 @@ export function JobPostingForm({
         />
       </label>
 
-      <RolePicker
-        name="roleId"
-        label="Role"
-        defaultValue={defaultRole}
-        initialOptions={roleOptions}
-        placeholder="Optional"
-        helperText="Link this job to a saved role if you have one."
-      />
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Role</span>
+        <select
+          name="roleId"
+          required
+          defaultValue={job?.roleId ?? ""}
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        >
+          <option value="">Select a role</option>
+          {roleOptions
+            .filter((role) => role.isActive !== false)
+            .map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.department ? `${role.label} — ${role.department}` : role.label}
+              </option>
+            ))}
+        </select>
+        <p className="text-xs text-[color:var(--app-muted)]">
+          Select the role this job is for to determine assessment difficulty level.
+        </p>
+      </label>
 
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Summary</span>

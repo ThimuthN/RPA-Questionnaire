@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
+import { getDepartmentOptions } from "@/lib/roles/departments";
 
 export interface RolePickerOption {
   id: string;
@@ -212,10 +213,18 @@ export function RolePicker({
                         }`}
                       >
                         <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="space-y-1">
+                            <div className="space-y-1 flex-1">
                               <p className="text-sm text-[color:var(--app-heading)]">{role.label}</p>
                               <p className="text-xs text-[color:var(--app-muted)]">
-                                {role.department || "No department"}
+                                {role.department || "No department"} • Level: {
+                                  {
+                                    "Intern": "Intern",
+                                    "Associate": "Associate",
+                                    "SE": "Senior",
+                                    "SeniorSE": "Senior+",
+                                    "TechLead": "Lead"
+                                  }[role.coreBasisRoleId] || role.coreBasisRoleId
+                                }
                               </p>
                             </div>
                           <span className="text-xs text-[color:var(--app-muted)]">{role.isActive === false ? "Inactive" : "Active"}</span>
@@ -249,11 +258,35 @@ export function RolePicker({
                     <label className="grid gap-1">
                       <span className="text-sm text-[color:var(--app-text)]">Department</span>
                       <input
+                        list="dept-options"
                         value={editor.department}
                         onChange={(event) => setEditor((current) => ({ ...current, department: event.target.value }))}
                         placeholder="Engineering"
                         className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
                       />
+                      <datalist id="dept-options">
+                        {getDepartmentOptions(options.map((o) => o.department)).map((dept) => (
+                          <option key={dept} value={dept} />
+                        ))}
+                      </datalist>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-[color:var(--app-text)]">Assessment level</span>
+                      <select
+                        value={editor.coreBasisRoleId}
+                        onChange={(event) => setEditor((current) => ({ ...current, coreBasisRoleId: event.target.value as RoleId }))}
+                        className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      >
+                        <option value="Intern">Intern</option>
+                        <option value="Associate">Associate (Standard)</option>
+                        <option value="SE">Senior Engineer</option>
+                        <option value="SeniorSE">Senior Engineer+ (Advanced)</option>
+                        <option value="TechLead">Tech Lead (Expert)</option>
+                      </select>
+                      <p className="text-xs text-[color:var(--app-muted)]">
+                        This determines the difficulty level of questions for this role.
+                      </p>
                     </label>
 
                     <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

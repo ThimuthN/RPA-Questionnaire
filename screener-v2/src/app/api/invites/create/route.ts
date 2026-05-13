@@ -17,6 +17,7 @@ import {
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
+import { prisma } from "@/lib/db/prisma";
 
 const createInviteSchema = z.object({
   assessmentVersionId: z.string().default("v1-default"),
@@ -92,6 +93,17 @@ export async function POST(request: Request) {
       }
     }
 
+    let roleWarning: string | undefined;
+    if (body.candidateId) {
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: body.candidateId },
+        select: { roleId: true, role: { select: { label: true, coreBasisRoleId: true } } }
+      });
+      if (!candidate?.role?.coreBasisRoleId) {
+        roleWarning = "Candidate has no role assigned. Assessment will use the default level.";
+      }
+    }
+
     const created = await createInvite({
       assessmentVersionId: body.assessmentVersionId,
       mode: body.mode,
@@ -120,7 +132,8 @@ export async function POST(request: Request) {
       passcode: created.passcode || null,
       integrityPreset: created.row.integrityPreset,
       passTarget: created.row.passTargetPercent,
-      entryUrl: `${appUrl}/a/${created.row.slug}?t=${encodeURIComponent(created.token)}`
+      entryUrl: `${appUrl}/a/${created.row.slug}?t=${encodeURIComponent(created.token)}`,
+      ...(roleWarning ? { roleWarning } : {})
     });
   } catch (error) {
     logRouteError("invite_create_failed", logContext, error);

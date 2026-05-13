@@ -8,6 +8,7 @@ import {
 } from "@/lib/candidates/resume-storage";
 import { normalizeResumeFileName } from "@/lib/candidates/resume-config";
 import { createCandidateApplicationFromPublicSubmission } from "@/lib/db/jobs";
+import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 const publicApplySchema = z.object({
   fullName: z.string().min(2),
@@ -20,6 +21,10 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  if (!PUBLIC_JOBS_ENABLED) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const { id: slug } = await params;
 
   try {

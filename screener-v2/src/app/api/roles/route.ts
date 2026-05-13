@@ -5,7 +5,8 @@ import { createRoleCatalogEntry, listRoleCatalog } from "@/lib/roles/catalog";
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
-  department: z.string().trim().max(80).optional().or(z.literal(""))
+  department: z.string().trim().max(80).optional().or(z.literal("")),
+  coreBasisRoleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).default("Associate")
 });
 
 export async function GET() {
@@ -37,7 +38,8 @@ export async function POST(request: Request) {
     const body = createRoleSchema.parse(await request.json());
     const role = await createRoleCatalogEntry({
       label: body.label,
-      department: body.department || undefined
+      department: body.department || undefined,
+      coreBasisRoleId: body.coreBasisRoleId
     });
 
     return NextResponse.json({
