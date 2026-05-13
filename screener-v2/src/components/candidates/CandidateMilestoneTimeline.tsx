@@ -510,7 +510,7 @@ function RegistrationMilestoneCard({
         {!hasResume ? (
           <div className="pt-2">
             <Link href={`/candidates/${candidateId}#resume` as Route}>
-              <Button type="button" variant="secondary" size="sm">
+              <Button type="button" variant="secondary">
                 Add resume
               </Button>
             </Link>
