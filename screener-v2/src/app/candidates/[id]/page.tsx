@@ -9,13 +9,11 @@ import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInf
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import { Button } from "@/components/primitives/Button";
-import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
-import { candidateUiStatusLabels, candidateUiStatusValues } from "@/lib/candidates/types";
 import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
@@ -117,22 +115,6 @@ function NoticeBanner({
       : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
 
   return <div className={className}>{children}</div>;
-}
-
-function HiddenCandidateFields({ candidate }: { candidate: CandidateData }) {
-  return (
-    <>
-      <input type="hidden" name="fullName" value={candidate.fullName} />
-      <input type="hidden" name="email" value={candidate.email} />
-      <input type="hidden" name="phone" value={candidate.phone || ""} />
-      <input type="hidden" name="roleId" value={candidate.roleId || ""} />
-      <input type="hidden" name="positionAppliedFor" value={candidate.roleLabel || candidate.positionAppliedFor || ""} />
-      <input type="hidden" name="batchId" value={candidate.batchId || ""} />
-      <input type="hidden" name="resumeSource" value={candidate.resumeSource || ""} />
-      <input type="hidden" name="hrOwner" value={candidate.hrOwner || ""} />
-      <input type="hidden" name="candidateFolderUrl" value={candidate.candidateFolderUrl || ""} />
-    </>
-  );
 }
 
 export default async function CandidateDetailPage({
@@ -272,41 +254,6 @@ export default async function CandidateDetailPage({
                 </div>
               </div>
             </div>
-
-            <form
-              action={`/api/candidates/${candidate.id}`}
-              method="post"
-              className="min-w-0 space-y-4 border-t border-[color:var(--app-border)] pt-4 xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0"
-            >
-              <HiddenCandidateFields candidate={candidate} />
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision status</p>
-                <h3 className="text-xl text-[color:var(--app-heading)]">Set the candidate decision</h3>
-                <p className="text-sm text-[color:var(--app-muted)]">Set the status and leave a short note about what comes next.</p>
-              </div>
-              <ChoicePills
-                name="uiStatus"
-                idPrefix={`candidate-status-${candidate.id}`}
-                defaultValue={uiStatus}
-                options={candidateUiStatusValues.map((status) => ({
-                  value: status,
-                  label: candidateUiStatusLabels[status]
-                }))}
-              />
-              <label className="grid gap-2">
-                <span className="text-sm text-[color:var(--app-text)]">Decision summary</span>
-                <textarea
-                  name="notesSummary"
-                  rows={4}
-                  defaultValue={candidate.notesSummary || ""}
-                  placeholder="Summarize the main reason, current decision, and exact next step."
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-              <div className="flex justify-end">
-                <Button type="submit">Save decision</Button>
-              </div>
-            </form>
           </div>
         </StagePanel>
 
