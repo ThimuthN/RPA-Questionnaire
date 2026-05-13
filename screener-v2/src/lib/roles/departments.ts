@@ -12,7 +12,7 @@ export const DEFAULT_DEPARTMENTS = [
 ];
 
 export function getDepartmentOptions(usedDepartments: (string | undefined | null)[]): string[] {
-  const customDepts = new Set(usedDepartments.filter((d) => d && d.trim()));
+  const customDepts = new Set(usedDepartments.filter((d): d is string => Boolean(d && d.trim())));
   const allDepts = new Set([...DEFAULT_DEPARTMENTS, ...customDepts]);
   return Array.from(allDepts).sort();
 }
