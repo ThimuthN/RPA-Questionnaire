@@ -448,14 +448,14 @@ function ScreenerMilestoneCard({
             <button
               onClick={() => handleCheckAction("resume_review", "passed")}
               disabled={isPending}
-              className="px-3 py-1.5 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition"
             >
               Approve
             </button>
             <button
               onClick={() => handleCheckAction("resume_review", "failed")}
               disabled={isPending}
-              className="px-3 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
             >
               Reject
             </button>
@@ -472,7 +472,7 @@ function ScreenerMilestoneCard({
         <div className="space-y-3 pt-2">
           {!milestone.assessment ? (
             <Link href={sendHref}>
-              <Button type="button" variant="secondary" size="sm">
+              <Button type="button" variant="secondary">
                 Create assessment
               </Button>
             </Link>
