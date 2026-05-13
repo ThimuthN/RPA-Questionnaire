@@ -16,9 +16,11 @@ import {
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
   candidateMilestoneStatusValues,
-  type CandidateMilestoneMode
+  milestoneCheckDefs,
+  type CandidateMilestoneMode,
+  type CheckType
 } from "@/lib/candidates/milestones";
-import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
+import type { CandidateMilestoneCheckRecord, CandidateMilestoneRecord } from "@/lib/db/candidates";
 
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
@@ -383,6 +385,106 @@ function TestMilestoneCard({
   );
 }
 
+function CheckBadge({ status }: { status: string }) {
+  const statusClass =
+    status === "passed"
+      ? "bg-green-100 text-green-800"
+      : status === "failed"
+        ? "bg-red-100 text-red-800"
+        : "bg-gray-100 text-gray-800";
+
+  return (
+    <span className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${statusClass}`}>
+      {status === "passed" ? "✓ Approved" : status === "failed" ? "✗ Rejected" : "Pending"}
+    </span>
+  );
+}
+
+function ScreenerMilestoneCard({
+  candidateId,
+  milestone
+}: {
+  candidateId: string;
+  milestone: CandidateMilestoneRecord;
+}) {
+  const [isPending, setIsPending] = useState(false);
+  const checks = milestone.checks || [];
+  const resumeReviewCheck = checks.find((c) => c.type === "resume_review");
+  const screenerTestCheck = checks.find((c) => c.type === "screener_test");
+  const defs = milestoneCheckDefs[milestone.type];
+  const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
+
+  const handleCheckAction = async (checkType: CheckType, status: string) => {
+    setIsPending(true);
+    try {
+      const formData = new FormData();
+      formData.append("action", "check");
+      formData.append("checkType", checkType);
+      formData.append("status", status);
+
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestone.id}`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (response.ok) {
+        window.location.href = `/candidates/${candidateId}?updated=1`;
+      }
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium text-sm">Resume Review</h4>
+          {resumeReviewCheck && <CheckBadge status={resumeReviewCheck.status} />}
+        </div>
+        {resumeReviewCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{resumeReviewCheck.notes}</p>}
+        {!resumeReviewCheck || resumeReviewCheck.status === "not_started" ? (
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={() => handleCheckAction("resume_review", "passed")}
+              disabled={isPending}
+              className="px-3 py-1.5 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => handleCheckAction("resume_review", "failed")}
+              disabled={isPending}
+              className="px-3 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium text-sm">Screener Test</h4>
+          {screenerTestCheck && <CheckBadge status={screenerTestCheck.status} />}
+        </div>
+        {screenerTestCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{screenerTestCheck.notes}</p>}
+        <div className="space-y-3 pt-2">
+          {!milestone.assessment ? (
+            <Link href={sendHref}>
+              <Button type="button" variant="secondary" size="sm">
+                Create assessment
+              </Button>
+            </Link>
+          ) : (
+            <LinkedAssessmentSummary milestone={milestone} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MilestonePanelContent({
   candidateId,
   milestone,
@@ -404,7 +506,11 @@ function MilestonePanelContent({
     );
   }
 
-  if (milestone.type === "screener" || milestone.type === "advanced_test" || milestone.type === "review_round") {
+  if (milestone.type === "screener") {
+    return <ScreenerMilestoneCard candidateId={candidateId} milestone={milestone} />;
+  }
+
+  if (milestone.type === "advanced_test" || milestone.type === "review_round") {
     return <TestMilestoneCard candidateId={candidateId} milestone={milestone} />;
   }
 

@@ -4,10 +4,12 @@ import { requireApiSession } from "@/lib/auth/guards";
 import {
   candidateMilestoneResultValues,
   candidateMilestoneModeValues,
-  candidateMilestoneStatusValues
+  candidateMilestoneStatusValues,
+  milestoneCheckDefs
 } from "@/lib/candidates/milestones";
 import {
   attachExistingAssessmentToMilestone,
+  initOrUpdateMilestoneCheck,
   quickUpdateCandidateMilestoneStatus,
   updateCandidateMilestone
 } from "@/lib/db/candidates";
@@ -33,6 +35,13 @@ const linkExistingSchema = z.object({
   action: z.literal("link_existing"),
   attemptId: z.string().optional(),
   inviteSlug: z.string().optional()
+});
+
+const checkSchema = z.object({
+  action: z.literal("check"),
+  checkType: z.string(),
+  status: z.string(),
+  notes: z.string().optional()
 });
 
 function redirectToCandidate(request: Request, candidateId: string, searchKey: string, value = "1") {
@@ -72,6 +81,20 @@ export async function POST(
         inviteSlug: body.inviteSlug,
         createdById: session.userId ?? undefined
       });
+      return redirectToCandidate(request, id, "updated");
+    }
+
+    if (action === "check") {
+      const body = checkSchema.parse(raw);
+      await initOrUpdateMilestoneCheck(
+        id,
+        milestoneId,
+        body.checkType as any,
+        body.status,
+        body.notes,
+        session.userId ?? undefined,
+        session.userName ?? undefined
+      );
       return redirectToCandidate(request, id, "updated");
     }
 
