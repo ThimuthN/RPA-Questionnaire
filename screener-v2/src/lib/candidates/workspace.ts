@@ -259,5 +259,15 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
     });
   }
 
+  for (const event of candidate.activityEvents) {
+    items.push({
+      id: event.id,
+      at: event.createdAt,
+      kind: "activity",
+      title: event.event,
+      detail: event.detail || event.actorName || "Activity logged"
+    });
+  }
+
   return items.sort((left, right) => Date.parse(right.at) - Date.parse(left.at));
 }

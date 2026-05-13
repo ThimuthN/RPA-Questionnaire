@@ -4,6 +4,9 @@ import { prisma } from "@/lib/db/prisma";
 import type { RoleId } from "@/lib/assessment-engine/types";
 import {
   defaultCandidateMilestones,
+  deriveMilestoneStatus,
+  milestoneCheckDefs,
+  type CheckType,
   type CandidateMilestoneMode,
   type CandidateMilestoneResult,
   type CandidateMilestoneStatus,
@@ -112,6 +115,17 @@ export interface CandidateApplicationRecord {
   updatedAt: string;
 }
 
+export interface CandidateMilestoneCheckRecord {
+  id: string;
+  type: CheckType;
+  status: string;
+  notes?: string;
+  actorId?: string;
+  actorName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CandidateMilestoneRecord {
   id: string;
   candidateId: string;
@@ -129,6 +143,7 @@ export interface CandidateMilestoneRecord {
   createdAt: string;
   updatedAt: string;
   assessment?: CandidateAssessmentRecord | null;
+  checks?: CandidateMilestoneCheckRecord[];
 }
 
 export interface CandidateListItem extends CandidateRecord {
@@ -138,12 +153,24 @@ export interface CandidateListItem extends CandidateRecord {
   latestAssessment: CandidateAssessmentRecord | null;
 }
 
+export interface CandidateActivityEventRecord {
+  id: string;
+  actorId?: string;
+  actorName?: string;
+  event: string;
+  entityType?: string;
+  entityId?: string;
+  detail?: string;
+  createdAt: string;
+}
+
 export interface CandidateDetail extends CandidateRecord {
   resumes: CandidateResumeRecord[];
   notes: CandidateNoteRecord[];
   assessments: CandidateAssessmentRecord[];
   applications: CandidateApplicationRecord[];
   milestones: CandidateMilestoneRecord[];
+  activityEvents: CandidateActivityEventRecord[];
   currentFocus?: string;
 }
 
@@ -386,6 +413,16 @@ function mapMilestone(
     candidateAssessmentId: string | null;
     createdAt: Date;
     updatedAt: Date;
+    checks?: Array<{
+      id: string;
+      type: string;
+      status: string;
+      notes: string | null;
+      actorId: string | null;
+      actorName: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+    }>;
   },
   assessment?: CandidateAssessmentRecord | null
 ): CandidateMilestoneRecord {
@@ -405,7 +442,17 @@ function mapMilestone(
     candidateAssessmentId: row.candidateAssessmentId ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    assessment: assessment ?? null
+    assessment: assessment ?? null,
+    checks: row.checks?.map((check) => ({
+      id: check.id,
+      type: check.type as CheckType,
+      status: check.status,
+      notes: check.notes ?? undefined,
+      actorId: check.actorId ?? undefined,
+      actorName: check.actorName ?? undefined,
+      createdAt: check.createdAt.toISOString(),
+      updatedAt: check.updatedAt.toISOString()
+    }))
   };
 }
 
@@ -1030,6 +1077,105 @@ export async function quickUpdateCandidateMilestoneStatus(
   return mapMilestone(updated);
 }
 
+export async function initOrUpdateMilestoneCheck(
+  candidateId: string,
+  milestoneId: string,
+  checkType: CheckType,
+  status: string,
+  notes?: string,
+  actorId?: string,
+  actorName?: string
+) {
+  const updated = await prisma.$transaction(async (tx) => {
+    const milestone = await tx.candidateMilestone.findFirst({
+      where: {
+        id: milestoneId,
+        candidateId
+      },
+      select: {
+        id: true,
+        type: true,
+        status: true
+      }
+    });
+
+    if (!milestone) {
+      throw new Error("Milestone not found.");
+    }
+
+    await tx.candidateMilestoneCheck.upsert({
+      where: {
+        milestoneId_type: {
+          milestoneId,
+          type: checkType
+        }
+      },
+      update: {
+        status,
+        notes: notes?.trim() || null,
+        actorId: actorId || null,
+        actorName: actorName || null,
+        updatedAt: new Date()
+      },
+      create: {
+        id: cuidLike(),
+        milestoneId,
+        type: checkType,
+        status,
+        notes: notes?.trim() || null,
+        actorId: actorId || null,
+        actorName: actorName || null
+      }
+    });
+
+    const allChecks = await tx.candidateMilestoneCheck.findMany({
+      where: { milestoneId },
+      select: { type: true, status: true }
+    });
+
+    const defs = milestoneCheckDefs[milestone.type];
+    const newStatus = deriveMilestoneStatus(allChecks, defs);
+    const oldStatus = milestone.status;
+
+    let upd = milestone;
+    if (newStatus !== oldStatus) {
+      upd = await tx.candidateMilestone.update({
+        where: { id: milestoneId },
+        data: {
+          status: newStatus,
+          updatedAt: new Date()
+        }
+      });
+
+      await applyMilestoneCascade(candidateId, milestoneId, newStatus, tx);
+    }
+
+    await tx.candidate.update({
+      where: { id: candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    await tx.candidateActivityEvent.create({
+      data: {
+        id: cuidLike(),
+        candidateId,
+        actorId: actorId || null,
+        actorName: actorName || null,
+        event: "check_updated",
+        entityType: "check",
+        detail: `${checkType}: ${status}${notes ? ` - ${notes}` : ""}`,
+        createdAt: new Date()
+      }
+    });
+
+    return upd;
+  });
+
+  return updated;
+}
+
 export async function linkCandidateAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;
@@ -1430,6 +1576,9 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       milestones: {
         orderBy: { sortOrder: "asc" },
         include: {
+          checks: {
+            orderBy: { createdAt: "desc" }
+          },
           candidateAssessment: {
             include: {
               invite: {
@@ -1455,6 +1604,9 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
           department: true,
           coreBasisRoleId: true
         }
+      },
+      activityEvents: {
+        orderBy: { createdAt: "desc" }
       }
     }
   });
@@ -1505,6 +1657,16 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
     assessments,
     applications: row.applications.map(mapApplication),
     milestones,
+    activityEvents: row.activityEvents.map((event) => ({
+      id: event.id,
+      actorId: event.actorId ?? undefined,
+      actorName: event.actorName ?? undefined,
+      event: event.event,
+      entityType: event.entityType ?? undefined,
+      entityId: event.entityId ?? undefined,
+      detail: event.detail ?? undefined,
+      createdAt: event.createdAt.toISOString()
+    })),
     currentFocus: currentFocusFromMilestones(milestones)
   };
 }
