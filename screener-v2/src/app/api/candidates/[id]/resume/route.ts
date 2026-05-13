@@ -88,15 +88,14 @@ export async function POST(
       });
 
       if (registrationMilestone) {
-        const userEmail = auth.value.email || "system";
-        const userName = auth.value.name || "System";
+        const userName = auth.session.name || "System";
         await initOrUpdateMilestoneCheck(
           id,
           registrationMilestone.id,
           "resume_upload",
           "passed",
           undefined,
-          auth.value.id,
+          auth.session.userId ?? undefined,
           userName
         );
       }
