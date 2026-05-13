@@ -1133,7 +1133,7 @@ export async function initOrUpdateMilestoneCheck(
       select: { type: true, status: true }
     });
 
-    const defs = milestoneCheckDefs[milestone.type];
+    const defs = milestoneCheckDefs[milestone.type as CandidateMilestoneType];
     const newStatus = deriveMilestoneStatus(allChecks, defs);
     const oldStatus = milestone.status;
 
