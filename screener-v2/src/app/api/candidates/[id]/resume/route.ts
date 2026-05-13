@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { del, put } from "@vercel/blob";
 import { requireApiSession } from "@/lib/auth/guards";
 import {
-  getLatestCandidateResume
+  getLatestCandidateResume,
+  initOrUpdateMilestoneCheck
 } from "@/lib/db/candidates";
+import { prisma } from "@/lib/db/prisma";
 import {
   assertCandidateResumeCandidateExists,
   assertCandidateResumeMimeType,
@@ -74,6 +76,32 @@ export async function POST(
     } catch (error) {
       await del(blob.pathname);
       throw error;
+    }
+
+    try {
+      const registrationMilestone = await prisma.candidateMilestone.findFirst({
+        where: {
+          candidateId: id,
+          type: "registration"
+        },
+        select: { id: true }
+      });
+
+      if (registrationMilestone) {
+        const userEmail = auth.value.email || "system";
+        const userName = auth.value.name || "System";
+        await initOrUpdateMilestoneCheck(
+          id,
+          registrationMilestone.id,
+          "resume_upload",
+          "passed",
+          undefined,
+          auth.value.id,
+          userName
+        );
+      }
+    } catch (checkError) {
+      logRouteError("registration_check_failed", logContext, checkError);
     }
 
     return NextResponse.json({ ok: true, resume });
