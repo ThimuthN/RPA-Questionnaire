@@ -1134,7 +1134,7 @@ export async function initOrUpdateMilestoneCheck(
     });
 
     const defs = milestoneCheckDefs[milestone.type as CandidateMilestoneType];
-    const newStatus = deriveMilestoneStatus(allChecks, defs);
+    const newStatus = deriveMilestoneStatus(allChecks as Array<{ type?: CheckType; status: string }>, defs);
     const oldStatus = milestone.status;
 
     let upd = milestone;
