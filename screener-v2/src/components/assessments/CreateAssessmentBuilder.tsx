@@ -508,8 +508,9 @@ export function CreateAssessmentBuilder({
           slug: data.slug,
           inviteId: data.inviteId
         });
-        if ((data as CreateInviteSuccess).roleWarning) {
-          setRoleWarning((data as CreateInviteSuccess).roleWarning);
+        const roleWarning = (data as CreateInviteSuccess).roleWarning;
+        if (typeof roleWarning === 'string') {
+          setRoleWarning(roleWarning);
         }
         setStep("share");
         return;
