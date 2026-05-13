@@ -13,6 +13,7 @@ export const candidateMilestoneStatusValues = [
   "not_started",
   "in_progress",
   "done",
+  "failed",
   "skipped"
 ] as const;
 
@@ -39,6 +40,7 @@ export const candidateMilestoneStatusLabels: Record<CandidateMilestoneStatus, st
   not_started: "Not started",
   in_progress: "In progress",
   done: "Done",
+  failed: "Failed",
   skipped: "Skipped"
 };
 
@@ -70,6 +72,80 @@ export function isCandidateMilestoneMode(value: string): value is CandidateMiles
 
 export function isCandidateMilestoneResult(value: string): value is CandidateMilestoneResult {
   return (candidateMilestoneResultValues as readonly string[]).includes(value);
+}
+
+export type CheckType =
+  | 'resume_upload'
+  | 'resume_review'
+  | 'screener_test'
+  | 'interview_notes'
+  | 'review_assessment'
+  | 'review_notes'
+  | 'final_decision';
+
+export interface CheckDefinition {
+  type: CheckType;
+  label: string;
+  required: boolean;
+}
+
+export const milestoneCheckDefs: Record<CandidateMilestoneType, CheckDefinition[]> = {
+  registration: [
+    { type: 'resume_upload', label: 'Resume', required: true }
+  ],
+  screener: [
+    { type: 'resume_review', label: 'Resume review', required: true },
+    { type: 'screener_test', label: 'Screener test', required: true }
+  ],
+  interview: [
+    { type: 'interview_notes', label: 'Interview', required: true }
+  ],
+  review_round: [
+    { type: 'review_assessment', label: 'Assessment', required: false },
+    { type: 'review_notes', label: 'Interview notes', required: false }
+  ],
+  advanced_test: [
+    { type: 'review_assessment', label: 'Assessment', required: true }
+  ],
+  decision: [
+    { type: 'final_decision', label: 'Final decision', required: true }
+  ]
+};
+
+export function deriveMilestoneStatus(
+  checks: Array<{ type?: CheckType; status: string }>,
+  defs: CheckDefinition[]
+): CandidateMilestoneStatus {
+  if (checks.length === 0) {
+    return 'not_started';
+  }
+
+  for (const def of defs) {
+    if (def.required) {
+      const check = checks.find((c) => c.type === def.type);
+      if (check?.status === 'failed') {
+        return 'failed';
+      }
+    }
+  }
+
+  const allRequiredPassed = defs
+    .filter((def) => def.required)
+    .every((def) => {
+      const check = checks.find((c) => c.type === def.type);
+      return check?.status === 'passed';
+    });
+
+  if (allRequiredPassed) {
+    return 'done';
+  }
+
+  const hasAnyStarted = checks.some((check) => check.status !== 'not_started');
+  if (hasAnyStarted) {
+    return 'in_progress';
+  }
+
+  return 'not_started';
 }
 
 export function defaultCandidateMilestones() {
