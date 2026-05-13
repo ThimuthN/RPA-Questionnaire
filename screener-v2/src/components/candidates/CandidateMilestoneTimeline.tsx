@@ -485,6 +485,42 @@ function ScreenerMilestoneCard({
   );
 }
 
+function RegistrationMilestoneCard({
+  candidateId,
+  milestone,
+  hasResume
+}: {
+  candidateId: string;
+  milestone: CandidateMilestoneRecord;
+  hasResume: boolean;
+}) {
+  const checks = milestone.checks || [];
+  const resumeUploadCheck = checks.find((c) => c.type === "resume_upload");
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-medium text-sm">Resume Upload</h4>
+          {resumeUploadCheck && <CheckBadge status={resumeUploadCheck.status} />}
+        </div>
+        {resumeUploadCheck?.notes && (
+          <p className="text-xs text-[color:var(--app-muted)]">{resumeUploadCheck.notes}</p>
+        )}
+        {!hasResume ? (
+          <div className="pt-2">
+            <Link href={`/candidates/${candidateId}#resume` as Route}>
+              <Button type="button" variant="secondary" size="sm">
+                Add resume
+              </Button>
+            </Link>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function MilestonePanelContent({
   candidateId,
   milestone,
@@ -495,15 +531,7 @@ function MilestonePanelContent({
   hasResume: boolean;
 }) {
   if (milestone.type === "registration") {
-    return hasResume ? (
-      <p className="text-sm text-[color:var(--app-text)]">Resume attached.</p>
-    ) : (
-      <Link href={`/candidates/${candidateId}#resume` as Route}>
-        <Button type="button" variant="secondary">
-          Add resume
-        </Button>
-      </Link>
-    );
+    return <RegistrationMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />;
   }
 
   if (milestone.type === "screener") {
