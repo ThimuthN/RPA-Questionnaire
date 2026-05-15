@@ -1374,7 +1374,7 @@ export async function submitAttempt(input: {
       }
     });
     return true;
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted });
 
   if (!submitted) {
     const latestRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
@@ -1408,15 +1408,16 @@ export async function submitAttempt(input: {
 }
 
 async function loadResultSummary(attemptId: string) {
-  const resultRow = await prisma.result.findUnique({
-    where: { attemptId }
-  });
-  if (!resultRow) return null;
+  const [resultRow, attemptRow] = await Promise.all([
+    prisma.result.findUnique({
+      where: { attemptId }
+    }),
+    prisma.attempt.findUnique({
+      where: { id: attemptId }
+    })
+  ]);
 
-  const attemptRow = await prisma.attempt.findUnique({
-    where: { id: attemptId }
-  });
-  if (!attemptRow) return null;
+  if (!resultRow || !attemptRow) return null;
 
   const participantRow = await prisma.participant.findUnique({
     where: { id: attemptRow.participantId }
