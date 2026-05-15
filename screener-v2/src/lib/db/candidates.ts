@@ -47,10 +47,13 @@ export interface CandidateRecord {
   roleId?: string;
   roleLabel?: string;
   roleDepartment?: string;
+  departmentId?: string;
+  departmentName?: string;
   positionAppliedFor?: string;
   batchId?: string;
   resumeSource?: string;
   hrOwner?: string;
+  hrOwnerId?: string;
   intakeBucket: CandidateIntakeBucket;
   stage: CandidateStage;
   finalDecision: CandidateFinalDecision;
@@ -193,7 +196,7 @@ export interface CandidateWorkspacePage {
   page: number;
   pageSize: number;
   roleOptions: Array<{ id: string; label: string }>;
-  ownerOptions: string[];
+  ownerOptions: Array<{ id: string; label: string }>;
   summary: CandidateOpenWorkSummary;
 }
 
@@ -216,7 +219,10 @@ export function mapCandidate(row: {
   email: string;
   phone: string | null;
   roleId: string | null;
+  departmentId?: string | null;
+  hrOwnerId?: string | null;
   role: { label: string; department: string | null } | null;
+  department?: { id: string; name: string } | null;
   positionAppliedFor: string | null;
   batchId: string | null;
   resumeSource: string | null;
@@ -230,6 +236,7 @@ export function mapCandidate(row: {
   notesSummary: string | null;
   createdAt: Date;
   updatedAt: Date;
+  [key: string]: any; // Allow additional properties for Prisma type inference
 }): CandidateRecord {
   return {
     id: row.id,
@@ -239,10 +246,13 @@ export function mapCandidate(row: {
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? row.positionAppliedFor ?? undefined,
     roleDepartment: row.role?.department ?? undefined,
+    departmentId: row.departmentId ?? undefined,
+    departmentName: row.department?.name ?? undefined,
     positionAppliedFor: row.positionAppliedFor ?? row.role?.label ?? undefined,
     batchId: row.batchId ?? undefined,
     resumeSource: row.resumeSource ?? undefined,
     hrOwner: row.hrOwner ?? undefined,
+    hrOwnerId: row.hrOwnerId ?? undefined,
     intakeBucket: row.intakeBucket as CandidateIntakeBucket,
     stage: row.stage as CandidateStage,
     finalDecision: row.finalDecision as CandidateFinalDecision,
@@ -526,6 +536,8 @@ export async function createCandidate(input: {
   email: string;
   phone?: string;
   roleId?: string;
+  departmentId?: string;
+  hrOwnerId?: string;
   positionAppliedFor?: string;
   batchId?: string;
   resumeSource?: string;
@@ -558,6 +570,8 @@ export async function createCandidate(input: {
         email: normalizedEmail,
         phone: input.phone?.trim() || null,
         roleId: resolvedRole?.id ?? null,
+        departmentId: input.departmentId || null,
+        hrOwnerId: input.hrOwnerId || null,
         positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
@@ -575,6 +589,12 @@ export async function createCandidate(input: {
           select: {
             label: true,
             department: true
+          }
+        },
+        department: {
+          select: {
+            id: true,
+            name: true
           }
         }
       }
@@ -762,6 +782,12 @@ export async function updateCandidate(
           select: {
             label: true,
             department: true
+          }
+        },
+        department: {
+          select: {
+            id: true,
+            name: true
           }
         }
       }
@@ -1126,6 +1152,8 @@ export async function bulkUpdateCandidates(input: {
   owner?: string;
   status?: CandidateUiStatus;
   roleId?: string;
+  departmentId?: string;
+  hrOwnerId?: string;
   noteBody?: string;
   noteType?: CandidateNoteType;
   createdById?: string;
@@ -1136,12 +1164,26 @@ export async function bulkUpdateCandidates(input: {
   }
 
   if (input.action === "assign_owner") {
+    const updateData: any = { updatedAt: new Date() };
+
+    // Prefer hrOwnerId if provided, otherwise use owner string for backward compatibility
+    if (input.hrOwnerId) {
+      updateData.hrOwnerId = input.hrOwnerId;
+      // Also sync the user's name to hrOwner display field
+      const user = await prisma.user.findUnique({
+        where: { id: input.hrOwnerId },
+        select: { name: true }
+      });
+      if (user) {
+        updateData.hrOwner = user.name;
+      }
+    } else if (input.owner) {
+      updateData.hrOwner = input.owner.trim();
+    }
+
     await prisma.candidate.updateMany({
       where: { id: { in: candidateIds } },
-      data: {
-        hrOwner: input.owner?.trim() || null,
-        updatedAt: new Date()
-      }
+      data: updateData
     });
     return { updatedCount: candidateIds.length };
   }
@@ -1166,14 +1208,15 @@ export async function bulkUpdateCandidates(input: {
   }
 
   if (input.action === "set_department") {
-    if (!input.roleId) {
+    if (!input.departmentId) {
       throw new Error("Select a department.");
     }
 
     await prisma.candidate.updateMany({
       where: { id: { in: candidateIds } },
       data: {
-        roleId: input.roleId,
+        departmentId: input.departmentId,
+        roleId: null, // Clear role when transferring departments
         updatedAt: new Date()
       }
     });
@@ -1720,7 +1763,7 @@ function buildCandidateWhere(filters?: {
     where.finalDecision = filters.finalDecision;
   }
   if (filters?.owner) {
-    where.hrOwner = filters.owner;
+    where.hrOwnerId = filters.owner;
   }
   if (filters?.q) {
     const q = filters.q.trim().toLowerCase();
@@ -1913,6 +1956,9 @@ export async function listCandidateWorkspacePage(
         },
         role: {
           select: { label: true, department: true }
+        },
+        department: {
+          select: { id: true, name: true }
         }
       }
     }),
@@ -1961,7 +2007,17 @@ export async function listCandidateWorkspacePage(
     id: role.id,
     label: role.label
   }));
-  const ownerOptions = [...new Set(candidates.map((row) => row.hrOwner).filter(Boolean))].sort() as string[];
+
+  // Get owners from User table instead of deriving from candidates
+  const ownerUsers = await prisma.user.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' }
+  });
+  const ownerOptions = ownerUsers.map((user) => ({
+    id: user.id,
+    label: user.name ?? user.id
+  }));
 
   return {
     rows: sorted,

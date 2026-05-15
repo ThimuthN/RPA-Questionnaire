@@ -625,6 +625,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       slug: true,
       title: true,
       roleId: true,
+      role: {
+        select: { departmentId: true }
+      },
       screenerPresetId: true,
       screenerPreset: {
         select: {
@@ -671,6 +674,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         email: normalizedEmail,
         phone: input.phone,
         roleId: job.roleId ?? undefined,
+        departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
         resumeSource: "Company Website",
         intakeBucket: "applicant",
@@ -694,6 +698,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         fullName: input.fullName.trim(),
         phone: input.phone?.trim() || undefined,
         roleId: job.roleId ?? undefined,
+        departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title
       }
     });

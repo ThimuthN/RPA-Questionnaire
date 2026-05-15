@@ -201,8 +201,8 @@ export default async function PeopleCandidatesPage({
                 >
                   <option value="">All owners</option>
                   {page.ownerOptions.map((owner) => (
-                    <option key={owner} value={owner}>
-                      {owner}
+                    <option key={owner.id} value={owner.id}>
+                      {owner.label}
                     </option>
                   ))}
                 </select>
