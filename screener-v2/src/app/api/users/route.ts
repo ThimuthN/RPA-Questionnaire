@@ -11,7 +11,7 @@ const userSchema = z.object({
   title: z.string().optional(),
   department: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).default("recruiter"),
+  accessLevel: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).default("recruiter"),
   isInterviewer: z.boolean().optional()
 });
 
@@ -26,7 +26,11 @@ export async function POST(request: Request) {
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
     const body = userSchema.parse(rawBody);
-    const created = await createAppUser(body);
+    const created = await createAppUser({
+      ...body,
+      actorId: auth.session.userId,
+      actorEmail: auth.session.email
+    });
 
     if (isFormRequest(request)) {
       const url = new URL("/users", request.url);

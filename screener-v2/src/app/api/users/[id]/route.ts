@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession, getApiSession } from "@/lib/auth/guards";
+import { requireAdminApiSession } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
 import { updateAppUser, deactivateAppUser, reactivateAppUser } from "@/lib/auth/app-auth";
 
@@ -10,7 +10,7 @@ const updateUserSchema = z.object({
   title: z.string().optional(),
   department: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).optional(),
+  accessLevel: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).optional(),
   isInterviewer: z.boolean().optional(),
   isActive: z.boolean().optional()
 });
@@ -25,7 +25,6 @@ export async function POST(
   }
 
   const { id } = await context.params;
-  const session = await getApiSession();
 
   try {
     const rawBody = isFormRequest(request)
@@ -34,12 +33,18 @@ export async function POST(
     const body = updateUserSchema.parse(rawBody);
 
     if (body.action === "deactivate") {
-      if (session?.userId === id) {
+      if (auth.session.userId === id) {
         throw new Error("Cannot deactivate your own account.");
       }
-      await deactivateAppUser(id);
+      await deactivateAppUser(id, {
+        actorId: auth.session.userId,
+        actorEmail: auth.session.email
+      });
     } else if (body.action === "reactivate") {
-      await reactivateAppUser(id);
+      await reactivateAppUser(id, {
+        actorId: auth.session.userId,
+        actorEmail: auth.session.email
+      });
     } else {
       await updateAppUser({
         userId: id,
@@ -47,9 +52,11 @@ export async function POST(
         title: body.title,
         department: body.department,
         phone: body.phone,
-        role: body.role,
+        accessLevel: body.accessLevel,
         isInterviewer: body.isInterviewer,
-        isActive: body.isActive
+        isActive: body.isActive,
+        actorId: auth.session.userId,
+        actorEmail: auth.session.email
       });
     }
 

@@ -615,6 +615,7 @@ export async function updateCandidate(
     screeningStatus?: CandidateScreeningStatus;
     candidateFolderUrl?: string;
     notesSummary?: string;
+    actorId?: string;
   }
 ) {
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -629,32 +630,70 @@ export async function updateCandidate(
     createIfMissing: Boolean(input.positionAppliedFor?.trim())
   });
 
-  const updated = await prisma.candidate.update({
-    where: { id: candidateId },
-    data: {
-      fullName: input.fullName.trim(),
-      email: normalizedEmail,
-      phone: input.phone?.trim() || null,
-      roleId: resolvedRole?.id ?? null,
-      positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
-      batchId: input.batchId?.trim() || null,
-      resumeSource: input.resumeSource?.trim() || null,
-      hrOwner: input.hrOwner?.trim() || null,
-      stage: input.stage,
-      finalDecision: input.finalDecision,
-      nextAction: input.nextAction,
-      screeningStatus: input.screeningStatus ?? null,
-      candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
-      notesSummary: input.notesSummary?.trim() || null
-    },
-    include: {
-      role: {
-        select: {
-          label: true,
-          department: true
+  const updated = await prisma.$transaction(async (tx) => {
+    const current = await tx.candidate.findUnique({
+      where: { id: candidateId },
+      select: {
+        fullName: true,
+        email: true,
+        phone: true,
+        roleId: true,
+        stage: true,
+        finalDecision: true,
+        nextAction: true,
+        hrOwner: true,
+        screeningStatus: true
+      }
+    });
+
+    const upd = await tx.candidate.update({
+      where: { id: candidateId },
+      data: {
+        fullName: input.fullName.trim(),
+        email: normalizedEmail,
+        phone: input.phone?.trim() || null,
+        roleId: resolvedRole?.id ?? null,
+        positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
+        batchId: input.batchId?.trim() || null,
+        resumeSource: input.resumeSource?.trim() || null,
+        hrOwner: input.hrOwner?.trim() || null,
+        stage: input.stage,
+        finalDecision: input.finalDecision,
+        nextAction: input.nextAction,
+        screeningStatus: input.screeningStatus ?? null,
+        candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
+        notesSummary: input.notesSummary?.trim() || null
+      },
+      include: {
+        role: {
+          select: {
+            label: true,
+            department: true
+          }
         }
       }
+    });
+
+    const changedFields: string[] = [];
+    if (current && current.fullName !== input.fullName.trim()) changedFields.push("name");
+    if (current && current.email !== normalizedEmail) changedFields.push("email");
+    if (current && current.phone !== (input.phone?.trim() || null)) changedFields.push("phone");
+    if (current && current.stage !== input.stage) changedFields.push("stage");
+    if (current && current.finalDecision !== input.finalDecision) changedFields.push("decision");
+    if (current && current.nextAction !== input.nextAction) changedFields.push("nextAction");
+    if (current && current.hrOwner !== (input.hrOwner?.trim() || null)) changedFields.push("owner");
+    if (current && current.screeningStatus !== (input.screeningStatus ?? null)) changedFields.push("screeningStatus");
+
+    if (changedFields.length > 0) {
+      await logActivityEvent(tx, {
+        candidateId,
+        event: "candidate_profile_updated",
+        detail: `Updated: ${changedFields.join(", ")}`,
+        actorId: input.actorId
+      });
     }
+
+    return upd;
   });
 
   return mapCandidate(updated);
@@ -961,6 +1000,33 @@ export async function deleteCandidateNote(input: {
   return mapNote(result as any);
 }
 
+async function logActivityEvent(
+  tx: any,
+  input: {
+    candidateId: string;
+    event: string;
+    entityType?: string;
+    entityId?: string;
+    detail?: string;
+    actorId?: string;
+    actorName?: string;
+  }
+) {
+  await tx.candidateActivityEvent.create({
+    data: {
+      id: cuidLike(),
+      candidateId: input.candidateId,
+      actorId: input.actorId ?? null,
+      actorName: input.actorName ?? null,
+      event: input.event,
+      entityType: input.entityType ?? null,
+      entityId: input.entityId ?? null,
+      detail: input.detail ?? null,
+      createdAt: new Date()
+    }
+  });
+}
+
 export async function bulkUpdateCandidates(input: {
   candidateIds: string[];
   action: "assign_owner" | "set_ui_status" | "add_note";
@@ -1086,6 +1152,7 @@ export async function updateCandidateMilestone(
     score?: number;
     result?: CandidateMilestoneResult;
     recommendation?: string;
+    actorId?: string;
   }
 ) {
   const milestone = await prisma.candidateMilestone.findFirst({
@@ -1093,7 +1160,7 @@ export async function updateCandidateMilestone(
       id: milestoneId,
       candidateId
     },
-    select: { id: true, type: true }
+    select: { id: true, type: true, title: true, status: true, score: true, result: true }
   });
 
   if (!milestone) {
@@ -1128,6 +1195,23 @@ export async function updateCandidateMilestone(
       }
     });
 
+    const changedFields: string[] = [];
+    if (input.title !== undefined && milestone.title !== input.title?.trim()) changedFields.push("title");
+    if (input.status !== undefined && milestone.status !== statusToApply) changedFields.push(`status: ${statusToApply}`);
+    if (input.score !== undefined && milestone.score !== input.score) changedFields.push("score");
+    if (input.result !== undefined && milestone.result !== input.result) changedFields.push("result");
+
+    if (changedFields.length > 0) {
+      await logActivityEvent(tx, {
+        candidateId,
+        event: "milestone_updated",
+        entityType: "milestone",
+        entityId: milestoneId,
+        detail: `${milestone.title}: ${changedFields.join(", ")}`,
+        actorId: input.actorId
+      });
+    }
+
     if (statusToApply) {
       await applyMilestoneCascade(candidateId, milestoneId, statusToApply, tx);
     }
@@ -1141,14 +1225,15 @@ export async function updateCandidateMilestone(
 export async function quickUpdateCandidateMilestoneStatus(
   candidateId: string,
   milestoneId: string,
-  status: CandidateMilestoneStatus
+  status: CandidateMilestoneStatus,
+  actorId?: string
 ) {
   const milestone = await prisma.candidateMilestone.findFirst({
     where: {
       id: milestoneId,
       candidateId
     },
-    select: { id: true }
+    select: { id: true, title: true, status: true }
   });
 
   if (!milestone) {
@@ -1169,6 +1254,17 @@ export async function quickUpdateCandidateMilestoneStatus(
         updatedAt: new Date()
       }
     });
+
+    if (milestone.status !== status) {
+      await logActivityEvent(tx, {
+        candidateId,
+        event: "milestone_status_changed",
+        entityType: "milestone",
+        entityId: milestoneId,
+        detail: `${milestone.title}: ${milestone.status} → ${status}`,
+        actorId
+      });
+    }
 
     await applyMilestoneCascade(candidateId, milestoneId, status, tx);
 
@@ -1281,6 +1377,7 @@ export async function linkCandidateAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;
   candidateAssessmentId: string;
+  actorId?: string;
 }) {
   const milestone = await prisma.candidateMilestone.findFirst({
     where: {
@@ -1288,7 +1385,8 @@ export async function linkCandidateAssessmentToMilestone(input: {
       candidateId: input.candidateId
     },
     select: {
-      id: true
+      id: true,
+      title: true
     }
   });
 
@@ -1337,6 +1435,15 @@ export async function linkCandidateAssessmentToMilestone(input: {
         status: "in_progress",
         updatedAt: new Date()
       }
+    });
+
+    await logActivityEvent(tx, {
+      candidateId: input.candidateId,
+      event: "assessment_linked",
+      entityType: "milestone",
+      entityId: input.milestoneId,
+      detail: `Assessment linked to ${milestone.title}`,
+      actorId: input.actorId
     });
 
     await tx.candidate.update({

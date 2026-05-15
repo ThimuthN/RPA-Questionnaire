@@ -6,7 +6,7 @@ import type { AppUserRow } from "@/lib/auth/app-auth";
 
 export function UserFilters({ users }: { users: AppUserRow[] }) {
   const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [accessLevelFilter, setAccessLevelFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active">("all");
 
@@ -22,13 +22,13 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
         user.name?.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase());
 
-      const matchesRole = roleFilter === "all" || user.role === roleFilter;
+      const matchesAccessLevel = accessLevelFilter === "all" || user.accessLevel === accessLevelFilter;
       const matchesDept = departmentFilter === "all" || user.department === departmentFilter;
       const matchesStatus = statusFilter === "all" || (statusFilter === "active" && user.isActive);
 
-      return matchesSearch && matchesRole && matchesDept && matchesStatus;
+      return matchesSearch && matchesAccessLevel && matchesDept && matchesStatus;
     });
-  }, [users, search, roleFilter, departmentFilter, statusFilter]);
+  }, [users, search, accessLevelFilter, departmentFilter, statusFilter]);
 
   return (
     <div className="space-y-4 border-b border-[color:var(--app-border)] pb-4">
@@ -40,8 +40,8 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
         />
 
         <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
+          value={accessLevelFilter}
+          onChange={(e) => setAccessLevelFilter(e.target.value)}
           className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
         >
           <option value="all">All roles</option>

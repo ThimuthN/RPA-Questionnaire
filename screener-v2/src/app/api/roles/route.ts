@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { createRoleCatalogEntry, listRoleCatalog, getRoleUsageCounts } from "@/lib/roles/catalog";
 
 const createRoleSchema = z.object({
@@ -39,6 +39,10 @@ export async function POST(request: Request) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = requirePermission(auth.session, "create_role");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {

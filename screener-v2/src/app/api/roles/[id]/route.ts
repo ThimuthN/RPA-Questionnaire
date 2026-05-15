@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { updateRoleCatalogEntry, getRoleUsageCounts, deleteRoleCatalogEntry } from "@/lib/roles/catalog";
 
 const updateRoleSchema = z.object({
@@ -16,6 +16,10 @@ export async function PUT(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = requirePermission(auth.session, "edit_role");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {
@@ -51,6 +55,10 @@ export async function DELETE(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = requirePermission(auth.session, "delete_role");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {

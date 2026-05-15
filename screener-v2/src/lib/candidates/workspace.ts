@@ -194,6 +194,8 @@ function eventTitle(eventName: string): string {
     "check_updated": "Check updated",
     "check_created": "Check created",
     "milestone_updated": "Milestone updated",
+    "milestone_status_changed": "Status changed",
+    "candidate_profile_updated": "Profile updated",
     "assessment_linked": "Assessment linked",
     "resume_uploaded": "Resume uploaded",
     "candidate_updated": "Candidate updated",

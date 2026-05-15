@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import type { Prisma } from "@prisma/client";
 
 export async function logAudit(input: {
   action: string;
@@ -6,8 +7,8 @@ export async function logAudit(input: {
   actorEmail?: string;
   targetId: string;
   targetType: string;
-  before?: Record<string, unknown>;
-  after?: Record<string, unknown>;
+  before?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
+  after?: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
 }) {
   await prisma.auditLog.create({ data: input });
 }
