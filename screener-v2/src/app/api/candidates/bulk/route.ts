@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { parseCandidateCsv } from "@/lib/candidates/csv";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
-import { bulkUpdateCandidates, createCandidate } from "@/lib/db/candidates";
+import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
 import { prisma } from "@/lib/db/prisma";
 
 const bulkSchema = z.object({
@@ -56,21 +56,12 @@ export async function POST(request: Request) {
         ).map((row) => row.email.toLowerCase())
       );
 
-      let createdCount = 0;
-      let skippedCount = 0;
+      const newRows = rows.filter((row) => !existingEmails.has(row.email.toLowerCase()));
+      const skippedCount = rows.length - newRows.length;
 
-      for (const row of rows) {
-        if (existingEmails.has(row.email)) {
-          skippedCount += 1;
-          continue;
-        }
+      const result = await createCandidatesBatch(newRows);
 
-        await createCandidate(row);
-        existingEmails.add(row.email);
-        createdCount += 1;
-      }
-
-      url.searchParams.set("imported", String(createdCount));
+      url.searchParams.set("imported", String(result.createdCount));
       if (skippedCount > 0) {
         url.searchParams.set("skipped", String(skippedCount));
       }

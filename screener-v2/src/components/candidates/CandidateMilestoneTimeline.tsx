@@ -18,6 +18,7 @@ import {
   candidateMilestoneStatusValues,
   milestoneCheckDefs,
   type CandidateMilestoneMode,
+  type CandidateMilestoneResult,
   type CheckType
 } from "@/lib/candidates/milestones";
 import type { CandidateMilestoneCheckRecord, CandidateMilestoneRecord } from "@/lib/db/candidates";
@@ -812,8 +813,8 @@ export function CandidateMilestoneTimeline({
                   : node.id === activeMilestoneId;
 
               let isComplete = false;
-              let result: string | undefined = undefined;
-              let status: string = "not_started";
+              let result: CandidateMilestoneResult | undefined = undefined;
+              let status: CandidateMilestoneRecord["status"] = "not_started";
               let title: string = "";
               let summary: string = "";
 
@@ -870,7 +871,7 @@ export function CandidateMilestoneTimeline({
                       {summary}
                     </span>
                     <span className="mt-2 flex flex-wrap justify-center gap-2">
-                      <CandidateMilestoneStatusPill status={status as any} />
+                      <CandidateMilestoneStatusPill status={status} />
                       {result && !isAdvancedReviewGroup(node) ? (
                         <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
                       ) : null}

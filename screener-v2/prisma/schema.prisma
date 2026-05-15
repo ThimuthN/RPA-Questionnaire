@@ -216,6 +216,7 @@ model Result {
 
   @@index([finalPercent])
   @@index([reviewState, createdAt])
+  @@index([contextType, reviewState, createdAt])
 }
 
 model MagicToken {
@@ -226,6 +227,7 @@ model MagicToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+  @@index([expiresAt])
 }
 
 model Candidate {
@@ -257,6 +259,8 @@ model Candidate {
   @@index([roleId])
   @@index([stage, updatedAt])
   @@index([intakeBucket, updatedAt])
+  @@index([finalDecision, stage, updatedAt])
+  @@index([fullName])
 }
 
 model CandidateResume {

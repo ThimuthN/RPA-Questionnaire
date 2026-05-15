@@ -123,9 +123,9 @@ function NoteItem({
           <div className="flex gap-2">
             <Button
               type="button"
-              size="sm"
               onClick={handleSave}
               disabled={isSaving || !editedBody.trim() || editedBody === note.body}
+              className="px-3 py-1.5 text-sm"
             >
               {isSaving ? "Saving..." : "Save"}
             </Button>
@@ -155,7 +155,7 @@ export function CandidateNotesModal({
   candidateId: string;
   notes: CandidateNoteItem[];
 }) {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = Boolean(useReducedMotion());
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const activeNotes = notes.filter(note => !(note as any).deletedAt);

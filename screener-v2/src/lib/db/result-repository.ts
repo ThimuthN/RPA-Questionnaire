@@ -94,73 +94,47 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
           }
         }
       : undefined,
-    orderBy: { createdAt: "desc" }
-  });
-  const attemptIds = resultRows.map((row) => row.attemptId);
-  if (attemptIds.length === 0) return [];
-
-  const attemptRows = await prisma.attempt.findMany({
-    where: { id: { in: attemptIds } }
-  });
-  const attemptsById = new Map(attemptRows.map((row) => [row.id, mapAttempt(row)]));
-  const participantIds = [...new Set(attemptRows.map((row) => row.participantId))];
-  const participantRows =
-    participantIds.length > 0
-      ? await prisma.participant.findMany({
-          where: { id: { in: participantIds } }
-        })
-      : [];
-  const participantsById = new Map(participantRows.map((row) => [row.id, mapParticipant(row)]));
-  const candidateAssessmentRows = await prisma.candidateAssessmentAttempt.findMany({
-    where: {
-      attemptId: {
-        in: attemptIds
-      }
-    },
+    orderBy: { createdAt: "desc" },
     include: {
-      candidateAssessment: {
+      attempt: {
         include: {
-          candidate: {
-            select: {
-              id: true,
-              roleId: true,
-              positionAppliedFor: true,
-              hrOwner: true,
-              stage: true,
-              nextAction: true,
-              finalDecision: true,
-              screeningStatus: true,
-              notesSummary: true,
-              updatedAt: true,
-              role: {
+          participant: true,
+          candidateAssessment: {
+            include: {
+              candidate: {
                 select: {
-                  label: true
+                  id: true,
+                  roleId: true,
+                  positionAppliedFor: true,
+                  hrOwner: true,
+                  stage: true,
+                  nextAction: true,
+                  finalDecision: true,
+                  screeningStatus: true,
+                  notesSummary: true,
+                  updatedAt: true,
+                  role: {
+                    select: {
+                      label: true
+                    }
+                  }
                 }
               }
             }
           }
         }
       }
-    },
-    orderBy: [{ linkedAt: "desc" }, { id: "desc" }]
-  });
-  const candidateByAttemptId = new Map<
-    string,
-    (typeof candidateAssessmentRows)[number]["candidateAssessment"]["candidate"]
-  >();
-  for (const row of candidateAssessmentRows) {
-    if (!candidateByAttemptId.has(row.attemptId)) {
-      candidateByAttemptId.set(row.attemptId, row.candidateAssessment.candidate);
     }
-  }
+  });
 
   return resultRows
     .map((row) => {
-      const attempt = attemptsById.get(row.attemptId) ?? null;
-      const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
-      const candidate = candidateByAttemptId.get(row.attemptId);
-      const summary = toResultSummary(row, attempt, participant, candidate ?? null);
-      if (!summary || !attempt) return null;
+      if (!row.attempt) return null;
+      const attempt = mapAttempt(row.attempt);
+      const participant = row.attempt.participant ? mapParticipant(row.attempt.participant) : null;
+      const candidate = row.attempt.candidateAssessment?.candidate ?? null;
+      const summary = toResultSummary(row, attempt, participant, candidate);
+      if (!summary) return null;
       const resultStatus: CandidateAssessmentStatus = row.pass
         ? "passed"
         : row.borderline
@@ -213,25 +187,113 @@ export async function listResultWorkspacePage(
 ): Promise<ResultWorkspacePage> {
   const page = Math.max(1, Number(filters.page ?? 1));
   const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
-  const rows = await listAllResultWorkspaceRows(filters);
-  const start = (page - 1) * pageSize;
+  const skip = (page - 1) * pageSize;
+
+  const resultRows = await prisma.result.findMany({
+    where: filters.attemptIds?.length
+      ? { attemptId: { in: filters.attemptIds } }
+      : undefined,
+    orderBy: { createdAt: "desc" },
+    take: pageSize,
+    skip,
+    include: {
+      attempt: {
+        include: {
+          participant: true,
+          candidateAssessment: {
+            include: {
+              candidate: {
+                select: {
+                  id: true,
+                  roleId: true,
+                  positionAppliedFor: true,
+                  hrOwner: true,
+                  stage: true,
+                  nextAction: true,
+                  finalDecision: true,
+                  screeningStatus: true,
+                  notesSummary: true,
+                  updatedAt: true,
+                  role: { select: { label: true } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const mappedRows = resultRows
+    .map((row) => {
+      if (!row.attempt) return null;
+      const attempt = mapAttempt(row.attempt);
+      const participant = row.attempt.participant ? mapParticipant(row.attempt.participant) : null;
+      const candidate = row.attempt.candidateAssessment?.candidate ?? null;
+      const summary = toResultSummary(row, attempt, participant, candidate);
+      if (!summary) return null;
+      const resultStatus: CandidateAssessmentStatus = row.pass
+        ? "passed"
+        : row.borderline
+          ? "review"
+          : "failed";
+      const uiStatus: CandidateUiStatus | undefined = candidate
+        ? getCandidateUiStatus({
+            stage: candidate.stage as CandidateStage,
+            finalDecision: candidate.finalDecision as CandidateFinalDecision,
+            nextAction: candidate.nextAction as CandidateNextAction,
+            screeningStatus:
+              (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+            latestAssessmentStatus: resultStatus
+          })
+        : undefined;
+      const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
+      const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
+      const staleDays = Math.max(
+        0,
+        Math.floor((Date.now() - Date.parse(latestActivityAt)) / (1000 * 60 * 60 * 24))
+      );
+
+      return toWorkspaceResultRow(summary, {
+        contextType: summary.contextType,
+        reviewState: summary.reviewState,
+        submittedAt,
+        candidateId: candidate?.id,
+        candidateRoleId: candidate?.roleId ?? undefined,
+        candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
+        candidateOwner: candidate?.hrOwner ?? undefined,
+        candidateStage: candidate?.stage as CandidateStage | undefined,
+        candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
+        candidateUiStatus: uiStatus,
+        candidateLatestActivityAt: latestActivityAt,
+        candidateStaleDays: staleDays,
+        candidateNotesSummary: candidate?.notesSummary ?? undefined
+      });
+    })
+    .filter((row): row is WorkspaceResultRow => Boolean(row));
+
+  const filteredRows = filterResultWorkspaceRows(mappedRows, filters);
   const roleOptions = (await listRoleCatalog()).map((role) => ({
     id: role.id,
     label: role.label
   }));
-  const ownerOptions = [...new Set(rows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
+  const ownerOptions = [...new Set(mappedRows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
+
+  const total = await prisma.result.count({
+    where: filters.attemptIds?.length ? { attemptId: { in: filters.attemptIds } } : undefined
+  });
 
   return {
-    rows: rows.slice(start, start + pageSize),
-    total: rows.length,
+    rows: filteredRows.slice(0, pageSize),
+    total,
     page,
     pageSize,
     roleOptions,
     ownerOptions,
     statusCounts: {
-      pass: rows.filter((row) => row.resultStatus === "pass").length,
-      review: rows.filter((row) => row.resultStatus === "review").length,
-      fail: rows.filter((row) => row.resultStatus === "fail").length
+      pass: filteredRows.filter((row) => row.resultStatus === "pass").length,
+      review: filteredRows.filter((row) => row.resultStatus === "review").length,
+      fail: filteredRows.filter((row) => row.resultStatus === "fail").length
     }
   };
 }
@@ -612,17 +674,30 @@ export async function getScoreContextForAttempt(
   return { roleAverage: Math.round(avg * 10) / 10, percentile, label };
 }
 
-export async function getNextUnreviewedAttemptId(
-  currentAttemptId: string
-): Promise<string | null> {
-  const rows = await prisma.result.findMany({
-    orderBy: { createdAt: "desc" },
-    select: { attemptId: true, reviewState: true }
+export async function getNextUnreviewedAttemptId(currentAttemptId: string): Promise<string | null> {
+  const current = await prisma.result.findUnique({
+    where: { attemptId: currentAttemptId },
+    select: { reviewState: true, createdAt: true }
   });
-  const ids = rows.filter((r) => r.reviewState === "unreviewed").map((r) => r.attemptId);
-  const idx = ids.indexOf(currentAttemptId);
-  if (idx === -1) return ids[0] ?? null;
-  return ids[idx + 1] ?? null;
+
+  if (!current || current.reviewState !== "unreviewed") {
+    const first = await prisma.result.findFirst({
+      where: { reviewState: "unreviewed" },
+      orderBy: { createdAt: "desc" },
+      select: { attemptId: true }
+    });
+    return first?.attemptId ?? null;
+  }
+
+  const next = await prisma.result.findFirst({
+    where: {
+      reviewState: "unreviewed",
+      createdAt: { lt: current.createdAt }
+    },
+    orderBy: { createdAt: "desc" },
+    select: { attemptId: true }
+  });
+  return next?.attemptId ?? null;
 }
 
 export async function deleteResultAttempt(attemptId: string) {

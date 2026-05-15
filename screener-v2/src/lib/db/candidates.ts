@@ -598,6 +598,99 @@ export async function createCandidate(input: {
   return mapCandidate(created);
 }
 
+export async function createCandidatesBatch(
+  inputs: Array<{
+    fullName: string;
+    email: string;
+    phone?: string;
+    roleId?: string;
+    positionAppliedFor?: string;
+    batchId?: string;
+    resumeSource?: string;
+    hrOwner?: string;
+    intakeBucket?: CandidateIntakeBucket;
+    stage?: CandidateStage;
+    finalDecision?: CandidateFinalDecision;
+    nextAction?: CandidateNextAction;
+    screeningStatus?: CandidateScreeningStatus;
+    candidateFolderUrl?: string;
+    notesSummary?: string;
+  }>
+) {
+  const normalizedInputs = inputs.map((input) => ({
+    ...input,
+    email: input.email.trim().toLowerCase()
+  }));
+
+  const uniqueRoleLabels = [
+    ...new Set(
+      normalizedInputs
+        .map((i) => i.positionAppliedFor?.trim())
+        .filter((label): label is string => Boolean(label))
+    )
+  ];
+  const rolesByLabel = new Map<string, { id: string; label: string }>();
+  if (uniqueRoleLabels.length > 0) {
+    const rolesFromDb = await prisma.roleCatalog.findMany({
+      where: { label: { in: uniqueRoleLabels } },
+      select: { id: true, label: true }
+    });
+    rolesFromDb.forEach((role) => rolesByLabel.set(role.label, role));
+  }
+
+  let createdCount = 0;
+  const baselineMilestones = defaultCandidateMilestones();
+
+  for (const input of normalizedInputs) {
+    const role = input.positionAppliedFor?.trim()
+      ? rolesByLabel.get(input.positionAppliedFor.trim())
+      : null;
+
+    const candidateId = cuidLike();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.candidate.create({
+        data: {
+          id: candidateId,
+          fullName: input.fullName.trim(),
+          email: input.email,
+          phone: input.phone?.trim() || null,
+          roleId: input.roleId ?? role?.id ?? null,
+          positionAppliedFor: input.roleId
+            ? null
+            : role?.label ?? (input.positionAppliedFor?.trim() || null),
+          batchId: input.batchId?.trim() || null,
+          resumeSource: input.resumeSource?.trim() || null,
+          hrOwner: input.hrOwner?.trim() || null,
+          intakeBucket: input.intakeBucket ?? "pipeline",
+          stage: input.stage ?? "new",
+          finalDecision: input.finalDecision ?? "in_process",
+          nextAction: input.nextAction ?? "none",
+          screeningStatus: input.screeningStatus ?? null,
+          candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
+          notesSummary: input.notesSummary?.trim() || null
+        }
+      });
+
+      await tx.candidateMilestone.createMany({
+        data: baselineMilestones.map((milestone) => ({
+          id: cuidLike(),
+          candidateId,
+          type: milestone.type,
+          title: milestone.title,
+          status: milestone.status,
+          sortOrder: milestone.sortOrder,
+          mode: milestone.mode
+        }))
+      });
+    });
+
+    createdCount += 1;
+  }
+
+  return { createdCount };
+}
+
 export async function updateCandidate(
   candidateId: string,
   input: {
@@ -776,15 +869,15 @@ export async function deleteCandidate(candidateId: string) {
       where: { id: candidateId }
     });
 
-    for (const participantId of participantIds) {
-      const remainingAttempts = await tx.attempt.count({
-        where: { participantId }
+    if (participantIds.length > 0) {
+      const usedParticipantIds = await tx.attempt.findMany({
+        where: { participantId: { in: participantIds } },
+        select: { participantId: true }
       });
-
-      if (remainingAttempts === 0) {
-        await tx.participant.delete({
-          where: { id: participantId }
-        });
+      const usedSet = new Set(usedParticipantIds.map((r) => r.participantId));
+      const toDelete = participantIds.filter((id) => !usedSet.has(id));
+      if (toDelete.length > 0) {
+        await tx.participant.deleteMany({ where: { id: { in: toDelete } } });
       }
     }
   });
@@ -1588,6 +1681,43 @@ export async function findExistingCandidateByEmail(email: string) {
   };
 }
 
+function buildCandidateWhere(filters?: {
+  roleId?: string;
+  intakeBucket?: CandidateIntakeBucket;
+  stage?: CandidateStage;
+  finalDecision?: CandidateFinalDecision;
+  q?: string;
+  owner?: string;
+}): Prisma.CandidateWhereInput {
+  const where: Prisma.CandidateWhereInput = {};
+
+  if (filters?.intakeBucket) {
+    where.intakeBucket = filters.intakeBucket;
+  }
+  if (filters?.roleId) {
+    where.roleId = filters.roleId;
+  }
+  if (filters?.stage) {
+    where.stage = filters.stage;
+  }
+  if (filters?.finalDecision) {
+    where.finalDecision = filters.finalDecision;
+  }
+  if (filters?.owner) {
+    where.hrOwner = filters.owner;
+  }
+  if (filters?.q) {
+    const q = filters.q.trim().toLowerCase();
+    where.OR = [
+      { fullName: { contains: q, mode: "insensitive" } },
+      { email: { contains: q, mode: "insensitive" } },
+      { positionAppliedFor: { contains: q, mode: "insensitive" } }
+    ];
+  }
+
+  return where;
+}
+
 export async function listCandidates(filters?: {
   roleId?: string;
   intakeBucket?: CandidateIntakeBucket;
@@ -1596,9 +1726,12 @@ export async function listCandidates(filters?: {
   assessmentStatus?: CandidateAssessmentStatus;
 }) {
   const rows = await prisma.candidate.findMany({
-    where: {
-      intakeBucket: filters?.intakeBucket
-    },
+    where: buildCandidateWhere({
+      intakeBucket: filters?.intakeBucket,
+      roleId: filters?.roleId,
+      stage: filters?.stage,
+      finalDecision: filters?.finalDecision
+    }),
     orderBy: { updatedAt: "desc" },
     include: {
       _count: {
@@ -1689,9 +1822,6 @@ export async function listCandidates(filters?: {
   });
 
   return mapped.filter((row) => {
-    if (filters?.roleId && row.roleId !== filters.roleId) return false;
-    if (filters?.stage && row.stage !== filters.stage) return false;
-    if (filters?.finalDecision && row.finalDecision !== filters.finalDecision) return false;
     if (filters?.assessmentStatus) {
       const status = row.latestAssessment?.status ?? "none";
       if (status !== filters.assessmentStatus) return false;
@@ -1703,43 +1833,114 @@ export async function listCandidates(filters?: {
 export async function listCandidateWorkspacePage(
   filters: CandidateWorkspaceFilters = {}
 ): Promise<CandidateWorkspacePage> {
-  const candidates = await listCandidates({
+  const page = Math.max(1, Number(filters.page ?? 1));
+  const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
+  const skip = (page - 1) * pageSize;
+
+  const where = buildCandidateWhere({
     intakeBucket: filters.intakeBucket,
     roleId: filters.roleId,
     stage: filters.stage,
-    assessmentStatus: filters.assessmentStatus
+    q: filters.q,
+    owner: filters.owner
   });
-  const query = filters.q?.trim().toLowerCase() ?? "";
-  const roleId = filters.roleId?.trim() ?? "";
-  const status = filters.status;
-  const owner = filters.owner?.trim() ?? "";
-  const sort = filters.sort ?? "updated_desc";
-  const page = Math.max(1, Number(filters.page ?? 1));
-  const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
+
+  const [dbCandidates, total] = await Promise.all([
+    prisma.candidate.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      take: pageSize,
+      skip,
+      include: {
+        _count: {
+          select: { resumes: true }
+        },
+        resumes: {
+          orderBy: { uploadedAt: "desc" },
+          take: 1,
+          select: { storageKey: true }
+        },
+        assessments: {
+          orderBy: { createdAt: "desc" },
+          include: {
+            invite: {
+              select: { slug: true, mode: true }
+            },
+            attempt: {
+              select: {
+                status: true,
+                startedAt: true,
+                submittedAt: true
+              }
+            }
+          }
+        },
+        milestones: {
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            candidateId: true,
+            type: true,
+            title: true,
+            status: true,
+            sortOrder: true,
+            mode: true,
+            date: true,
+            notes: true,
+            score: true,
+            result: true,
+            recommendation: true,
+            candidateAssessmentId: true,
+            createdAt: true,
+            updatedAt: true
+          }
+        },
+        role: {
+          select: { label: true, department: true }
+        }
+      }
+    }),
+    prisma.candidate.count({ where })
+  ]);
+
+  const attemptIds = dbCandidates.flatMap((row) =>
+    row.assessments
+      .map((assessment) => assessment.attemptId)
+      .filter((value): value is string => Boolean(value))
+  );
+  const resultsByAttemptId = await loadResultsByAttemptId(attemptIds);
+
+  const candidates = dbCandidates.map((row) => {
+    const base = mapCandidate(row);
+    const assessments = sortCandidateAssessmentsByLatestActivity(
+      row.assessments.map((assessment) =>
+        mapAssessment(
+          assessment,
+          assessment.attemptId ? resultsByAttemptId.get(assessment.attemptId) ?? null : null
+        )
+      )
+    );
+    const latest = assessments[0] ?? null;
+
+    return {
+      ...base,
+      hasResume: row._count.resumes > 0,
+      latestResumeStorageKey: row.resumes[0]?.storageKey ?? undefined,
+      currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
+      latestAssessment: latest
+    } satisfies CandidateListItem;
+  });
 
   const workspaceRows = candidates.map(toCandidateWorkspaceItem).filter((row) => {
-    if (query) {
-      const haystack = [
-        row.fullName,
-        row.email,
-        row.positionAppliedFor || "",
-        row.hrOwner || "",
-        row.currentFocus || "",
-        row.notesSummary || ""
-      ]
-        .join(" ")
-        .toLowerCase();
-      if (!haystack.includes(query)) return false;
+    if (filters.status && row.uiStatus !== filters.status) return false;
+    if (filters.assessmentStatus) {
+      const status = row.latestAssessment?.status ?? "none";
+      if (status !== filters.assessmentStatus) return false;
     }
-    if (roleId && (row.roleId || "") !== roleId) return false;
-    if (status && row.uiStatus !== status) return false;
-    if (owner && (row.hrOwner || "") !== owner) return false;
     return true;
   });
 
-  const sorted = sortCandidateWorkspaceItems(workspaceRows, sort);
-  const start = (page - 1) * pageSize;
-  const rows = sorted.slice(start, start + pageSize);
+  const sorted = sortCandidateWorkspaceItems(workspaceRows, filters.sort ?? "updated_desc");
   const roleOptions = (await listRoleCatalog()).map((role) => ({
     id: role.id,
     label: role.label
@@ -1747,13 +1948,13 @@ export async function listCandidateWorkspacePage(
   const ownerOptions = [...new Set(candidates.map((row) => row.hrOwner).filter(Boolean))].sort() as string[];
 
   return {
-    rows,
-    total: sorted.length,
+    rows: sorted,
+    total,
     page,
     pageSize,
     roleOptions,
     ownerOptions,
-    summary: buildCandidateOpenWorkSummary(workspaceRows)
+    summary: buildCandidateOpenWorkSummary(sorted)
   };
 }
 
