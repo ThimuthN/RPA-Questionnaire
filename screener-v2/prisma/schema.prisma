@@ -16,12 +16,29 @@ enum AppAccessLevel {
   member
 }
 
+model Department {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  roles     RoleCatalog[]
+  users     User[]
+  candidates Candidate[]
+  jobPostings JobPosting[]
+
+  @@index([isActive, sortOrder])
+}
+
 model User {
   id            String             @id @default(cuid())
   email         String             @unique
   name          String?
   title         String?
   department    String?
+  departmentId  String?
   phone         String?
   accessLevel   AppAccessLevel     @default(member)
   passwordHash  String?
@@ -30,6 +47,10 @@ model User {
   lastLoginAt   DateTime?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
+  dept          Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  ownedCandidates Candidate[]       @relation("HROwner")
+
+  @@index([departmentId])
 }
 
 model AssessmentTemplate {
@@ -133,15 +154,18 @@ model RoleCatalog {
   slug            String   @unique
   label           String
   department      String?
+  departmentId    String?
   sortOrder       Int      @default(0)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  dept            Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   candidates      Candidate[]
   jobPostings     JobPosting[]
 
   @@index([isActive, sortOrder])
   @@index([label, department])
+  @@index([departmentId])
 }
 
 model Participant {
@@ -236,6 +260,8 @@ model Candidate {
   email              String   @unique
   phone              String?
   roleId             String?
+  departmentId       String?
+  hrOwnerId          String?
   positionAppliedFor String?
   batchId            String?
   resumeSource       String?
@@ -250,6 +276,8 @@ model Candidate {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   role               RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  department         Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  hrOwnerUser        User? @relation("HROwner", fields: [hrOwnerId], references: [id], onDelete: SetNull)
   resumes            CandidateResume[]
   assessments        CandidateAssessment[]
   notes              CandidateNote[]
@@ -257,6 +285,8 @@ model Candidate {
   applications       CandidateApplication[]
   activityEvents     CandidateActivityEvent[]
   @@index([roleId])
+  @@index([departmentId])
+  @@index([hrOwnerId])
   @@index([stage, updatedAt])
   @@index([intakeBucket, updatedAt])
   @@index([finalDecision, stage, updatedAt])
@@ -381,6 +411,7 @@ model JobPosting {
   slug        String   @unique
   title       String
   roleId      String?
+  departmentId String?
   screenerPresetId String?
   summary     String
   description String
@@ -389,10 +420,12 @@ model JobPosting {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   role        RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   screenerPreset AssessmentPreset? @relation(fields: [screenerPresetId], references: [id], onDelete: SetNull)
   applications CandidateApplication[]
 
   @@index([roleId])
+  @@index([departmentId])
   @@index([screenerPresetId])
   @@index([isPublished, isOpen, updatedAt])
 }
