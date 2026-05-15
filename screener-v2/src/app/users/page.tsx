@@ -10,7 +10,7 @@ import { UserFilters } from "@/components/users/UserFilters";
 import { requireAdminPageSession } from "@/lib/auth/guards";
 import { listAppUsers, type AppUserRow } from "@/lib/auth/app-auth";
 
-const roleTones = {
+const accessLevelTones = {
   admin: "purple" as const,
   recruiter: "blue" as const,
   hiring_manager: "emerald" as const,
@@ -18,7 +18,7 @@ const roleTones = {
   member: "blue" as const
 };
 
-const roleLabels: Record<string, string> = {
+const accessLevelLabels: Record<string, string> = {
   admin: "Admin",
   recruiter: "Recruiter",
   hiring_manager: "Hiring Manager",
@@ -53,7 +53,7 @@ export default async function UsersPage({
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.isActive).length;
   const interviewers = users.filter((u) => u.isInterviewer && u.isActive).length;
-  const admins = users.filter((u) => u.role === "admin").length;
+  const admins = users.filter((u) => u.accessLevel === "admin").length;
 
   return (
     <SceneShell
@@ -116,7 +116,10 @@ export default async function UsersPage({
                           <span className="truncate" title={user.email}>{user.email}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <StatusPill label={roleLabels[user.role] || user.role} tone={roleTones[user.role as keyof typeof roleTones] || "blue"} />
+                          <StatusPill
+                            label={accessLevelLabels[user.accessLevel] || user.accessLevel}
+                            tone={accessLevelTones[user.accessLevel as keyof typeof accessLevelTones] || "blue"}
+                          />
                         </td>
                         <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
                           {user.department || "—"}

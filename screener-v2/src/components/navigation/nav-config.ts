@@ -6,7 +6,7 @@ import type { AppSession } from "@/lib/auth/session";
 
 export type NavItem = { href: Route; label: string; icon: LucideIcon };
 
-export function getNavItems(viewer: Pick<AppSession, "role"> | null): NavItem[] {
+export function getNavItems(viewer: Pick<AppSession, "accessLevel"> | null): NavItem[] {
   return viewer
     ? [
         { href: "/people/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
@@ -15,7 +15,7 @@ export function getNavItems(viewer: Pick<AppSession, "role"> | null): NavItem[] 
         { href: "/results" as Route, label: copy.nav.results, icon: Activity },
         { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
         { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
-        ...(viewer.role === "admin" ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }] : [])
+        ...(viewer.accessLevel === "admin" ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }] : [])
       ]
     : [
         { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },

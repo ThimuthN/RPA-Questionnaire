@@ -158,7 +158,8 @@ export function CandidateNotesModal({
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
-  const latestNote = notes[0] ?? null;
+  const activeNotes = notes.filter(note => !(note as any).deletedAt);
+  const latestNote = activeNotes[0] ?? null;
 
   useEffect(() => {
     setMounted(true);
@@ -195,7 +196,7 @@ export function CandidateNotesModal({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <StatusPill label={`${notes.length} note${notes.length === 1 ? "" : "s"}`} tone="neutral" />
+          <StatusPill label={`${activeNotes.length} note${activeNotes.length === 1 ? "" : "s"}`} tone="neutral" />
           {latestNote ? <StatusPill label={new Date(latestNote.createdAt).toLocaleString()} tone="neutral" /> : null}
         </div>
 
@@ -246,7 +247,7 @@ export function CandidateNotesModal({
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
                           <StatusPill label="Notes" tone="blue" />
-                          <StatusPill label={`${notes.length} total`} tone="neutral" />
+                          <StatusPill label={`${activeNotes.length} active`} tone="neutral" />
                         </div>
                         <div>
                           <h3 className="text-xl text-[color:var(--app-heading)]">Candidate notes</h3>
@@ -293,12 +294,12 @@ export function CandidateNotesModal({
                       </form>
 
                       <div className="space-y-3">
-                        {notes.length === 0 ? (
+                        {activeNotes.length === 0 ? (
                           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                             <p className="text-sm text-[color:var(--app-muted)]">No notes yet.</p>
                           </div>
                         ) : (
-                          notes.map((note, index) => (
+                          activeNotes.map((note, index) => (
                             <NoteItem
                               key={note.id}
                               note={note}

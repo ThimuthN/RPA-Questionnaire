@@ -14,7 +14,7 @@ const STORAGE_KEY = "northstar-rail-collapsed";
 export function WorkspaceRail({
   viewer
 }: {
-  viewer: Pick<AppSession, "email" | "name" | "role"> | null;
+  viewer: Pick<AppSession, "email" | "name" | "accessLevel"> | null;
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -110,7 +110,7 @@ export function WorkspaceRail({
                       <div className="space-y-1 transition-all duration-300">
                         <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Workspace user</p>
                         <p className="text-sm font-medium text-[color:var(--app-heading)]">{viewer.name || viewer.email}</p>
-                        <p className="text-xs text-[color:var(--app-muted)]">{viewer.role}</p>
+                        <p className="text-xs text-[color:var(--app-muted)]">{viewer.accessLevel}</p>
                       </div>
                     )}
                   </div>

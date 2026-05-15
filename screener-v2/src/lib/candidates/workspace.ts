@@ -231,7 +231,7 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       id: note.id,
       at: note.createdAt,
       kind: "note",
-      title: noteTitle(note),
+      title: note.deletedAt ? `${noteTitle(note)} (deleted)` : noteTitle(note),
       detail: note.body,
       actorName: note.createdByName || null
     });

@@ -91,13 +91,13 @@ export function AddUserModal({
           />
 
           <div className="grid gap-1">
-            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-role">
-              Role
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-access-level">
+              Access level
             </label>
             <select
-              id="user-role"
-              name="role"
-              defaultValue={user?.role || "recruiter"}
+              id="user-access-level"
+              name="accessLevel"
+              defaultValue={user?.accessLevel || "recruiter"}
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
             >
               <option value="recruiter">Recruiter</option>

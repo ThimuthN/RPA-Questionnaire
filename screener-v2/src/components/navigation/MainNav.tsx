@@ -8,7 +8,7 @@ import { MobileNavDrawer } from "@/components/navigation/MobileNavDrawer";
 import { getNavItems } from "@/components/navigation/nav-config";
 import type { AppSession } from "@/lib/auth/session";
 
-export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" | "role"> | null }) {
+export function MainNav({ viewer }: { viewer: Pick<AppSession, "email" | "name" | "accessLevel"> | null }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const items = getNavItems(viewer);

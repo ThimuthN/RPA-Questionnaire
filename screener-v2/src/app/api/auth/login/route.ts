@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { authenticateAppUser } from "@/lib/auth/app-auth";
+import { authenticateAppUser, ensureBootstrapAdmin } from "@/lib/auth/app-auth";
 import { createSessionToken, sanitizeNextPath, setSessionCookie } from "@/lib/auth/session";
 import { isFormRequest } from "@/lib/http/request";
 import {
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
     const body = loginSchema.parse(rawBody);
+    await ensureBootstrapAdmin();
     const session = await authenticateAppUser(body.email, body.password);
 
     if (!session) {
@@ -40,8 +41,7 @@ export async function POST(request: Request) {
       userId: session.userId,
       email: session.email,
       name: session.name,
-      role: session.role,
-      bootstrap: session.bootstrap
+      accessLevel: session.accessLevel
     });
     const redirectTarget = sanitizeNextPath(body.next);
     const response = isFormRequest(request)

@@ -79,6 +79,7 @@ export interface CandidateNoteRecord {
   type: CandidateNoteType;
   body: string;
   createdAt: string;
+  deletedAt?: string;
   createdById?: string;
   createdByName?: string;
   createdByEmail?: string;
@@ -309,6 +310,7 @@ function mapNote(row: {
   type: string;
   body: string;
   createdAt: Date;
+  deletedAt?: Date | null;
   createdById: string | null;
 }, author?: { name: string | null; email: string } | null): CandidateNoteRecord {
   return {
@@ -317,6 +319,7 @@ function mapNote(row: {
     type: row.type as CandidateNoteType,
     body: row.body,
     createdAt: row.createdAt.toISOString(),
+    deletedAt: row.deletedAt?.toISOString(),
     createdById: row.createdById ?? undefined,
     createdByName: author?.name ?? undefined,
     createdByEmail: author?.email ?? undefined
@@ -1655,7 +1658,6 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
         orderBy: { uploadedAt: "desc" }
       },
       notes: {
-        where: { deletedAt: null },
         orderBy: { createdAt: "desc" }
       },
       applications: {

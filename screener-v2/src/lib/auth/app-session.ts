@@ -5,19 +5,20 @@ import {
   SESSION_COOKIE_NAME,
   sanitizeNextPath,
   verifySessionToken,
-  type AppRole,
+  type AppAccessLevel,
   type AppSession
 } from "@/lib/auth/session";
 
-function normalizeRole(role: string): AppRole {
-  return role === "admin" ? "admin" : "member";
+function normalizeAccessLevel(accessLevel: string): AppAccessLevel {
+  const valid: AppAccessLevel[] = ["admin", "recruiter", "hiring_manager", "interviewer", "member"];
+  return valid.includes(accessLevel as AppAccessLevel) ? (accessLevel as AppAccessLevel) : "member";
 }
 
 export async function getAppSession(): Promise<AppSession | null> {
   const cookieStore = await cookies();
   const session = await verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
   if (!session) return null;
-  if (session.bootstrap || !session.userId) return session;
+  if (!session.userId) return session;
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
@@ -25,7 +26,7 @@ export async function getAppSession(): Promise<AppSession | null> {
       id: true,
       email: true,
       name: true,
-      role: true
+      accessLevel: true
     }
   });
 
@@ -38,7 +39,7 @@ export async function getAppSession(): Promise<AppSession | null> {
     userId: user.id,
     email: user.email,
     name: user.name,
-    role: normalizeRole(user.role)
+    accessLevel: normalizeAccessLevel(user.accessLevel)
   };
 }
 
