@@ -196,7 +196,9 @@ function eventTitle(eventName: string): string {
     "milestone_updated": "Milestone updated",
     "assessment_linked": "Assessment linked",
     "resume_uploaded": "Resume uploaded",
-    "candidate_updated": "Candidate updated"
+    "candidate_updated": "Candidate updated",
+    "note_updated": "Note edited",
+    "note_deleted": "Note deleted"
   };
   return titles[eventName] ?? eventName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }

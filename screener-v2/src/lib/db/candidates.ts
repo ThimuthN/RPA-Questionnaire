@@ -865,6 +865,99 @@ export async function addCandidateNote(input: {
   return mapNote(result as any);
 }
 
+export async function updateCandidateNote(input: {
+  noteId: string;
+  candidateId: string;
+  body: string;
+  updatedById?: string;
+}) {
+  const result = await prisma.$transaction(async (tx) => {
+    const updated = await tx.candidateNote.update({
+      where: { id: input.noteId },
+      data: {
+        body: input.body.trim(),
+        updatedById: input.updatedById ?? null,
+        updatedAt: new Date()
+      },
+      select: {
+        id: true,
+        type: true,
+        body: true,
+        createdAt: true,
+        updatedAt: true,
+        createdById: true
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: { updatedAt: new Date() }
+    });
+
+    await tx.candidateActivityEvent.create({
+      data: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        actorId: input.updatedById ?? null,
+        event: "note_updated",
+        entityType: "note",
+        entityId: input.noteId,
+        detail: input.body.slice(0, 100),
+        createdAt: new Date()
+      }
+    });
+
+    return updated;
+  });
+
+  return mapNote(result as any);
+}
+
+export async function deleteCandidateNote(input: {
+  noteId: string;
+  candidateId: string;
+  deletedById?: string;
+}) {
+  const result = await prisma.$transaction(async (tx) => {
+    const deleted = await tx.candidateNote.update({
+      where: { id: input.noteId },
+      data: {
+        deletedAt: new Date()
+      },
+      select: {
+        id: true,
+        type: true,
+        body: true,
+        createdAt: true,
+        deletedAt: true,
+        createdById: true
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: { updatedAt: new Date() }
+    });
+
+    await tx.candidateActivityEvent.create({
+      data: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        actorId: input.deletedById ?? null,
+        event: "note_deleted",
+        entityType: "note",
+        entityId: input.noteId,
+        detail: deleted.body.slice(0, 100),
+        createdAt: new Date()
+      }
+    });
+
+    return deleted;
+  });
+
+  return mapNote(result as any);
+}
+
 export async function bulkUpdateCandidates(input: {
   candidateIds: string[];
   action: "assign_owner" | "set_ui_status" | "add_note";
@@ -1562,6 +1655,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
         orderBy: { uploadedAt: "desc" }
       },
       notes: {
+        where: { deletedAt: null },
         orderBy: { createdAt: "desc" }
       },
       applications: {

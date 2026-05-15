@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { Pencil, Trash2, X } from "lucide-react";
 import { CandidateNoteTypePill } from "@/components/candidates/CandidatePills";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
@@ -16,6 +17,136 @@ type CandidateNoteItem = {
   createdAt: string;
   author?: string | null;
 };
+
+function NoteItem({
+  note,
+  index,
+  candidateId,
+  reduceMotion
+}: {
+  note: CandidateNoteItem;
+  index: number;
+  candidateId: string;
+  reduceMotion: boolean;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedBody, setEditedBody] = useState(note.body);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleSave = async () => {
+    if (!editedBody.trim()) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidateId}/notes/${note.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body: editedBody })
+      });
+      if (res.ok) {
+        setIsEditing(false);
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("Failed to save note:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Delete this note? This action cannot be undone.")) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/candidates/${candidateId}/notes/${note.id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("Failed to delete note:", err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <motion.div
+      className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
+      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      transition={{ duration: reduceMotion ? 0 : 0.24, delay: reduceMotion ? 0 : index * 0.04 }}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <CandidateNoteTypePill type={note.type} />
+          <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
+          {note.author ? (
+            <StatusPill label={`by ${note.author}`} tone="neutral" className="normal-case tracking-normal" />
+          ) : null}
+        </div>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => {
+              if (isEditing) {
+                setIsEditing(false);
+                setEditedBody(note.body);
+              } else {
+                setIsEditing(true);
+              }
+            }}
+            disabled={isSaving || isDeleting}
+            className="rounded-lg p-2 text-xs hover:bg-[color:var(--app-control-bg)] disabled:opacity-50"
+            title={isEditing ? "Cancel" : "Edit note"}
+          >
+            {isEditing ? <X size={16} /> : <Pencil size={16} />}
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={isSaving || isDeleting}
+            className="rounded-lg p-2 text-xs hover:bg-[color:var(--app-danger-soft)] disabled:opacity-50"
+            title="Delete note"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+      {isEditing ? (
+        <div className="mt-3 space-y-2">
+          <textarea
+            value={editedBody}
+            onChange={(e) => setEditedBody(e.target.value)}
+            rows={6}
+            className="w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving || !editedBody.trim() || editedBody === note.body}
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </Button>
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setEditedBody(note.body);
+              }}
+              disabled={isSaving}
+              className="rounded-lg px-3 py-1.5 text-sm hover:bg-[color:var(--app-control-bg)]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">{note.body}</p>
+      )}
+    </motion.div>
+  );
+}
 
 export function CandidateNotesModal({
   candidateId,
@@ -168,22 +299,13 @@ export function CandidateNotesModal({
                           </div>
                         ) : (
                           notes.map((note, index) => (
-                            <motion.div
+                            <NoteItem
                               key={note.id}
-                              className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
-                              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-                              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                              transition={{ duration: reduceMotion ? 0 : 0.24, delay: reduceMotion ? 0 : index * 0.04 }}
-                            >
-                              <div className="flex flex-wrap gap-2">
-                                <CandidateNoteTypePill type={note.type} />
-                                <StatusPill label={new Date(note.createdAt).toLocaleString()} tone="neutral" />
-                                {note.author ? (
-                                  <StatusPill label={`by ${note.author}`} tone="neutral" className="normal-case tracking-normal" />
-                                ) : null}
-                              </div>
-                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">{note.body}</p>
-                            </motion.div>
+                              note={note}
+                              index={index}
+                              candidateId={candidateId}
+                              reduceMotion={reduceMotion}
+                            />
                           ))
                         )}
                       </div>
