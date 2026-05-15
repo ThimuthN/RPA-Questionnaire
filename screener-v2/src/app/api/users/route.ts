@@ -9,7 +9,8 @@ const userSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   title: z.string().optional(),
-  department: z.string().optional(),
+  department: z.string().optional(), // deprecated: use departmentId
+  departmentId: z.string().optional(),
   phone: z.string().optional(),
   accessLevel: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).default("recruiter"),
   isInterviewer: z.boolean().optional()

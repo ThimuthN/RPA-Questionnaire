@@ -4,7 +4,8 @@ export interface RoleCatalogEntry {
   id: string;
   slug: string;
   label: string;
-  department?: string;
+  departmentId?: string;
+  department?: string; // deprecated: kept for backward compatibility during migration
   sortOrder: number;
   isActive: boolean;
 }
@@ -18,20 +19,11 @@ function slugifyRoleLabel(value: string) {
     .slice(0, 64);
 }
 
-function normalizeDepartment(value?: string) {
-  const trimmed = value?.trim() ?? "";
-  return trimmed.length > 0 ? trimmed : "";
-}
-
-function slugifyRoleIdentity(label: string, department?: string) {
-  const parts = [label.trim(), normalizeDepartment(department)].filter(Boolean);
-  return slugifyRoleLabel(parts.join(" "));
-}
-
 function mapRole(row: {
   id: string;
   slug: string;
   label: string;
+  departmentId?: string | null;
   department?: string | null;
   sortOrder: number;
   isActive: boolean;
@@ -40,6 +32,7 @@ function mapRole(row: {
     id: row.id,
     slug: row.slug,
     label: row.label,
+    departmentId: row.departmentId ?? undefined,
     department: row.department ?? undefined,
     sortOrder: row.sortOrder,
     isActive: row.isActive
@@ -63,12 +56,11 @@ export async function getRoleCatalogEntry(roleId: string) {
   return row ? mapRole(row) : null;
 }
 
-export async function findRoleCatalogEntryByLabel(label: string, department?: string) {
+export async function findRoleCatalogEntryByLabel(label: string, departmentId?: string) {
   const trimmed = label.trim();
   if (!trimmed) return null;
 
-  const normalizedDepartment = normalizeDepartment(department);
-  const slug = slugifyRoleIdentity(trimmed, normalizedDepartment);
+  const slug = slugifyRoleLabel(trimmed);
   const rows = await prisma.roleCatalog.findMany({
     where: {
       OR: [{ label: trimmed }, { slug }]
@@ -76,8 +68,9 @@ export async function findRoleCatalogEntryByLabel(label: string, department?: st
     orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
   });
 
+  // If departmentId is specified, prefer a match in that department
   const row =
-    rows.find((candidate) => normalizeDepartment(candidate.department ?? undefined) === normalizedDepartment) ??
+    (departmentId && rows.find((candidate) => candidate.departmentId === departmentId)) ??
     rows[0];
 
   return row ? mapRole(row) : null;
@@ -85,16 +78,16 @@ export async function findRoleCatalogEntryByLabel(label: string, department?: st
 
 export async function createRoleCatalogEntry(input: {
   label: string;
-  department?: string;
+  departmentId?: string;
 }) {
   const label = input.label.trim();
-  const department = normalizeDepartment(input.department);
   if (!label) {
     throw new Error("Role label is required.");
   }
 
-  const existing = await findRoleCatalogEntryByLabel(label, department);
-  if (existing) {
+  // Check for duplicate in same department
+  const existing = await findRoleCatalogEntryByLabel(label, input.departmentId);
+  if (existing && existing.departmentId === input.departmentId) {
     return existing;
   }
 
@@ -105,9 +98,9 @@ export async function createRoleCatalogEntry(input: {
 
   const created = await prisma.roleCatalog.create({
     data: {
-      slug: slugifyRoleIdentity(label, department),
+      slug: slugifyRoleLabel(label),
       label,
-      department: department || null,
+      departmentId: input.departmentId || null,
       sortOrder: (last?.sortOrder ?? -1) + 1,
       isActive: true
     }
@@ -120,25 +113,22 @@ export async function updateRoleCatalogEntry(
   roleId: string,
   input: {
     label: string;
-    department?: string;
+    departmentId?: string;
     isActive?: boolean;
   }
 ) {
   const label = input.label.trim();
-  const department = normalizeDepartment(input.department);
   if (!label) {
     throw new Error("Role label is required.");
   }
 
-  const duplicate = (
-    await prisma.roleCatalog.findMany({
-      where: {
-        id: { not: roleId },
-        label
-      },
-      select: { id: true, department: true }
-    })
-  ).find((candidate) => normalizeDepartment(candidate.department ?? undefined) === department);
+  const duplicate = await prisma.roleCatalog.findFirst({
+    where: {
+      id: { not: roleId },
+      label,
+      departmentId: input.departmentId || null
+    }
+  });
 
   if (duplicate) {
     throw new Error("A role with that name already exists in that department.");
@@ -147,9 +137,9 @@ export async function updateRoleCatalogEntry(
   const updated = await prisma.roleCatalog.update({
     where: { id: roleId },
     data: {
-      slug: slugifyRoleIdentity(label, department),
+      slug: slugifyRoleLabel(label),
       label,
-      department: department || null,
+      departmentId: input.departmentId || null,
       isActive: input.isActive
     }
   });

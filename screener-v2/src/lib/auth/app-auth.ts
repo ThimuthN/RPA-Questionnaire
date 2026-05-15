@@ -107,6 +107,7 @@ export async function createAppUser(input: {
   password: string;
   title?: string;
   department?: string;
+  departmentId?: string;
   phone?: string;
   accessLevel: AppAccessLevel;
   isInterviewer?: boolean;
@@ -122,6 +123,7 @@ export async function createAppUser(input: {
       name: input.name?.trim() || null,
       title: input.title?.trim() || null,
       department: input.department?.trim() || null,
+      departmentId: input.departmentId || null,
       phone: input.phone?.trim() || null,
       accessLevel: input.accessLevel,
       passwordHash,
@@ -133,6 +135,7 @@ export async function createAppUser(input: {
       name: true,
       title: true,
       department: true,
+      departmentId: true,
       phone: true,
       accessLevel: true,
       isInterviewer: true,

@@ -5,7 +5,7 @@ import { updateRoleCatalogEntry, getRoleUsageCounts, deleteRoleCatalogEntry } fr
 
 const updateRoleSchema = z.object({
   label: z.string().min(2),
-  department: z.string().trim().max(80).optional().or(z.literal("")),
+  departmentId: z.string().optional().or(z.literal("")),
   isActive: z.boolean().default(true)
 });
 
@@ -27,7 +27,7 @@ export async function PUT(
     const body = updateRoleSchema.parse(await request.json());
     const role = await updateRoleCatalogEntry(id, {
       label: body.label,
-      department: body.department || undefined,
+      departmentId: body.departmentId || undefined,
       isActive: body.isActive
     });
 
@@ -36,7 +36,7 @@ export async function PUT(
       role: {
         id: role.id,
         label: role.label,
-        department: role.department ?? "",
+        departmentId: role.departmentId ?? "",
         isActive: role.isActive
       }
     });

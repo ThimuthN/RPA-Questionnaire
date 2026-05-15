@@ -5,7 +5,7 @@ import { createRoleCatalogEntry, listRoleCatalog, getRoleUsageCounts } from "@/l
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
-  department: z.string().trim().max(80).optional().or(z.literal(""))
+  departmentId: z.string().optional().or(z.literal(""))
 });
 
 export async function GET() {
@@ -21,6 +21,7 @@ export async function GET() {
       return {
         id: role.id,
         label: role.label,
+        departmentId: role.departmentId ?? "",
         department: role.department ?? "",
         isActive: role.isActive,
         openJobCount: counts.openJobCount,
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
     const body = createRoleSchema.parse(await request.json());
     const role = await createRoleCatalogEntry({
       label: body.label,
-      department: body.department || undefined
+      departmentId: body.departmentId || undefined
     });
 
     return NextResponse.json({
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
       role: {
         id: role.id,
         label: role.label,
-        department: role.department ?? "",
+        departmentId: role.departmentId ?? "",
         isActive: role.isActive
       }
     });

@@ -14,7 +14,9 @@ const bulkSchema = z.object({
   action: z.enum(["assign_owner", "set_ui_status", "add_note", "set_department", "import_csv"]),
   owner: z.string().optional(),
   status: z.enum(candidateUiStatusValues).optional(),
-  roleId: z.string().optional(),
+  roleId: z.string().optional(), // deprecated: use departmentId for set_department action
+  departmentId: z.string().optional(),
+  hrOwnerId: z.string().optional(),
   noteBody: z.string().optional(),
   noteType: z.enum(candidateNoteTypeValues).optional(),
   returnTo: z.string().optional()
