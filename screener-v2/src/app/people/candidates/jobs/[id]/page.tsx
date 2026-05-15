@@ -11,8 +11,9 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getJobPosting } from "@/lib/db/jobs";
-import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
+import { candidateApplicationStatusLabels, type CandidateApplicationListItem } from "@/lib/jobs/types";
 import { listRoleCatalog } from "@/lib/roles/catalog";
+import { listAssessmentPresets } from "@/lib/addons/catalog";
 
 function applicationTone(status: string): "neutral" | "blue" | "amber" | "emerald" {
   if (status === "under_review") return "amber";
@@ -31,8 +32,7 @@ export default async function EditJobPostingPage({
   const { id } = await params;
   await requirePageSession(`/people/candidates/jobs/${id}`);
   const pageState = await searchParams;
-  const job = await getJobPosting(id);
-  const roles = await listRoleCatalog(true);
+  const [job, roles, presets] = await Promise.all([getJobPosting(id), listRoleCatalog(true), listAssessmentPresets(false)]);
 
   if (!job) {
     notFound();
@@ -80,8 +80,11 @@ export default async function EditJobPostingPage({
                 id: role.id,
                 label: role.label,
                 department: role.department,
-                isActive: role.isActive,
-                coreBasisRoleId: role.coreBasisRoleId
+                isActive: role.isActive
+              }))}
+              presetOptions={presets.map((preset) => ({
+                id: preset.id,
+                label: preset.label
               }))}
             />
           </StagePanel>
@@ -102,6 +105,18 @@ export default async function EditJobPostingPage({
                   /jobs/{job.slug}
                 </Link>
               </div>
+              <div className="space-y-2 border-t border-[color:var(--app-border)] pt-4">
+                <p className="text-sm text-[color:var(--app-heading)]">Screener</p>
+                {job.screenerPresetLabel ? (
+                  <div className="space-y-2">
+                    <StatusPill label={job.screenerPresetLabel} tone="blue" />
+                    <p className="text-xs text-[color:var(--app-muted)]">Applicants receive an automated assessment invite on submission.</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[color:var(--app-muted)]">No screener attached — applicants apply without a test.</p>
+                )}
+              </div>
+
               <div className="space-y-2 border-t border-[color:var(--app-border)] pt-4">
                 <p className="text-sm text-[color:var(--app-heading)]">Availability</p>
                 <div className="flex flex-wrap gap-2">
@@ -136,7 +151,7 @@ export default async function EditJobPostingPage({
                 <p className="text-sm text-[color:var(--app-muted)]">No applicants yet for this opening.</p>
               ) : (
                 <div className="space-y-3">
-                  {job.recentApplications.map((application) => (
+                  {job.recentApplications.map((application: CandidateApplicationListItem) => (
                     <div
                       key={application.id}
                       className="space-y-2 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"

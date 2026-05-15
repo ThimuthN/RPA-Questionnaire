@@ -13,13 +13,15 @@ export function JobPostingForm({
   submitLabel,
   cancelHref,
   job,
-  roleOptions = []
+  roleOptions = [],
+  presetOptions = []
 }: {
   action: string;
   submitLabel: string;
   cancelHref: Route;
   job?: JobPostingListItem | null;
   roleOptions?: RolePickerOption[];
+  presetOptions?: { id: string; label: string }[];
 }) {
   return (
     <form action={action} method="post" className="space-y-4">
@@ -51,7 +53,7 @@ export function JobPostingForm({
             ))}
         </select>
         <p className="text-xs text-[color:var(--app-muted)]">
-          Select the role this job is for to determine assessment difficulty level.
+          Required. Every job posting must be linked to a role.
         </p>
       </label>
 
@@ -73,6 +75,25 @@ export function JobPostingForm({
         placeholder="Describe the work, expectations, and what the applicant should know."
         helperText="Paste formatted text here. Bold, italic, headings, quotes, and lists are supported."
       />
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Screener (optional)</span>
+        <select
+          name="screenerPresetId"
+          defaultValue={job?.screenerPresetId ?? ""}
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        >
+          <option value="">No screener — applicants apply without a test</option>
+          {presetOptions.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-[color:var(--app-muted)]">
+          Applicants will automatically receive an assessment link by email after applying.
+        </p>
+      </label>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

@@ -25,6 +25,7 @@ export default async function PublicJobsPage({
     notFound();
   }
 
+  const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const params = await searchParams;
   const allJobs = await listPublicJobPostings();
   const departments = Array.from(new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))).slice(0, 6) as string[];
@@ -63,8 +64,8 @@ export default async function PublicJobsPage({
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="Northstar careers"
-      title="Find your next role at Northstar"
+      eyebrow={`${orgName} careers`}
+      title={`Find your next role at ${orgName}`}
       subtitle="Browse open roles, check the details, and apply online."
     >
       <div className="space-y-6">
@@ -118,7 +119,7 @@ export default async function PublicJobsPage({
                     <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_14%,var(--app-surface)),var(--app-surface-soft))] p-5 shadow-[var(--app-shadow-soft)]">
                       <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                         <span>Featured opening</span>
-                        <span className="text-[color:var(--app-brand)]">Northstar</span>
+                        <span className="text-[color:var(--app-brand)]">{orgName}</span>
                       </div>
                       <div className="mt-3 space-y-3">
                         <div className="space-y-1">

@@ -1,4 +1,3 @@
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { prisma } from "@/lib/db/prisma";
 
 export interface RoleCatalogEntry {
@@ -8,7 +7,6 @@ export interface RoleCatalogEntry {
   department?: string;
   sortOrder: number;
   isActive: boolean;
-  coreBasisRoleId: RoleId;
 }
 
 function slugifyRoleLabel(value: string) {
@@ -37,7 +35,6 @@ function mapRole(row: {
   department?: string | null;
   sortOrder: number;
   isActive: boolean;
-  coreBasisRoleId: string;
 }): RoleCatalogEntry {
   return {
     id: row.id,
@@ -45,8 +42,7 @@ function mapRole(row: {
     label: row.label,
     department: row.department ?? undefined,
     sortOrder: row.sortOrder,
-    isActive: row.isActive,
-    coreBasisRoleId: row.coreBasisRoleId as RoleId
+    isActive: row.isActive
   };
 }
 
@@ -90,7 +86,6 @@ export async function findRoleCatalogEntryByLabel(label: string, department?: st
 export async function createRoleCatalogEntry(input: {
   label: string;
   department?: string;
-  coreBasisRoleId?: RoleId;
 }) {
   const label = input.label.trim();
   const department = normalizeDepartment(input.department);
@@ -114,8 +109,7 @@ export async function createRoleCatalogEntry(input: {
       label,
       department: department || null,
       sortOrder: (last?.sortOrder ?? -1) + 1,
-      isActive: true,
-      coreBasisRoleId: input.coreBasisRoleId ?? "Associate"
+      isActive: true
     }
   });
 
@@ -127,7 +121,6 @@ export async function updateRoleCatalogEntry(
   input: {
     label: string;
     department?: string;
-    coreBasisRoleId?: RoleId;
     isActive?: boolean;
   }
 ) {
@@ -157,7 +150,6 @@ export async function updateRoleCatalogEntry(
       slug: slugifyRoleIdentity(label, department),
       label,
       department: department || null,
-      coreBasisRoleId: input.coreBasisRoleId,
       isActive: input.isActive
     }
   });
@@ -170,7 +162,6 @@ export async function resolveOrCreateRoleCatalogEntry(input: {
   roleLabel?: string;
   legacyRoleLabel?: string;
   createIfMissing?: boolean;
-  defaultCoreBasisRoleId?: RoleId;
 }) {
   if (input.roleId?.trim()) {
     const existing = await getRoleCatalogEntry(input.roleId.trim());
@@ -185,7 +176,18 @@ export async function resolveOrCreateRoleCatalogEntry(input: {
 
   if (!input.createIfMissing) return null;
   return createRoleCatalogEntry({
-    label,
-    coreBasisRoleId: input.defaultCoreBasisRoleId ?? "Associate"
+    label
   });
+}
+
+export async function getRoleUsageCounts(roleId: string) {
+  const [openJobCount, pipelineCandidateCount] = await Promise.all([
+    prisma.jobPosting.count({ where: { roleId, isOpen: true } }),
+    prisma.candidate.count({ where: { roleId, intakeBucket: "pipeline" } })
+  ]);
+  return { openJobCount, pipelineCandidateCount };
+}
+
+export async function deleteRoleCatalogEntry(roleId: string) {
+  await prisma.roleCatalog.delete({ where: { id: roleId } });
 }

@@ -25,7 +25,8 @@ export type JobPostingListItem = {
   roleId?: string;
   roleLabel?: string;
   roleDepartment?: string;
-  roleCoreBasisRoleId?: string;
+  screenerPresetId?: string;
+  screenerPresetLabel?: string;
   summary: string;
   description: string;
   isPublished: boolean;

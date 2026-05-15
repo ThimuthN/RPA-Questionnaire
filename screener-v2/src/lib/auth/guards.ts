@@ -57,6 +57,10 @@ export async function requireAdminApiSession(): Promise<ApiAuthSuccess | ApiAuth
   return auth;
 }
 
+export async function getApiSession(): Promise<AppSession | null> {
+  return getAppSession();
+}
+
 export function runtimeEntryHref(slug: string): Route {
   return (slug === "internal" ? "/employee/verify" : `/a/${slug}`) as Route;
 }

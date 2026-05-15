@@ -386,18 +386,21 @@ function TestMilestoneCard({
 }
 
 function CheckBadge({ status }: { status: string }) {
-  const statusClass =
+  const tone =
     status === "passed"
-      ? "bg-green-100 text-green-800"
+      ? ("emerald" as const)
       : status === "failed"
-        ? "bg-red-100 text-red-800"
-        : "bg-gray-100 text-gray-800";
+        ? ("red" as const)
+        : ("neutral" as const);
 
-  return (
-    <span className={`inline-block rounded px-2.5 py-0.5 text-xs font-medium ${statusClass}`}>
-      {status === "passed" ? "✓ Approved" : status === "failed" ? "✗ Rejected" : "Pending"}
-    </span>
-  );
+  const label =
+    status === "passed"
+      ? "Approved"
+      : status === "failed"
+        ? "Rejected"
+        : "Pending";
+
+  return <StatusPill tone={tone} label={label} />;
 }
 
 function ScreenerMilestoneCard({
@@ -408,6 +411,7 @@ function ScreenerMilestoneCard({
   milestone: CandidateMilestoneRecord;
 }) {
   const [isPending, setIsPending] = useState(false);
+  const [checkError, setCheckError] = useState("");
   const checks = milestone.checks || [];
   const resumeReviewCheck = checks.find((c) => c.type === "resume_review");
   const screenerTestCheck = checks.find((c) => c.type === "screener_test");
@@ -429,7 +433,14 @@ function ScreenerMilestoneCard({
 
       if (response.ok) {
         window.location.href = `/candidates/${candidateId}?updated=1`;
+      } else {
+        const data = await response.json();
+        setCheckError(data.message || "Could not update check. Please try again.");
       }
+    } catch (error) {
+      setCheckError(
+        error instanceof Error ? error.message : "Network error. Please check your connection and try again."
+      );
     } finally {
       setIsPending(false);
     }
@@ -437,6 +448,7 @@ function ScreenerMilestoneCard({
 
   return (
     <div className="space-y-4">
+      {checkError && <p className="text-sm text-[color:var(--app-danger)]">{checkError}</p>}
       <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
           <h4 className="font-medium text-sm">Resume Review</h4>
@@ -647,7 +659,7 @@ export function CandidateMilestoneTimeline({
     }
 
     setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
-  }, [activeMilestoneId, hasResume, milestones]);
+  }, [milestones, hasResume]);
 
   const activeMilestone =
     milestones.find((milestone) => milestone.id === activeMilestoneId) ?? milestones[0] ?? null;

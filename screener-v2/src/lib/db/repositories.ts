@@ -18,7 +18,6 @@ export {
   getScoreContextForAttempt,
   linkResultToCandidateMilestone,
   listAllResultWorkspaceRows,
-  listResults,
   listResultWorkspacePage,
   type ResultCandidateLinkOptions,
   type ResultCandidateLinkTarget,

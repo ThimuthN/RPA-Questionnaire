@@ -9,12 +9,19 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      String
-  passwordHash String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  title         String?
+  department    String?
+  phone         String?
+  role          String
+  passwordHash  String?
+  isInterviewer Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model AssessmentTemplate {
@@ -66,6 +73,7 @@ model AssessmentPreset {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   items       AssessmentPresetItem[]
+  jobPostings JobPosting[]
 
   @@index([isActive, sortOrder])
 }
@@ -119,7 +127,6 @@ model RoleCatalog {
   department      String?
   sortOrder       Int      @default(0)
   isActive        Boolean  @default(true)
-  coreBasisRoleId String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   candidates      Candidate[]
@@ -359,6 +366,7 @@ model JobPosting {
   slug        String   @unique
   title       String
   roleId      String?
+  screenerPresetId String?
   summary     String
   description String
   isPublished Boolean  @default(false)
@@ -366,9 +374,11 @@ model JobPosting {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   role        RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  screenerPreset AssessmentPreset? @relation(fields: [screenerPresetId], references: [id], onDelete: SetNull)
   applications CandidateApplication[]
 
   @@index([roleId])
+  @@index([screenerPresetId])
   @@index([isPublished, isOpen, updatedAt])
 }
 

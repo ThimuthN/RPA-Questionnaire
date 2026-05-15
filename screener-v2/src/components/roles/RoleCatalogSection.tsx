@@ -1,31 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
+import { Modal } from "@/components/primitives/Modal";
+import { FormInput } from "@/components/primitives/FormInput";
+import { FormError } from "@/components/primitives/FormError";
+import { DataTable } from "@/components/primitives/DataTable";
 import { DEFAULT_DEPARTMENTS, getDepartmentOptions } from "@/lib/roles/departments";
 import type { RolePickerOption } from "@/components/roles/RolePicker";
-
-const LEVEL_LABELS: Record<RoleId, string> = {
-  "Intern": "Intern",
-  "Associate": "Associate",
-  "SE": "Senior",
-  "SeniorSE": "Senior+",
-  "TechLead": "Lead"
-};
 
 interface EditorState {
   id?: string;
   label: string;
   department: string;
-  coreBasisRoleId: RoleId;
   isActive: boolean;
+  openJobCount?: number;
+  pipelineCandidateCount?: number;
 }
 
 const emptyEditor: EditorState = {
   label: "",
   department: "",
-  coreBasisRoleId: "Associate",
   isActive: true
 };
 
@@ -35,6 +30,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
   const [modalOpen, setModalOpen] = useState(false);
   const [editor, setEditor] = useState<EditorState>(emptyEditor);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -69,8 +65,9 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
       id: role.id,
       label: role.label,
       department: role.department ?? "",
-      coreBasisRoleId: role.coreBasisRoleId,
-      isActive: role.isActive ?? true
+      isActive: role.isActive ?? true,
+      openJobCount: role.openJobCount,
+      pipelineCandidateCount: role.pipelineCandidateCount
     });
     setError("");
     setModalOpen(true);
@@ -90,7 +87,6 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
         body: JSON.stringify({
           label: editor.label.trim(),
           department: editor.department.trim() || undefined,
-          coreBasisRoleId: editor.coreBasisRoleId,
           isActive: editor.isActive
         })
       });
@@ -113,6 +109,33 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
     }
   }
 
+  async function deleteRole() {
+    if (!editor.id) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/roles/${editor.id}`, {
+        method: "DELETE"
+      });
+
+      const data = (await response.json()) as { ok: boolean; message?: string };
+
+      if (!data.ok) {
+        setError(data.message || "Could not delete role.");
+        return;
+      }
+
+      await loadRoles();
+      setModalOpen(false);
+      setEditor(emptyEditor);
+      setError("");
+    } catch {
+      setError("Could not delete role. Check your connection and try again.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const deptOptions = getDepartmentOptions(roles.map((r) => r.department));
 
   return (
@@ -121,7 +144,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
         <div>
           <h3 className="text-lg text-[color:var(--app-heading)]">Roles</h3>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Create roles that link jobs to assessment difficulty levels.
+            Create roles to organize candidates by position and department.
           </p>
         </div>
         <Button onClick={beginCreate}>New role</Button>
@@ -131,108 +154,65 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
 
       {loading ? (
         <p className="text-sm text-[color:var(--app-muted)]">Loading roles...</p>
-      ) : roles.length === 0 ? (
-        <div className="rounded-[20px] bg-[color:var(--app-surface-muted)] p-4 text-sm text-[color:var(--app-muted)]">
-          No roles yet. Create your first role to get started.
-        </div>
       ) : (
-        <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
-          <div className="overflow-x-auto">
-            <table className="min-w-[600px] w-full">
-              <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                <tr>
-                  <th className="w-[35%] px-4 py-3 text-left font-medium">Role</th>
-                  <th className="w-[25%] px-4 py-3 text-left font-medium">Department</th>
-                  <th className="w-[20%] px-4 py-3 text-left font-medium">Level</th>
-                  <th className="w-[20%] px-4 py-3 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roles.map((role) => (
-                  <tr key={role.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]">
-                    <td className="px-4 py-3 text-[color:var(--app-heading)]">{role.label}</td>
-                    <td className="px-4 py-3 text-[color:var(--app-text)]">{role.department || "—"}</td>
-                    <td className="px-4 py-3 text-[color:var(--app-text)]">
-                      {LEVEL_LABELS[role.coreBasisRoleId] || role.coreBasisRoleId}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Button variant="secondary" onClick={() => beginEdit(role)}>
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DataTable
+          columns={[
+            {
+              header: "Role",
+              width: "w-[30%]",
+              render: (role) => <p className="text-sm font-medium text-[color:var(--app-heading)]">{role.label}</p>
+            },
+            {
+              header: "Department",
+              width: "w-[30%]",
+              render: (role) => <p className="text-sm text-[color:var(--app-text)]">{role.department || "—"}</p>
+            },
+            {
+              header: "In use",
+              width: "w-[20%]",
+              render: (role) =>
+                (role.openJobCount ?? 0) > 0 || (role.pipelineCandidateCount ?? 0) > 0
+                  ? `${role.openJobCount ?? 0} job(s) · ${role.pipelineCandidateCount ?? 0} candidate(s)`
+                  : "—"
+            },
+            {
+              header: "Actions",
+              width: "w-[20%]",
+              render: (role) => (
+                <div className="text-right">
+                  <Button variant="secondary" onClick={() => beginEdit(role)}>
+                    Edit
+                  </Button>
+                </div>
+              )
+            }
+          ]}
+          data={roles}
+          emptyMessage="No roles yet. Create your first role to get started."
+        />
       )}
 
-      {modalOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 backdrop-blur-md" style={{ background: "var(--app-modal-overlay)" }}>
-          <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[30px] border border-[color:var(--app-border)] shadow-[var(--app-modal-shadow)]" style={{ background: "var(--app-modal-surface)" }}>
-            <div className="border-b border-[color:var(--app-border)] px-5 py-4 md:px-6" style={{ background: "var(--app-modal-header)" }}>
-              <h3 className="text-xl text-[color:var(--app-heading)]">{editor.id ? "Edit role" : "Create role"}</h3>
-            </div>
-
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 md:px-6" style={{ background: "var(--app-modal-body)" }}>
-              <label className="grid gap-1">
-                <span className="text-sm text-[color:var(--app-text)]">Role name</span>
-                <input
-                  value={editor.label}
-                  onChange={(e) => setEditor((current) => ({ ...current, label: e.target.value }))}
-                  placeholder="e.g. Senior Backend Engineer"
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-[color:var(--app-text)]">Department</span>
-                <input
-                  list="role-depts"
-                  value={editor.department}
-                  onChange={(e) => setEditor((current) => ({ ...current, department: e.target.value }))}
-                  placeholder="e.g. Engineering"
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                />
-                <datalist id="role-depts">
-                  {deptOptions.map((dept) => (
-                    <option key={dept} value={dept} />
-                  ))}
-                </datalist>
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-sm text-[color:var(--app-text)]">Assessment level</span>
-                <select
-                  value={editor.coreBasisRoleId}
-                  onChange={(e) => setEditor((current) => ({ ...current, coreBasisRoleId: e.target.value as RoleId }))}
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                >
-                  <option value="Intern">Intern</option>
-                  <option value="Associate">Associate (Standard)</option>
-                  <option value="SE">Senior Engineer</option>
-                  <option value="SeniorSE">Senior Engineer+ (Advanced)</option>
-                  <option value="TechLead">Tech Lead (Expert)</option>
-                </select>
-              </label>
-
-              {editor.id && (
-                <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
-                  <input
-                    type="checkbox"
-                    checked={editor.isActive}
-                    onChange={(e) => setEditor((current) => ({ ...current, isActive: e.target.checked }))}
-                    className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg)] text-brand-400"
-                  />
-                  Active
-                </label>
-              )}
-
-              {error && <p className="text-sm text-[color:var(--app-danger)]">{error}</p>}
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2 border-t border-[color:var(--app-border)] px-5 py-4 md:px-6" style={{ background: "var(--app-modal-footer)" }}>
+      <Modal
+        isOpen={modalOpen}
+        title={editor.id ? "Edit role" : "Create role"}
+        onClose={() => {
+          setModalOpen(false);
+          setEditor(emptyEditor);
+          setError("");
+        }}
+        footer={
+          <>
+            {editor.id && (
+              <Button
+                type="button"
+                variant="danger"
+                onClick={deleteRole}
+                disabled={deleting || saving || (editor.openJobCount ?? 0) > 0 || (editor.pipelineCandidateCount ?? 0) > 0}
+              >
+                {deleting ? "Deleting..." : "Delete role"}
+              </Button>
+            )}
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="ghost"
@@ -248,9 +228,46 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
                 {saving ? "Saving..." : editor.id ? "Save changes" : "Create role"}
               </Button>
             </div>
-          </div>
+          </>
+        }
+      >
+        <FormInput
+          label="Role name"
+          value={editor.label}
+          onChange={(e) => setEditor((current) => ({ ...current, label: e.target.value }))}
+          placeholder="e.g. Senior Backend Engineer"
+        />
+
+        <div className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Department</span>
+          <input
+            list="role-depts"
+            value={editor.department}
+            onChange={(e) => setEditor((current) => ({ ...current, department: e.target.value }))}
+            placeholder="e.g. Engineering"
+            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
+          />
+          <datalist id="role-depts">
+            {deptOptions.map((dept) => (
+              <option key={dept} value={dept} />
+            ))}
+          </datalist>
         </div>
-      )}
+
+        {editor.id && (
+          <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
+            <input
+              type="checkbox"
+              checked={editor.isActive}
+              onChange={(e) => setEditor((current) => ({ ...current, isActive: e.target.checked }))}
+              className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg)] text-brand-400"
+            />
+            Active
+          </label>
+        )}
+
+        <FormError message={error} />
+      </Modal>
     </div>
   );
 }

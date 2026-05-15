@@ -24,8 +24,7 @@ export function EditCandidateInfoModal({
       ? {
           id: candidate.roleId,
           label: candidate.roleLabel,
-          department: undefined,
-          coreBasisRoleId: (candidate.coreBasisRoleId ?? "Associate")
+          department: undefined
         }
       : null
   );

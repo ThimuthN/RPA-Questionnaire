@@ -7,6 +7,39 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import type { CandidateActivityItem } from "@/lib/candidates/workspace";
 
+function ActivityActor({ name, isSystem }: { name?: string | null; isSystem?: boolean }) {
+  if (isSystem) {
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--app-surface)] text-xs font-medium text-[color:var(--app-muted)]">
+          ⚙
+        </div>
+        <span className="text-xs font-medium text-[color:var(--app-muted)]">System</span>
+      </div>
+    );
+  }
+
+  if (name) {
+    const initials = name
+      .split(" ")
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
+
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-xs font-medium text-white">
+          {initials}
+        </div>
+        <span className="text-xs font-medium text-[color:var(--app-heading)]">{name}</span>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export function ResultActivityModal({ items }: { items: CandidateActivityItem[] }) {
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
@@ -54,8 +87,13 @@ export function ResultActivityModal({ items }: { items: CandidateActivityItem[] 
 
         {latestItem ? (
           <div className="space-y-2">
-            <p className="text-sm text-[color:var(--app-heading)]">{latestItem.title}</p>
-            <p className="text-sm leading-6 text-[color:var(--app-text)]">{latestItem.detail}</p>
+            <div className="flex items-start gap-2">
+              <ActivityActor name={latestItem.actorName} isSystem={latestItem.isSystemEvent} />
+              <div className="flex-1">
+                <p className="text-sm text-[color:var(--app-heading)]">{latestItem.title}</p>
+                <p className="text-sm leading-6 text-[color:var(--app-text)]">{latestItem.detail}</p>
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-[color:var(--app-text)]">No recent candidate activity available.</p>
@@ -98,7 +136,7 @@ export function ResultActivityModal({ items }: { items: CandidateActivityItem[] 
                         </div>
                         <div>
                           <h3 className="text-xl text-[color:var(--app-heading)]">Candidate activity</h3>
-                          <p className="text-sm text-[color:var(--app-muted)]">Notes, milestones, resumes, and results in one place.</p>
+                          <p className="text-sm text-[color:var(--app-muted)]">Notes, milestones, resumes, and results with user attribution.</p>
                         </div>
                       </div>
                       <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
@@ -118,12 +156,19 @@ export function ResultActivityModal({ items }: { items: CandidateActivityItem[] 
                             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
                             transition={{ duration: reduceMotion ? 0 : 0.24, delay: reduceMotion ? 0 : index * 0.04 }}
                           >
-                            <div className="flex flex-wrap gap-2">
-                              <StatusPill label={item.kind} tone="neutral" />
-                              <StatusPill label={new Date(item.at).toLocaleString()} tone="neutral" />
+                            <div className="flex flex-col gap-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <ActivityActor name={item.actorName} isSystem={item.isSystemEvent} />
+                                  <StatusPill label={item.kind} tone="neutral" />
+                                </div>
+                                <p className="text-xs text-[color:var(--app-muted)]">{new Date(item.at).toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-[color:var(--app-heading)]">{item.title}</p>
+                                <p className="mt-1 text-sm leading-6 text-[color:var(--app-text)]">{item.detail}</p>
+                              </div>
                             </div>
-                            <p className="mt-3 text-sm text-[color:var(--app-heading)]">{item.title}</p>
-                            <p className="mt-1 text-sm leading-6 text-[color:var(--app-text)]">{item.detail}</p>
                           </motion.div>
                         ))
                       )}

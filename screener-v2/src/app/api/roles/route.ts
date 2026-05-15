@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
-import { createRoleCatalogEntry, listRoleCatalog } from "@/lib/roles/catalog";
+import { createRoleCatalogEntry, listRoleCatalog, getRoleUsageCounts } from "@/lib/roles/catalog";
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
-  department: z.string().trim().max(80).optional().or(z.literal("")),
-  coreBasisRoleId: z.enum(["Intern", "Associate", "SE", "SeniorSE", "TechLead"]).default("Associate")
+  department: z.string().trim().max(80).optional().or(z.literal(""))
 });
 
 export async function GET() {
@@ -16,15 +15,23 @@ export async function GET() {
   }
 
   const roles = await listRoleCatalog(true);
+  const rolesWithCounts = await Promise.all(
+    roles.map(async (role) => {
+      const counts = await getRoleUsageCounts(role.id);
+      return {
+        id: role.id,
+        label: role.label,
+        department: role.department ?? "",
+        isActive: role.isActive,
+        openJobCount: counts.openJobCount,
+        pipelineCandidateCount: counts.pipelineCandidateCount
+      };
+    })
+  );
+
   return NextResponse.json({
     ok: true,
-    roles: roles.map((role) => ({
-      id: role.id,
-      label: role.label,
-      department: role.department ?? "",
-      isActive: role.isActive,
-      coreBasisRoleId: role.coreBasisRoleId
-    }))
+    roles: rolesWithCounts
   });
 }
 
@@ -38,8 +45,7 @@ export async function POST(request: Request) {
     const body = createRoleSchema.parse(await request.json());
     const role = await createRoleCatalogEntry({
       label: body.label,
-      department: body.department || undefined,
-      coreBasisRoleId: body.coreBasisRoleId
+      department: body.department || undefined
     });
 
     return NextResponse.json({
@@ -48,8 +54,7 @@ export async function POST(request: Request) {
         id: role.id,
         label: role.label,
         department: role.department ?? "",
-        isActive: role.isActive,
-        coreBasisRoleId: role.coreBasisRoleId
+        isActive: role.isActive
       }
     });
   } catch (error) {

@@ -8,7 +8,11 @@ const userSchema = z.object({
   name: z.string().optional(),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(["admin", "member"]).default("member")
+  title: z.string().optional(),
+  department: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).default("recruiter"),
+  isInterviewer: z.boolean().optional()
 });
 
 export async function POST(request: Request) {

@@ -83,6 +83,16 @@ export type CheckType =
   | 'review_notes'
   | 'final_decision';
 
+export const checkTypeValues: CheckType[] = [
+  'resume_upload',
+  'resume_review',
+  'screener_test',
+  'interview_notes',
+  'review_assessment',
+  'review_notes',
+  'final_decision'
+];
+
 export interface CheckDefinition {
   type: CheckType;
   label: string;
@@ -104,9 +114,7 @@ export const milestoneCheckDefs: Record<CandidateMilestoneType, CheckDefinition[
     { type: 'review_assessment', label: 'Assessment', required: false },
     { type: 'review_notes', label: 'Interview notes', required: false }
   ],
-  advanced_test: [
-    { type: 'review_assessment', label: 'Assessment', required: true }
-  ],
+  advanced_test: [],
   decision: [
     { type: 'final_decision', label: 'Final decision', required: true }
   ]
@@ -116,6 +124,10 @@ export function deriveMilestoneStatus(
   checks: Array<{ type?: CheckType; status: string }>,
   defs: CheckDefinition[]
 ): CandidateMilestoneStatus {
+  if (!defs || defs.length === 0) {
+    return checks.length > 0 ? 'in_progress' : 'not_started';
+  }
+
   if (checks.length === 0) {
     return 'not_started';
   }
@@ -129,14 +141,15 @@ export function deriveMilestoneStatus(
     }
   }
 
-  const allRequiredPassed = defs
-    .filter((def) => def.required)
-    .every((def) => {
-      const check = checks.find((c) => c.type === def.type);
-      return check?.status === 'passed';
-    });
+  const requiredDefs = defs.filter((def) => def.required);
+  const allRequiredPassed = requiredDefs.length === 0
+    ? false
+    : requiredDefs.every((def) => {
+        const check = checks.find((c) => c.type === def.type);
+        return check?.status === 'passed';
+      });
 
-  if (allRequiredPassed) {
+  if (allRequiredPassed && requiredDefs.length > 0) {
     return 'done';
   }
 

@@ -149,7 +149,7 @@ export default async function CandidateDetailPage({
   const resumeDownloadUrl = currentResume
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}&download=1`
     : null;
-  const activityFeed = buildCandidateActivityFeed(candidate).slice(0, 8);
+  const activityFeed = buildCandidateActivityFeed(candidate);
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
       <CandidateUiStatusPill status={uiStatus} />

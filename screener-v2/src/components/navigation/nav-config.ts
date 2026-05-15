@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, Blocks, ClipboardList, RadioTower, Users2 } from "lucide-react";
+import { Activity, Blocks, BriefcaseBusiness, ClipboardList, RadioTower, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -14,9 +14,13 @@ export function getNavItems(viewer: Pick<AppSession, "role"> | null): NavItem[] 
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
         { href: "/results" as Route, label: copy.nav.results, icon: Activity },
         { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
+        { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
         ...(viewer.role === "admin" ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }] : [])
       ]
-    : [{ href: "/live" as Route, label: copy.nav.run, icon: RadioTower }];
+    : [
+        { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
+        { href: "/live" as Route, label: copy.nav.run, icon: RadioTower }
+      ];
 }
 
 export function isNavItemActive(pathname: string, href: string) {

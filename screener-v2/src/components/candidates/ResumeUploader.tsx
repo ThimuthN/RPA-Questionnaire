@@ -26,7 +26,6 @@ export function ResumeUploader({
   const pathname = usePathname();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
-  const [progress, setProgress] = useState<number | null>(null);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [dragging, setDragging] = useState(false);
@@ -54,7 +53,6 @@ export function ResumeUploader({
     }
 
     setUploadState("uploading");
-    setProgress(null);
     setError("");
     setMessage("");
 
@@ -93,8 +91,6 @@ export function ResumeUploader({
     } catch (uploadError) {
       setUploadState("failed");
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed.");
-    } finally {
-      setProgress(null);
     }
   }
 
@@ -144,12 +140,6 @@ export function ResumeUploader({
           <p className="text-sm text-[color:var(--app-heading)]">
             {uploadState === "uploading" ? "Uploading..." : "Processing..."}
           </p>
-          {progress !== null ? (
-            <p className="mt-1 text-sm text-[color:var(--app-muted)]">
-              {progress}% complete
-              {uploadState === "uploading" && progress >= 80 ? " | Finalizing with storage..." : ""}
-            </p>
-          ) : null}
         </div>
       ) : null}
 

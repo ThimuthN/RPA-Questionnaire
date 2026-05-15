@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { FormInput } from "@/components/primitives/FormInput";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
@@ -28,8 +29,8 @@ function NoticeBanner({
 }) {
   const className =
     tone === "success"
-      ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
-      : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
+      ? "rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success)]/10 p-4 text-sm text-white"
+      : "rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger)]/10 p-4 text-sm text-white";
 
   return <div className={className}>{children}</div>;
 }
@@ -84,7 +85,7 @@ export default async function ApplicantReviewPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Applicant review</p>
-              <h2 className="text-3xl text-[color:var(--app-heading)]">Review this application</h2>
+              <h2 className="text-2xl text-[color:var(--app-heading)]">Review this application</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
                 Keep the application context here, then move the person into the pipeline only when you are ready.
               </p>
@@ -119,6 +120,10 @@ export default async function ApplicantReviewPage({
                   <p className="text-sm text-[color:var(--app-text)]">{detail.job.title}</p>
                 </div>
                 <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
+                  <p className="text-sm text-[color:var(--app-text)]">{detail.job.roleLabel ?? "No role linked"}</p>
+                </div>
+                <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Applied on</p>
                   <p className="text-sm text-[color:var(--app-text)]">{new Date(detail.createdAt).toLocaleDateString()}</p>
                 </div>
@@ -148,30 +153,24 @@ export default async function ApplicantReviewPage({
               <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <input type="hidden" name="action" value="review" />
                 <input type="hidden" name="returnTo" value={returnTo} />
-                <label className="grid gap-1">
-                  <span className="text-sm text-[color:var(--app-text)]">Owner</span>
-                  <input
-                    name="hrOwner"
-                    defaultValue={detail.candidate.hrOwner || ""}
-                    placeholder="Assign an owner"
-                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
+                <FormInput
+                  name="hrOwner"
+                  label="Owner"
+                  defaultValue={detail.candidate.hrOwner || ""}
+                  placeholder="Assign an owner"
+                />
                 <Button type="submit" variant="secondary">Mark under review</Button>
               </form>
 
               <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <input type="hidden" name="action" value="promote" />
                 <input type="hidden" name="returnTo" value={`/candidates/${detail.candidate.id}` as Route} />
-                <label className="grid gap-1">
-                  <span className="text-sm text-[color:var(--app-text)]">Owner</span>
-                  <input
-                    name="hrOwner"
-                    defaultValue={detail.candidate.hrOwner || ""}
-                    placeholder="Assign an owner"
-                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                  />
-                </label>
+                <FormInput
+                  name="hrOwner"
+                  label="Owner"
+                  defaultValue={detail.candidate.hrOwner || ""}
+                  placeholder="Assign an owner"
+                />
                 <Button type="submit">Move to pipeline</Button>
               </form>
 
@@ -203,6 +202,22 @@ export default async function ApplicantReviewPage({
           </StagePanel>
 
           <div className="space-y-4">
+            {detail.job.screenerPresetLabel ? (
+              <StagePanel tone="summary" className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl text-[color:var(--app-heading)]">Screener</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">View assessment results in the candidate profile.</p>
+                </div>
+                <StatusPill label={detail.job.screenerPresetLabel} tone="blue" />
+                <p className="text-xs text-[color:var(--app-muted)]">This job has a screener test attached.</p>
+                <Link href={`/candidates/${detail.candidate.id}` as Route}>
+                  <Button type="button" variant="secondary" className="w-full">
+                    View screener results
+                  </Button>
+                </Link>
+              </StagePanel>
+            ) : null}
+
             <StagePanel tone="summary" className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-xl text-[color:var(--app-heading)]">Resume</h2>

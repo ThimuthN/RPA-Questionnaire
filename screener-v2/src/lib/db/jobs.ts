@@ -18,13 +18,15 @@ type JobPostingRow = {
   slug: string;
   title: string;
   roleId: string | null;
+  screenerPresetId: string | null;
   summary: string;
   description: string;
   isPublished: boolean;
   isOpen: boolean;
   createdAt: Date;
   updatedAt: Date;
-  role: { label: string; department: string | null; coreBasisRoleId: string } | null;
+  role: { label: string; department: string | null } | null;
+  screenerPreset: { id: string; label: string } | null;
   applications: Array<{ status: string }>;
 };
 
@@ -49,7 +51,8 @@ function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? undefined,
     roleDepartment: row.role?.department ?? undefined,
-    roleCoreBasisRoleId: row.role?.coreBasisRoleId ?? undefined,
+    screenerPresetId: row.screenerPresetId ?? undefined,
+    screenerPresetLabel: row.screenerPreset?.label ?? undefined,
     summary: row.summary,
     description: row.description,
     isPublished: row.isPublished,
@@ -145,8 +148,13 @@ export async function listPublicJobPostings(filters: ListPublicJobPostingsFilter
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -171,8 +179,13 @@ export async function getPublicJobPostingBySlug(slug: string) {
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -193,8 +206,13 @@ export async function listJobPostings() {
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -215,8 +233,13 @@ export async function getJobPosting(jobId: string) {
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -243,6 +266,12 @@ export async function getJobPosting(jobId: string) {
                 select: {
                   label: true,
                   department: true
+                }
+              },
+              screenerPreset: {
+                select: {
+                  id: true,
+                  label: true
                 }
               }
             }
@@ -291,6 +320,7 @@ async function uniqueJobSlug(title: string, excludeId?: string) {
 export async function createJobPosting(input: {
   title: string;
   roleId?: string;
+  screenerPresetId?: string;
   summary: string;
   description: string;
   isPublished?: boolean;
@@ -303,6 +333,7 @@ export async function createJobPosting(input: {
       slug,
       title,
       roleId: input.roleId?.trim() || null,
+      screenerPresetId: input.screenerPresetId?.trim() || null,
       summary: input.summary.trim(),
       description: input.description.trim(),
       isPublished: Boolean(input.isPublished),
@@ -312,8 +343,13 @@ export async function createJobPosting(input: {
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -332,6 +368,7 @@ export async function updateJobPosting(
   input: {
     title: string;
     roleId?: string;
+    screenerPresetId?: string;
     summary: string;
     description: string;
     isPublished?: boolean;
@@ -346,6 +383,7 @@ export async function updateJobPosting(
       slug,
       title,
       roleId: input.roleId?.trim() || null,
+      screenerPresetId: input.screenerPresetId === "" ? null : (input.screenerPresetId?.trim() || undefined),
       summary: input.summary.trim(),
       description: input.description.trim(),
       isPublished: Boolean(input.isPublished),
@@ -355,8 +393,13 @@ export async function updateJobPosting(
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true
         }
       },
       applications: {
@@ -435,14 +478,16 @@ export async function listApplicantWorkspacePage(filters: {
 
   const start = (page - 1) * pageSize;
   const paged = mapped.slice(start, start + pageSize);
-  const jobOptions = await listJobPostings();
+  const jobOptionRows = await prisma.jobPosting.findMany({
+    select: { id: true, title: true }
+  });
 
   return {
     rows: paged,
     total: mapped.length,
     page,
     pageSize,
-    jobOptions: jobOptions.map((job) => ({
+    jobOptions: jobOptionRows.map((job) => ({
       id: job.id,
       label: job.title
     })),
@@ -468,8 +513,7 @@ export async function getApplicantReviewDetail(applicationId: string) {
           role: {
             select: {
               label: true,
-              department: true,
-              coreBasisRoleId: true
+              department: true
             }
           }
         }
@@ -479,8 +523,13 @@ export async function getApplicantReviewDetail(applicationId: string) {
           role: {
             select: {
               label: true,
-              department: true,
-              coreBasisRoleId: true
+              department: true
+            }
+          },
+          screenerPreset: {
+            select: {
+              id: true,
+              label: true
             }
           }
         }
@@ -575,7 +624,36 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       id: true,
       slug: true,
       title: true,
-      roleId: true
+      roleId: true,
+      screenerPresetId: true,
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true,
+          items: {
+            select: {
+              id: true,
+              sortOrder: true,
+              configOverrideJson: true,
+              weightOverride: true,
+              addon: {
+                select: {
+                  id: true,
+                  slug: true,
+                  label: true,
+                  description: true,
+                  assessmentTypeId: true,
+                  defaultConfigJson: true,
+                  defaultDurationMinutes: true,
+                  defaultRequiredPercent: true,
+                  defaultWeight: true
+                }
+              }
+            },
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+          }
+        }
+      }
     }
   });
 
@@ -659,7 +737,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
     status: "created" as const,
     candidateId: existingCandidate.id,
     applicationId: application.id,
-    jobId: job.id
+    jobId: job.id,
+    jobTitle: job.title,
+    screenerPreset: job.screenerPreset
   };
 }
 

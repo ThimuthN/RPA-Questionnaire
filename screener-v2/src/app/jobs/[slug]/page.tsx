@@ -27,12 +27,14 @@ export default async function PublicJobDetailPage({
     resumeError?: string;
     error?: string;
     applicationId?: string;
+    hasScreener?: string;
   }>;
 }) {
   if (!PUBLIC_JOBS_ENABLED) {
     notFound();
   }
 
+  const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const { slug } = await params;
   const pageState = await searchParams;
   const job = await getPublicJobPostingBySlug(slug);
@@ -47,7 +49,7 @@ export default async function PublicJobDetailPage({
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="Northstar careers"
+      eyebrow={`${orgName} careers`}
       title={job.title}
       subtitle={job.summary}
       utility={
@@ -69,7 +71,7 @@ export default async function PublicJobDetailPage({
             <div className="flex flex-wrap items-center gap-2 text-sm text-[color:var(--app-text)]">
               <span className="inline-flex items-center gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1.5">
                 <Building2 className="h-4 w-4 text-[color:var(--app-brand)]" />
-                Northstar
+                {orgName}
               </span>
               {job.roleLabel ? (
                 <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1.5">
@@ -201,6 +203,14 @@ export default async function PublicJobDetailPage({
                   {pageState.resumeError ? " The resume upload did not finish, so only the application details were saved." : ""}
                 </p>
               </div>
+              {pageState.hasScreener === "1" ? (
+                <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  <p className="font-medium">Assessment next</p>
+                  <p>
+                    We&apos;ve sent an assessment link to your email address. Check your inbox and complete it within 7 days to move forward.
+                  </p>
+                </div>
+              ) : null}
               {pageState.applicationId ? (
                 <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
                   <p className="font-medium">Application reference</p>

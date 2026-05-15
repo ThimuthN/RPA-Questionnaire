@@ -1,7 +1,6 @@
 import { del } from "@vercel/blob";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import {
   defaultCandidateMilestones,
   deriveMilestoneStatus,
@@ -48,7 +47,6 @@ export interface CandidateRecord {
   roleId?: string;
   roleLabel?: string;
   roleDepartment?: string;
-  coreBasisRoleId?: RoleId;
   positionAppliedFor?: string;
   batchId?: string;
   resumeSource?: string;
@@ -217,7 +215,7 @@ export function mapCandidate(row: {
   email: string;
   phone: string | null;
   roleId: string | null;
-  role: { label: string; department: string | null; coreBasisRoleId: string } | null;
+  role: { label: string; department: string | null } | null;
   positionAppliedFor: string | null;
   batchId: string | null;
   resumeSource: string | null;
@@ -240,7 +238,6 @@ export function mapCandidate(row: {
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? row.positionAppliedFor ?? undefined,
     roleDepartment: row.role?.department ?? undefined,
-    coreBasisRoleId: (row.role?.coreBasisRoleId as RoleId | null) ?? undefined,
     positionAppliedFor: row.positionAppliedFor ?? row.role?.label ?? undefined,
     batchId: row.batchId ?? undefined,
     resumeSource: row.resumeSource ?? undefined,
@@ -547,8 +544,7 @@ export async function createCandidate(input: {
   const resolvedRole = await resolveOrCreateRoleCatalogEntry({
     roleId: input.roleId,
     legacyRoleLabel: input.positionAppliedFor,
-    createIfMissing: Boolean(input.positionAppliedFor?.trim()),
-    defaultCoreBasisRoleId: "Associate"
+    createIfMissing: Boolean(input.positionAppliedFor?.trim())
   });
 
   const created = await prisma.$transaction(async (tx) => {
@@ -575,8 +571,7 @@ export async function createCandidate(input: {
         role: {
           select: {
             label: true,
-            department: true,
-            coreBasisRoleId: true
+            department: true
           }
         }
       }
@@ -628,8 +623,7 @@ export async function updateCandidate(
   const resolvedRole = await resolveOrCreateRoleCatalogEntry({
     roleId: input.roleId,
     legacyRoleLabel: input.positionAppliedFor,
-    createIfMissing: Boolean(input.positionAppliedFor?.trim()),
-    defaultCoreBasisRoleId: "Associate"
+    createIfMissing: Boolean(input.positionAppliedFor?.trim())
   });
 
   const updated = await prisma.candidate.update({
@@ -654,8 +648,7 @@ export async function updateCandidate(
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
         }
       }
     }
@@ -841,24 +834,35 @@ export async function addCandidateNote(input: {
   body: string;
   createdById?: string;
 }) {
-  const created = await prisma.candidateNote.create({
-    data: {
-      id: cuidLike(),
-      candidateId: input.candidateId,
-      type: input.type,
-      body: input.body.trim(),
-      createdById: input.createdById ?? null
-    }
+  const result = await prisma.$transaction(async (tx) => {
+    const created = await tx.candidateNote.create({
+      data: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        type: input.type,
+        body: input.body.trim(),
+        createdById: input.createdById ?? null
+      },
+      select: {
+        id: true,
+        type: true,
+        body: true,
+        createdAt: true,
+        createdById: true
+      }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    return created;
   });
 
-  await prisma.candidate.update({
-    where: { id: input.candidateId },
-    data: {
-      updatedAt: new Date()
-    }
-  });
-
-  return mapNote(created);
+  return mapNote(result as any);
 }
 
 export async function bulkUpdateCandidates(input: {
@@ -1133,7 +1137,7 @@ export async function initOrUpdateMilestoneCheck(
       select: { type: true, status: true }
     });
 
-    const defs = milestoneCheckDefs[milestone.type as CandidateMilestoneType];
+    const defs = milestoneCheckDefs[milestone.type as CandidateMilestoneType] ?? [];
     const newStatus = deriveMilestoneStatus(allChecks as Array<{ type?: CheckType; status: string }>, defs);
     const oldStatus = milestone.status;
 
@@ -1215,6 +1219,26 @@ export async function linkCandidateAssessmentToMilestone(input: {
         candidateAssessmentId: input.candidateAssessmentId,
         status: "in_progress",
         mode: "platform"
+      }
+    });
+
+    await tx.candidateMilestoneCheck.upsert({
+      where: {
+        milestoneId_type: {
+          milestoneId: input.milestoneId,
+          type: "screener_test"
+        }
+      },
+      update: {
+        status: "in_progress",
+        updatedAt: new Date()
+      },
+      create: {
+        id: `check_${Date.now()}`,
+        milestoneId: input.milestoneId,
+        type: "screener_test",
+        status: "in_progress",
+        updatedAt: new Date()
       }
     });
 
@@ -1426,8 +1450,7 @@ export async function listCandidates(filters?: {
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
         }
       }
     }
@@ -1601,8 +1624,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       role: {
         select: {
           label: true,
-          department: true,
-          coreBasisRoleId: true
+          department: true
         }
       },
       activityEvents: {

@@ -860,7 +860,6 @@ export async function validateInvite(input: {
       : null;
 
   const invite = row ? mapInvite(row) : undefined;
-  const roleMismatch = false;
   const requiresPasscode = Boolean(invite?.passcodeHash);
   const providedPasscode = String(input.passcode ?? "").trim().length > 0;
   const passcodeMatches =
@@ -874,13 +873,13 @@ export async function validateInvite(input: {
     requiresPasscode,
     passcodeProvided: providedPasscode,
     passcodeMatches,
-    roleMismatch,
+    roleMismatch: false,
     remainingAttempts
   });
 
   return {
     ...validation,
-    invite: invite && !roleMismatch ? invite : undefined,
+    invite: invite ?? undefined,
     remainingAttempts: validation.remainingAttempts
   };
 }

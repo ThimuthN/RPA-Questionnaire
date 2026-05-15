@@ -116,32 +116,12 @@ function milestoneModeTone(mode: CandidateMilestoneMode) {
   return mode === "platform" ? ("blue" as const) : ("neutral" as const);
 }
 
-export function CandidateStagePill({ stage }: { stage: CandidateStage }) {
-  return <StatusPill label={candidateStageLabels[stage]} tone={stageTone(stage)} />;
-}
-
 export function CandidateAssessmentPill({ status }: { status: CandidateAssessmentStatus }) {
   return <StatusPill label={candidateAssessmentStatusLabels[status]} tone={assessmentTone(status)} />;
 }
 
 export function CandidateUiStatusPill({ status }: { status: CandidateUiStatus }) {
   return <StatusPill label={candidateUiStatusLabels[status]} tone={uiStatusTone(status)} />;
-}
-
-export function CandidateDecisionPill({ decision }: { decision: CandidateFinalDecision }) {
-  return <StatusPill label={candidateFinalDecisionLabels[decision]} tone={decisionTone(decision)} />;
-}
-
-export function CandidateScreeningPill({
-  status
-}: {
-  status?: CandidateScreeningStatus;
-}) {
-  if (!status) {
-    return <StatusPill label="No screening" tone="neutral" />;
-  }
-
-  return <StatusPill label={candidateScreeningStatusLabels[status]} tone={screeningTone(status)} />;
 }
 
 export function CandidateNoteTypePill({ type }: { type: CandidateNoteType }) {
@@ -152,9 +132,6 @@ export function CandidateMilestoneStatusPill({ status }: { status: CandidateMile
   return <StatusPill label={candidateMilestoneStatusLabels[status]} tone={milestoneStatusTone(status)} />;
 }
 
-export function CandidateMilestoneModePill({ mode }: { mode: CandidateMilestoneMode }) {
-  return <StatusPill label={candidateMilestoneModeLabels[mode]} tone={milestoneModeTone(mode)} />;
-}
 
 export function CandidateMilestoneTypePill({ type }: { type: CandidateMilestoneType }) {
   return <StatusPill label={candidateMilestoneTypeLabels[type]} tone="neutral" />;

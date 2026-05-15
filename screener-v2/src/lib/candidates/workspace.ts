@@ -30,6 +30,8 @@ export interface CandidateActivityItem {
   kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone" | "application" | "activity";
   title: string;
   detail: string;
+  actorName?: string | null;
+  isSystemEvent?: boolean;
 }
 
 export interface CandidateOpenWorkSummary {
@@ -187,6 +189,18 @@ function noteTitle(note: CandidateNoteRecord) {
   return note.type === "technical" ? "Technical note added" : `${note.type[0].toUpperCase()}${note.type.slice(1)} note added`;
 }
 
+function eventTitle(eventName: string): string {
+  const titles: Record<string, string> = {
+    "check_updated": "Check updated",
+    "check_created": "Check created",
+    "milestone_updated": "Milestone updated",
+    "assessment_linked": "Assessment linked",
+    "resume_uploaded": "Resume uploaded",
+    "candidate_updated": "Candidate updated"
+  };
+  return titles[eventName] ?? eventName.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export function buildCandidateActivityFeed(candidate: CandidateDetail): CandidateActivityItem[] {
   const items: CandidateActivityItem[] = [
     {
@@ -194,7 +208,8 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       at: candidate.updatedAt,
       kind: "candidate",
       title: "Candidate updated",
-      detail: candidate.currentFocus || candidate.positionAppliedFor || candidate.email
+      detail: candidate.currentFocus || candidate.positionAppliedFor || candidate.email,
+      isSystemEvent: true
     }
   ];
 
@@ -204,7 +219,8 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       at: resume.uploadedAt,
       kind: "resume",
       title: "Resume uploaded",
-      detail: resume.fileName
+      detail: resume.fileName,
+      isSystemEvent: true
     });
   }
 
@@ -214,7 +230,8 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       at: note.createdAt,
       kind: "note",
       title: noteTitle(note),
-      detail: note.body
+      detail: note.body,
+      actorName: note.createdByName || null
     });
   }
 
@@ -224,7 +241,8 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       at: assessment.createdAt,
       kind: "assessment",
       title: "Assessment linked",
-      detail: assessment.inviteSlug ? `Invite ${assessment.inviteSlug.toUpperCase()}` : "Assessment created"
+      detail: assessment.inviteSlug ? `Invite ${assessment.inviteSlug.toUpperCase()}` : "Assessment created",
+      isSystemEvent: true
     });
 
     if (assessment.submittedAt && typeof assessment.finalPercent === "number") {
@@ -233,7 +251,8 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
         at: assessment.submittedAt,
         kind: "result",
         title: "Result available",
-        detail: `${assessment.finalPercent.toFixed(1)} / 100`
+        detail: `${assessment.finalPercent.toFixed(1)} / 100`,
+        isSystemEvent: true
       });
     }
   }
@@ -244,18 +263,21 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       at: application.createdAt,
       kind: "application",
       title: "Application received",
-      detail: application.jobTitle
+      detail: application.jobTitle,
+      isSystemEvent: true
     });
   }
 
   for (const milestone of candidate.milestones) {
     if (milestone.status === "not_started" && !milestone.notes && !milestone.assessment) continue;
+    const latestCheck = milestone.checks?.[milestone.checks.length - 1];
     items.push({
       id: `${milestone.id}-milestone`,
       at: milestone.updatedAt,
       kind: "milestone",
       title: milestone.title,
-      detail: milestone.notes || milestone.assessment?.status || milestone.status
+      detail: milestone.notes || milestone.assessment?.status || milestone.status,
+      actorName: latestCheck?.actorName || null
     });
   }
 
@@ -264,8 +286,10 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       id: event.id,
       at: event.createdAt,
       kind: "activity",
-      title: event.event,
-      detail: event.detail || event.actorName || "Activity logged"
+      title: eventTitle(event.event),
+      detail: event.detail || "Activity logged",
+      actorName: event.actorName || null,
+      isSystemEvent: !event.actorName
     });
   }
 

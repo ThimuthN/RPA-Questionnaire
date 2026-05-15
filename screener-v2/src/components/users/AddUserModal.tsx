@@ -1,152 +1,152 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/primitives/Button";
+import { FormInput } from "@/components/primitives/FormInput";
+import { Modal } from "@/components/primitives/Modal";
+import type { AppUserRow } from "@/lib/auth/app-auth";
 
 export function AddUserModal({
+  mode = "create",
+  user,
   created,
   updated,
   error
 }: {
+  mode?: "create" | "edit";
+  user?: AppUserRow;
   created?: string;
   updated?: string;
   error?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
+    if (created || updated || error) setOpen(true);
+  }, [created, updated, error]);
 
-  useEffect(() => {
-    if (!open) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (created || error) setOpen(true);
-  }, [created, error]);
+  const title = mode === "create" ? "Add user" : "Edit user";
+  const subtitle = mode === "create" ? "Create internal access for a team member." : "Update user profile and permissions.";
+  const action = mode === "create" ? "/api/users" : `/api/users/${user?.id}`;
+  const submitLabel = mode === "create" ? "Create user" : "Save user";
 
   return (
     <>
       <Button type="button" onClick={() => setOpen(true)}>
-        Add user
+        {mode === "create" ? "Add member" : "Edit"}
       </Button>
 
-      {mounted
-        ? createPortal(
-            <AnimatePresence>
-              {open ? (
-                <motion.div
-                  initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
-                  animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(6px)" }}
-                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
-                  transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-                  className="fixed inset-0 z-[999] flex items-start justify-center overflow-y-auto p-4 pt-16 md:p-6 md:pt-20"
-                  style={{ background: "var(--app-modal-overlay)" }}
-                  onClick={() => setOpen(false)}
-                >
-                  <motion.div
-                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.985, filter: "blur(10px)" }}
-                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                    exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.992, filter: "blur(8px)" }}
-                    transition={{ duration: reduceMotion ? 0.14 : 0.26, ease: [0.22, 1, 0.36, 1] }}
-                    className="flex w-full max-w-2xl flex-col overflow-hidden rounded-[30px] border border-[color:var(--app-border)] shadow-[var(--app-modal-shadow)]"
-                    style={{ background: "var(--app-modal-surface)" }}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <div className="flex items-start justify-between gap-4 border-b border-[color:var(--app-border)] px-5 py-5 md:px-6" style={{ background: "var(--app-modal-header)" }}>
-                      <div className="space-y-1">
-                        <h2 className="text-2xl text-[color:var(--app-heading)]">Add user</h2>
-                        <p className="text-sm text-[color:var(--app-muted)]">Create internal access for a team member.</p>
-                      </div>
-                      <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-                        Close
-                      </Button>
-                    </div>
+      <Modal isOpen={open} onClose={() => setOpen(false)} title={title}>
+        <div className="space-y-1 mb-4">
+          <p className="text-sm text-[color:var(--app-muted)]">{subtitle}</p>
+        </div>
+        <form action={action} method="post" className="space-y-4">
+          <FormInput
+            name="name"
+            label="Full name"
+            defaultValue={user?.name || ""}
+            placeholder="John Doe"
+          />
 
-                    <form action="/api/users" method="post" className="space-y-4 px-5 py-5 md:px-6" style={{ background: "var(--app-modal-body)" }}>
-                      <div className="grid gap-1">
-                        <label className="text-sm text-[color:var(--app-text)]" htmlFor="add-user-name">
-                          Name
-                        </label>
-                        <input
-                          id="add-user-name"
-                          name="name"
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                          placeholder="Internal user"
-                        />
-                      </div>
+          <FormInput
+            name="email"
+            label="Email"
+            type="email"
+            defaultValue={user?.email || ""}
+            disabled={mode === "edit"}
+            placeholder="user@company.com"
+            required
+          />
 
-                      <div className="grid gap-1">
-                        <label className="text-sm text-[color:var(--app-text)]" htmlFor="add-user-email">
-                          Email
-                        </label>
-                        <input
-                          id="add-user-email"
-                          name="email"
-                          type="email"
-                          required
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        />
-                      </div>
+          <FormInput
+            name="password"
+            label="Password"
+            type="password"
+            defaultValue=""
+            placeholder={mode === "create" ? "Min 8 characters" : "Leave blank to keep current"}
+            minLength={8}
+            required={mode === "create"}
+          />
 
-                      <div className="grid gap-1">
-                        <label className="text-sm text-[color:var(--app-text)]" htmlFor="add-user-password">
-                          Password
-                        </label>
-                        <input
-                          id="add-user-password"
-                          name="password"
-                          type="password"
-                          minLength={8}
-                          required
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        />
-                      </div>
+          <FormInput
+            name="title"
+            label="Job title"
+            defaultValue={user?.title || ""}
+            placeholder="Senior Recruiter"
+          />
 
-                      <div className="grid gap-1">
-                        <label className="text-sm text-[color:var(--app-text)]" htmlFor="add-user-role">
-                          Role
-                        </label>
-                        <select
-                          id="add-user-role"
-                          name="role"
-                          defaultValue="member"
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </div>
+          <FormInput
+            name="department"
+            label="Department"
+            defaultValue={user?.department || ""}
+            placeholder="Human Resources"
+          />
 
-                      {created ? <p className="text-sm text-[color:var(--app-success)]">Created {created}.</p> : null}
-                      {updated ? <p className="text-sm text-[color:var(--app-success)]">Updated {updated}.</p> : null}
-                      {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
+          <FormInput
+            name="phone"
+            label="Phone"
+            type="tel"
+            defaultValue={user?.phone || ""}
+            placeholder="+1 (555) 123-4567"
+          />
 
-                      <div className="flex justify-end gap-3 border-t border-[color:var(--app-border)] pt-4">
-                        <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button type="submit">Create user</Button>
-                      </div>
-                    </form>
-                  </motion.div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>,
-            document.body,
-          )
-        : null}
+          <div className="grid gap-1">
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-role">
+              Role
+            </label>
+            <select
+              id="user-role"
+              name="role"
+              defaultValue={user?.role || "recruiter"}
+              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            >
+              <option value="recruiter">Recruiter</option>
+              <option value="hiring_manager">Hiring Manager</option>
+              <option value="interviewer">Interviewer</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              id="user-interviewer"
+              name="isInterviewer"
+              type="checkbox"
+              defaultChecked={user?.isInterviewer || false}
+              className="h-4 w-4 rounded border-[color:var(--app-border)] accent-brand"
+            />
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-interviewer">
+              Available for interview assignments
+            </label>
+          </div>
+
+          {mode === "edit" && (
+            <div className="flex items-center gap-2">
+              <input
+                id="user-active"
+                name="isActive"
+                type="checkbox"
+                defaultChecked={user?.isActive || true}
+                className="h-4 w-4 rounded border-[color:var(--app-border)] accent-brand"
+              />
+              <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-active">
+                Account is active
+              </label>
+            </div>
+          )}
+
+          {created ? <p className="text-sm text-[color:var(--app-success)]">Created {created}.</p> : null}
+          {updated ? <p className="text-sm text-[color:var(--app-success)]">Updated {updated}.</p> : null}
+          {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
+
+          <div className="flex justify-end gap-3 border-t border-[color:var(--app-border)] pt-4">
+            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">{submitLabel}</Button>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 }

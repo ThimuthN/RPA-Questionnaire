@@ -7,6 +7,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
 import { listRoleCatalog } from "@/lib/roles/catalog";
+import { listAssessmentPresets } from "@/lib/addons/catalog";
 
 export default async function NewJobPostingPage({
   searchParams
@@ -15,7 +16,7 @@ export default async function NewJobPostingPage({
 }) {
   await requirePageSession("/people/candidates/jobs/new");
   const pageState = await searchParams;
-  const roles = await listRoleCatalog(true);
+  const [roles, presets] = await Promise.all([listRoleCatalog(true), listAssessmentPresets(false)]);
 
   return (
     <SceneShell
@@ -49,8 +50,11 @@ export default async function NewJobPostingPage({
               id: role.id,
               label: role.label,
               department: role.department,
-              isActive: role.isActive,
-              coreBasisRoleId: role.coreBasisRoleId
+              isActive: role.isActive
+            }))}
+            presetOptions={presets.map((preset) => ({
+              id: preset.id,
+              label: preset.label
             }))}
           />
         </StagePanel>

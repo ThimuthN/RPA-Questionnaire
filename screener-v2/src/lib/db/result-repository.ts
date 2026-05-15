@@ -84,43 +84,6 @@ function compareLinkTargets(
   return left.milestoneId.localeCompare(right.milestoneId);
 }
 
-export async function listResults() {
-  const resultRows = await prisma.result.findMany({
-    orderBy: { createdAt: "desc" }
-  });
-  const attemptIds = resultRows.map((row) => row.attemptId);
-  if (attemptIds.length === 0) return [];
-
-  const attemptRows = await prisma.attempt.findMany({
-    where: { id: { in: attemptIds } }
-  });
-  const attemptsById = new Map(attemptRows.map((row) => [row.id, mapAttempt(row)]));
-  const participantIds = [...new Set(attemptRows.map((row) => row.participantId))];
-  const participantRows =
-    participantIds.length > 0
-      ? await prisma.participant.findMany({
-          where: { id: { in: participantIds } }
-        })
-      : [];
-  const participantsById = new Map(participantRows.map((row) => [row.id, mapParticipant(row)]));
-
-  return resultRows
-    .map((row) => {
-      const attempt = attemptsById.get(row.attemptId) ?? null;
-      const participant = attempt ? participantsById.get(attempt.participantId) ?? null : null;
-      return {
-        summary: toResultSummary(row, attempt, participant),
-        submittedAt: attempt?.submittedAt ?? attempt?.startedAt ?? ""
-      };
-    })
-    .filter((row): row is { summary: ResultSummary; submittedAt: string } => Boolean(row.summary))
-    .sort(
-      (a, b) =>
-        Date.parse(b.submittedAt || "1970-01-01T00:00:00.000Z") -
-        Date.parse(a.submittedAt || "1970-01-01T00:00:00.000Z")
-    )
-    .map((row) => row.summary);
-}
 
 async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
   const resultRows = await prisma.result.findMany({

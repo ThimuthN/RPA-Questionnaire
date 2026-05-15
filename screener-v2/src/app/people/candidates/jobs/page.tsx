@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { DataTable } from "@/components/primitives/DataTable";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
@@ -21,8 +22,8 @@ function NoticeBanner({
 }) {
   const className =
     tone === "success"
-      ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
-      : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
+      ? "rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success)]/10 p-4 text-sm text-white"
+      : "rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger)]/10 p-4 text-sm text-white";
 
   return <div className={className}>{children}</div>;
 }
@@ -70,8 +71,7 @@ export default async function CandidateJobsPage({
               id: role.id,
               label: role.label,
               department: role.department,
-              isActive: role.isActive,
-              coreBasisRoleId: role.coreBasisRoleId
+              isActive: role.isActive
             }))}
           />
         </div>
@@ -95,71 +95,73 @@ export default async function CandidateJobsPage({
           </div>
         </div>
 
-        {jobs.length === 0 ? (
-          <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">No jobs yet</h2>
-            <p className="mt-2 text-sm text-[color:var(--app-muted)]">Create the first opening to publish a public application page.</p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
-            <div className="overflow-x-auto">
-              <table className="min-w-[900px] w-full table-fixed text-left">
-                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                  <tr>
-                    <th className="w-[28%] px-4 py-3 font-medium">Job</th>
-                    <th className="w-[16%] px-4 py-3 font-medium">Role</th>
-                    <th className="w-[14%] px-4 py-3 font-medium">Applicants</th>
-                    <th className="w-[16%] px-4 py-3 font-medium">Status</th>
-                    <th className="w-[12%] px-4 py-3 font-medium">Updated</th>
-                    <th className="w-[14%] px-4 py-3 font-medium text-right">Open</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {jobs.map((job) => (
-                    <tr key={job.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-surface-soft)]/70">
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
-                          <p className="text-xs text-[color:var(--app-muted)]">{job.summary}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{job.roleLabel || "No role"}</td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">
-                        <Link
-                          href={{
-                            pathname: "/people/candidates/applicants",
-                            query: { jobId: job.id }
-                          }}
-                          className="text-[color:var(--app-brand)] hover:underline"
-                        >
-                          {job.applicantCount}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <StatusPill label={job.isPublished ? "Published" : "Draft"} tone={job.isPublished ? "emerald" : "neutral"} />
-                          <StatusPill label={job.isOpen ? "Open" : "Closed"} tone={job.isOpen ? "blue" : "amber"} />
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-muted)]">
-                        {new Date(job.updatedAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/people/candidates/jobs/${job.id}` as Route}>
-                            <Button type="button" className="px-3 py-2 text-xs">
-                              Open
-                            </Button>
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        <DataTable
+          columns={[
+            {
+              header: "Job",
+              width: "w-[28%]",
+              render: (job) => (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">{job.summary}</p>
+                </div>
+              )
+            },
+            {
+              header: "Role",
+              width: "w-[16%]",
+              render: (job) =>
+                job.roleLabel ? (
+                  <p className="text-sm text-[color:var(--app-text)]">{job.roleLabel}</p>
+                ) : (
+                  <StatusPill label="No role" tone="amber" />
+                )
+            },
+            {
+              header: "Applicants",
+              width: "w-[14%]",
+              render: (job) => (
+                <Link
+                  href={{
+                    pathname: "/people/candidates/applicants",
+                    query: { jobId: job.id }
+                  }}
+                  className="text-[color:var(--app-brand)] hover:underline"
+                >
+                  {job.applicantCount}
+                </Link>
+              )
+            },
+            {
+              header: "Status",
+              width: "w-[16%]",
+              render: (job) => (
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill label={job.isPublished ? "Published" : "Draft"} tone={job.isPublished ? "emerald" : "neutral"} />
+                  <StatusPill label={job.isOpen ? "Open" : "Closed"} tone={job.isOpen ? "blue" : "amber"} />
+                </div>
+              )
+            },
+            {
+              header: "Updated",
+              width: "w-[12%]",
+              render: (job) => <p className="text-sm text-[color:var(--app-muted)]">{new Date(job.updatedAt).toLocaleDateString()}</p>
+            },
+            {
+              header: "Open",
+              width: "w-[14%]",
+              render: (job) => (
+                <div className="text-right">
+                  <Link href={`/people/candidates/jobs/${job.id}` as Route}>
+                    <Button>Open</Button>
+                  </Link>
+                </div>
+              )
+            }
+          ]}
+          data={jobs}
+          emptyMessage="Create the first opening to publish a public application page."
+        />
         </div>
       </div>
     </SceneShell>

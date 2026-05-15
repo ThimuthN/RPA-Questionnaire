@@ -1,1 +1,1 @@
-export const PUBLIC_JOBS_ENABLED = false;
+export const PUBLIC_JOBS_ENABLED = true;

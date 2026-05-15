@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireAdminApiSession, getApiSession } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
-import { updateAppUserRole } from "@/lib/auth/app-auth";
+import { updateAppUser, deactivateAppUser, reactivateAppUser } from "@/lib/auth/app-auth";
 
-const updateUserRoleSchema = z.object({
-  role: z.enum(["admin", "member"])
+const updateUserSchema = z.object({
+  action: z.enum(["update", "deactivate", "reactivate"]).default("update"),
+  name: z.string().optional(),
+  title: z.string().optional(),
+  department: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).optional(),
+  isInterviewer: z.boolean().optional(),
+  isActive: z.boolean().optional()
 });
 
 export async function POST(
@@ -18,24 +25,41 @@ export async function POST(
   }
 
   const { id } = await context.params;
+  const session = await getApiSession();
 
   try {
     const rawBody = isFormRequest(request)
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
-    const body = updateUserRoleSchema.parse(rawBody);
-    const updated = await updateAppUserRole({
-      userId: id,
-      role: body.role
-    });
+    const body = updateUserSchema.parse(rawBody);
+
+    if (body.action === "deactivate") {
+      if (session?.userId === id) {
+        throw new Error("Cannot deactivate your own account.");
+      }
+      await deactivateAppUser(id);
+    } else if (body.action === "reactivate") {
+      await reactivateAppUser(id);
+    } else {
+      await updateAppUser({
+        userId: id,
+        name: body.name,
+        title: body.title,
+        department: body.department,
+        phone: body.phone,
+        role: body.role,
+        isInterviewer: body.isInterviewer,
+        isActive: body.isActive
+      });
+    }
 
     if (isFormRequest(request)) {
       const url = new URL("/users", request.url);
-      url.searchParams.set("updated", updated.email);
+      url.searchParams.set("updated", id);
       return NextResponse.redirect(url, 303);
     }
 
-    return NextResponse.json({ ok: true, user: updated });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     if (isFormRequest(request)) {
       const url = new URL("/users", request.url);

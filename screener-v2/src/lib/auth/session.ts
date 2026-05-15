@@ -9,7 +9,7 @@ import {
 export const SESSION_COOKIE_NAME = "assessment_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
-export type AppRole = "admin" | "member";
+export type AppRole = "admin" | "recruiter" | "hiring_manager" | "interviewer" | "member";
 
 export interface AppSession {
   userId: string | null;
@@ -53,7 +53,8 @@ export async function verifySessionToken(token?: string | null): Promise<AppSess
     if (!payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
       return null;
     }
-    if (payload.role !== "admin" && payload.role !== "member") {
+    const validRoles: AppRole[] = ["admin", "recruiter", "hiring_manager", "interviewer", "member"];
+    if (!validRoles.includes(payload.role)) {
       return null;
     }
     return payload;

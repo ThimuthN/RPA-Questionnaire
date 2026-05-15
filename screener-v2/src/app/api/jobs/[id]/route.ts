@@ -6,7 +6,8 @@ import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/job
 
 const updateJobSchema = z.object({
   title: z.string().min(2).optional(),
-  roleId: z.string().optional(),
+  roleId: z.string().min(1, "A role is required.").optional(),
+  screenerPresetId: z.string().optional(),
   summary: z.string().min(8).optional(),
   description: z.string().min(20).optional(),
   isPublished: z.string().optional(),
@@ -38,6 +39,7 @@ export async function POST(
       await updateJobPosting(id, {
         title: current.title,
         roleId: current.roleId,
+        screenerPresetId: current.screenerPresetId,
         summary: current.summary,
         description: current.description,
         isPublished: !current.isPublished,
@@ -55,6 +57,7 @@ export async function POST(
       await updateJobPosting(id, {
         title: current.title,
         roleId: current.roleId,
+        screenerPresetId: current.screenerPresetId,
         summary: current.summary,
         description: current.description,
         isPublished: current.isPublished,
@@ -71,6 +74,9 @@ export async function POST(
     if (!body.title || !body.summary || !body.description) {
       throw new Error("Job details are required.");
     }
+    if (!body.roleId) {
+      throw new Error("A role is required to save this job.");
+    }
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
       throw new Error("Description should be at least 20 characters.");
@@ -79,6 +85,7 @@ export async function POST(
     await updateJobPosting(id, {
       title: body.title,
       roleId: body.roleId,
+      screenerPresetId: body.screenerPresetId,
       summary: body.summary,
       description,
       isPublished: body.isPublished === "on",

@@ -5,7 +5,9 @@ import {
   candidateMilestoneResultValues,
   candidateMilestoneModeValues,
   candidateMilestoneStatusValues,
-  milestoneCheckDefs
+  milestoneCheckDefs,
+  checkTypeValues,
+  type CheckType
 } from "@/lib/candidates/milestones";
 import {
   attachExistingAssessmentToMilestone,
@@ -39,7 +41,7 @@ const linkExistingSchema = z.object({
 
 const checkSchema = z.object({
   action: z.literal("check"),
-  checkType: z.string(),
+  checkType: z.string().refine((val): val is CheckType => checkTypeValues.includes(val as CheckType)),
   status: z.string(),
   notes: z.string().optional()
 });
@@ -89,7 +91,7 @@ export async function POST(
       await initOrUpdateMilestoneCheck(
         id,
         milestoneId,
-        body.checkType as any,
+        body.checkType,
         body.status,
         body.notes,
         session.userId ?? undefined,
