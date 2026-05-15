@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { createAssessmentPreset, listAssessmentPresets } from "@/lib/addons/catalog";
 import {
   createRequestLogContext,
@@ -45,6 +45,12 @@ export async function POST(request: Request) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  // Require admin permission to manage presets
+  const permission = requirePermission(auth.session, "manage_addons");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {
