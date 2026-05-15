@@ -22,6 +22,48 @@ import {
 } from "@/lib/candidates/milestones";
 import type { CandidateMilestoneCheckRecord, CandidateMilestoneRecord } from "@/lib/db/candidates";
 
+type TimelineNode = CandidateMilestoneRecord | { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] };
+
+function isAdvancedReviewGroup(node: TimelineNode): node is { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] } {
+  return node.type === "__advanced_review";
+}
+
+function groupMilestonesForTimeline(milestones: CandidateMilestoneRecord[]): TimelineNode[] {
+  const sorted = [...milestones].sort((a, b) => a.sortOrder - b.sortOrder);
+  const result: TimelineNode[] = [];
+  let advancedMilestones: CandidateMilestoneRecord[] = [];
+
+  for (const m of sorted) {
+    if (m.type === "decision") {
+      // Add any accumulated advanced milestones as a group before decision
+      if (advancedMilestones.length > 0) {
+        result.push({
+          id: "advanced_review_group",
+          type: "__advanced_review",
+          groupedMilestones: advancedMilestones
+        });
+        advancedMilestones = [];
+      }
+      result.push(m);
+    } else if (m.sortOrder >= 40 && m.sortOrder < 9999) {
+      advancedMilestones.push(m);
+    } else {
+      result.push(m);
+    }
+  }
+
+  // Add any remaining advanced milestones at the end
+  if (advancedMilestones.length > 0) {
+    result.push({
+      id: "advanced_review_group",
+      type: "__advanced_review",
+      groupedMilestones: advancedMilestones
+    });
+  }
+
+  return result;
+}
+
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
@@ -48,7 +90,7 @@ function defaultActiveMilestoneId(milestones: CandidateMilestoneRecord[], hasRes
     (milestone) =>
       !isMilestoneComplete(milestone.status) && !(milestone.type === "registration" && hasResume)
   );
-  return nextActionable?.id ?? milestones[0]?.id ?? "";
+  return nextActionable?.id ?? milestones[0]?.id ?? "advanced_review_group";
 }
 
 function derivedResult(milestone: CandidateMilestoneRecord) {
@@ -227,42 +269,6 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
   );
 }
 
-function AttachExistingTest({
-  candidateId,
-  milestoneId
-}: {
-  candidateId: string;
-  milestoneId: string;
-}) {
-  return (
-    <details className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-4 py-3">
-      <summary className="cursor-pointer list-none text-sm text-[color:var(--app-text)] [&::-webkit-details-marker]:hidden">
-        <span className="font-medium text-[color:var(--app-heading)]">Attach an existing assessment</span>
-        <span className="ml-2 text-[color:var(--app-muted)]">Use this only when this lifecycle step already has an assessment elsewhere.</span>
-      </summary>
-
-      <form
-        action={`/api/candidates/${candidateId}/milestones/${milestoneId}`}
-        method="post"
-        className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end"
-      >
-        <input type="hidden" name="action" value="link_existing" />
-        <label className="grid gap-1">
-          <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Attempt ID</span>
-          <input name="attemptId" className={fieldClassName} />
-        </label>
-        <label className="grid gap-1">
-          <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Invite slug</span>
-          <input name="inviteSlug" className={fieldClassName} />
-        </label>
-        <Button type="submit" variant="secondary">
-          Attach assessment
-        </Button>
-      </form>
-    </details>
-  );
-}
-
 function TestMilestoneCard({
   candidateId,
   milestone
@@ -374,12 +380,8 @@ function TestMilestoneCard({
         )}
       </form>
 
-      {isPlatform ? (
-        milestone.assessment ? (
-          <LinkedAssessmentSummary milestone={milestone} />
-        ) : (
-          <AttachExistingTest candidateId={candidateId} milestoneId={milestone.id} />
-        )
+      {isPlatform && milestone.assessment ? (
+        <LinkedAssessmentSummary milestone={milestone} />
       ) : null}
     </div>
   );
@@ -448,36 +450,44 @@ function ScreenerMilestoneCard({
 
   return (
     <div className="space-y-4">
-      {checkError && <p className="text-sm text-[color:var(--app-danger)]">{checkError}</p>}
-      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      {checkError && (
+        <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
+          {checkError}
+        </div>
+      )}
+      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium text-sm">Resume Review</h4>
+          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Resume Review</h4>
           {resumeReviewCheck && <CheckBadge status={resumeReviewCheck.status} />}
         </div>
         {resumeReviewCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{resumeReviewCheck.notes}</p>}
         {!resumeReviewCheck || resumeReviewCheck.status === "not_started" ? (
-          <div className="flex gap-2 pt-2">
-            <button
+          <div className="flex gap-2 pt-3">
+            <Button
+              type="button"
               onClick={() => handleCheckAction("resume_review", "passed")}
               disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition"
+              variant="secondary"
+              className="flex-1"
             >
-              Approve
-            </button>
-            <button
+              {isPending ? "Updating..." : "Approve"}
+            </Button>
+            <Button
+              type="button"
               onClick={() => handleCheckAction("resume_review", "failed")}
               disabled={isPending}
-              className="px-3 py-1.5 text-xs font-medium rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition"
+              variant="danger"
+              className="flex-1"
             >
-              Reject
-            </button>
+              {isPending ? "Updating..." : "Reject"}
+            </Button>
           </div>
         ) : null}
       </div>
 
-      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium text-sm">Screener Test</h4>
+          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Screener Test</h4>
           {screenerTestCheck && <CheckBadge status={screenerTestCheck.status} />}
         </div>
         {screenerTestCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{screenerTestCheck.notes}</p>}
@@ -485,7 +495,7 @@ function ScreenerMilestoneCard({
           {!milestone.assessment ? (
             <Link href={sendHref}>
               <Button type="button" variant="secondary">
-                Create assessment
+                Send screener
               </Button>
             </Link>
           ) : (
@@ -511,9 +521,9 @@ function RegistrationMilestoneCard({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-medium text-sm">Resume Upload</h4>
+          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Resume Upload</h4>
           {resumeUploadCheck && <CheckBadge status={resumeUploadCheck.status} />}
         </div>
         {resumeUploadCheck?.notes && (
@@ -535,13 +545,18 @@ function RegistrationMilestoneCard({
 
 function MilestonePanelContent({
   candidateId,
-  milestone,
+  node,
   hasResume
 }: {
   candidateId: string;
-  milestone: CandidateMilestoneRecord;
+  node: TimelineNode;
   hasResume: boolean;
 }) {
+  if (isAdvancedReviewGroup(node)) {
+    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} />;
+  }
+
+  const milestone = node;
   if (milestone.type === "registration") {
     return <RegistrationMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />;
   }
@@ -631,6 +646,117 @@ function DocumentationMilestoneCard({
   );
 }
 
+function AdvancedReviewCard({
+  candidateId,
+  groupedMilestones
+}: {
+  candidateId: string;
+  groupedMilestones: CandidateMilestoneRecord[];
+}) {
+  const [isCreatingTest, setIsCreatingTest] = useState(false);
+  const [isCreatingInterview, setIsCreatingInterview] = useState(false);
+  const [createError, setCreateError] = useState("");
+
+  const handleAddMilestone = async (type: "advanced_test" | "interview") => {
+    setCreateError("");
+    try {
+      const setter = type === "advanced_test" ? setIsCreatingTest : setIsCreatingInterview;
+      setter(true);
+
+      const response = await fetch(`/api/candidates/${candidateId}/milestones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type })
+      });
+
+      if (response.ok) {
+        const newMilestone = await response.json();
+        window.location.href = `/create-test?candidateId=${candidateId}&milestoneId=${newMilestone.id}`;
+      } else {
+        const data = await response.json();
+        setCreateError(data.error || "Failed to create milestone");
+      }
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "Error creating milestone");
+    } finally {
+      setIsCreatingTest(false);
+      setIsCreatingInterview(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      {createError && (
+        <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
+          {createError}
+        </div>
+      )}
+
+      {groupedMilestones.length > 0 ? (
+        <div className="space-y-3">
+          <div className="px-1">
+            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">Current items</p>
+          </div>
+          {groupedMilestones.map((m) => {
+            const result = derivedResult(m);
+            return (
+              <div key={m.id} className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <CandidateMilestoneTypePill type={m.type} />
+                      <CandidateMilestoneStatusPill status={m.status} />
+                    </div>
+                    {result && <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm text-[color:var(--app-heading)]">{m.title}</p>
+                    <p className="text-xs text-[color:var(--app-muted)] mt-1">{stepSummary(m, false)}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-[16px] border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6 text-center">
+          <p className="text-sm text-[color:var(--app-muted)]">No additional tests or interviews added yet.</p>
+        </div>
+      )}
+
+      <div className="space-y-3 border-t border-[color:var(--app-border)] pt-5">
+        <div className="px-1">
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">Add more</p>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            type="button"
+            onClick={() => handleAddMilestone("advanced_test")}
+            disabled={isCreatingTest}
+            variant="secondary"
+            className="flex-1"
+          >
+            <span>
+              {isCreatingTest ? "Creating test..." : "Add test"}
+            </span>
+          </Button>
+          <Button
+            type="button"
+            onClick={() => handleAddMilestone("interview")}
+            disabled={isCreatingInterview}
+            variant="secondary"
+            className="flex-1"
+          >
+            <span>
+              {isCreatingInterview ? "Creating interview..." : "Add interview"}
+            </span>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -649,22 +775,28 @@ export function CandidateMilestoneTimeline({
   hasResume: boolean;
 }) {
   const reduceMotion = useReducedMotion();
+  const timelineNodes = groupMilestonesForTimeline(milestones);
+
   const [activeMilestoneId, setActiveMilestoneId] = useState(() =>
     defaultActiveMilestoneId(milestones, hasResume)
   );
 
   useEffect(() => {
-    if (milestones.some((milestone) => milestone.id === activeMilestoneId)) {
-      return;
+    const exists =
+      milestones.some((m) => m.id === activeMilestoneId) || activeMilestoneId === "advanced_review_group";
+    if (!exists) {
+      setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
     }
+  }, [milestones, hasResume, activeMilestoneId]);
 
-    setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
-  }, [milestones, hasResume]);
+  const activeNode = timelineNodes.find((node) => {
+    if (isAdvancedReviewGroup(node)) {
+      return activeMilestoneId === "advanced_review_group";
+    }
+    return node.id === activeMilestoneId;
+  }) ?? timelineNodes[0] ?? null;
 
-  const activeMilestone =
-    milestones.find((milestone) => milestone.id === activeMilestoneId) ?? milestones[0] ?? null;
-
-  if (!activeMilestone) {
+  if (!activeNode) {
     return null;
   }
 
@@ -673,18 +805,42 @@ export function CandidateMilestoneTimeline({
       <div className="overflow-x-auto pb-2">
         <div className="min-w-[720px] px-1">
           <div className="flex items-start">
-            {milestones.map((milestone, index) => {
-              const result = derivedResult(milestone);
-              const isActive = milestone.id === activeMilestone.id;
-              const isComplete = isMilestoneComplete(milestone.status);
-              const segmentFilled = isMilestoneComplete(milestone.status);
+            {timelineNodes.map((node, index) => {
+              const isActive =
+                isAdvancedReviewGroup(node)
+                  ? activeMilestoneId === "advanced_review_group"
+                  : node.id === activeMilestoneId;
+
+              let isComplete = false;
+              let result: string | undefined = undefined;
+              let status: string = "not_started";
+              let title: string = "";
+              let summary: string = "";
+
+              if (isAdvancedReviewGroup(node)) {
+                title = "Advanced Review";
+                const allDone = node.groupedMilestones.every((m) => isMilestoneComplete(m.status));
+                const anyDone = node.groupedMilestones.some((m) => isMilestoneComplete(m.status));
+                const anyInProgress = node.groupedMilestones.some((m) => m.status === "in_progress");
+                isComplete = allDone;
+                status = allDone ? "done" : anyInProgress ? "in_progress" : anyDone ? "in_progress" : "not_started";
+                summary = `${node.groupedMilestones.length} item${node.groupedMilestones.length === 1 ? "" : "s"}`;
+              } else {
+                result = derivedResult(node);
+                isComplete = isMilestoneComplete(node.status);
+                status = node.status;
+                title = node.title;
+                summary = stepSummary(node, hasResume);
+              }
+
+              const segmentFilled = isComplete;
               const nodeState = isComplete ? "complete" : isActive ? "active" : "pending";
 
               return (
-                <div key={milestone.id} className="flex min-w-0 flex-1 items-start">
+                <div key={node.id} className="flex min-w-0 flex-1 items-start">
                   <button
                     type="button"
-                    onClick={() => setActiveMilestoneId(milestone.id)}
+                    onClick={() => setActiveMilestoneId(node.id)}
                     className="group flex w-40 shrink-0 flex-col items-center text-center"
                   >
                     <span
@@ -709,19 +865,19 @@ export function CandidateMilestoneTimeline({
                         )}
                       </span>
                     </span>
-                    <span className="mt-3 text-sm font-medium text-[color:var(--app-heading)]">{milestone.title}</span>
+                    <span className="mt-3 text-sm font-medium text-[color:var(--app-heading)]">{title}</span>
                     <span className="mt-1 max-w-[10rem] text-xs leading-5 text-[color:var(--app-muted)]">
-                      {stepSummary(milestone, hasResume)}
+                      {summary}
                     </span>
                     <span className="mt-2 flex flex-wrap justify-center gap-2">
-                      <CandidateMilestoneStatusPill status={milestone.status} />
-                      {result ? (
+                      <CandidateMilestoneStatusPill status={status as any} />
+                      {result && !isAdvancedReviewGroup(node) ? (
                         <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
                       ) : null}
                     </span>
                   </button>
 
-                  {index < milestones.length - 1 ? (
+                  {index < timelineNodes.length - 1 ? (
                     <div className="mt-5 flex min-w-[72px] flex-1 items-center px-2">
                       <div className="relative h-[4px] w-full overflow-hidden rounded-full bg-[color:var(--app-border)]">
                         <motion.div
@@ -741,53 +897,61 @@ export function CandidateMilestoneTimeline({
         </div>
       </div>
 
-      <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface-soft)_92%,white),color-mix(in_srgb,var(--app-surface)_94%,black))] p-5 shadow-[var(--app-shadow-soft)]">
-        <div className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2">
-                <CandidateMilestoneTypePill type={activeMilestone.type} />
-                <CandidateMilestoneStatusPill status={activeMilestone.status} />
-                {derivedResult(activeMilestone) ? (
-                  <StatusPill
-                    label={candidateMilestoneResultLabels[derivedResult(activeMilestone) ?? "review"]}
-                    tone={resultTone(derivedResult(activeMilestone))}
+      <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface-soft)_92%,white),color-mix(in_srgb,var(--app-surface)_94%,black))] shadow-[var(--app-shadow-soft)]">
+        <div className="p-6 lg:p-7">
+          <div className="space-y-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="space-y-3 flex-1">
+                <div className="flex flex-wrap gap-2">
+                  {!isAdvancedReviewGroup(activeNode) && (
+                    <>
+                      <CandidateMilestoneTypePill type={activeNode.type} />
+                      {derivedResult(activeNode) ? (
+                        <StatusPill
+                          label={candidateMilestoneResultLabels[derivedResult(activeNode) ?? "review"]}
+                          tone={resultTone(derivedResult(activeNode))}
+                        />
+                      ) : null}
+                      {activeNode.assessment?.status === "in_progress" ? (
+                        <CandidateAssessmentPill status={activeNode.assessment.status} />
+                      ) : null}
+                    </>
+                  )}
+                  <CandidateMilestoneStatusPill
+                    status={isAdvancedReviewGroup(activeNode) ? "not_started" : activeNode.status}
                   />
-                ) : null}
-                {activeMilestone.assessment?.status === "in_progress" ? (
-                  <CandidateAssessmentPill status={activeMilestone.assessment.status} />
-                ) : null}
-              </div>
+                </div>
 
-              <div className="space-y-1">
-                <h3 className="text-xl text-[color:var(--app-heading)]">{activeMilestone.title}</h3>
-                <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                  {stepSummary(activeMilestone, hasResume)}
-                </p>
+                <div>
+                  <h3 className="text-2xl font-semibold text-[color:var(--app-heading)]">
+                    {isAdvancedReviewGroup(activeNode) ? "Advanced Review" : activeNode.title}
+                  </h3>
+                  <p className="max-w-2xl text-sm text-[color:var(--app-text)] mt-2">
+                    {isAdvancedReviewGroup(activeNode)
+                      ? `Manage additional tests and interviews (${activeNode.groupedMilestones.length} item${activeNode.groupedMilestones.length === 1 ? "" : "s"})`
+                      : stepSummary(activeNode, hasResume)}
+                  </p>
+                </div>
               </div>
             </div>
 
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)]">
-              <ChevronIcon />
-            </span>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeNode.id}
+                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+                transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="border-t border-[color:var(--app-border)] pt-5"
+              >
+                <MilestonePanelContent
+                  candidateId={candidateId}
+                  node={activeNode}
+                  hasResume={hasResume}
+                />
+              </motion.div>
+            </AnimatePresence>
           </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeMilestone.id}
-              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
-              transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="border-t border-[color:var(--app-border)] pt-4"
-            >
-              <MilestonePanelContent
-                candidateId={candidateId}
-                milestone={activeMilestone}
-                hasResume={hasResume}
-              />
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
     </div>

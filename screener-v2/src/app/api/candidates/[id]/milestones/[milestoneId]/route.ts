@@ -10,7 +10,6 @@ import {
   type CheckType
 } from "@/lib/candidates/milestones";
 import {
-  attachExistingAssessmentToMilestone,
   initOrUpdateMilestoneCheck,
   quickUpdateCandidateMilestoneStatus,
   updateCandidateMilestone
@@ -31,12 +30,6 @@ const saveMilestoneSchema = z.object({
 const quickStatusSchema = z.object({
   action: z.literal("status"),
   status: z.enum(candidateMilestoneStatusValues)
-});
-
-const linkExistingSchema = z.object({
-  action: z.literal("link_existing"),
-  attemptId: z.string().optional(),
-  inviteSlug: z.string().optional()
 });
 
 const checkSchema = z.object({
@@ -71,18 +64,6 @@ export async function POST(
     if (action === "status") {
       const body = quickStatusSchema.parse(raw);
       await quickUpdateCandidateMilestoneStatus(id, milestoneId, body.status);
-      return redirectToCandidate(request, id, "updated");
-    }
-
-    if (action === "link_existing") {
-      const body = linkExistingSchema.parse(raw);
-      await attachExistingAssessmentToMilestone({
-        candidateId: id,
-        milestoneId,
-        attemptId: body.attemptId,
-        inviteSlug: body.inviteSlug,
-        createdById: session.userId ?? undefined
-      });
       return redirectToCandidate(request, id, "updated");
     }
 

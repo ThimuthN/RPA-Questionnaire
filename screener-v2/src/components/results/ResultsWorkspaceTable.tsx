@@ -208,13 +208,9 @@ export function ResultsWorkspaceTable({
                         <Link href={`/results/${row.attemptId}`} className={actionPillPrimaryClassName}>
                           View
                         </Link>
-                        {row.candidateId ? (
+                        {row.candidateId && (
                           <Link href={`/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
                             Profile
-                          </Link>
-                        ) : (
-                          <Link href={`/results/${row.attemptId}#link-candidate`} className={actionPillSecondaryClassName}>
-                            Link
                           </Link>
                         )}
                         <Link

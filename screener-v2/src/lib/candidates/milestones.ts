@@ -195,7 +195,7 @@ export function defaultCandidateMilestones() {
       type: "decision" as const,
       title: "Decision",
       status: "not_started" as const,
-      sortOrder: 50,
+      sortOrder: 9999,
       mode: "manual" as const
     }
   ];
