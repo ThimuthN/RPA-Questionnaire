@@ -700,6 +700,8 @@ function AdvancedReviewCard({
           </div>
           {groupedMilestones.map((m) => {
             const result = derivedResult(m);
+            const setupHref = `/create-test?candidateId=${candidateId}&milestoneId=${m.id}` as Route;
+            const canCreateAssessment = m.mode === "platform" && !m.assessment;
             return (
               <div key={m.id} className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
                 <div className="space-y-2">
@@ -714,6 +716,15 @@ function AdvancedReviewCard({
                     <p className="font-medium text-sm text-[color:var(--app-heading)]">{m.title}</p>
                     <p className="text-xs text-[color:var(--app-muted)] mt-1">{stepSummary(m, false)}</p>
                   </div>
+                  {canCreateAssessment ? (
+                    <div className="pt-1">
+                      <Link href={setupHref}>
+                        <Button type="button" variant="secondary" className="px-3 py-1.5 text-xs">
+                          Create assessment
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             );

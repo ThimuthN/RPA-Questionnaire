@@ -7,6 +7,7 @@ import {
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
+import { checkAutosaveRateLimit } from "@/lib/server/rate-limit";
 
 const autosaveSchema = z.object({
   stage: z.string().optional(),
@@ -34,6 +35,14 @@ export async function PATCH(
     if (!auth.ok) {
       return auth.response;
     }
+
+    if (!checkAutosaveRateLimit(attemptId)) {
+      return NextResponse.json(
+        { ok: false, message: "Too many autosaves. Please wait 5 seconds before trying again." },
+        { status: 429 }
+      );
+    }
+
     const body = autosaveSchema.parse(await request.json());
     const updated = await patchAttempt(attemptId, body);
     if (updated.status === "missing") {

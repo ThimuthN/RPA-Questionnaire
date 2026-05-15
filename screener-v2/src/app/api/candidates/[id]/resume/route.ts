@@ -14,6 +14,10 @@ import {
   persistCandidateResumeUpload
 } from "@/lib/candidates/resume-storage";
 import {
+  candidateResumeMaxSizeBytes,
+  candidateResumeMaxSizeMB
+} from "@/lib/candidates/resume-config";
+import {
   createRequestLogContext,
   logRouteError,
   messageFromError
@@ -36,6 +40,15 @@ export async function POST(
     const contentType = request.headers.get("content-type") || "";
     if (!contentType.includes("multipart/form-data")) {
       throw new Error("Resume upload must use multipart form data.");
+    }
+
+    // Check Content-Length header before parsing to prevent large uploads
+    const contentLength = request.headers.get("content-length");
+    if (contentLength) {
+      const bytes = parseInt(contentLength, 10);
+      if (bytes > candidateResumeMaxSizeBytes) {
+        throw new Error(`File size exceeds ${candidateResumeMaxSizeMB}MB limit`);
+      }
     }
 
     await assertCandidateResumeCandidateExists(id);

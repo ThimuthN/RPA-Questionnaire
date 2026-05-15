@@ -5,6 +5,10 @@ import { parseCandidateCsv } from "@/lib/candidates/csv";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
 import { prisma } from "@/lib/db/prisma";
+import { checkBulkOpRateLimit } from "@/lib/server/rate-limit";
+
+const MAX_BULK_IDS_PER_REQUEST = 500;
+const MAX_CSV_ROWS_PER_IMPORT = 1000;
 
 const bulkSchema = z.object({
   action: z.enum(["assign_owner", "set_ui_status", "add_note", "import_csv"]),
@@ -29,6 +33,12 @@ export async function POST(request: Request) {
   }
   const { session } = auth;
 
+  if (!checkBulkOpRateLimit(session.userId ?? "")) {
+    const url = redirectUrl(request, "");
+    url.searchParams.set("error", "Bulk operation in progress. Please wait 30 seconds before trying again.");
+    return NextResponse.redirect(url, 303);
+  }
+
   const formData = await request.formData();
   try {
     const parsed = bulkSchema.parse(Object.fromEntries(formData.entries()));
@@ -41,6 +51,11 @@ export async function POST(request: Request) {
       }
 
       const rows = parseCandidateCsv(await csvFile.text());
+      if (rows.length > MAX_CSV_ROWS_PER_IMPORT) {
+        url.searchParams.set("error", `Maximum ${MAX_CSV_ROWS_PER_IMPORT} rows per CSV import`);
+        return NextResponse.redirect(url, 303);
+      }
+
       const existingEmails = new Set(
         (
           await prisma.candidate.findMany({
@@ -72,6 +87,11 @@ export async function POST(request: Request) {
       .getAll("candidateId")
       .map((value) => String(value))
       .filter(Boolean);
+
+    if (ids.length > MAX_BULK_IDS_PER_REQUEST) {
+      url.searchParams.set("error", `Maximum ${MAX_BULK_IDS_PER_REQUEST} candidates per request`);
+      return NextResponse.redirect(url, 303);
+    }
     const result = await bulkUpdateCandidates({
       candidateIds: ids,
       action: parsed.action,

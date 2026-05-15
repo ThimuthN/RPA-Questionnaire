@@ -2,7 +2,9 @@ export const candidateResumeMimeTypes = [
   "application/pdf"
 ] as const;
 
-export const candidateResumeMaxSizeBytes = 10 * 1024 * 1024;
+// Reduced to 5MB to prevent DoS via concurrent uploads at 500+ users
+export const candidateResumeMaxSizeBytes = 5 * 1024 * 1024;
+export const candidateResumeMaxSizeMB = candidateResumeMaxSizeBytes / (1024 * 1024);
 
 export function isAllowedResumeMimeType(value: string) {
   return candidateResumeMimeTypes.includes(
