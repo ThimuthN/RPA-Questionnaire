@@ -1122,9 +1122,10 @@ async function logActivityEvent(
 
 export async function bulkUpdateCandidates(input: {
   candidateIds: string[];
-  action: "assign_owner" | "set_ui_status" | "add_note";
+  action: "assign_owner" | "set_ui_status" | "add_note" | "set_department";
   owner?: string;
   status?: CandidateUiStatus;
+  roleId?: string;
   noteBody?: string;
   noteType?: CandidateNoteType;
   createdById?: string;
@@ -1158,6 +1159,21 @@ export async function bulkUpdateCandidates(input: {
         finalDecision: fields.finalDecision,
         nextAction: fields.nextAction,
         screeningStatus: fields.screeningStatus ?? null,
+        updatedAt: new Date()
+      }
+    });
+    return { updatedCount: candidateIds.length };
+  }
+
+  if (input.action === "set_department") {
+    if (!input.roleId) {
+      throw new Error("Select a department.");
+    }
+
+    await prisma.candidate.updateMany({
+      where: { id: { in: candidateIds } },
+      data: {
+        roleId: input.roleId,
         updatedAt: new Date()
       }
     });

@@ -12,18 +12,21 @@ export function CandidateBulkActionsBar({
   selectedCount,
   onClearSelection,
   onSelectAll,
-  defaultStatus = "need_review"
+  defaultStatus = "need_review",
+  roleOptions
 }: {
   selectedCount: number;
   onClearSelection: () => void;
   onSelectAll: () => void;
   defaultStatus?: CandidateUiStatus;
+  roleOptions: Array<{ id: string; label: string }>;
 }) {
-  const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note">("assign_owner");
+  const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note" | "set_department">("assign_owner");
 
   const helperText = useMemo(() => {
     if (action === "assign_owner") return "Assign an owner to the selected candidates.";
     if (action === "set_ui_status") return "Set the next hiring status for the selected candidates.";
+    if (action === "set_department") return "Set the department for the selected candidates.";
     return "Add one note to every selected candidate.";
   }, [action]);
 
@@ -61,6 +64,7 @@ export function CandidateBulkActionsBar({
           <option value="assign_owner">Assign owner</option>
           <option value="set_ui_status">Change status</option>
           <option value="add_note">Add note</option>
+          <option value="set_department">Set department</option>
         </select>
 
         {action === "assign_owner" ? (
@@ -91,6 +95,20 @@ export function CandidateBulkActionsBar({
             placeholder="Add one note to all selected candidates"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
           />
+        ) : null}
+
+        {action === "set_department" ? (
+          <select
+            name="roleId"
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          >
+            <option value="">Select department...</option>
+            {roleOptions.map((role) => (
+              <option key={role.id} value={role.id}>
+                {role.label}
+              </option>
+            ))}
+          </select>
         ) : null}
 
         <Button type="submit">

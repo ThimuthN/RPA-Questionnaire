@@ -11,9 +11,10 @@ const MAX_BULK_IDS_PER_REQUEST = 500;
 const MAX_CSV_ROWS_PER_IMPORT = 1000;
 
 const bulkSchema = z.object({
-  action: z.enum(["assign_owner", "set_ui_status", "add_note", "import_csv"]),
+  action: z.enum(["assign_owner", "set_ui_status", "add_note", "set_department", "import_csv"]),
   owner: z.string().optional(),
   status: z.enum(candidateUiStatusValues).optional(),
+  roleId: z.string().optional(),
   noteBody: z.string().optional(),
   noteType: z.enum(candidateNoteTypeValues).optional(),
   returnTo: z.string().optional()
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
       action: parsed.action,
       owner: parsed.owner,
       status: parsed.status,
+      roleId: parsed.roleId,
       noteBody: parsed.noteBody,
       noteType: parsed.noteType,
       createdById: session.userId ?? undefined

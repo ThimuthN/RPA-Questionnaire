@@ -48,10 +48,12 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
 
 export function CandidateWorkspaceTable({
   rows,
-  currentPathAndQuery
+  currentPathAndQuery,
+  roleOptions
 }: {
   rows: CandidateWorkspaceItem[];
   currentPathAndQuery: string;
+  roleOptions: Array<{ id: string; label: string }>;
 }) {
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
 
@@ -83,6 +85,7 @@ export function CandidateWorkspaceTable({
         selectedCount={selectedCandidateIds.length}
         onSelectAll={selectAllOnPage}
         onClearSelection={clearSelection}
+        roleOptions={roleOptions}
       />
 
       <div className={tableShellClassName}>
@@ -96,7 +99,7 @@ export function CandidateWorkspaceTable({
                 <th className="w-[24%] px-4 py-3 font-medium">Name</th>
                 <th className="w-[13%] px-4 py-3 font-medium">Owner</th>
                 <th className="w-[19%] px-4 py-3 font-medium">Status</th>
-                <th className="w-[16%] px-4 py-3 font-medium">Assessment</th>
+                <th className="w-[16%] px-4 py-3 font-medium">Department</th>
                 <th className="w-[8%] px-4 py-3 font-medium">Updated</th>
                 <th className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
               </tr>
@@ -139,16 +142,9 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
-                          {typeof candidate.latestAssessment?.finalPercent === "number" ? (
-                            <span className="text-xs text-[color:var(--app-muted)]">
-                              {candidate.latestAssessment.finalPercent.toFixed(1)} / 100
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
+                      <span className="text-sm text-[color:var(--app-text)]">
+                        {candidate.roleDepartment || "—"}
+                      </span>
                     </td>
                     <td className={tableCellClassName}>
                       <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>

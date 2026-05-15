@@ -269,7 +269,11 @@ export default async function PeopleCandidatesPage({
             </StaggerItem>
           ) : (
             <StaggerItem>
-              <CandidateWorkspaceTable rows={page.rows} currentPathAndQuery={currentPathAndQuery} />
+              <CandidateWorkspaceTable
+                rows={page.rows}
+                currentPathAndQuery={currentPathAndQuery}
+                roleOptions={page.roleOptions}
+              />
             </StaggerItem>
           )}
 
