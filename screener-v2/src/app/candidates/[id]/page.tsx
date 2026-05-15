@@ -215,11 +215,11 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
             <div className="min-w-0 space-y-4">
               {outcomeBadges}
 
-              <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
                   <p className="break-all text-sm text-[color:var(--app-text)]">{candidate.email}</p>
@@ -248,11 +248,24 @@ export default async function CandidateDetailPage({
                     {currentResume ? currentResume.fileName : "Upload to add review context"}
                   </p>
                 </div>
-                <div className="space-y-1 sm:col-span-2 xl:col-span-3">
+                <div className="space-y-1 sm:col-span-2 lg:col-span-3">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next step</p>
                   <p className="text-sm text-[color:var(--app-text)]">{nextPrompt(candidate)}</p>
                 </div>
               </div>
+            </div>
+
+            <div className="min-h-0">
+              <CandidateNotesModal
+                candidateId={candidate.id}
+                notes={candidate.notes.map((note) => ({
+                  id: note.id,
+                  type: note.type,
+                  body: note.body,
+                  createdAt: note.createdAt,
+                  author: note.createdByName || note.createdByEmail
+                }))}
+              />
             </div>
           </div>
         </StagePanel>
@@ -363,19 +376,6 @@ export default async function CandidateDetailPage({
                   </div>
                 </details>
               </div>
-            </section>
-
-            <section className="border-t border-[color:var(--app-border)] pt-5">
-              <CandidateNotesModal
-                candidateId={candidate.id}
-                notes={candidate.notes.map((note) => ({
-                  id: note.id,
-                  type: note.type,
-                  body: note.body,
-                  createdAt: note.createdAt,
-                  author: note.createdByName || note.createdByEmail
-                }))}
-              />
             </section>
 
             <section className="border-t border-[color:var(--app-border)] pt-5">
