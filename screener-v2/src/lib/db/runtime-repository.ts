@@ -1199,52 +1199,49 @@ export async function patchAttempt(
     current.blueprint
   );
 
-  const updated = await prisma.attempt.updateMany({
-    where: {
-      id: attemptId,
-      status: "in_progress",
-      stateVersion: current.stateVersion
-    },
-    data: {
-      stage: nextStage,
-      stateVersion: {
-        increment: 1
+  try {
+    const updatedRow = await prisma.attempt.update({
+      where: {
+        id: attemptId,
+        status: "in_progress",
+        stateVersion: current.stateVersion
       },
-      sectionStateJson: toJsonValue(
-        buildExamStateEnvelopeJson({
-          examState: mergedExamState,
-          activeExamInstanceId: nextStage === "submitted" ? undefined : nextStage,
-          activeExamStartedAt: nextStage === "submitted" ? undefined : now.toISOString(),
-          integrity: nextIntegrity
-        })
-      ),
-      coreAnswersJson: toJsonValue(split.coreAnswers),
-      practicalAnswerJson: toJsonValue(split.practicalAnswer),
-      logicReasoningAnswerJson: current.sections.includes("applied_logic_reasoning")
-        ? toJsonValue(split.logicReasoningAnswer)
-        : Prisma.JsonNull,
-      remainingCoreSeconds: split.remainingCoreSeconds,
-      remainingPracticalSeconds: split.remainingPracticalSeconds,
-      remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
-      integrityJson: toJsonValue(nextIntegrity)
+      data: {
+        stage: nextStage,
+        stateVersion: {
+          increment: 1
+        },
+        sectionStateJson: toJsonValue(
+          buildExamStateEnvelopeJson({
+            examState: mergedExamState,
+            activeExamInstanceId: nextStage === "submitted" ? undefined : nextStage,
+            activeExamStartedAt: nextStage === "submitted" ? undefined : now.toISOString(),
+            integrity: nextIntegrity
+          })
+        ),
+        coreAnswersJson: toJsonValue(split.coreAnswers),
+        practicalAnswerJson: toJsonValue(split.practicalAnswer),
+        logicReasoningAnswerJson: current.sections.includes("applied_logic_reasoning")
+          ? toJsonValue(split.logicReasoningAnswer)
+          : Prisma.JsonNull,
+        remainingCoreSeconds: split.remainingCoreSeconds,
+        remainingPracticalSeconds: split.remainingPracticalSeconds,
+        remainingLogicReasoningSeconds: split.remainingLogicReasoningSeconds,
+        integrityJson: toJsonValue(nextIntegrity)
+      }
+    });
+    return { status: "updated", attempt: mapAttempt(updatedRow) };
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
+      const latestRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
+      if (!latestRow) return { status: "missing" };
+      const latest = mapAttempt(latestRow);
+      return latest.status === "submitted"
+        ? { status: "submitted", attempt: latest }
+        : { status: "conflict", attempt: latest };
     }
-  });
-
-  if (updated.count !== 1) {
-    const latestRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
-    if (!latestRow) return { status: "missing" };
-    const latest = mapAttempt(latestRow);
-    return latest.status === "submitted"
-      ? { status: "submitted", attempt: latest }
-      : { status: "conflict", attempt: latest };
+    throw e;
   }
-
-  const updatedRow = await prisma.attempt.findUnique({ where: { id: attemptId } });
-  if (!updatedRow) {
-    return { status: "missing" };
-  }
-
-  return { status: "updated", attempt: mapAttempt(updatedRow) };
 }
 
 export async function submitAttempt(input: {
