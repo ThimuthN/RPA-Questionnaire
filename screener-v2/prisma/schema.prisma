@@ -415,6 +415,11 @@ model JobPosting {
   screenerPresetId String?
   summary     String
   description String
+  salaryMin   Int?
+  salaryMax   Int?
+  teamSize    Int?
+  techStack   String?
+  remotePolicy String?
   isPublished Boolean  @default(false)
   isOpen      Boolean  @default(true)
   createdAt   DateTime @default(now())

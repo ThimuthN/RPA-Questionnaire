@@ -49,11 +49,13 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
 export function CandidateWorkspaceTable({
   rows,
   currentPathAndQuery,
-  roleOptions
+  roleOptions,
+  departmentOptions
 }: {
   rows: CandidateWorkspaceItem[];
   currentPathAndQuery: string;
-  roleOptions: Array<{ id: string; label: string }>;
+  roleOptions?: Array<{ id: string; label: string }>;
+  departmentOptions?: Array<{ id: string; name: string }>;
 }) {
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
 
@@ -86,6 +88,7 @@ export function CandidateWorkspaceTable({
         onSelectAll={selectAllOnPage}
         onClearSelection={clearSelection}
         roleOptions={roleOptions}
+        departmentOptions={departmentOptions}
       />
 
       <div className={tableShellClassName}>

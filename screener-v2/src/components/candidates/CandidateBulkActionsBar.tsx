@@ -13,13 +13,15 @@ export function CandidateBulkActionsBar({
   onClearSelection,
   onSelectAll,
   defaultStatus = "need_review",
-  roleOptions
+  roleOptions,
+  departmentOptions
 }: {
   selectedCount: number;
   onClearSelection: () => void;
   onSelectAll: () => void;
   defaultStatus?: CandidateUiStatus;
-  roleOptions: Array<{ id: string; label: string }>;
+  roleOptions?: Array<{ id: string; label: string }>;
+  departmentOptions?: Array<{ id: string; name: string }>;
 }) {
   const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note" | "set_department">("assign_owner");
 
@@ -69,8 +71,8 @@ export function CandidateBulkActionsBar({
 
         {action === "assign_owner" ? (
           <input
-            name="owner"
-            placeholder="Owner"
+            name="hrOwnerId"
+            placeholder="Owner ID"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
           />
         ) : null}
@@ -99,13 +101,13 @@ export function CandidateBulkActionsBar({
 
         {action === "set_department" ? (
           <select
-            name="roleId"
+            name="departmentId"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
           >
             <option value="">Select department...</option>
-            {roleOptions.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.label}
+            {(departmentOptions ?? []).map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name}
               </option>
             ))}
           </select>

@@ -76,6 +76,71 @@ export function JobPostingForm({
         helperText="Paste formatted text here. Bold, italic, headings, quotes, and lists are supported."
       />
 
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Salary min (optional)</span>
+          <input
+            name="salaryMin"
+            type="number"
+            defaultValue={job?.salaryMin ?? ""}
+            placeholder="e.g., 120000"
+            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+          />
+          <p className="text-xs text-[color:var(--app-muted)]">Annual salary in dollars</p>
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Salary max (optional)</span>
+          <input
+            name="salaryMax"
+            type="number"
+            defaultValue={job?.salaryMax ?? ""}
+            placeholder="e.g., 150000"
+            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+          />
+          <p className="text-xs text-[color:var(--app-muted)]">Annual salary in dollars</p>
+        </label>
+      </div>
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Team size (optional)</span>
+        <input
+          name="teamSize"
+          type="number"
+          defaultValue={job?.teamSize ?? ""}
+          placeholder="e.g., 5"
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        />
+        <p className="text-xs text-[color:var(--app-muted)]">Number of engineers on the team</p>
+      </label>
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Tech stack (optional)</span>
+        <input
+          name="techStack"
+          defaultValue={job?.techStack ?? ""}
+          placeholder="e.g., Go, React, PostgreSQL"
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        />
+        <p className="text-xs text-[color:var(--app-muted)]">Comma-separated list of technologies</p>
+      </label>
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Remote policy (optional)</span>
+        <select
+          name="remotePolicy"
+          defaultValue={job?.remotePolicy ?? ""}
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        >
+          <option value="">Not specified</option>
+          <option value="Remote">Remote</option>
+          <option value="Remote (Flexible)">Remote (Flexible)</option>
+          <option value="Remote (Flexible, US only)">Remote (Flexible, US only)</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="On-site">On-site</option>
+        </select>
+      </label>
+
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Screener (optional)</span>
         <select

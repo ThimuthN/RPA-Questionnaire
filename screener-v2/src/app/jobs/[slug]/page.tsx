@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, Clock3, FileText } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
+import { JobQuickFactsCard } from "@/components/jobs/JobQuickFactsCard";
+import { JobApplicationForm } from "@/components/jobs/JobApplicationForm";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
@@ -85,21 +87,19 @@ export default async function PublicJobDetailPage({
               ) : null}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Company</p>
-                <p className="mt-2 text-base text-[color:var(--app-heading)]">Northstar</p>
-              </div>
-              <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Apply from</p>
-                <p className="mt-2 text-base text-[color:var(--app-heading)]">This role page</p>
-              </div>
-              <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Updated</p>
-                <p className="mt-2 text-base text-[color:var(--app-heading)]">
-                  {updatedAtFormatter.format(new Date(job.updatedAt))}
-                </p>
-              </div>
+            <JobQuickFactsCard
+              salaryMin={job.salaryMin}
+              salaryMax={job.salaryMax}
+              teamSize={job.teamSize}
+              techStack={job.techStack}
+              remotePolicy={job.remotePolicy}
+              companyName={orgName}
+            />
+
+            <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
+              <span>Updated {updatedAtFormatter.format(new Date(job.updatedAt))}</span>
+              <span>•</span>
+              <span>Apply from this page</span>
             </div>
 
             <div className="grid gap-4 rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_12%,var(--app-surface)),var(--app-surface-soft))] p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
@@ -244,88 +244,7 @@ export default async function PublicJobDetailPage({
           ) : null}
 
           {!hasConfirmation ? (
-            <div className="space-y-4">
-              <form action={`/api/jobs/${job.slug}/apply`} method="post" encType="multipart/form-data" className="space-y-5">
-                <div className="space-y-3">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Contact details</p>
-                    <p className="text-sm text-[color:var(--app-muted)]">Use the details the hiring team should contact you on.</p>
-                  </div>
-                  <div className="grid gap-4">
-                    <label className="grid gap-1.5">
-                      <span className="text-sm text-[color:var(--app-text)]">Full name</span>
-                      <input
-                        name="fullName"
-                        required
-                        placeholder="Jane Doe"
-                        className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                    </label>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="grid gap-1.5">
-                        <span className="text-sm text-[color:var(--app-text)]">Email</span>
-                        <input
-                          name="email"
-                          type="email"
-                          required
-                          placeholder="jane@example.com"
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        />
-                      </label>
-                      <label className="grid gap-1.5">
-                        <span className="text-sm text-[color:var(--app-text)]">Phone</span>
-                        <input
-                          name="phone"
-                          placeholder="+94 77 123 4567"
-                          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Resume</p>
-                    <p className="text-sm text-[color:var(--app-muted)]">Upload a PDF if you want to include one with this application.</p>
-                  </div>
-                  <label className="grid gap-1.5">
-                    <span className="text-sm text-[color:var(--app-text)]">Resume</span>
-                    <input
-                      name="resume"
-                      type="file"
-                      accept=".pdf,application/pdf"
-                      className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
-                    />
-                  </label>
-                </div>
-
-                <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Message</p>
-                    <p className="text-sm text-[color:var(--app-muted)]">Add a short note if there is anything the team should know.</p>
-                  </div>
-                  <label className="grid gap-1.5">
-                    <span className="text-sm text-[color:var(--app-text)]">Cover note</span>
-                    <textarea
-                      name="coverNote"
-                      rows={5}
-                      placeholder="Share a short introduction, relevant experience, or anything else that helps your application."
-                      className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                    />
-                  </label>
-                </div>
-
-                <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                  <p className="text-xs leading-6 text-[color:var(--app-muted)]">
-                    By submitting, you are sharing this information with the hiring team for review on this role.
-                  </p>
-                  <Button type="submit" className="w-full justify-center">
-                    Apply now
-                  </Button>
-                </div>
-              </form>
-            </div>
+            <JobApplicationForm jobSlug={job.slug} />
           ) : (
             <div className="flex flex-wrap gap-2">
               <Link href="/jobs">

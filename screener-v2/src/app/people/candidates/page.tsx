@@ -25,12 +25,14 @@ import {
   type CandidateUiStatus
 } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
+import { listDepartments } from "@/lib/db/departments";
 
 export const dynamic = "force-dynamic";
 
 type PageState = {
   q?: string;
   roleId?: string;
+  departmentId?: string;
   status?: string;
   stage?: string;
   owner?: string;
@@ -94,24 +96,28 @@ export default async function PeopleCandidatesPage({
   );
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
   await requirePageSession(nextPath);
-  const page = await listCandidateWorkspacePage({
-    intakeBucket: "pipeline",
-    q: params.q?.trim() || undefined,
-    roleId: params.roleId?.trim() || undefined,
-    status: candidateUiStatusValues.includes(params.status as CandidateUiStatus)
-      ? (params.status as CandidateUiStatus)
-      : undefined,
-    stage: candidateStageValues.includes(params.stage as CandidateStage)
-      ? (params.stage as CandidateStage)
-      : undefined,
-    owner: params.owner?.trim() || undefined,
-    assessmentStatus: candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)
-      ? (params.assessmentStatus as CandidateAssessmentStatus)
-      : undefined,
-    sort: (params.sort as "updated_desc" | "updated_asc" | "name_asc" | "stale_desc" | "inbox") || "inbox",
-    page: Number(params.page ?? 1),
-    pageSize: Number(params.pageSize ?? 12)
-  });
+
+  const [page, departments] = await Promise.all([
+    listCandidateWorkspacePage({
+      intakeBucket: "pipeline",
+      q: params.q?.trim() || undefined,
+      roleId: params.roleId?.trim() || undefined,
+      status: candidateUiStatusValues.includes(params.status as CandidateUiStatus)
+        ? (params.status as CandidateUiStatus)
+        : undefined,
+      stage: candidateStageValues.includes(params.stage as CandidateStage)
+        ? (params.stage as CandidateStage)
+        : undefined,
+      owner: params.owner?.trim() || undefined,
+      assessmentStatus: candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)
+        ? (params.assessmentStatus as CandidateAssessmentStatus)
+        : undefined,
+      sort: (params.sort as "updated_desc" | "updated_asc" | "name_asc" | "stale_desc" | "inbox") || "inbox",
+      page: Number(params.page ?? 1),
+      pageSize: Number(params.pageSize ?? 12)
+    }),
+    listDepartments()
+  ]);
   const currentPathAndQuery = nextPath;
 
   return (
@@ -273,6 +279,7 @@ export default async function PeopleCandidatesPage({
                 rows={page.rows}
                 currentPathAndQuery={currentPathAndQuery}
                 roleOptions={page.roleOptions}
+                departmentOptions={departments.map(d => ({ id: d.id, name: d.name }))}
               />
             </StaggerItem>
           )}

@@ -34,6 +34,11 @@ export type JobPostingListItem = {
   createdAt: string;
   updatedAt: string;
   applicantCount: number;
+  salaryMin?: number;
+  salaryMax?: number;
+  teamSize?: number;
+  techStack?: string;
+  remotePolicy?: string;
 };
 
 export type JobPostingDetail = JobPostingListItem & {
