@@ -722,6 +722,8 @@ export async function updateCandidate(
     batchId?: string;
     resumeSource?: string;
     hrOwner?: string;
+    departmentId?: string;
+    hrOwnerId?: string;
     stage: CandidateStage;
     finalDecision: CandidateFinalDecision;
     nextAction: CandidateNextAction;
@@ -770,6 +772,8 @@ export async function updateCandidate(
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
+        departmentId: input.departmentId || null,
+        hrOwnerId: input.hrOwnerId || null,
         stage: input.stage,
         finalDecision: input.finalDecision,
         nextAction: input.nextAction,
