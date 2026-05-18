@@ -169,6 +169,7 @@ export async function updateAppUser(input: {
   name?: string;
   title?: string;
   department?: string;
+  departmentId?: string;
   phone?: string;
   accessLevel?: AppAccessLevel;
   isInterviewer?: boolean;
@@ -185,6 +186,7 @@ export async function updateAppUser(input: {
   if (input.name !== undefined) data.name = input.name?.trim() || null;
   if (input.title !== undefined) data.title = input.title?.trim() || null;
   if (input.department !== undefined) data.department = input.department?.trim() || null;
+  if (input.departmentId !== undefined) data.departmentId = input.departmentId || null;
   if (input.phone !== undefined) data.phone = input.phone?.trim() || null;
   if (input.accessLevel !== undefined) data.accessLevel = input.accessLevel;
   if (input.isInterviewer !== undefined) data.isInterviewer = input.isInterviewer;
