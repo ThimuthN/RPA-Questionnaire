@@ -9,6 +9,18 @@ import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker
 import { resumeSourceOptions, type CandidateUiStatus } from "@/lib/candidates/types";
 import type { CandidateDetail } from "@/lib/db/candidates";
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
+
+interface UserOption {
+  id: string;
+  name: string | null;
+}
+
 export function EditCandidateInfoModal({
   candidate,
   uiStatus
@@ -19,20 +31,63 @@ export function EditCandidateInfoModal({
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [owners, setOwners] = useState<UserOption[]>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>(candidate.departmentId || "");
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string>(candidate.hrOwnerId || "");
   const [selectedRole, setSelectedRole] = useState<RolePickerOption | null>(
     candidate.roleId && candidate.roleLabel
       ? {
           id: candidate.roleId,
           label: candidate.roleLabel,
-          department: undefined
+          departmentId: candidate.departmentId,
+          departmentName: candidate.departmentName
         }
       : null
   );
+
+  async function loadDepartments() {
+    try {
+      const response = await fetch("/api/departments", { cache: "no-store" });
+      const data = (await response.json()) as { ok?: boolean; departments?: DepartmentOption[] };
+      if (Array.isArray(data.departments)) {
+        setDepartments(data.departments);
+      }
+    } catch {
+      // Silently fail - departments are optional
+    }
+  }
+
+  async function loadOwners(deptId: string) {
+    if (!deptId) {
+      setOwners([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/users?departmentId=${encodeURIComponent(deptId)}`, { cache: "no-store" });
+      const data = (await response.json()) as { ok?: boolean; users?: UserOption[] };
+      if (Array.isArray(data.users)) {
+        setOwners(data.users);
+      }
+    } catch {
+      // Silently fail - owners are optional
+    }
+  }
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    loadDepartments();
+    loadOwners(selectedDepartmentId);
+  }, []);
+
+  useEffect(() => {
+    loadOwners(selectedDepartmentId);
+  }, [selectedDepartmentId]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,6 +149,8 @@ export function EditCandidateInfoModal({
                         <input type="hidden" name="phone" value={candidate.phone || ""} />
                         <input type="hidden" name="batchId" value={candidate.batchId || ""} />
                         <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
+                        <input type="hidden" name="hrOwnerId" value={selectedOwnerId} />
+                        <input type="hidden" name="departmentId" value={selectedDepartmentId} />
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <label className="grid gap-1">
@@ -117,6 +174,22 @@ export function EditCandidateInfoModal({
                             />
                           </label>
 
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Department</span>
+                            <select
+                              value={selectedDepartmentId}
+                              onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            >
+                              <option value="">Select department</option>
+                              {departments.filter(d => d.isActive).map((dept) => (
+                                <option key={dept.id} value={dept.id}>
+                                  {dept.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
                           <RolePicker
                             name="roleId"
                             label="Role"
@@ -130,11 +203,18 @@ export function EditCandidateInfoModal({
 
                           <label className="grid gap-1">
                             <span className="text-sm text-[color:var(--app-text)]">Owner</span>
-                            <input
-                              name="hrOwner"
-                              defaultValue={candidate.hrOwner || ""}
+                            <select
+                              value={selectedOwnerId}
+                              onChange={(e) => setSelectedOwnerId(e.target.value)}
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                            />
+                            >
+                              <option value="">Unassigned</option>
+                              {owners.map((owner) => (
+                                <option key={owner.id} value={owner.id}>
+                                  {owner.name || "Unknown"}
+                                </option>
+                              ))}
+                            </select>
                           </label>
                         </div>
 

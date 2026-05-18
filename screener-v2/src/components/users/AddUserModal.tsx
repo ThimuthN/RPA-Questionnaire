@@ -6,6 +6,13 @@ import { FormInput } from "@/components/primitives/FormInput";
 import { Modal } from "@/components/primitives/Modal";
 import type { AppUserRow } from "@/lib/auth/app-auth";
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
+
 export function AddUserModal({
   mode = "create",
   user,
@@ -20,6 +27,23 @@ export function AddUserModal({
   error?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+
+  async function loadDepartments() {
+    try {
+      const response = await fetch("/api/departments", { cache: "no-store" });
+      const data = (await response.json()) as { ok?: boolean; departments?: DepartmentOption[] };
+      if (Array.isArray(data.departments)) {
+        setDepartments(data.departments);
+      }
+    } catch {
+      // Silently fail - departments are optional
+    }
+  }
+
+  useEffect(() => {
+    loadDepartments();
+  }, []);
 
   useEffect(() => {
     if (created || updated || error) setOpen(true);
@@ -75,12 +99,24 @@ export function AddUserModal({
             placeholder="Senior Recruiter"
           />
 
-          <FormInput
-            name="department"
-            label="Department"
-            defaultValue={user?.department || ""}
-            placeholder="Human Resources"
-          />
+          <div className="grid gap-1">
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-department">
+              Department
+            </label>
+            <select
+              id="user-department"
+              name="departmentId"
+              defaultValue={user?.departmentId || ""}
+              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+            >
+              <option value="">Select department</option>
+              {departments.filter(d => d.isActive).map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <FormInput
             name="phone"

@@ -3,27 +3,35 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
-import { getDepartmentOptions } from "@/lib/roles/departments";
 
 export interface RolePickerOption {
   id: string;
   label: string;
-  department?: string;
+  departmentId?: string;
+  departmentName?: string;
+  department?: string; // Backward compatibility
   isActive?: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;
 }
 
+interface DepartmentOption {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
+
 type EditorState = {
   id?: string;
   label: string;
-  department: string;
+  departmentId: string;
   isActive: boolean;
 };
 
 const emptyEditor: EditorState = {
   label: "",
-  department: "",
+  departmentId: "",
   isActive: true
 };
 
@@ -52,6 +60,7 @@ export function RolePicker({
 }) {
   const hasInitialOptions = (initialOptions?.length ?? 0) > 0;
   const [options, setOptions] = useState<RolePickerOption[]>(initialOptions ?? []);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(!hasInitialOptions);
   const [mounted, setMounted] = useState(false);
   const [internalValue, setInternalValue] = useState<RolePickerOption | null>(defaultValue ?? null);
@@ -59,6 +68,18 @@ export function RolePicker({
   const [editor, setEditor] = useState<EditorState>(emptyEditor);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  async function loadDepartments() {
+    try {
+      const response = await fetch("/api/departments", { cache: "no-store" });
+      const data = (await response.json()) as { ok?: boolean; departments?: DepartmentOption[] };
+      if (Array.isArray(data.departments)) {
+        setDepartments(data.departments);
+      }
+    } catch {
+      // Silently fail - departments are optional
+    }
+  }
 
   async function loadRoles({ keepCurrentOptions = false }: { keepCurrentOptions?: boolean } = {}) {
     if (!keepCurrentOptions) {
@@ -82,6 +103,7 @@ export function RolePicker({
 
   useEffect(() => {
     void loadRoles({ keepCurrentOptions: hasInitialOptions });
+    void loadDepartments();
   }, [hasInitialOptions]);
 
   useEffect(() => {
@@ -123,7 +145,7 @@ export function RolePicker({
     setEditor({
       id: role.id,
       label: role.label,
-      department: role.department ?? "",
+      departmentId: role.departmentId ?? "",
       isActive: role.isActive ?? true
     });
     setError("");
@@ -132,7 +154,7 @@ export function RolePicker({
   async function saveRole() {
     const payload = {
       label: editor.label.trim(),
-      department: editor.department.trim(),
+      departmentId: editor.departmentId,
       isActive: editor.isActive
     };
 
@@ -212,7 +234,7 @@ export function RolePicker({
                             <div className="space-y-1 flex-1">
                               <p className="text-sm text-[color:var(--app-heading)]">{role.label}</p>
                               <p className="text-xs text-[color:var(--app-muted)]">
-                                {role.department || "No department"}
+                                {role.departmentName || role.department || "No department"}
                               </p>
                             </div>
                           <span className="text-xs text-[color:var(--app-muted)]">{role.isActive === false ? "Inactive" : "Active"}</span>
@@ -245,18 +267,18 @@ export function RolePicker({
 
                     <label className="grid gap-1">
                       <span className="text-sm text-[color:var(--app-text)]">Department</span>
-                      <input
-                        list="dept-options"
-                        value={editor.department}
-                        onChange={(event) => setEditor((current) => ({ ...current, department: event.target.value }))}
-                        placeholder="Engineering"
+                      <select
+                        value={editor.departmentId}
+                        onChange={(event) => setEditor((current) => ({ ...current, departmentId: event.target.value }))}
                         className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-                      />
-                      <datalist id="dept-options">
-                        {getDepartmentOptions(options.map((o) => o.department)).map((dept) => (
-                          <option key={dept} value={dept} />
+                      >
+                        <option value="">Select department</option>
+                        {departments.filter(d => d.isActive).map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
                         ))}
-                      </datalist>
+                      </select>
                     </label>
 
                     <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
@@ -307,7 +329,7 @@ export function RolePicker({
             <option value="">{loading ? "Loading roles..." : placeholder}</option>
             {selectableOptions.map((option) => (
               <option key={option.id} value={option.id}>
-                {option.department ? `${option.label} - ${option.department}` : option.label}
+                {option.departmentName ? `${option.label} - ${option.departmentName}` : option.department ? `${option.label} - ${option.department}` : option.label}
               </option>
             ))}
           </select>
@@ -327,7 +349,7 @@ export function RolePicker({
 
         {selectedRole ? (
           <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-xs text-[color:var(--app-muted)]">
-            {selectedRole.department ? `${selectedRole.label} - ${selectedRole.department}` : selectedRole.label}
+            {selectedRole.departmentName ? `${selectedRole.label} - ${selectedRole.departmentName}` : selectedRole.department ? `${selectedRole.label} - ${selectedRole.department}` : selectedRole.label}
           </div>
         ) : null}
 

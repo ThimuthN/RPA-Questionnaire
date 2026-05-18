@@ -9,6 +9,7 @@ export type AppUserRow = {
   name: string | null;
   title: string | null;
   department: string | null;
+  departmentId: string | null;
   phone: string | null;
   accessLevel: AppAccessLevel;
   isInterviewer: boolean;
@@ -90,6 +91,7 @@ export async function listAppUsers() {
       name: true,
       title: true,
       department: true,
+      departmentId: true,
       phone: true,
       accessLevel: true,
       isInterviewer: true,
@@ -154,7 +156,8 @@ export async function createAppUser(input: {
     targetType: "user",
     after: {
       email: created.email,
-      accessLevel: created.accessLevel
+      accessLevel: created.accessLevel,
+      departmentId: created.departmentId
     }
   });
 
@@ -196,6 +199,7 @@ export async function updateAppUser(input: {
       name: true,
       title: true,
       department: true,
+      departmentId: true,
       phone: true,
       accessLevel: true,
       isInterviewer: true,

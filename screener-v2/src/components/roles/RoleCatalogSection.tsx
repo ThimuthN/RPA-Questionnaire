@@ -6,13 +6,19 @@ import { Modal } from "@/components/primitives/Modal";
 import { FormInput } from "@/components/primitives/FormInput";
 import { FormError } from "@/components/primitives/FormError";
 import { DataTable } from "@/components/primitives/DataTable";
-import { DEFAULT_DEPARTMENTS, getDepartmentOptions } from "@/lib/roles/departments";
 import type { RolePickerOption } from "@/components/roles/RolePicker";
+
+interface DepartmentOption {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
 
 interface EditorState {
   id?: string;
   label: string;
-  department: string;
+  departmentId: string;
   isActive: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;
@@ -20,12 +26,13 @@ interface EditorState {
 
 const emptyEditor: EditorState = {
   label: "",
-  department: "",
+  departmentId: "",
   isActive: true
 };
 
 export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RolePickerOption[] }) {
   const [roles, setRoles] = useState<RolePickerOption[]>(initialRoles);
+  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(initialRoles.length === 0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editor, setEditor] = useState<EditorState>(emptyEditor);
@@ -33,10 +40,23 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
+  async function loadDepartments() {
+    try {
+      const response = await fetch("/api/departments", { cache: "no-store" });
+      const data = (await response.json()) as { ok?: boolean; departments?: DepartmentOption[] };
+      if (Array.isArray(data.departments)) {
+        setDepartments(data.departments);
+      }
+    } catch {
+      // Silently fail - departments are optional
+    }
+  }
+
   useEffect(() => {
     if (initialRoles.length === 0) {
       loadRoles();
     }
+    loadDepartments();
   }, []);
 
   async function loadRoles() {
@@ -64,7 +84,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
     setEditor({
       id: role.id,
       label: role.label,
-      department: role.department ?? "",
+      departmentId: role.departmentId ?? "",
       isActive: role.isActive ?? true,
       openJobCount: role.openJobCount,
       pipelineCandidateCount: role.pipelineCandidateCount
@@ -86,7 +106,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           label: editor.label.trim(),
-          department: editor.department.trim() || undefined,
+          departmentId: editor.departmentId || undefined,
           isActive: editor.isActive
         })
       });
@@ -136,8 +156,6 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
     }
   }
 
-  const deptOptions = getDepartmentOptions(roles.map((r) => r.department));
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -165,7 +183,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
             {
               header: "Department",
               width: "w-[30%]",
-              render: (role) => <p className="text-sm text-[color:var(--app-text)]">{role.department || "—"}</p>
+              render: (role) => <p className="text-sm text-[color:var(--app-text)]">{role.departmentName || role.department || "—"}</p>
             },
             {
               header: "In use",
@@ -240,18 +258,18 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
 
         <div className="grid gap-1">
           <span className="text-sm text-[color:var(--app-text)]">Department</span>
-          <input
-            list="role-depts"
-            value={editor.department}
-            onChange={(e) => setEditor((current) => ({ ...current, department: e.target.value }))}
-            placeholder="e.g. Engineering"
+          <select
+            value={editor.departmentId}
+            onChange={(e) => setEditor((current) => ({ ...current, departmentId: e.target.value }))}
             className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
-          />
-          <datalist id="role-depts">
-            {deptOptions.map((dept) => (
-              <option key={dept} value={dept} />
+          >
+            <option value="">Select department</option>
+            {departments.filter(d => d.isActive).map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name}
+              </option>
             ))}
-          </datalist>
+          </select>
         </div>
 
         {editor.id && (
