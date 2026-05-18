@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requireAdminApiSession } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
 import {
   deleteDepartment,
@@ -19,7 +19,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }

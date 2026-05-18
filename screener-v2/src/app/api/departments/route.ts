@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requireAdminApiSession } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
 import { createDepartment, listDepartments } from "@/lib/db/departments";
 
@@ -9,7 +9,7 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }

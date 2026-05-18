@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   }
   const { session } = auth;
 
-  if (!checkBulkOpRateLimit(session.userId ?? "")) {
+  if (!(await checkBulkOpRateLimit(session.userId ?? ""))) {
     const url = redirectUrl(request, "");
     url.searchParams.set("error", "Bulk operation in progress. Please wait 30 seconds before trying again.");
     return NextResponse.redirect(url, 303);

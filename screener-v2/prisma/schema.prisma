@@ -277,6 +277,8 @@ model Candidate {
   screeningStatus    String?
   candidateFolderUrl String?
   notesSummary       String?
+  uiStatus           String   @default("in_progress")
+  searchVector       Unsupported("tsvector")?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   role               RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
@@ -298,6 +300,8 @@ model Candidate {
   @@index([intakeBucket, updatedAt])
   @@index([finalDecision, stage, updatedAt])
   @@index([fullName])
+  @@index([uiStatus, updatedAt])
+  @@index(fields: [searchVector], type: Gin, map: "candidate_fts_idx")
 }
 
 model CandidateResume {

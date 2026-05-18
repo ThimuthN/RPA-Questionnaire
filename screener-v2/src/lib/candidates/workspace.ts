@@ -104,8 +104,6 @@ export function toCandidateWorkspaceItem(candidate: CandidateListItem): Candidat
     stage: candidate.stage,
     finalDecision: candidate.finalDecision,
     nextAction: candidate.nextAction,
-    screeningStatus: candidate.screeningStatus,
-    latestAssessmentStatus: assessmentStatus
   });
   const activityAt = latestActivityAt(candidate);
   const staleDays = daysSince(activityAt);

@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
 
 export interface RoleCatalogEntry {
@@ -39,14 +40,20 @@ function mapRole(row: {
   };
 }
 
-export async function listRoleCatalog(includeInactive = false): Promise<RoleCatalogEntry[]> {
+const listRoleCatalogUncached = async (includeInactive = false): Promise<RoleCatalogEntry[]> => {
   const rows = await prisma.roleCatalog.findMany({
     where: includeInactive ? undefined : { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
 
   return rows.map((row) => mapRole(row));
-}
+};
+
+export const listRoleCatalog = unstable_cache(
+  (includeInactive = false) => listRoleCatalogUncached(includeInactive),
+  ["role-catalog"],
+  { revalidate: 300, tags: ["role-catalog"] }
+);
 
 export async function getRoleCatalogEntry(roleId: string) {
   const row = await prisma.roleCatalog.findUnique({
@@ -106,6 +113,7 @@ export async function createRoleCatalogEntry(input: {
     }
   });
 
+  revalidateTag("role-catalog");
   return mapRole(created);
 }
 
@@ -144,6 +152,7 @@ export async function updateRoleCatalogEntry(
     }
   });
 
+  revalidateTag("role-catalog");
   return mapRole(updated);
 }
 
@@ -180,4 +189,5 @@ export async function getRoleUsageCounts(roleId: string) {
 
 export async function deleteRoleCatalogEntry(roleId: string) {
   await prisma.roleCatalog.delete({ where: { id: roleId } });
+  revalidateTag("role-catalog");
 }

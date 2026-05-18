@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
 
 export type DepartmentRecord = {
@@ -15,9 +16,9 @@ function slugify(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export async function listDepartments(
+const listDepartmentsUncached = async (
   includeInactive = false
-): Promise<DepartmentRecord[]> {
+): Promise<DepartmentRecord[]> => {
   return prisma.department.findMany({
     where: includeInactive ? {} : { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -29,7 +30,13 @@ export async function listDepartments(
       sortOrder: true
     }
   });
-}
+};
+
+export const listDepartments = unstable_cache(
+  (includeInactive = false) => listDepartmentsUncached(includeInactive),
+  ["departments"],
+  { revalidate: 300, tags: ["departments"] }
+);
 
 export async function getDepartment(id: string): Promise<DepartmentRecord | null> {
   return prisma.department.findUnique({
@@ -74,6 +81,7 @@ export async function createDepartment(input: {
     }
   });
 
+  revalidateTag("departments");
   return dept;
 }
 
@@ -112,6 +120,7 @@ export async function updateDepartment(
     }
   });
 
+  revalidateTag("departments");
   return dept;
 }
 
@@ -137,4 +146,5 @@ export async function deleteDepartment(id: string): Promise<void> {
   await prisma.department.delete({
     where: { id }
   });
+  revalidateTag("departments");
 }

@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const input: CreateReviewInput = {
       employeeId: id,
-      reviewerId: auth.session.userId,
+      reviewerId: auth.session.userId || 'system',
       period: parsed.data.period,
       type: parsed.data.type,
       status: 'draft',

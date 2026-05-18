@@ -1,83 +1,133 @@
-import type {
-  CandidateAssessmentStatus,
-  CandidateFinalDecision,
-  CandidateNextAction,
-  CandidateScreeningStatus,
-  CandidateStage,
-  CandidateUiStatus
-} from "@/lib/candidates/types";
+import { prisma } from '@/lib/db/prisma';
+import type { CandidateStage, CandidateFinalDecision, CandidateNextAction, CandidateUiStatus } from '@/lib/candidates/types';
 
-type CandidateStatusShape = {
+/**
+ * Compute the UI status for a candidate based on stage, finalDecision, and nextAction.
+ * Maps complex state into a simplified 4-value UI status for filtering and display.
+ */
+export function getCandidateUiStatus(candidate: {
+  stage: CandidateStage;
+  finalDecision: CandidateFinalDecision;
+  nextAction?: CandidateNextAction;
+}): CandidateUiStatus {
+  // Rejected candidates stay rejected regardless of other fields
+  if (candidate.finalDecision === 'rejected') {
+    return 'rejected';
+  }
+
+  // Selected/moved forward candidates
+  if (candidate.finalDecision === 'selected') {
+    return 'moved_forward';
+  }
+
+  // On-hold candidates need review
+  if (candidate.finalDecision === 'on_hold') {
+    return 'need_review';
+  }
+
+  // In-process candidates: check if they're waiting for review
+  if (candidate.nextAction === 'review_result') {
+    return 'need_review';
+  }
+
+  // Default: everything else is in_progress
+  return 'in_progress';
+}
+
+/**
+ * Reverse mapping: convert a CandidateUiStatus back to stored fields.
+ * This is used when bulk-updating candidates by their UI status.
+ */
+export function candidateUiStatusToStoredFields(status: CandidateUiStatus): {
   stage: CandidateStage;
   finalDecision: CandidateFinalDecision;
   nextAction: CandidateNextAction;
-  screeningStatus?: CandidateScreeningStatus;
-  latestAssessmentStatus?: CandidateAssessmentStatus;
-};
-
-type CandidateStoredStatus = {
-  stage: CandidateStage;
-  finalDecision: CandidateFinalDecision;
-  nextAction: CandidateNextAction;
-  screeningStatus?: CandidateScreeningStatus;
-};
-
-export function candidateUiStatusToStoredFields(status: CandidateUiStatus): CandidateStoredStatus {
+} {
   switch (status) {
-    case "need_review":
+    case 'rejected':
       return {
-        stage: "decision",
-        finalDecision: "on_hold",
-        nextAction: "review_result",
-        screeningStatus: "passed"
+        stage: 'closed',
+        finalDecision: 'rejected',
+        nextAction: 'none',
       };
-    case "moved_forward":
+    case 'moved_forward':
       return {
-        stage: "interview",
-        finalDecision: "in_process",
-        nextAction: "schedule_interview",
-        screeningStatus: "passed"
+        stage: 'offer',
+        finalDecision: 'selected',
+        nextAction: 'none',
       };
-    case "in_progress":
-    case "rejected":
-      return status === "rejected"
-        ? {
-        stage: "closed",
-        finalDecision: "rejected",
-        nextAction: "close_profile"
-      }
-        : {
-            stage: "screening",
-            finalDecision: "in_process",
-            nextAction: "follow_up",
-            screeningStatus: "pending"
-          };
+    case 'need_review':
+      return {
+        stage: 'testing',
+        finalDecision: 'in_process',
+        nextAction: 'review_result',
+      };
+    case 'in_progress':
     default:
       return {
-        stage: "new",
-        finalDecision: "in_process",
-        nextAction: "none"
+        stage: 'screening',
+        finalDecision: 'in_process',
+        nextAction: 'schedule_interview',
       };
   }
 }
 
-export function getCandidateUiStatus(candidate: CandidateStatusShape): CandidateUiStatus {
-  if (candidate.finalDecision === "rejected" || candidate.stage === "closed") {
-    return "rejected";
+/**
+ * Sync the uiStatus column for a candidate after mutation.
+ * Call this in every candidate update route to keep the column current.
+ */
+export async function syncCandidateUiStatus(
+  tx: typeof prisma,
+  candidateId: string
+): Promise<void> {
+  const candidate = await tx.candidate.findUnique({
+    where: { id: candidateId },
+    select: { stage: true, finalDecision: true, nextAction: true },
+  });
+
+  if (!candidate) {
+    return;
   }
 
-  if (candidate.stage === "interview") {
-    return "moved_forward";
+  const newStatus = getCandidateUiStatus({
+    stage: candidate.stage as CandidateStage,
+    finalDecision: candidate.finalDecision as CandidateFinalDecision,
+    nextAction: candidate.nextAction as CandidateNextAction | undefined,
+  });
+
+  await tx.candidate.update({
+    where: { id: candidateId },
+    data: { uiStatus: newStatus },
+  });
+}
+
+/**
+ * Sync uiStatus for multiple candidates (used in bulk operations).
+ */
+export async function syncCandidatesUiStatus(
+  tx: typeof prisma,
+  candidateIds: string[]
+): Promise<void> {
+  if (candidateIds.length === 0) {
+    return;
   }
 
-  if (
-    candidate.latestAssessmentStatus === "passed" ||
-    candidate.latestAssessmentStatus === "review" ||
-    candidate.latestAssessmentStatus === "failed" ||
-    (candidate.stage === "decision" && candidate.nextAction === "review_result")
-  ) {
-    return "need_review";
-  }
+  // Fetch all candidates
+  const candidates = await tx.candidate.findMany({
+    where: { id: { in: candidateIds } },
+    select: { id: true, stage: true, finalDecision: true, nextAction: true },
+  });
 
-  return "in_progress";
+  // Batch update their UI statuses
+  for (const candidate of candidates) {
+    const newStatus = getCandidateUiStatus({
+      stage: candidate.stage as CandidateStage,
+      finalDecision: candidate.finalDecision as CandidateFinalDecision,
+      nextAction: candidate.nextAction as CandidateNextAction | undefined,
+    });
+    await tx.candidate.update({
+      where: { id: candidate.id },
+      data: { uiStatus: newStatus },
+    });
+  }
 }

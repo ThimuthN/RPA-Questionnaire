@@ -810,8 +810,7 @@ export async function updateCandidateApplicationLifecycle(input: {
           intakeBucket: "pipeline",
           stage: fields.stage,
           finalDecision: fields.finalDecision,
-          nextAction: fields.nextAction,
-          screeningStatus: fields.screeningStatus ?? null
+          nextAction: fields.nextAction
         }
       });
     }

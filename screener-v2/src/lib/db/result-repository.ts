@@ -145,9 +145,6 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
             stage: candidate.stage as CandidateStage,
             finalDecision: candidate.finalDecision as CandidateFinalDecision,
             nextAction: candidate.nextAction as CandidateNextAction,
-            screeningStatus:
-              (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
-            latestAssessmentStatus: resultStatus
           })
         : undefined;
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
@@ -242,9 +239,6 @@ export async function listResultWorkspacePage(
             stage: candidate.stage as CandidateStage,
             finalDecision: candidate.finalDecision as CandidateFinalDecision,
             nextAction: candidate.nextAction as CandidateNextAction,
-            screeningStatus:
-              (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
-            latestAssessmentStatus: resultStatus
           })
         : undefined;
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
@@ -459,9 +453,6 @@ export async function getDetailedResult(
           stage: candidate.stage as CandidateStage,
           finalDecision: candidate.finalDecision as CandidateFinalDecision,
           nextAction: candidate.nextAction as CandidateNextAction,
-          screeningStatus:
-            (candidate.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
-          latestAssessmentStatus: resultStatus
         })
       : undefined,
     candidateLatestActivityAt: candidate?.updatedAt?.toISOString(),

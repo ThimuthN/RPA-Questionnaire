@@ -36,8 +36,6 @@ function currentUiStatus(candidate: CandidateData) {
     stage: candidate.stage,
     finalDecision: candidate.finalDecision,
     nextAction: candidate.nextAction,
-    screeningStatus: candidate.screeningStatus,
-    latestAssessmentStatus: currentAssessmentStatus(candidate)
   });
 }
 

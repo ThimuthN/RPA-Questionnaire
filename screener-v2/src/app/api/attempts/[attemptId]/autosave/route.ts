@@ -36,7 +36,7 @@ export async function PATCH(
       return auth.response;
     }
 
-    if (!checkAutosaveRateLimit(attemptId)) {
+    if (!(await checkAutosaveRateLimit(attemptId))) {
       return NextResponse.json(
         { ok: false, message: "Too many autosaves. Please wait 5 seconds before trying again." },
         { status: 429 }
