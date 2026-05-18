@@ -94,7 +94,6 @@ export default async function UsersPage({
                       <th className="px-4 py-3 font-medium">Email</th>
                       <th className="px-4 py-3 font-medium">Role</th>
                       <th className="px-4 py-3 font-medium">Department</th>
-                      <th className="px-4 py-3 font-medium">Interviewer</th>
                       <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 font-medium">Last active</th>
                       <th className="px-4 py-3 font-medium text-right">Actions</th>
@@ -123,9 +122,6 @@ export default async function UsersPage({
                         </td>
                         <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
                           {user.dept?.name || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-[color:var(--app-text)]">
-                          {user.isInterviewer ? "✓" : "—"}
                         </td>
                         <td className="px-4 py-3">
                           <StatusPill label={user.isActive ? "Active" : "Inactive"} tone={user.isActive ? "emerald" : "neutral"} />
