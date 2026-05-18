@@ -1,272 +1,183 @@
-import Link from "next/link";
-import type { Route } from "next";
-import { Button } from "@/components/primitives/Button";
-import { StatusPill } from "@/components/primitives/StatusPill";
-import { SceneTransition } from "@/components/motion/SceneTransition";
-import { StaggerGroup, StaggerItem } from "@/components/motion/StaggerGroup";
-import { PaginationBar } from "@/components/workspace/PaginationBar";
-import { PersistedTableState } from "@/components/workspace/PersistedTableState";
-import { SceneShell } from "@/components/scene/SceneShell";
-import { StagePanel } from "@/components/scene/StagePanel";
-import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
-import { requirePageSession } from "@/lib/auth/guards";
-import { listEmployeeWorkspacePage } from "@/lib/db/employee-workspace";
+'use client';
 
-export const dynamic = "force-dynamic";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { EmployeeRecord, EmployeeWorkspacePage, EmploymentStatusLabels } from '@/lib/employees/types';
+import { StatusPill } from '@/components/primitives/StatusPill';
+import { Button } from '@/components/primitives/Button';
+import { Search } from 'lucide-react';
 
-type PageState = {
-  q?: string;
-  contextType?: string;
-  reviewState?: string;
-  page?: string;
-  pageSize?: string;
-};
+export default function EmployeesPage() {
+  const [employees, setEmployees] = useState<EmployeeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-function buildHref(params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
-  const next = new URLSearchParams(params.toString());
-  for (const [key, value] of Object.entries(overrides)) {
-    if (!value) next.delete(key);
-    else next.set(key, value);
-  }
-  return `/people/employees${next.toString() ? `?${next.toString()}` : ""}` as Route;
-}
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        setLoading(true);
+        const params = new URLSearchParams({
+          page: page.toString(),
+          pageSize: pageSize.toString(),
+          ...(search && { search }),
+          ...(departmentFilter && { departmentId: departmentFilter }),
+          ...(statusFilter && { status: statusFilter }),
+        });
 
-function statusTone(status: string): "neutral" | "emerald" | "teal" {
-  if (status === "submitted") return "emerald";
-  if (status === "in_progress") return "teal";
-  return "neutral";
-}
+        const res = await fetch(`/api/employees?${params}`);
+        if (res.ok) {
+          const data: EmployeeWorkspacePage = await res.json();
+          setEmployees(data.items);
+          setTotal(data.total);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
 
-function reviewTone(reviewState?: string): "neutral" | "emerald" | "amber" {
-  if (reviewState === "reviewed") return "emerald";
-  if (reviewState === "flagged") return "amber";
-  return "neutral";
-}
+    fetchEmployees();
+  }, [page, search, departmentFilter, statusFilter, pageSize]);
 
-function contextLabel(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function filterFieldClassName() {
-  return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
-}
-
-const tableShellClassName =
-  "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
-
-const tableHeadClassName =
-  "bg-[color:var(--app-surface-soft)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
-
-const tableCellClassName =
-  "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
-
-const inlineActionClassName =
-  "text-sm font-medium text-[color:var(--app-brand-strong)] transition hover:text-[color:var(--app-brand)]";
-
-export default async function PeopleEmployeesPage({
-  searchParams
-}: {
-  searchParams: Promise<PageState>;
-}) {
-  const params = await searchParams;
-  const query = new URLSearchParams(
-    Object.entries(params)
-      .filter(([, value]) => typeof value === "string" && value.length > 0)
-      .map(([key, value]) => [key, value as string])
-  );
-  const nextPath = `/people/employees${query.toString() ? `?${query.toString()}` : ""}`;
-  await requirePageSession(nextPath);
-  const page = await listEmployeeWorkspacePage({
-    q: params.q?.trim() || undefined,
-    contextType: params.contextType?.trim() || undefined,
-    reviewState: params.reviewState?.trim() || undefined,
-    page: Number(params.page ?? 1),
-    pageSize: Number(params.pageSize ?? 12)
-  });
+  const hasMore = (page * pageSize) < total;
 
   return (
-    <SceneTransition>
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow="People"
-        title="Employees"
-        subtitle="Monitor internal assessments and certifications."
-        utility={
-          <div className="flex flex-wrap items-center gap-2">
-            <PeopleViewSwitch current="employees" />
-            <Link href="/employee">
-              <Button variant="secondary">Internal access</Button>
-            </Link>
-          </div>
-        }
-      >
-        <PersistedTableState storageKey="people-employees-table-view" />
-        <StaggerGroup className="space-y-5" delay={0.04}>
-          <StaggerItem>
-            <div className="space-y-4">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill label={`${page.summary.activeEmployees} employees`} tone="neutral" />
-                  <StatusPill label={`${page.summary.withCompletedResults} with results`} tone="teal" />
-                  <StatusPill label={`${page.summary.certifications} certifications`} tone="amber" />
-                </div>
-              </div>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 p-6 border-b border-[color:var(--app-border)]">
+        <div>
+          <h1 className="text-2xl font-display font-semibold text-[color:var(--app-heading)]">Employees</h1>
+          <p className="text-sm text-[color:var(--app-muted)]">{total} total</p>
+        </div>
+        <Link href="/people/employees/new">
+          <Button variant="primary">Add Employee</Button>
+        </Link>
+      </div>
 
-              <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)_auto_auto]">
-                <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
-                <input
-                  name="q"
-                  defaultValue={params.q ?? ""}
-                  placeholder="Search name, email, ID, or assessment"
-                  className={filterFieldClassName()}
-                />
-                <select
-                  name="contextType"
-                  defaultValue={params.contextType ?? ""}
-                  className={filterFieldClassName()}
-                >
-                  <option value="">Context</option>
-                  {page.contextOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {contextLabel(option)}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  name="reviewState"
-                  defaultValue={params.reviewState ?? ""}
-                  className={filterFieldClassName()}
-                >
-                  <option value="">Review</option>
-                  {page.reviewStateOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {contextLabel(option)}
-                    </option>
-                  ))}
-                </select>
-                <Button>Apply</Button>
-                <Link href="/people/employees?clearView=1">
-                  <Button type="button" variant="secondary">
-                    Reset
-                  </Button>
-                </Link>
-              </form>
+      {/* Filters */}
+      <div className="flex gap-3 px-6 pb-4">
+        <div className="flex-1 flex items-center gap-2 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2">
+          <Search className="w-4 h-4 text-[color:var(--app-muted)]" />
+          <input
+            type="text"
+            placeholder="Search by name, email, or ID..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className="flex-1 bg-transparent text-sm focus:outline-none"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-sm focus:outline-none"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="on_leave">On Leave</option>
+          <option value="terminated">Terminated</option>
+        </select>
+      </div>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-1">
-                <Link href={buildHref(query, { reviewState: "unreviewed", page: "1" })}>
-                  <Button type="button" variant="ghost">Needs review</Button>
-                </Link>
-                <Link href={buildHref(query, { contextType: "certification", page: "1" })}>
-                  <Button type="button" variant="ghost">Certifications</Button>
-                </Link>
-              </div>
+      {/* Table */}
+      <div className="flex-1 overflow-auto px-6 pb-6">
+        {employees.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-center">
+            <div>
+              <p className="text-base text-[color:var(--app-text)] mb-2">No employees found</p>
+              <p className="text-sm text-[color:var(--app-muted)]">Get started by adding your first employee</p>
             </div>
-          </StaggerItem>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[color:var(--app-border)]">
+                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                  ID
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                  Name
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                  Title
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                  Status
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                  Start Date
+                </th>
+                <th className="text-left py-3 px-4"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {employees.map((emp) => (
+                <tr key={emp.id} className="border-b border-[color:var(--app-border)] hover:bg-[color:var(--app-surface-soft)] transition-colors">
+                  <td className="py-3 px-4">
+                    <span className="text-xs font-mono font-medium text-[color:var(--app-brand)]">
+                      {emp.employeeNumber}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="font-medium text-[color:var(--app-text)]">{emp.fullName}</span>
+                    <br />
+                    <span className="text-xs text-[color:var(--app-muted)]">{emp.email}</span>
+                  </td>
+                  <td className="py-3 px-4 text-[color:var(--app-text)]">{emp.title || '—'}</td>
+                  <td className="py-3 px-4">
+                    <StatusPill
+                      label={EmploymentStatusLabels[emp.employmentStatus]}
+                      tone={emp.employmentStatus === 'active' ? 'emerald' : emp.employmentStatus === 'on_leave' ? 'amber' : 'neutral'}
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-[color:var(--app-text)] text-xs">
+                    {new Date(emp.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <Link href={`/people/employees/${emp.id}`} className="text-[color:var(--app-brand)] hover:underline text-sm font-medium">
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-          {page.rows.length === 0 ? (
-            <StaggerItem>
-              <StagePanel className="space-y-3">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">No employees match this view</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Employees appear here after using internal access for assessments or certifications.</p>
-                <div className="flex flex-wrap gap-3">
-                  <Link href="/employee">
-                    <Button>Open internal access</Button>
-                  </Link>
-                  <Link href="/people/employees?clearView=1">
-                    <Button variant="secondary">Reset filters</Button>
-                  </Link>
-                </div>
-              </StagePanel>
-            </StaggerItem>
-          ) : (
-            <StaggerItem>
-              <div className={tableShellClassName}>
-                <div className="overflow-x-auto">
-                  <table className="min-w-[920px] w-full table-fixed text-left">
-                    <thead className={tableHeadClassName}>
-                      <tr>
-                        <th className="w-[25%] px-4 py-3 font-medium">Employee</th>
-                        <th className="w-[29%] px-4 py-3 font-medium">Latest assessment</th>
-                        <th className="w-[24%] px-4 py-3 font-medium">Latest result</th>
-                        <th className="w-[8%] px-4 py-3 font-medium">Completed</th>
-                        <th className="w-[14%] px-4 py-3 font-medium text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {page.rows.map((employee) => (
-                        <tr key={employee.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
-                          <td className={tableCellClassName}>
-                            <div className="space-y-1">
-                              <p className="font-medium text-[color:var(--app-heading)]">{employee.fullName}</p>
-                              <p className="truncate text-xs text-[color:var(--app-muted)]" title={employee.email}>
-                                {employee.email}
-                              </p>
-                            </div>
-                          </td>
-                          <td className={tableCellClassName}>
-                            <div className="space-y-1">
-                              <p className="text-[color:var(--app-heading)]">{employee.latestAssessmentLabel ?? "No assessment yet"}</p>
-                              <p className="text-xs text-[color:var(--app-muted)]">
-                                {contextLabel(employee.latestContextType)}
-                                {employee.employeeId ? ` | ID ${employee.employeeId}` : ""}
-                              </p>
-                            </div>
-                          </td>
-                          <td className={tableCellClassName}>
-                            <div className="space-y-2">
-                              <div className="flex flex-wrap items-center gap-2 whitespace-nowrap">
-                                <StatusPill label={employee.latestStatus.replaceAll("_", " ")} tone={statusTone(employee.latestStatus)} />
-                                {employee.latestReviewState ? (
-                                  <StatusPill label={contextLabel(employee.latestReviewState)} tone={reviewTone(employee.latestReviewState)} />
-                                ) : null}
-                              </div>
-                              <p className="text-sm text-[color:var(--app-text)]">
-                                {typeof employee.latestScore === "number" ? `${employee.latestScore.toFixed(1)} / 100` : "No score yet"}
-                              </p>
-                              <p className="text-xs text-[color:var(--app-muted)]">
-                                {employee.latestSubmittedAt
-                                  ? `Submitted ${new Date(employee.latestSubmittedAt).toLocaleDateString()}`
-                                  : "Not submitted yet"}
-                              </p>
-                            </div>
-                          </td>
-                          <td className={tableCellClassName}>{employee.completedCount}</td>
-                          <td className={tableCellClassName}>
-                            <div className="flex justify-end whitespace-nowrap">
-                              {employee.latestAttemptId ? (
-                                <Link href={`/results/${employee.latestAttemptId}`} className={inlineActionClassName}>
-                                  View result
-                                </Link>
-                              ) : (
-                                <Link href="/employee" className={inlineActionClassName}>
-                                  Open access
-                                </Link>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </StaggerItem>
-          )}
-
-          <StaggerItem>
-            <PaginationBar
-              page={page.page}
-              pageSize={page.pageSize}
-              total={page.total}
-              makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
-            />
-          </StaggerItem>
-        </StaggerGroup>
-      </SceneShell>
-    </SceneTransition>
+      {/* Pagination */}
+      {employees.length > 0 && (
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[color:var(--app-border)]">
+          <p className="text-xs text-[color:var(--app-muted)]">
+            Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, total)} of {total}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="rounded-full border border-[color:var(--app-border)] px-4 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={!hasMore}
+              className="rounded-full border border-[color:var(--app-border)] px-4 py-2 text-sm font-medium disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

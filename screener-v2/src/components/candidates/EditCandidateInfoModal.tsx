@@ -49,8 +49,10 @@ export function EditCandidateInfoModal({
   async function loadDepartments() {
     try {
       const response = await fetch("/api/departments", { cache: "no-store" });
-      const data = (await response.json()) as { ok?: boolean; departments?: DepartmentOption[] };
-      if (Array.isArray(data.departments)) {
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setDepartments(data);
+      } else if (Array.isArray(data.departments)) {
         setDepartments(data.departments);
       }
     } catch {
