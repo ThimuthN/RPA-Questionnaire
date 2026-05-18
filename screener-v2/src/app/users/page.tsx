@@ -122,7 +122,7 @@ export default async function UsersPage({
                           />
                         </td>
                         <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
-                          {user.department || "—"}
+                          {user.dept?.name || "—"}
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-[color:var(--app-text)]">
                           {user.isInterviewer ? "✓" : "—"}

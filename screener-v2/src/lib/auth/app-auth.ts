@@ -8,8 +8,8 @@ export type AppUserRow = {
   email: string;
   name: string | null;
   title: string | null;
-  department: string | null;
   departmentId: string | null;
+  dept: { id: string; name: string } | null;
   phone: string | null;
   accessLevel: AppAccessLevel;
   isInterviewer: boolean;
@@ -82,7 +82,7 @@ export async function authenticateAppUser(email: string, password: string): Prom
   };
 }
 
-export async function listAppUsers() {
+export async function listAppUsers(): Promise<AppUserRow[]> {
   return prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     select: {
@@ -90,8 +90,10 @@ export async function listAppUsers() {
       email: true,
       name: true,
       title: true,
-      department: true,
       departmentId: true,
+      dept: {
+        select: { id: true, name: true }
+      },
       phone: true,
       accessLevel: true,
       isInterviewer: true,

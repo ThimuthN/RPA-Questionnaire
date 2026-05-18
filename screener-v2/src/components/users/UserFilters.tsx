@@ -11,7 +11,7 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
   const [statusFilter, setStatusFilter] = useState<"all" | "active">("all");
 
   const departments = useMemo(
-    () => Array.from(new Set(users.map((u) => u.department).filter(Boolean))).sort() as string[],
+    () => Array.from(new Set(users.map((u) => u.dept?.name).filter(Boolean))).sort() as string[],
     [users]
   );
 
@@ -23,7 +23,7 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
         user.email.toLowerCase().includes(search.toLowerCase());
 
       const matchesAccessLevel = accessLevelFilter === "all" || user.accessLevel === accessLevelFilter;
-      const matchesDept = departmentFilter === "all" || user.department === departmentFilter;
+      const matchesDept = departmentFilter === "all" || user.dept?.name === departmentFilter;
       const matchesStatus = statusFilter === "all" || (statusFilter === "active" && user.isActive);
 
       return matchesSearch && matchesAccessLevel && matchesDept && matchesStatus;
