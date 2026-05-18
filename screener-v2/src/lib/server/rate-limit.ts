@@ -41,8 +41,8 @@ async function checkRateLimit(key: string, windowMs: number): Promise<boolean> {
   if (redisClient) {
     // Redis-backed rate limiting (distributed)
     try {
-      const lastTime = await redisClient.get<number>(key);
-      const lastValue = lastTime || 0;
+      const lastTime = await redisClient.get(key);
+      const lastValue = (lastTime as number) || 0;
 
       if (now - lastValue < windowMs) {
         return false;
