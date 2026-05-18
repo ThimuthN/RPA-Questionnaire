@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, Blocks, BriefcaseBusiness, ClipboardList, RadioTower, Users2 } from "lucide-react";
+import { Activity, Blocks, BriefcaseBusiness, Building2, ClipboardList, RadioTower, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -15,7 +15,12 @@ export function getNavItems(viewer: Pick<AppSession, "accessLevel"> | null): Nav
         { href: "/results" as Route, label: copy.nav.results, icon: Activity },
         { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
         { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
-        ...(viewer.accessLevel === "admin" ? [{ href: "/users" as Route, label: copy.nav.users, icon: Users2 }] : [])
+        ...(viewer.accessLevel === "admin"
+          ? [
+              { href: "/users" as Route, label: copy.nav.users, icon: Users2 },
+              { href: "/departments" as Route, label: "Departments", icon: Building2 }
+            ]
+          : [])
       ]
     : [
         { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
@@ -32,6 +37,7 @@ export function isNavItemActive(pathname: string, href: string) {
     (href === "/addons" && pathname.startsWith("/addons")) ||
     (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
     (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
-    (href === "/users" && pathname.startsWith("/users"))
+    (href === "/users" && pathname.startsWith("/users")) ||
+    (href === "/departments" && pathname.startsWith("/departments"))
   );
 }

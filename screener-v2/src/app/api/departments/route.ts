@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireAdminApiSession } from "@/lib/auth/guards";
+import { isFormRequest } from "@/lib/http/request";
 import { createDepartment, listDepartments } from "@/lib/db/departments";
 
 const createSchema = z.object({
@@ -8,7 +9,7 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireApiSession();
+  const auth = await requireAdminApiSession();
   if (!auth.ok) {
     return auth.response;
   }
@@ -25,25 +26,32 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireApiSession();
+  const auth = await requireAdminApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  // Admin-only
-  if (auth.session.accessLevel !== "admin") {
-    return NextResponse.json(
-      { error: "Admin access required" },
-      { status: 403 }
-    );
-  }
-
   try {
-    const body = await request.json();
-    const parsed = createSchema.parse(body);
+    const rawBody = isFormRequest(request)
+      ? Object.fromEntries((await request.formData()).entries())
+      : await request.json();
+    const parsed = createSchema.parse(rawBody);
     const dept = await createDepartment({ name: parsed.name });
+
+    if (isFormRequest(request)) {
+      const url = new URL("/departments", request.url);
+      url.searchParams.set("created", dept.name);
+      return NextResponse.redirect(url, 303);
+    }
+
     return NextResponse.json(dept, { status: 201 });
   } catch (error) {
+    if (isFormRequest(request)) {
+      const url = new URL("/departments", request.url);
+      url.searchParams.set("error", error instanceof Error ? error.message : "Could not create department.");
+      return NextResponse.redirect(url, 303);
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.errors[0].message },
