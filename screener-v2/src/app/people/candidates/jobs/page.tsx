@@ -5,11 +5,9 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { DataTable } from "@/components/primitives/DataTable";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
-import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { requirePageSession } from "@/lib/auth/guards";
 import { listJobPostings } from "@/lib/db/jobs";
-import { listRoleCatalog } from "@/lib/roles/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +33,6 @@ export default async function CandidateJobsPage({
 }) {
   await requirePageSession("/people/candidates/jobs");
   const pageState = await searchParams;
-  const roles = await listRoleCatalog(true);
   const jobs = await listJobPostings();
 
   return (
@@ -64,17 +61,6 @@ export default async function CandidateJobsPage({
             {pageState.error ? <NoticeBanner tone="error">{pageState.error}</NoticeBanner> : null}
           </div>
         ) : null}
-
-        <div className="rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-5 py-5 shadow-[var(--app-shadow-soft)]">
-          <RoleCatalogSection
-            initialRoles={roles.map((role) => ({
-              id: role.id,
-              label: role.label,
-              department: role.department,
-              isActive: role.isActive
-            }))}
-          />
-        </div>
 
         <div className="space-y-4">
           <h2 className="text-2xl text-[color:var(--app-heading)]">Jobs</h2>
