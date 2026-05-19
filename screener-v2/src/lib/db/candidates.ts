@@ -1184,7 +1184,7 @@ async function logActivityEvent(
 
 export async function bulkUpdateCandidates(input: {
   candidateIds: string[];
-  action: "assign_owner" | "set_ui_status" | "add_note" | "set_department";
+  action: "assign_owner" | "set_ui_status" | "add_note" | "set_department" | "nominate_to_dept" | "set_org_status";
   owner?: string;
   status?: CandidateUiStatus;
   roleId?: string;
@@ -1192,6 +1192,8 @@ export async function bulkUpdateCandidates(input: {
   hrOwnerId?: string;
   noteBody?: string;
   noteType?: CandidateNoteType;
+  nominationNote?: string;
+  orgStatus?: string;
   createdById?: string;
 }) {
   const candidateIds = [...new Set(input.candidateIds.filter(Boolean))];
@@ -1256,6 +1258,45 @@ export async function bulkUpdateCandidates(input: {
       }
     });
     return { updatedCount: candidateIds.length };
+  }
+
+  if (input.action === "nominate_to_dept") {
+    if (!input.departmentId) {
+      throw new Error("Select a department to nominate to.");
+    }
+
+    // Import here to avoid circular dependency
+    const { createOrUpdateDepartmentCandidacy } = await import("./candidacies");
+
+    let count = 0;
+    for (const candidateId of candidateIds) {
+      await createOrUpdateDepartmentCandidacy({
+        candidateId,
+        departmentId: input.departmentId,
+        roleId: input.roleId,
+        hrOwnerId: input.hrOwnerId,
+        nominatedBy: input.createdById,
+        nominationNote: input.nominationNote,
+        source: "nominated"
+      });
+      count++;
+    }
+    return { updatedCount: count };
+  }
+
+  if (input.action === "set_org_status") {
+    if (!input.orgStatus) {
+      throw new Error("Select an org status.");
+    }
+
+    const { setOrgStatus } = await import("./candidacies");
+
+    let count = 0;
+    for (const candidateId of candidateIds) {
+      await setOrgStatus(candidateId, input.orgStatus as "active" | "talent_pool" | "org_rejected", input.createdById);
+      count++;
+    }
+    return { updatedCount: count };
   }
 
   const noteBody = input.noteBody?.trim();

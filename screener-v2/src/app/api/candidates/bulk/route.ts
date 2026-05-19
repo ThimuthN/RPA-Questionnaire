@@ -4,6 +4,7 @@ import { requireApiSession } from "@/lib/auth/guards";
 import { parseCandidateCsv } from "@/lib/candidates/csv";
 import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
 import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
+import { createOrUpdateDepartmentCandidacy } from "@/lib/db/candidacies";
 import { prisma } from "@/lib/db/prisma";
 import { checkBulkOpRateLimit } from "@/lib/server/rate-limit";
 
@@ -11,7 +12,7 @@ const MAX_BULK_IDS_PER_REQUEST = 500;
 const MAX_CSV_ROWS_PER_IMPORT = 1000;
 
 const bulkSchema = z.object({
-  action: z.enum(["assign_owner", "set_ui_status", "add_note", "set_department", "import_csv"]),
+  action: z.enum(["assign_owner", "set_ui_status", "add_note", "set_department", "import_csv", "nominate_to_dept", "set_org_status"]),
   owner: z.string().optional(),
   status: z.enum(candidateUiStatusValues).optional(),
   roleId: z.string().optional(), // deprecated: use departmentId for set_department action
@@ -19,6 +20,8 @@ const bulkSchema = z.object({
   hrOwnerId: z.string().optional(),
   noteBody: z.string().optional(),
   noteType: z.enum(candidateNoteTypeValues).optional(),
+  nominationNote: z.string().optional(),
+  orgStatus: z.enum(["active", "talent_pool", "org_rejected"]).optional(),
   returnTo: z.string().optional()
 });
 
@@ -95,14 +98,48 @@ export async function POST(request: Request) {
       url.searchParams.set("error", `Maximum ${MAX_BULK_IDS_PER_REQUEST} candidates per request`);
       return NextResponse.redirect(url, 303);
     }
+    // Handle new bulk actions that aren't in bulkUpdateCandidates yet
+    if (parsed.action === "nominate_to_dept" && parsed.departmentId) {
+      let count = 0;
+      for (const candidateId of ids) {
+        await createOrUpdateDepartmentCandidacy({
+          candidateId,
+          departmentId: parsed.departmentId,
+          roleId: parsed.roleId,
+          hrOwnerId: parsed.hrOwnerId,
+          nominatedBy: session.userId ?? undefined,
+          nominationNote: parsed.nominationNote,
+          source: "nominated"
+        });
+        count++;
+      }
+      url.searchParams.set("updated", String(count));
+      return NextResponse.redirect(url, 303);
+    }
+
+    if (parsed.action === "set_org_status" && parsed.orgStatus) {
+      const { setOrgStatus } = await import("@/lib/db/candidacies");
+      let count = 0;
+      for (const candidateId of ids) {
+        await setOrgStatus(candidateId, parsed.orgStatus as "active" | "talent_pool" | "org_rejected", session.userId ?? undefined);
+        count++;
+      }
+      url.searchParams.set("updated", String(count));
+      return NextResponse.redirect(url, 303);
+    }
+
     const result = await bulkUpdateCandidates({
       candidateIds: ids,
-      action: parsed.action,
+      action: parsed.action as any,
       owner: parsed.owner,
       status: parsed.status,
       roleId: parsed.roleId,
+      departmentId: parsed.departmentId,
+      hrOwnerId: parsed.hrOwnerId,
       noteBody: parsed.noteBody,
       noteType: parsed.noteType,
+      nominationNote: parsed.nominationNote,
+      orgStatus: parsed.orgStatus,
       createdById: session.userId ?? undefined
     });
 
