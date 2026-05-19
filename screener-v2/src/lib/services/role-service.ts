@@ -6,9 +6,19 @@ export class RoleService {
       throw new Error("Label must be at least 2 characters");
     }
 
-    if (departmentId) {
+    let deptId = departmentId;
+    if (!deptId) {
+      const systemDept = await prisma.department.findUnique({
+        where: { slug: "system" },
+        select: { id: true }
+      });
+      if (!systemDept) {
+        throw new Error("System department not found. Cannot create role without a department.");
+      }
+      deptId = systemDept.id;
+    } else {
       const dept = await prisma.department.findUnique({
-        where: { id: departmentId }
+        where: { id: deptId }
       });
       if (!dept) {
         throw new Error("Department not found");
@@ -19,7 +29,7 @@ export class RoleService {
       data: {
         label,
         slug: `${label.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`,
-        departmentId: departmentId || null
+        departmentId: deptId
       }
     });
 
@@ -40,13 +50,14 @@ export class RoleService {
       }
     }
 
+    const updateData: any = {};
+    if (data.label) updateData.label = data.label;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.departmentId) updateData.departmentId = data.departmentId;
+
     const role = await prisma.roleCatalog.update({
       where: { id },
-      data: {
-        ...(data.label && { label: data.label }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.departmentId && { departmentId: data.departmentId })
-      }
+      data: updateData
     });
 
     return role;
