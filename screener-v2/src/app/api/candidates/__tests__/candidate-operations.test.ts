@@ -76,7 +76,7 @@ describe("Candidate Operations", () => {
           candidateId: candidate.id,
           type: "interview",
           title: "Round 1",
-          status: "pending",
+          status: "not_started",
           sortOrder: 1,
           mode: "scheduled"
         }

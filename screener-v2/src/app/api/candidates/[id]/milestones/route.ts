@@ -80,7 +80,7 @@ export async function POST(
         candidateId,
         type: body.type,
         title: body.title || getDefaultMilestoneTitle(body.type),
-        status: "pending",
+        status: "not_started",
         mode: body.type === "advanced_test" ? "platform" : "manual",
         sortOrder: newSortOrder
       }
