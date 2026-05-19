@@ -27,7 +27,11 @@ export async function POST(
   _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await requireApiSession();
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+  const { session } = auth;
   const { id: candidateId } = await params;
 
   const candidate = await prisma.candidate.findUnique({
