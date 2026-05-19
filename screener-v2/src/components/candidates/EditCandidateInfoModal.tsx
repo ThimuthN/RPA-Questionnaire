@@ -31,6 +31,8 @@ export function EditCandidateInfoModal({
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [owners, setOwners] = useState<UserOption[]>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>(candidate.departmentId || "");
@@ -145,8 +147,39 @@ export function EditCandidateInfoModal({
                       </Button>
                     </div>
 
-                    <form action={`/api/candidates/${candidate.id}`} method="post" className="flex min-h-0 flex-1 flex-col">
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        setIsSubmitting(true);
+                        setSubmitError(null);
+
+                        const formData = new FormData(e.currentTarget);
+                        try {
+                          const response = await fetch(`/api/candidates/${candidate.id}`, {
+                            method: "POST",
+                            body: formData
+                          });
+
+                          if (!response.ok) {
+                            const text = await response.text();
+                            throw new Error(text || `API error: ${response.status}`);
+                          }
+
+                          // Success - reload page to get fresh data
+                          window.location.reload();
+                        } catch (err) {
+                          setSubmitError(err instanceof Error ? err.message : "Failed to save");
+                          setIsSubmitting(false);
+                        }
+                      }}
+                      className="flex min-h-0 flex-1 flex-col"
+                    >
                       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 md:px-6" style={{ background: "var(--app-modal-body)" }}>
+                        {submitError && (
+                          <div className="rounded-[16px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
+                            {submitError}
+                          </div>
+                        )}
                         <input type="hidden" name="uiStatus" value={uiStatus} />
                         <input type="hidden" name="phone" value={candidate.phone || ""} />
                         <input type="hidden" name="batchId" value={candidate.batchId || ""} />
@@ -161,7 +194,8 @@ export function EditCandidateInfoModal({
                               name="fullName"
                               defaultValue={candidate.fullName}
                               required
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                              disabled={isSubmitting}
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
 
@@ -172,7 +206,8 @@ export function EditCandidateInfoModal({
                               type="email"
                               defaultValue={candidate.email}
                               required
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                              disabled={isSubmitting}
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
 
@@ -181,7 +216,8 @@ export function EditCandidateInfoModal({
                             <select
                               value={selectedDepartmentId}
                               onChange={(e) => setSelectedDepartmentId(e.target.value)}
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                              disabled={isSubmitting}
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             >
                               <option value="">Select department</option>
                               {departments.filter(d => d.isActive).map((dept) => (
@@ -208,7 +244,8 @@ export function EditCandidateInfoModal({
                             <select
                               value={selectedOwnerId}
                               onChange={(e) => setSelectedOwnerId(e.target.value)}
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                              disabled={isSubmitting}
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             >
                               <option value="">Unassigned</option>
                               {owners.map((owner) => (
@@ -239,16 +276,19 @@ export function EditCandidateInfoModal({
                             name="candidateFolderUrl"
                             defaultValue={candidate.candidateFolderUrl || ""}
                             placeholder="https://..."
-                            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            disabled={isSubmitting}
+                            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                           />
                         </label>
                       </div>
 
                       <div className="flex flex-wrap justify-end gap-2 border-t border-[color:var(--app-border)] px-5 py-4 md:px-6" style={{ background: "var(--app-modal-footer)" }}>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isSubmitting}>
                           Cancel
                         </Button>
-                        <Button type="submit">Save</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? "Saving..." : "Save"}
+                        </Button>
                       </div>
                     </form>
                   </motion.div>

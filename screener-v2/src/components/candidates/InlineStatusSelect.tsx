@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { candidateUiStatusLabels, candidateUiStatusValues, type CandidateUiStatus } from "@/lib/candidates/types";
 
 interface InlineStatusSelectProps {
@@ -21,25 +21,53 @@ const toneClass: Record<CandidateUiStatus, string> = {
 };
 
 export function InlineStatusSelect({ candidateId, currentStatus, returnTo }: InlineStatusSelectProps) {
-  const formRef = useRef<HTMLFormElement>(null);
+  const [displayStatus, setDisplayStatus] = useState<CandidateUiStatus>(currentStatus);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = async (newStatus: CandidateUiStatus) => {
+    if (isSubmitting || newStatus === currentStatus) return;
+
+    setDisplayStatus(newStatus);
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("action", "set_ui_status");
+      formData.append("candidateId", candidateId);
+      formData.append("status", newStatus);
+      formData.append("returnTo", returnTo);
+
+      const response = await fetch("/api/candidates/bulk", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      // Success - reload to get fresh data
+      window.location.reload();
+    } catch (err) {
+      // Revert on error
+      setDisplayStatus(currentStatus);
+      setIsSubmitting(false);
+      alert(`Failed to update status: ${err instanceof Error ? err.message : "Unknown error"}`);
+    }
+  };
 
   return (
-    <form ref={formRef} action="/api/candidates/bulk" method="post">
-      <input type="hidden" name="action" value="set_ui_status" />
-      <input type="hidden" name="candidateId" value={candidateId} />
-      <input type="hidden" name="returnTo" value={returnTo} />
-      <select
-        name="status"
-        defaultValue={currentStatus}
-        onChange={() => formRef.current?.requestSubmit()}
-        className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold outline-none transition ${toneClass[currentStatus] ?? toneClass.in_progress}`}
-      >
-        {candidateUiStatusValues.map((status) => (
-          <option key={status} value={status} className="bg-[color:var(--app-control-bg-strong)] text-[color:var(--app-text)]">
-            {candidateUiStatusLabels[status]}
-          </option>
-        ))}
-      </select>
-    </form>
+    <select
+      value={displayStatus}
+      onChange={(e) => handleChange(e.target.value as CandidateUiStatus)}
+      disabled={isSubmitting}
+      className={`cursor-pointer rounded-full border px-3 py-1 text-xs font-semibold outline-none transition disabled:opacity-50 ${toneClass[displayStatus] ?? toneClass.in_progress}`}
+    >
+      {candidateUiStatusValues.map((status) => (
+        <option key={status} value={status} className="bg-[color:var(--app-control-bg-strong)] text-[color:var(--app-text)]">
+          {candidateUiStatusLabels[status]}
+        </option>
+      ))}
+    </select>
   );
 }

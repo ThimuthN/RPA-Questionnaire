@@ -158,6 +158,8 @@ export function CandidateNotesModal({
   const reduceMotion = Boolean(useReducedMotion());
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const activeNotes = notes.filter(note => !(note as any).deletedAt);
   const latestNote = activeNotes[0] ?? null;
 
@@ -260,24 +262,58 @@ export function CandidateNotesModal({
                     </div>
 
                     <div className="grid gap-5 overflow-y-auto p-4 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:p-5" style={{ background: "var(--app-modal-body)" }}>
-                      <form action={`/api/candidates/${candidateId}/notes`} method="post" className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          setIsSubmitting(true);
+                          setSubmitError(null);
+
+                          const formData = new FormData(e.currentTarget);
+                          try {
+                            const response = await fetch(`/api/candidates/${candidateId}/notes`, {
+                              method: "POST",
+                              body: formData
+                            });
+
+                            if (!response.ok) {
+                              const text = await response.text();
+                              throw new Error(text || `API error: ${response.status}`);
+                            }
+
+                            // Success - reload page to get fresh data
+                            window.location.reload();
+                          } catch (err) {
+                            setSubmitError(err instanceof Error ? err.message : "Failed to add note");
+                            setIsSubmitting(false);
+                          }
+                        }}
+                        className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
+                      >
                         <div className="space-y-1">
                           <h4 className="text-lg text-[color:var(--app-heading)]">Add note</h4>
                           <p className="text-sm text-[color:var(--app-muted)]">Keep it short and useful.</p>
                         </div>
 
+                        {submitError && (
+                          <div className="rounded-[16px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
+                            {submitError}
+                          </div>
+                        )}
+
                         <div className="grid gap-2">
                           <span className="text-sm text-[color:var(--app-text)]">Type</span>
-                          <ChoicePills
-                            name="type"
-                            idPrefix={`candidate-note-type-${candidateId}`}
-                            defaultValue="general"
-                            required
-                            options={candidateNoteTypeValues.map((value) => ({
-                              value,
-                              label: candidateNoteTypeLabels[value]
-                            }))}
-                          />
+                          <div className={isSubmitting ? "opacity-50 pointer-events-none" : ""}>
+                            <ChoicePills
+                              name="type"
+                              idPrefix={`candidate-note-type-${candidateId}`}
+                              defaultValue="general"
+                              required
+                              options={candidateNoteTypeValues.map((value) => ({
+                                value,
+                                label: candidateNoteTypeLabels[value]
+                              }))}
+                            />
+                          </div>
                         </div>
 
                         <label className="grid gap-1">
@@ -286,11 +322,15 @@ export function CandidateNotesModal({
                             name="body"
                             rows={8}
                             required
-                            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                            disabled={isSubmitting}
+                            minLength={2}
+                            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                           />
                         </label>
 
-                        <Button type="submit">Add note</Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                          {isSubmitting ? "Adding note..." : "Add note"}
+                        </Button>
                       </form>
 
                       <div className="space-y-3">
