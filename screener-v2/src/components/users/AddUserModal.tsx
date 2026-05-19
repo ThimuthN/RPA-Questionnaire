@@ -216,7 +216,7 @@ export function AddUserModal({
                 id="user-active"
                 name="isActive"
                 type="checkbox"
-                defaultChecked={user?.isActive || true}
+                defaultChecked={user?.isActive ?? true}
                 disabled={isSubmitting}
                 className="h-4 w-4 rounded border-[color:var(--app-border)] accent-brand disabled:opacity-50"
               />

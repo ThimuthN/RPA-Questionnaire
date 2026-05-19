@@ -94,36 +94,6 @@ export async function POST(
   }
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const auth = await requireAdminApiSession();
-  if (!auth.ok) {
-    return auth.response;
-  }
-
-  try {
-    const { id } = await params;
-    const body = await request.json();
-    const parsed = updateSchema.parse(body);
-
-    const dept = await updateDepartment(id, parsed);
-    return NextResponse.json(dept);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors[0].message },
-        { status: 400 }
-      );
-    }
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update department" },
-      { status: 500 }
-    );
-  }
-}
-
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
