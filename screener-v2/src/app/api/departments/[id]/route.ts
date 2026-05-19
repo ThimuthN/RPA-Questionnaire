@@ -30,7 +30,7 @@ export async function GET(
 
     if (!dept) {
       return NextResponse.json(
-        { error: "Department not found" },
+        { ok: false, message: "Department not found" },
         { status: 404 }
       );
     }
@@ -38,7 +38,7 @@ export async function GET(
     return NextResponse.json(dept);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get department" },
+      { ok: false, message: error instanceof Error ? error.message : "Failed to get department" },
       { status: 500 }
     );
   }
@@ -81,14 +81,15 @@ export async function POST(
 
     return NextResponse.json({ ok: true });
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Could not update department.";
     if (isFormRequest(request)) {
       const url = new URL("/departments", request.url);
-      url.searchParams.set("error", error instanceof Error ? error.message : "Could not update department.");
+      url.searchParams.set("error", message);
       return NextResponse.redirect(url, 303);
     }
 
     return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not update department." },
+      { ok: false, message },
       { status: 400 }
     );
   }
@@ -106,10 +107,10 @@ export async function DELETE(
   try {
     const { id } = await params;
     await deleteDepartment(id);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete department" },
+      { ok: false, message: error instanceof Error ? error.message : "Failed to delete department" },
       { status: 500 }
     );
   }

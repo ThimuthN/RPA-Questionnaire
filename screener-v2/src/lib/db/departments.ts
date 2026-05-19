@@ -9,8 +9,6 @@ export type DepartmentRecord = {
   sortOrder: number;
 };
 
-export type DepartmentDetail = DepartmentRecord;
-
 export type DepartmentUserRecord = {
   id: string;
   name: string | null;
@@ -49,19 +47,6 @@ export const listDepartments = unstable_cache(
 );
 
 export async function getDepartment(id: string): Promise<DepartmentRecord | null> {
-  return prisma.department.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      isActive: true,
-      sortOrder: true
-    }
-  });
-}
-
-export async function getDepartmentDetail(id: string): Promise<DepartmentDetail | null> {
   return prisma.department.findUnique({
     where: { id },
     select: {

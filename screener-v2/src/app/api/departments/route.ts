@@ -19,7 +19,7 @@ export async function GET() {
     return NextResponse.json(departments);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to list departments" },
+      { ok: false, message: error instanceof Error ? error.message : "Failed to list departments" },
       { status: 500 }
     );
   }
@@ -54,12 +54,12 @@ export async function POST(request: Request) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { ok: false, message: error.errors[0].message },
         { status: 400 }
       );
     }
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create department" },
+      { ok: false, message: error instanceof Error ? error.message : "Failed to create department" },
       { status: 500 }
     );
   }

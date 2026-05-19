@@ -40,9 +40,12 @@ function mapRole(row: {
   };
 }
 
-const listRoleCatalogUncached = async (includeInactive = false): Promise<RoleCatalogEntry[]> => {
+const listRoleCatalogUncached = async (includeInactive = false, departmentId?: string): Promise<RoleCatalogEntry[]> => {
   const rows = await prisma.roleCatalog.findMany({
-    where: includeInactive ? undefined : { isActive: true },
+    where: {
+      ...(includeInactive ? {} : { isActive: true }),
+      ...(departmentId ? { departmentId } : {})
+    },
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
 
@@ -50,7 +53,7 @@ const listRoleCatalogUncached = async (includeInactive = false): Promise<RoleCat
 };
 
 export const listRoleCatalog = unstable_cache(
-  (includeInactive = false) => listRoleCatalogUncached(includeInactive),
+  (includeInactive = false, departmentId?: string) => listRoleCatalogUncached(includeInactive, departmentId),
   ["role-catalog"],
   { revalidate: 300, tags: ["role-catalog"] }
 );

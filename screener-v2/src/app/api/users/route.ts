@@ -26,7 +26,19 @@ export async function GET() {
       email: true,
       departmentId: true,
       roleId: true,
-      isActive: true
+      isActive: true,
+      dept: {
+        select: {
+          id: true,
+          name: true
+        }
+      },
+      role: {
+        select: {
+          id: true,
+          label: true
+        }
+      }
     },
     orderBy: { name: "asc" }
   });

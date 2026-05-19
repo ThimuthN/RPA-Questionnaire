@@ -6,7 +6,7 @@ import { StagePanel } from "@/components/scene/StagePanel";
 import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { requirePageSession } from "@/lib/auth/guards";
-import { getDepartmentDetail, listDepartmentUsers } from "@/lib/db/departments";
+import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
 import { notFound } from "next/navigation";
 
 export default async function DepartmentUsersPage({
@@ -17,7 +17,7 @@ export default async function DepartmentUsersPage({
   const { id } = await params;
   const session = await requirePageSession(`/departments/${id}`);
 
-  const department = await getDepartmentDetail(id);
+  const department = await getDepartment(id);
   if (!department) {
     notFound();
   }

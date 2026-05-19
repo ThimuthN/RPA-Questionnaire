@@ -5,7 +5,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
 import { requirePageSession } from "@/lib/auth/guards";
-import { getDepartmentDetail } from "@/lib/db/departments";
+import { getDepartment } from "@/lib/db/departments";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 
@@ -17,7 +17,7 @@ export default async function DepartmentDetailPage({
   const { id } = await params;
   const session = await requirePageSession(`/departments/${id}`);
 
-  const department = await getDepartmentDetail(id);
+  const department = await getDepartment(id);
   if (!department) {
     notFound();
   }

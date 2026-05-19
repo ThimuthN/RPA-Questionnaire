@@ -15,12 +15,9 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const departmentId = searchParams.get("departmentId");
+  const departmentId = searchParams.get("departmentId") || undefined;
 
-  let roles = await listRoleCatalog(true);
-  if (departmentId) {
-    roles = roles.filter(role => role.departmentId === departmentId);
-  }
+  const roles = await listRoleCatalog(true, departmentId);
 
   const rolesWithCounts = await Promise.all(
     roles.map(async (role) => {
