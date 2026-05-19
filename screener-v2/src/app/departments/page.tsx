@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SignalCard } from "@/components/primitives/SignalCard";
@@ -89,12 +90,12 @@ export default async function DepartmentsPage({
                         className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
                       >
                         <td className="px-4 py-3">
-                          <a
+                          <Link
                             href={`/departments/${department.id}`}
                             className="text-sm font-medium text-[color:var(--app-brand)] hover:underline"
                           >
                             {department.name}
-                          </a>
+                          </Link>
                         </td>
                         <td className="px-4 py-3">
                           <StatusPill

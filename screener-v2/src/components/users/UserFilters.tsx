@@ -4,7 +4,13 @@ import { useMemo, useState } from "react";
 import { FormInput } from "@/components/primitives/FormInput";
 import type { AppUserRow } from "@/lib/auth/app-auth";
 
-export function UserFilters({ users }: { users: AppUserRow[] }) {
+export function UserFilters({
+  users,
+  onFiltered
+}: {
+  users: AppUserRow[];
+  onFiltered?: (filtered: AppUserRow[]) => void;
+}) {
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active">("all");
@@ -15,7 +21,7 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
   );
 
   const filtered = useMemo(() => {
-    return users.filter((user) => {
+    const result = users.filter((user) => {
       const matchesSearch =
         !search ||
         user.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -26,7 +32,9 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
 
       return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [users, search, departmentFilter, statusFilter]);
+    onFiltered?.(result);
+    return result;
+  }, [users, search, departmentFilter, statusFilter, onFiltered]);
 
   return (
     <div className="space-y-4 border-b border-[color:var(--app-border)] pb-4">

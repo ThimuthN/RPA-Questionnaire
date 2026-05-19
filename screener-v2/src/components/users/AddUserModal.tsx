@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { FormInput } from "@/components/primitives/FormInput";
 import { Modal } from "@/components/primitives/Modal";
@@ -21,6 +22,7 @@ export function AddUserModal({
   mode?: "create" | "edit";
   user?: AppUserRow;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
@@ -45,7 +47,6 @@ export function AddUserModal({
   }
 
   useEffect(() => {
-    loadDepartments();
     if (user?.departmentId) {
       setSelectedDepartmentId(user.departmentId);
     }
@@ -65,8 +66,8 @@ export function AddUserModal({
           const data = await response.json();
           setRoles(data.roles || []);
         }
-      } catch (err) {
-        console.error("Failed to load roles:", err);
+      } catch {
+        // Silently ignore role loading failures
       } finally {
         setLoadingRoles(false);
       }
@@ -97,7 +98,7 @@ export function AddUserModal({
 
       setOpen(false);
       formRef.current.reset();
-      window.location.reload();
+      router.refresh();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "An error occurred");
     } finally {
@@ -114,6 +115,7 @@ export function AddUserModal({
     <>
       <Button type="button" onClick={() => {
         setOpen(true);
+        loadDepartments();
         if (mode === "create") {
           setSelectedDepartmentId("");
         }

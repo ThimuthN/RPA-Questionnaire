@@ -30,7 +30,7 @@ export async function requirePageSession(nextPath: string) {
 
 export async function requireAdminPageSession(
   nextPath: string,
-  fallbackPath: Route = "/create-test"
+  fallbackPath: Route = "/login"
 ) {
   const session = await requirePageSession(nextPath);
   if (!session.permissions.includes("manage_users")) {
