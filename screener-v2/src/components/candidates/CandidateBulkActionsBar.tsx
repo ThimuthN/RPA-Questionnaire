@@ -16,11 +16,13 @@ export function CandidateBulkActionsBar({
   roleOptions?: Array<{ id: string; label: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
 }) {
-  const [action, setAction] = useState<"assign_owner" | "add_note" | "set_department">("assign_owner");
+  const [action, setAction] = useState<"assign_owner" | "add_note" | "set_department" | "nominate_to_dept" | "set_org_status">("assign_owner");
 
   const helperText = useMemo(() => {
     if (action === "assign_owner") return "Assign an owner to the selected candidates.";
     if (action === "set_department") return "Set the department for the selected candidates.";
+    if (action === "nominate_to_dept") return "Nominate the selected candidates to a department.";
+    if (action === "set_org_status") return "Set organization-level status for the selected candidates.";
     return "Add one note to every selected candidate.";
   }, [action]);
 
@@ -58,6 +60,8 @@ export function CandidateBulkActionsBar({
           <option value="assign_owner">Assign owner</option>
           <option value="add_note">Add note</option>
           <option value="set_department">Set department</option>
+          <option value="nominate_to_dept">Nominate to dept</option>
+          <option value="set_org_status">Set org status</option>
         </select>
 
         {action === "assign_owner" ? (
@@ -76,7 +80,7 @@ export function CandidateBulkActionsBar({
           />
         ) : null}
 
-        {action === "set_department" ? (
+        {action === "set_department" || action === "nominate_to_dept" ? (
           <select
             name="departmentId"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
@@ -87,6 +91,26 @@ export function CandidateBulkActionsBar({
                 {dept.name}
               </option>
             ))}
+          </select>
+        ) : null}
+
+        {action === "nominate_to_dept" ? (
+          <input
+            name="nominationNote"
+            placeholder="Nomination note (optional)"
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          />
+        ) : null}
+
+        {action === "set_org_status" ? (
+          <select
+            name="orgStatus"
+            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+          >
+            <option value="">Select status...</option>
+            <option value="active">Active</option>
+            <option value="talent_pool">Talent Pool</option>
+            <option value="org_rejected">Not Suitable</option>
           </select>
         ) : null}
 
