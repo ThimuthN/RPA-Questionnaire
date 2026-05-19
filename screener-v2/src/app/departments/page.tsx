@@ -78,9 +78,7 @@ export default async function DepartmentsPage({
                   <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                     <tr>
                       <th scope="col" className="px-4 py-3 font-medium">Name</th>
-                      <th scope="col" className="px-4 py-3 font-medium">Slug</th>
                       <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                      <th scope="col" className="px-4 py-3 font-medium">Sort Order</th>
                       <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
@@ -98,16 +96,12 @@ export default async function DepartmentsPage({
                             {department.name}
                           </a>
                         </td>
-                        <td className="px-4 py-3 text-sm text-[color:var(--app-muted)]">
-                          <code className="text-xs font-mono">{department.slug}</code>
-                        </td>
                         <td className="px-4 py-3">
                           <StatusPill
                             label={department.isActive ? "Active" : "Inactive"}
                             tone={department.isActive ? "emerald" : "neutral"}
                           />
                         </td>
-                        <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">{department.sortOrder}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <DepartmentModal mode="edit" department={department} />
