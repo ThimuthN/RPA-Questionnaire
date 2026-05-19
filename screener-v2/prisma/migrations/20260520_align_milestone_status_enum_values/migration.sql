@@ -10,5 +10,5 @@
 
 UPDATE "CandidateMilestone" SET status = 'not_started' WHERE status = 'pending';
 UPDATE "CandidateMilestone" SET status = 'done' WHERE status IN ('completed', 'passed');
-UPDATE "MilestoneCheck" SET status = 'not_started' WHERE status = 'pending';
-UPDATE "MilestoneCheck" SET status = 'done' WHERE status IN ('completed', 'passed');
+UPDATE "CandidateMilestoneCheck" SET status = 'not_started' WHERE status = 'pending';
+UPDATE "CandidateMilestoneCheck" SET status = 'done' WHERE status IN ('completed', 'passed');
