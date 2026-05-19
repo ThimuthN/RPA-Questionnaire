@@ -23,8 +23,11 @@ export function AddUserModal({
 }) {
   const [open, setOpen] = useState(false);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
+  const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function loadDepartments() {
@@ -43,7 +46,34 @@ export function AddUserModal({
 
   useEffect(() => {
     loadDepartments();
-  }, []);
+    if (user?.departmentId) {
+      setSelectedDepartmentId(user.departmentId);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!selectedDepartmentId) {
+      setRoles([]);
+      return;
+    }
+
+    const loadRoles = async () => {
+      setLoadingRoles(true);
+      try {
+        const response = await fetch(`/api/roles?departmentId=${selectedDepartmentId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setRoles(data.roles || []);
+        }
+      } catch (err) {
+        console.error("Failed to load roles:", err);
+      } finally {
+        setLoadingRoles(false);
+      }
+    };
+
+    loadRoles();
+  }, [selectedDepartmentId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -82,11 +112,22 @@ export function AddUserModal({
 
   return (
     <>
-      <Button type="button" onClick={() => setOpen(true)}>
+      <Button type="button" onClick={() => {
+        setOpen(true);
+        if (mode === "create") {
+          setSelectedDepartmentId("");
+        }
+      }}>
         {mode === "create" ? "Add member" : "Edit"}
       </Button>
 
-      <Modal isOpen={open} onClose={() => setOpen(false)} title={title}>
+      <Modal isOpen={open} onClose={() => {
+        setOpen(false);
+        setSubmitError("");
+        if (mode === "create") {
+          setSelectedDepartmentId("");
+        }
+      }} title={title}>
         <div className="space-y-1 mb-4">
           <p className="text-sm text-[color:var(--app-muted)]">{subtitle}</p>
         </div>
@@ -127,7 +168,8 @@ export function AddUserModal({
             <select
               id="user-department"
               name="departmentId"
-              defaultValue={user?.departmentId || ""}
+              value={selectedDepartmentId}
+              onChange={(e) => setSelectedDepartmentId(e.target.value)}
               disabled={isSubmitting}
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
             >
@@ -148,15 +190,24 @@ export function AddUserModal({
               id="user-role"
               name="roleId"
               defaultValue={user?.roleId || ""}
-              disabled={isSubmitting}
+              disabled={isSubmitting || !selectedDepartmentId || loadingRoles || roles.length === 0}
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
             >
-              <option value="">Select a role</option>
-              {/* Note: Roles will be loaded in Phase 4 */}
+              <option value="">
+                {!selectedDepartmentId
+                  ? "Select a department first"
+                  : loadingRoles
+                  ? "Loading roles..."
+                  : roles.length === 0
+                  ? "No roles available"
+                  : "Select a role"}
+              </option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.label}
+                </option>
+              ))}
             </select>
-            <p className="text-xs text-[color:var(--app-muted)]">
-              Role assignment will be completed in Phase 4 with department manager roles.
-            </p>
           </div>
 
           {mode === "edit" && (

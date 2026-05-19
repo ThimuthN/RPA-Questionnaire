@@ -8,13 +8,20 @@ const createRoleSchema = z.object({
   departmentId: z.string().optional().or(z.literal(""))
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const roles = await listRoleCatalog(true);
+  const { searchParams } = new URL(request.url);
+  const departmentId = searchParams.get("departmentId");
+
+  let roles = await listRoleCatalog(true);
+  if (departmentId) {
+    roles = roles.filter(role => role.departmentId === departmentId);
+  }
+
   const rolesWithCounts = await Promise.all(
     roles.map(async (role) => {
       const counts = await getRoleUsageCounts(role.id);

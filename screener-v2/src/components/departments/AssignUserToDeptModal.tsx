@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/primitives/Button";
-import { FormInput } from "@/components/primitives/FormInput";
 import { Modal } from "@/components/primitives/Modal";
 import { FormError } from "@/components/primitives/FormError";
 
@@ -17,6 +16,40 @@ export function AssignUserToDeptModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [users, setUsers] = useState<Array<{ id: string; name: string; departmentId: string | null }>>([]);
+  const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [usersRes, rolesRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch(`/api/roles?departmentId=${departmentId}`)
+        ]);
+
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          const usersList = Array.isArray(usersData) ? usersData : usersData.users || [];
+          setUsers(usersList.filter((u: any) => !u.departmentId));
+        }
+
+        if (rolesRes.ok) {
+          const rolesData = await rolesRes.json();
+          setRoles(rolesData.roles || []);
+        }
+      } catch (err) {
+        console.error("Failed to load users or roles:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [open, departmentId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -80,23 +113,49 @@ export function AssignUserToDeptModal({
         {error && <FormError message={error} />}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormInput
-            name="userId"
-            label="User"
-            placeholder="Select a user..."
-            type="text"
-            disabled={saving}
-            required
-          />
+          <div className="grid gap-1">
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-select">
+              User
+            </label>
+            <select
+              id="user-select"
+              name="userId"
+              disabled={saving || loading || users.length === 0}
+              required
+              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+            >
+              <option value="">
+                {loading ? "Loading users..." : users.length === 0 ? "No available users" : "Select a user..."}
+              </option>
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <FormInput
-            name="roleId"
-            label="Role"
-            placeholder="Select a role..."
-            type="text"
-            disabled={saving}
-            required
-          />
+          <div className="grid gap-1">
+            <label className="text-sm text-[color:var(--app-text)]" htmlFor="role-select">
+              Role
+            </label>
+            <select
+              id="role-select"
+              name="roleId"
+              disabled={saving || loading || roles.length === 0}
+              required
+              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+            >
+              <option value="">
+                {loading ? "Loading roles..." : roles.length === 0 ? "No available roles" : "Select a role..."}
+              </option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex gap-2 justify-end pt-4">
             <Button

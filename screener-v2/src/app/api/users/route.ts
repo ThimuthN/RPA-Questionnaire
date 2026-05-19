@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createAppUser } from "@/lib/auth/app-auth";
 import { requireAdminApiSession } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
+import { prisma } from "@/lib/db/prisma";
 
 const userSchema = z.object({
   name: z.string().optional(),
@@ -11,6 +12,27 @@ const userSchema = z.object({
   departmentId: z.string().optional(),
   roleId: z.string().optional()
 });
+
+export async function GET() {
+  const auth = await requireAdminApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      departmentId: true,
+      roleId: true,
+      isActive: true
+    },
+    orderBy: { name: "asc" }
+  });
+
+  return NextResponse.json(users);
+}
 
 export async function POST(request: Request) {
   const auth = await requireAdminApiSession();
