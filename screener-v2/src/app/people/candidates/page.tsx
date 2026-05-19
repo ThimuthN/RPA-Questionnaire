@@ -138,7 +138,16 @@ export default async function PeopleCandidatesPage({
         />
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
-            <CandidatesViewSwitch current="pipeline" />
+            <CandidatesViewSwitch
+              current={
+                params.stage === "new" ? "pipeline" :
+                params.stage === "screening" ? "screener" :
+                params.stage === "interview" ? "interview" :
+                params.stage === "testing" ? "testing" :
+                params.stage === "decision" ? "finalized" :
+                "pipeline"
+              }
+            />
           </StaggerItem>
           {params.deleted ? <StaggerItem><NoticeBanner tone="success">Candidate deleted.</NoticeBanner></StaggerItem> : null}
           {params.updated ? <StaggerItem><NoticeBanner tone="success">Updated {params.updated} candidate(s).</NoticeBanner></StaggerItem> : null}

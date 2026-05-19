@@ -58,10 +58,10 @@ export function CandidatesViewSwitch({ current }: { current: CandidatesView }) {
             key={item.key}
             href={item.href}
             className={cn(
-              "rounded-full px-3 py-1.5 transition whitespace-nowrap",
+              "rounded-full px-3 py-1.5 transition-all whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--app-control-bg)]",
               current === item.key
-                ? "bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_22%,transparent)]"
-                : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
+                ? "bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_22%,transparent)] hover:shadow-[0_16px_32px_color-mix(in_srgb,var(--app-brand)_28%,transparent)]"
+                : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)] hover:shadow-sm"
             )}
           >
             {label}
