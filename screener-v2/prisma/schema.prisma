@@ -29,6 +29,7 @@ model Department {
   candidates Candidate[]
   employees Employee[]
   jobPostings JobPosting[]
+  departmentCandidacies DepartmentCandidacy[]
 
   @@index([isActive, sortOrder])
 }
@@ -166,6 +167,7 @@ model RoleCatalog {
   candidates      Candidate[]
   employees       Employee[]
   jobPostings     JobPosting[]
+  departmentCandidacies DepartmentCandidacy[]
 
   @@index([isActive, sortOrder])
   @@index([label, department])
@@ -278,6 +280,7 @@ model Candidate {
   candidateFolderUrl String?
   notesSummary       String?
   uiStatus           String   @default("in_progress")
+  orgStatus          String   @default("active")
   searchVector       Unsupported("tsvector")?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -293,6 +296,7 @@ model Candidate {
   interviewPanels    InterviewPanel[]
   offer              CandidateOffer?
   employee           Employee?
+  departmentCandidacies DepartmentCandidacy[]
   @@index([roleId])
   @@index([departmentId])
   @@index([hrOwnerId])
@@ -302,6 +306,31 @@ model Candidate {
   @@index([fullName])
   @@index([uiStatus, updatedAt])
   @@index(fields: [searchVector], type: Gin, map: "candidate_fts_idx")
+}
+
+model DepartmentCandidacy {
+  id             String   @id @default(cuid())
+  candidateId    String
+  departmentId   String
+  roleId         String?
+  hrOwnerId      String?
+  status         String   @default("active")
+  source         String   @default("manual")
+  nominatedBy    String?
+  nominationNote String?
+  jobPostingId   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  candidate  Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  department Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  role       RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  @@unique([candidateId, departmentId])
+  @@index([departmentId, status, updatedAt])
+  @@index([candidateId])
+  @@index([hrOwnerId])
+  @@index([jobPostingId])
 }
 
 model CandidateResume {
