@@ -178,12 +178,12 @@ model RoleCatalog {
   slug                    String                      @unique
   label                   String
   department              String?
-  departmentId            String?
+  departmentId            String
   sortOrder               Int                         @default(0)
   isActive                Boolean                     @default(true)
   createdAt               DateTime                    @default(now())
   updatedAt               DateTime                    @updatedAt
-  dept                    Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  dept                    Department                  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   candidates              Candidate[]
   employees               Employee[]
   jobPostings             JobPosting[]
