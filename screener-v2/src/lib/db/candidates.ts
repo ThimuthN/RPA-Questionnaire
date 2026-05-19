@@ -662,6 +662,10 @@ export async function createCandidatesBatch(
   let createdCount = 0;
   const baselineMilestones = defaultCandidateMilestones();
 
+  // Prepare all candidate data and milestone data in advance
+  const candidateCreates: Parameters<typeof prisma.candidate.createMany>[0]['data'] = [];
+  const milestoneCreates: Parameters<typeof prisma.candidateMilestone.createMany>[0]['data'] = [];
+
   for (const input of normalizedInputs) {
     const role = input.positionAppliedFor?.trim()
       ? rolesByLabel.get(input.positionAppliedFor.trim())
@@ -669,45 +673,47 @@ export async function createCandidatesBatch(
 
     const candidateId = cuidLike();
 
-    await prisma.$transaction(async (tx) => {
-      await tx.candidate.create({
-        data: {
-          id: candidateId,
-          fullName: input.fullName.trim(),
-          email: input.email,
-          phone: input.phone?.trim() || null,
-          roleId: input.roleId ?? role?.id ?? null,
-          positionAppliedFor: input.roleId
-            ? null
-            : role?.label ?? (input.positionAppliedFor?.trim() || null),
-          batchId: input.batchId?.trim() || null,
-          resumeSource: input.resumeSource?.trim() || null,
-          hrOwner: input.hrOwner?.trim() || null,
-          intakeBucket: input.intakeBucket ?? "pipeline",
-          stage: input.stage ?? "new",
-          finalDecision: input.finalDecision ?? "in_process",
-          nextAction: input.nextAction ?? "none",
-          screeningStatus: input.screeningStatus ?? null,
-          candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
-          notesSummary: input.notesSummary?.trim() || null
-        }
-      });
+    candidateCreates.push({
+      id: candidateId,
+      fullName: input.fullName.trim(),
+      email: input.email,
+      phone: input.phone?.trim() || null,
+      roleId: input.roleId ?? role?.id ?? null,
+      positionAppliedFor: input.roleId
+        ? null
+        : role?.label ?? (input.positionAppliedFor?.trim() || null),
+      batchId: input.batchId?.trim() || null,
+      resumeSource: input.resumeSource?.trim() || null,
+      hrOwner: input.hrOwner?.trim() || null,
+      intakeBucket: input.intakeBucket ?? "pipeline",
+      stage: input.stage ?? "new",
+      finalDecision: input.finalDecision ?? "in_process",
+      nextAction: input.nextAction ?? "none",
+      screeningStatus: input.screeningStatus ?? null,
+      candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
+      notesSummary: input.notesSummary?.trim() || null
+    });
 
-      await tx.candidateMilestone.createMany({
-        data: baselineMilestones.map((milestone) => ({
-          id: cuidLike(),
-          candidateId,
-          type: milestone.type,
-          title: milestone.title,
-          status: milestone.status,
-          sortOrder: milestone.sortOrder,
-          mode: milestone.mode
-        }))
+    baselineMilestones.forEach((milestone) => {
+      milestoneCreates.push({
+        id: cuidLike(),
+        candidateId,
+        type: milestone.type,
+        title: milestone.title,
+        status: milestone.status,
+        sortOrder: milestone.sortOrder,
+        mode: milestone.mode
       });
     });
 
     createdCount += 1;
   }
+
+  // Execute all creates in a single transaction instead of N sequential transactions
+  await prisma.$transaction(async (tx) => {
+    await tx.candidate.createMany({ data: candidateCreates });
+    await tx.candidateMilestone.createMany({ data: milestoneCreates });
+  });
 
   return { createdCount };
 }
@@ -1902,11 +1908,12 @@ export async function listCandidateWorkspacePage(
   });
 
   // Use FTS for search queries to avoid sequential scans on large tables
+  // Limit to 500 results to prevent memory bloat on broad searches
   let candidateIds: string[] | null = null;
   if (filters.q?.trim()) {
     const searchQuery = filters.q.trim();
     const ftsResults = await prisma.$queryRaw<Array<{ id: string }>>(
-      PrismaRuntime.sql`SELECT id FROM "Candidate" WHERE search_vector @@ plainto_tsquery('english', ${searchQuery}) LIMIT 10000`
+      PrismaRuntime.sql`SELECT id FROM "Candidate" WHERE search_vector @@ plainto_tsquery('english', ${searchQuery}) LIMIT 500`
     );
     candidateIds = ftsResults.map((r) => r.id);
     if (candidateIds.length === 0) {
@@ -1949,6 +1956,7 @@ export async function listCandidateWorkspacePage(
         },
         assessments: {
           orderBy: { createdAt: "desc" },
+          take: 3, // Limit to 3 most recent to reduce payload size in list views
           include: {
             invite: {
               select: { slug: true, mode: true }

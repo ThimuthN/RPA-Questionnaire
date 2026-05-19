@@ -302,6 +302,7 @@ model Candidate {
   @@index([hrOwnerId])
   @@index([stage, updatedAt])
   @@index([intakeBucket, updatedAt])
+  @@index([intakeBucket, stage, updatedAt]) // Compound index for efficient filtering by both intake and stage
   @@index([finalDecision, stage, updatedAt])
   @@index([fullName])
   @@index([uiStatus, updatedAt])
