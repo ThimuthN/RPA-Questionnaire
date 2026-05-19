@@ -547,14 +547,16 @@ function RegistrationMilestoneCard({
 function MilestonePanelContent({
   candidateId,
   node,
-  hasResume
+  hasResume,
+  onSelectMilestone
 }: {
   candidateId: string;
   node: TimelineNode;
   hasResume: boolean;
+  onSelectMilestone?: (milestoneId: string) => void;
 }) {
   if (isAdvancedReviewGroup(node)) {
-    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} />;
+    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} onSelectMilestone={onSelectMilestone} />;
   }
 
   const milestone = node;
@@ -649,10 +651,12 @@ function DocumentationMilestoneCard({
 
 function AdvancedReviewCard({
   candidateId,
-  groupedMilestones
+  groupedMilestones,
+  onSelectMilestone
 }: {
   candidateId: string;
   groupedMilestones: CandidateMilestoneRecord[];
+  onSelectMilestone?: (milestoneId: string) => void;
 }) {
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
@@ -660,8 +664,9 @@ function AdvancedReviewCard({
 
   const handleAddMilestone = async (type: "advanced_test" | "interview") => {
     setCreateError("");
+    const setter = type === "advanced_test" ? setIsCreatingTest : setIsCreatingInterview;
+
     try {
-      const setter = type === "advanced_test" ? setIsCreatingTest : setIsCreatingInterview;
       setter(true);
 
       const response = await fetch(`/api/candidates/${candidateId}/milestones`, {
@@ -672,16 +677,22 @@ function AdvancedReviewCard({
 
       if (response.ok) {
         const newMilestone = await response.json();
-        window.location.href = `/create-test?candidateId=${candidateId}&milestoneId=${newMilestone.id}`;
+
+        // Only redirect to assessment builder for platform-based tests
+        if (type === "advanced_test") {
+          window.location.href = `/create-test?candidateId=${candidateId}&milestoneId=${newMilestone.id}`;
+        } else {
+          // For interviews, reload the page to show the new milestone
+          window.location.reload();
+        }
       } else {
         const data = await response.json();
         setCreateError(data.error || "Failed to create milestone");
+        setter(false);
       }
     } catch (error) {
       setCreateError(error instanceof Error ? error.message : "Error creating milestone");
-    } finally {
-      setIsCreatingTest(false);
-      setIsCreatingInterview(false);
+      setter(false);
     }
   };
 
@@ -703,7 +714,11 @@ function AdvancedReviewCard({
             const setupHref = `/create-test?candidateId=${candidateId}&milestoneId=${m.id}` as Route;
             const canCreateAssessment = m.mode === "platform" && !m.assessment;
             return (
-              <div key={m.id} className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => onSelectMilestone?.(m.id)}
+                className="w-full text-left group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex flex-wrap gap-2">
@@ -726,7 +741,7 @@ function AdvancedReviewCard({
                     </div>
                   ) : null}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -930,7 +945,13 @@ export function CandidateMilestoneTimeline({
                     </>
                   )}
                   <CandidateMilestoneStatusPill
-                    status={isAdvancedReviewGroup(activeNode) ? "not_started" : activeNode.status}
+                    status={isAdvancedReviewGroup(activeNode)
+                      ? (activeNode.groupedMilestones.every(m => m.status === "done" || m.status === "skipped")
+                          ? "done"
+                          : activeNode.groupedMilestones.some(m => m.status === "in_progress" || m.status === "done")
+                          ? "in_progress"
+                          : "not_started")
+                      : activeNode.status}
                   />
                 </div>
 
@@ -960,6 +981,7 @@ export function CandidateMilestoneTimeline({
                   candidateId={candidateId}
                   node={activeNode}
                   hasResume={hasResume}
+                  onSelectMilestone={setActiveMilestoneId}
                 />
               </motion.div>
             </AnimatePresence>

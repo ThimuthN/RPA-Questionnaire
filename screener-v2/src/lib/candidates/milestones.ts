@@ -114,7 +114,9 @@ export const milestoneCheckDefs: Record<CandidateMilestoneType, CheckDefinition[
     { type: 'review_assessment', label: 'Assessment', required: false },
     { type: 'review_notes', label: 'Interview notes', required: false }
   ],
-  advanced_test: [],
+  advanced_test: [
+    { type: 'review_notes', label: 'Notes', required: false }
+  ],
   decision: [
     { type: 'final_decision', label: 'Final decision', required: true }
   ]

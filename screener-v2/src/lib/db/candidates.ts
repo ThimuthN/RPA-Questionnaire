@@ -1282,10 +1282,10 @@ async function applyMilestoneCascade(
   }
 
   if (newStatus === "done") {
-    // Find next milestone, skipping the advanced section (sortOrder 40-9998)
+    // Find next milestone, stopping before decision (sortOrder 9999)
     const nextMilestone = allMilestones
       .slice(savedIndex + 1)
-      .find((m) => m.status === "not_started" && (m.sortOrder < 40 || m.sortOrder >= 9999));
+      .find((m) => m.status === "not_started" && m.sortOrder < 9999);
 
     if (nextMilestone) {
       await tx.candidateMilestone.update({
