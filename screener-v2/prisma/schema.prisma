@@ -22,11 +22,11 @@ enum ResultReviewState {
 }
 
 enum CandidateMilestoneStatus {
-  pending
+  not_started
   in_progress
-  completed
-  passed
+  done
   failed
+  skipped
 }
 
 enum CandidateOfferStatus {
