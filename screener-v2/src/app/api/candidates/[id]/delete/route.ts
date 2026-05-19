@@ -30,7 +30,7 @@ export async function POST(
         employee: true,
         offer: true,
         interviewPanels: { select: { id: true } },
-        milestones: { where: { status: { not: "completed" } }, select: { id: true } }
+        milestones: { where: { status: { not: "done" } }, select: { id: true } }
       }
     });
 
