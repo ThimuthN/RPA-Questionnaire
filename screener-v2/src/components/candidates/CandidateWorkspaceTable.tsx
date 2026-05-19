@@ -241,7 +241,6 @@ export function CandidateWorkspaceTable({
                                       fullName: candidate.fullName,
                                       email: candidate.email,
                                       stage: "closed",
-                                      finalDecision: "rejected",
                                       nextAction: "none"
                                     })
                                   });
