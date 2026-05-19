@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { FileText, ChevronRight, X } from "lucide-react";
+import { FileText, ChevronRight, X, Check } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
 import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
@@ -33,7 +34,7 @@ const tableShellClassName =
   "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
 
 const tableHeadClassName =
-  "bg-[color:var(--app-surface-soft)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
+  "bg-[color:var(--app-table-head)] border-b border-[color:var(--app-border)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
 
 const tableCellClassName =
   "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
@@ -76,7 +77,11 @@ export function CandidateWorkspaceTable({
   roleOptions?: Array<{ id: string; label: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
 }) {
+  const router = useRouter();
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
+  const [rejectConfirming, setRejectConfirming] = useState<string | null>(null);
+  const [promoteError, setPromoteError] = useState<Record<string, string>>({});
+  const [promoting, setPromoting] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const validIds = new Set(rows.map((candidate) => candidate.id));
@@ -131,7 +136,7 @@ export function CandidateWorkspaceTable({
                 const action = contextualAction(candidate);
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 return (
-                  <tr key={candidate.id} className="h-[88px] transition hover:bg-[color:var(--app-surface-soft)]/70">
+                  <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
                       <input
                         type="checkbox"
@@ -139,17 +144,17 @@ export function CandidateWorkspaceTable({
                         value={candidate.id}
                         checked={isSelected}
                         onChange={() => toggleCandidate(candidate.id)}
-                        className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400"
+                        className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400 cursor-pointer"
                       />
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-1">
-                        <p className="font-medium text-[color:var(--app-heading)]">{candidate.fullName}</p>
-                        <p className="text-xs text-[color:var(--app-muted)]">{candidate.roleLabel || "Role not set"}</p>
+                        <p className="font-medium text-[color:var(--app-heading)] truncate">{candidate.fullName}</p>
+                        <p className="text-xs text-[color:var(--app-muted)] truncate">{candidate.roleLabel || "Role not set"}</p>
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span>{candidate.hrOwner || "Unassigned"}</span>
+                      <span className="truncate">{candidate.hrOwner || "Unassigned"}</span>
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
@@ -157,65 +162,44 @@ export function CandidateWorkspaceTable({
                           {nextStageLabel[candidate.stage as CandidateStage] ? (
                             <button
                               type="button"
+                              disabled={promoting[candidate.id]}
                               onClick={async () => {
+                                setPromoting(prev => ({ ...prev, [candidate.id]: true }));
                                 try {
                                   const res = await fetch(`/api/candidates/${candidate.id}/promote`, {
                                     method: "POST"
                                   });
                                   if (res.ok) {
-                                    window.location.reload();
+                                    router.refresh();
                                   } else {
-                                    alert("Failed to promote candidate");
+                                    setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to promote candidate" }));
+                                    setTimeout(() => setPromoteError(prev => ({ ...prev, [candidate.id]: "" })), 3000);
                                   }
                                 } catch (err) {
-                                  alert(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+                                  setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unknown error" }));
+                                  setTimeout(() => setPromoteError(prev => ({ ...prev, [candidate.id]: "" })), 3000);
+                                } finally {
+                                  setPromoting(prev => ({ ...prev, [candidate.id]: false }));
                                 }
                               }}
-                              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2 py-1 text-xs font-medium text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
+                              className={actionPillSecondaryClassName + " disabled:opacity-50"}
                               title={nextStageLabel[candidate.stage as CandidateStage] || ""}
                             >
                               <span>{nextStageLabel[candidate.stage as CandidateStage]}</span>
                               <ChevronRight className="h-3 w-3" />
                             </button>
                           ) : null}
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (!confirm("Reject this candidate?")) return;
-                              try {
-                                const res = await fetch(`/api/candidates/${candidate.id}`, {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    fullName: candidate.fullName,
-                                    email: candidate.email,
-                                    stage: "closed",
-                                    finalDecision: "rejected",
-                                    nextAction: "none"
-                                  })
-                                });
-                                if (res.ok) {
-                                  window.location.reload();
-                                } else {
-                                  alert("Failed to reject candidate");
-                                }
-                              } catch (err) {
-                                alert(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
-                              }
-                            }}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-muted)] transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
-                            title="Reject candidate"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
                         </div>
+                        {promoteError[candidate.id] && (
+                          <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
+                        )}
                         <p className="text-xs text-[color:var(--app-muted)]">
                           {candidate.currentFocus || candidateStageLabels[candidate.stage as CandidateStage]}
                         </p>
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span className="text-sm text-[color:var(--app-text)]">
+                      <span className="text-sm text-[color:var(--app-text)] truncate">
                         {candidate.roleDepartment || "—"}
                       </span>
                     </td>
@@ -244,6 +228,58 @@ export function CandidateWorkspaceTable({
                         <Link href={`/candidates/${candidate.id}` as Route} className={actionPillSecondaryClassName}>
                           Profile
                         </Link>
+                        {rejectConfirming === candidate.id ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/candidates/${candidate.id}`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      fullName: candidate.fullName,
+                                      email: candidate.email,
+                                      stage: "closed",
+                                      finalDecision: "rejected",
+                                      nextAction: "none"
+                                    })
+                                  });
+                                  if (res.ok) {
+                                    router.refresh();
+                                  } else {
+                                    setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to reject candidate" }));
+                                  }
+                                } catch (err) {
+                                  setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unknown error" }));
+                                } finally {
+                                  setRejectConfirming(null);
+                                }
+                              }}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] text-[color:var(--app-danger)] transition hover:-translate-y-[1px]"
+                              title="Confirm rejection"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setRejectConfirming(null)}
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-muted)] transition hover:-translate-y-[1px]"
+                              title="Cancel"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setRejectConfirming(candidate.id)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-muted)] transition hover:-translate-y-[1px] hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
+                            title="Reject candidate"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

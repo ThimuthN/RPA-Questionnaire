@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { TestSubmissionModal } from "@/components/candidates/TestSubmissionModal";
+import { InterviewSchedulingModal } from "@/components/candidates/InterviewSchedulingModal";
 import {
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
@@ -661,6 +663,9 @@ function AdvancedReviewCard({
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [testModalOpen, setTestModalOpen] = useState(false);
+  const [interviewModalOpen, setInterviewModalOpen] = useState(false);
+  const [pendingMilestoneId, setPendingMilestoneId] = useState("");
 
   const handleAddMilestone = async (type: "advanced_test" | "interview") => {
     setCreateError("");
@@ -677,13 +682,13 @@ function AdvancedReviewCard({
 
       if (response.ok) {
         const newMilestone = await response.json();
+        setPendingMilestoneId(newMilestone.id);
 
-        // Only redirect to assessment builder for platform-based tests
+        // Open the appropriate modal instead of redirecting
         if (type === "advanced_test") {
-          window.location.href = `/create-test?candidateId=${candidateId}&milestoneId=${newMilestone.id}`;
+          setTestModalOpen(true);
         } else {
-          // For interviews, reload the page to show the new milestone
-          window.location.reload();
+          setInterviewModalOpen(true);
         }
       } else {
         const data = await response.json();
@@ -694,6 +699,20 @@ function AdvancedReviewCard({
       setCreateError(error instanceof Error ? error.message : "Error creating milestone");
       setter(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setTestModalOpen(false);
+    setInterviewModalOpen(false);
+    setIsCreatingTest(false);
+    setIsCreatingInterview(false);
+  };
+
+  const handleModalSuccess = () => {
+    setPendingMilestoneId("");
+    handleModalClose();
+    // Reload to show the new milestone in the list
+    window.location.reload();
   };
 
   return (
@@ -780,6 +799,26 @@ function AdvancedReviewCard({
           </Button>
         </div>
       </div>
+
+      {/* Modals for test and interview submission */}
+      {pendingMilestoneId && (
+        <>
+          <TestSubmissionModal
+            isOpen={testModalOpen}
+            onClose={handleModalClose}
+            candidateId={candidateId}
+            milestoneId={pendingMilestoneId}
+            onSuccess={handleModalSuccess}
+          />
+          <InterviewSchedulingModal
+            isOpen={interviewModalOpen}
+            onClose={handleModalClose}
+            candidateId={candidateId}
+            milestoneId={pendingMilestoneId}
+            onSuccess={handleModalSuccess}
+          />
+        </>
+      )}
     </div>
   );
 }
