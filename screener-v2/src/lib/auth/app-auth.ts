@@ -41,6 +41,22 @@ export async function ensureBootstrapAdmin() {
     return;
   }
 
+  // Ensure System department exists
+  let systemDept = await prisma.department.findUnique({
+    where: { slug: "system" }
+  });
+
+  if (!systemDept) {
+    systemDept = await prisma.department.create({
+      data: {
+        name: "System",
+        slug: "system",
+        isActive: true,
+        sortOrder: 0
+      }
+    });
+  }
+
   // Create or get system admin role
   let adminRole = await prisma.roleCatalog.findFirst({
     where: { slug: "system_admin" }
@@ -51,7 +67,8 @@ export async function ensureBootstrapAdmin() {
       data: {
         slug: "system_admin",
         label: "System Admin",
-        isActive: true
+        isActive: true,
+        departmentId: systemDept.id
       }
     });
 

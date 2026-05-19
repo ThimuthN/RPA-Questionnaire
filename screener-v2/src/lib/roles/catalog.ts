@@ -92,9 +92,22 @@ export async function createRoleCatalogEntry(input: {
     throw new Error("Role label is required.");
   }
 
+  // Default to System department if not specified
+  let deptId = input.departmentId;
+  if (!deptId) {
+    const systemDept = await prisma.department.findUnique({
+      where: { slug: "system" },
+      select: { id: true }
+    });
+    if (!systemDept) {
+      throw new Error("System department not found. Cannot create role without a department.");
+    }
+    deptId = systemDept.id;
+  }
+
   // Check for duplicate in same department
-  const existing = await findRoleCatalogEntryByLabel(label, input.departmentId);
-  if (existing && existing.departmentId === input.departmentId) {
+  const existing = await findRoleCatalogEntryByLabel(label, deptId);
+  if (existing && existing.departmentId === deptId) {
     return existing;
   }
 
@@ -107,7 +120,7 @@ export async function createRoleCatalogEntry(input: {
     data: {
       slug: slugifyRoleLabel(label),
       label,
-      departmentId: input.departmentId || null,
+      departmentId: deptId,
       sortOrder: (last?.sortOrder ?? -1) + 1,
       isActive: true
     }
@@ -130,11 +143,23 @@ export async function updateRoleCatalogEntry(
     throw new Error("Role label is required.");
   }
 
+  // Get the current role to preserve departmentId if not provided
+  const currentRole = await prisma.roleCatalog.findUnique({
+    where: { id: roleId },
+    select: { departmentId: true }
+  });
+
+  if (!currentRole) {
+    throw new Error("Role not found.");
+  }
+
+  const deptId = input.departmentId ?? currentRole.departmentId;
+
   const duplicate = await prisma.roleCatalog.findFirst({
     where: {
       id: { not: roleId },
       label,
-      departmentId: input.departmentId || null
+      departmentId: deptId
     }
   });
 
@@ -147,7 +172,7 @@ export async function updateRoleCatalogEntry(
     data: {
       slug: slugifyRoleLabel(label),
       label,
-      departmentId: input.departmentId || null,
+      departmentId: deptId,
       isActive: input.isActive
     }
   });
