@@ -60,6 +60,7 @@ export interface CandidateRecord {
   finalDecision: CandidateFinalDecision;
   nextAction: CandidateNextAction;
   screeningStatus?: CandidateScreeningStatus;
+  orgStatus?: "active" | "talent_pool" | "org_rejected";
   candidateFolderUrl?: string;
   notesSummary?: string;
   createdAt: string;
@@ -167,12 +168,36 @@ export interface CandidateActivityEventRecord {
   createdAt: string;
 }
 
+export interface DepartmentCandidacyDetail {
+  id: string;
+  candidateId: string;
+  departmentId: string;
+  roleId?: string;
+  hrOwnerId?: string;
+  status: "active" | "talent_pool" | "dept_rejected";
+  source: "manual" | "job_application" | "nominated";
+  nominatedBy?: string;
+  nominationNote?: string;
+  jobPostingId?: string;
+  department: {
+    id: string;
+    name: string;
+  };
+  role?: {
+    id: string;
+    label: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CandidateDetail extends CandidateRecord {
   resumes: CandidateResumeRecord[];
   notes: CandidateNoteRecord[];
   assessments: CandidateAssessmentRecord[];
   applications: CandidateApplicationRecord[];
   milestones: CandidateMilestoneRecord[];
+  departmentCandidacies?: DepartmentCandidacyDetail[];
   activityEvents: CandidateActivityEventRecord[];
   currentFocus?: string;
 }
@@ -2206,6 +2231,17 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
           department: true
         }
       },
+      departmentCandidacies: {
+        orderBy: { updatedAt: "desc" },
+        include: {
+          department: {
+            select: { id: true, name: true }
+          },
+          role: {
+            select: { id: true, label: true }
+          }
+        }
+      },
       activityEvents: {
         orderBy: { createdAt: "desc" }
       }
@@ -2258,6 +2294,28 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
     assessments,
     applications: row.applications.map(mapApplication),
     milestones,
+    departmentCandidacies: row.departmentCandidacies?.map((dc) => ({
+      id: dc.id,
+      candidateId: dc.candidateId,
+      departmentId: dc.departmentId,
+      roleId: dc.roleId ?? undefined,
+      hrOwnerId: dc.hrOwnerId ?? undefined,
+      status: dc.status as "active" | "talent_pool" | "dept_rejected",
+      source: dc.source as "manual" | "job_application" | "nominated",
+      nominatedBy: dc.nominatedBy ?? undefined,
+      nominationNote: dc.nominationNote ?? undefined,
+      jobPostingId: dc.jobPostingId ?? undefined,
+      department: {
+        id: dc.department.id,
+        name: dc.department.name
+      },
+      role: dc.role ? {
+        id: dc.role.id,
+        label: dc.role.label
+      } : undefined,
+      createdAt: dc.createdAt.toISOString(),
+      updatedAt: dc.updatedAt.toISOString()
+    })) ?? undefined,
     activityEvents: row.activityEvents.map((event) => ({
       id: event.id,
       actorId: event.actorId ?? undefined,

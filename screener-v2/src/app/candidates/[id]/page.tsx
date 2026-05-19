@@ -5,7 +5,9 @@ import { CandidateUiStatusPill } from "@/components/candidates/CandidatePills";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
+import { DeptCandidacyPanel } from "@/components/candidates/DeptCandidacyPanel";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
+import { OrgStatusControl } from "@/components/candidates/OrgStatusControl";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import { Button } from "@/components/primitives/Button";
@@ -375,6 +377,28 @@ export default async function CandidateDetailPage({
                 </details>
               </div>
             </section>
+
+            <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-[color:var(--app-heading)]">Organization Status</h3>
+                <OrgStatusControl
+                  candidateId={candidate.id}
+                  currentStatus={(candidate.orgStatus as any) || "active"}
+                />
+              </div>
+            </section>
+
+            {candidate.departmentCandidacies && candidate.departmentCandidacies.length > 0 && (
+              <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-[color:var(--app-heading)]">Department Candidacies</h3>
+                  <DeptCandidacyPanel
+                    candidateId={candidate.id}
+                    candidacies={candidate.departmentCandidacies as any}
+                  />
+                </div>
+              </section>
+            )}
 
             <section className="border-t border-[color:var(--app-border)] pt-5">
               <CandidateActivityModal items={activityFeed} />
