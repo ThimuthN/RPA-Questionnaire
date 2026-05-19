@@ -16,13 +16,10 @@ import { requirePageSession } from "@/lib/auth/guards";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
-  candidateUiStatusLabels,
-  candidateUiStatusValues,
   candidateStageLabels,
   candidateStageValues,
   type CandidateAssessmentStatus,
-  type CandidateStage,
-  type CandidateUiStatus
+  type CandidateStage
 } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listDepartments } from "@/lib/db/departments";
@@ -33,8 +30,8 @@ type PageState = {
   q?: string;
   roleId?: string;
   departmentId?: string;
-  status?: string;
   stage?: string;
+  stages?: string;
   owner?: string;
   assessmentStatus?: string;
   sort?: string;
@@ -102,12 +99,9 @@ export default async function PeopleCandidatesPage({
       intakeBucket: "pipeline",
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
-      status: candidateUiStatusValues.includes(params.status as CandidateUiStatus)
-        ? (params.status as CandidateUiStatus)
-        : undefined,
       stage: candidateStageValues.includes(params.stage as CandidateStage)
         ? (params.stage as CandidateStage)
-        : undefined,
+        : "new",
       owner: params.owner?.trim() || undefined,
       assessmentStatus: candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)
         ? (params.assessmentStatus as CandidateAssessmentStatus)
@@ -189,18 +183,6 @@ export default async function PeopleCandidatesPage({
                   ))}
                 </select>
                 <select
-                  name="status"
-                  defaultValue={params.status ?? ""}
-                  className={filterFieldClassName()}
-                >
-                  <option value="">All statuses</option>
-                  {candidateUiStatusValues.map((status) => (
-                    <option key={status} value={status}>
-                      {candidateUiStatusLabels[status]}
-                    </option>
-                  ))}
-                </select>
-                <select
                   name="owner"
                   defaultValue={params.owner ?? ""}
                   className={filterFieldClassName()}
@@ -244,9 +226,6 @@ export default async function PeopleCandidatesPage({
               </form>
 
               <div className="flex flex-wrap gap-2">
-                <Link href={buildHref(query, { status: "need_review", sort: "inbox", page: "1" })}>
-                  <Button variant="ghost">Review needed</Button>
-                </Link>
                 <Link href={buildHref(query, { assessmentStatus: "none", sort: "inbox", page: "1" })}>
                   <Button variant="ghost">Needs assessment</Button>
                 </Link>

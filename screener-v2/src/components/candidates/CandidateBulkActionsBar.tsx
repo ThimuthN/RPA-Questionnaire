@@ -2,32 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
-import {
-  candidateUiStatusLabels,
-  candidateUiStatusValues,
-  type CandidateUiStatus
-} from "@/lib/candidates/types";
 
 export function CandidateBulkActionsBar({
   selectedCount,
   onClearSelection,
   onSelectAll,
-  defaultStatus = "need_review",
   roleOptions,
   departmentOptions
 }: {
   selectedCount: number;
   onClearSelection: () => void;
   onSelectAll: () => void;
-  defaultStatus?: CandidateUiStatus;
   roleOptions?: Array<{ id: string; label: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
 }) {
-  const [action, setAction] = useState<"assign_owner" | "set_ui_status" | "add_note" | "set_department">("assign_owner");
+  const [action, setAction] = useState<"assign_owner" | "add_note" | "set_department">("assign_owner");
 
   const helperText = useMemo(() => {
     if (action === "assign_owner") return "Assign an owner to the selected candidates.";
-    if (action === "set_ui_status") return "Set the next hiring status for the selected candidates.";
     if (action === "set_department") return "Set the department for the selected candidates.";
     return "Add one note to every selected candidate.";
   }, [action]);
@@ -64,7 +56,6 @@ export function CandidateBulkActionsBar({
           className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
         >
           <option value="assign_owner">Assign owner</option>
-          <option value="set_ui_status">Change status</option>
           <option value="add_note">Add note</option>
           <option value="set_department">Set department</option>
         </select>
@@ -75,20 +66,6 @@ export function CandidateBulkActionsBar({
             placeholder="Owner ID"
             className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
           />
-        ) : null}
-
-        {action === "set_ui_status" ? (
-          <select
-            name="status"
-            defaultValue={defaultStatus}
-            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
-          >
-            {candidateUiStatusValues.map((status) => (
-              <option key={status} value={status}>
-                {candidateUiStatusLabels[status]}
-              </option>
-            ))}
-          </select>
         ) : null}
 
         {action === "add_note" ? (

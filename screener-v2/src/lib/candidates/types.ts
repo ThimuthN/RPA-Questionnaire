@@ -76,11 +76,11 @@ export const candidateIntakeBucketValues = ["pipeline", "applicant"] as const;
 export type CandidateIntakeBucket = (typeof candidateIntakeBucketValues)[number];
 
 export const candidateStageLabels: Record<CandidateStage, string> = {
-  new: "New",
-  screening: "Screening",
+  new: "Pipeline",
+  screening: "Screener",
   interview: "Interview",
-  testing: "Testing",
-  decision: "Decision",
+  testing: "Advanced Review",
+  decision: "Finalized",
   offer: "Offer",
   closed: "Closed"
 };

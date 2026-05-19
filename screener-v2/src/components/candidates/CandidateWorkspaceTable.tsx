@@ -2,13 +2,32 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { FileText } from "lucide-react";
+import { FileText, ChevronRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
-import { InlineStatusSelect } from "@/components/candidates/InlineStatusSelect";
-import { candidateStageLabels } from "@/lib/candidates/types";
+import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
 import type { CandidateWorkspaceItem } from "@/lib/candidates/workspace";
+
+const stageOrder: Record<CandidateStage, number> = {
+  new: 1,
+  screening: 2,
+  interview: 3,
+  testing: 4,
+  decision: 5,
+  offer: 6,
+  closed: 7
+};
+
+const nextStageLabel: Record<CandidateStage, string | null> = {
+  new: "Send to Screener",
+  screening: "Move to Interview",
+  interview: "Move to Review",
+  testing: "Finalize",
+  decision: "Offer",
+  offer: "Close",
+  closed: null
+};
 
 const tableShellClassName =
   "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
@@ -134,13 +153,64 @@ export function CandidateWorkspaceTable({
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
-                        <InlineStatusSelect
-                          candidateId={candidate.id}
-                          currentStatus={candidate.uiStatus}
-                          returnTo={currentPathAndQuery}
-                        />
+                        <div className="flex items-center gap-1.5">
+                          {nextStageLabel[candidate.stage as CandidateStage] ? (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`/api/candidates/${candidate.id}/promote`, {
+                                    method: "POST"
+                                  });
+                                  if (res.ok) {
+                                    window.location.reload();
+                                  } else {
+                                    alert("Failed to promote candidate");
+                                  }
+                                } catch (err) {
+                                  alert(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2 py-1 text-xs font-medium text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
+                              title={nextStageLabel[candidate.stage as CandidateStage] || ""}
+                            >
+                              <span>{nextStageLabel[candidate.stage as CandidateStage]}</span>
+                              <ChevronRight className="h-3 w-3" />
+                            </button>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!confirm("Reject this candidate?")) return;
+                              try {
+                                const res = await fetch(`/api/candidates/${candidate.id}`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    fullName: candidate.fullName,
+                                    email: candidate.email,
+                                    stage: "closed",
+                                    finalDecision: "rejected",
+                                    nextAction: "none"
+                                  })
+                                });
+                                if (res.ok) {
+                                  window.location.reload();
+                                } else {
+                                  alert("Failed to reject candidate");
+                                }
+                              } catch (err) {
+                                alert(`Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+                              }
+                            }}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-muted)] transition hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-500"
+                            title="Reject candidate"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                         <p className="text-xs text-[color:var(--app-muted)]">
-                          {candidate.currentFocus || candidateStageLabels[candidate.stage]}
+                          {candidate.currentFocus || candidateStageLabels[candidate.stage as CandidateStage]}
                         </p>
                       </div>
                     </td>
