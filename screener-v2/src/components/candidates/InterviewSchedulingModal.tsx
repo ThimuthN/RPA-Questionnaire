@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MessageSquare } from "lucide-react";
+import { X, Calendar, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 
@@ -14,6 +14,7 @@ interface InterviewSchedulingModalProps {
   onClose: () => void;
   candidateId: string;
   milestoneId: string;
+  milestone?: { date?: string; result?: string; notes?: string };
   onSuccess?: () => void;
 }
 
@@ -22,14 +23,17 @@ export function InterviewSchedulingModal({
   onClose,
   candidateId,
   milestoneId,
+  milestone,
   onSuccess
 }: InterviewSchedulingModalProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
-    date: "",
-    result: "",
-    notes: ""
+    date: milestone?.date ? new Date(milestone.date).toISOString().slice(0, 16) : "",
+    result: milestone?.result || "",
+    notes: milestone?.notes || ""
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +70,30 @@ export function InterviewSchedulingModal({
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        onSuccess?.();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || "Failed to delete interview");
+        setShowDeleteConfirm(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error deleting interview");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -92,7 +120,9 @@ export function InterviewSchedulingModal({
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10">
                     <Calendar className="h-5 w-5 text-brand-500" />
                   </div>
-                  <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Schedule Interview</h2>
+                  <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
+                    {milestone ? "Update Interview" : "Schedule Interview"}
+                  </h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -159,28 +189,72 @@ export function InterviewSchedulingModal({
                 </label>
 
                 <div className="flex gap-3 border-t border-[color:var(--app-border)] pt-4">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={onClose}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isPending}
-                    className="flex-1"
-                  >
-                    {isPending ? (
-                      <span className="flex items-center gap-2">
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Saving...
-                      </span>
-                    ) : (
-                      "Save Interview"
-                    )}
-                  </Button>
+                  {showDeleteConfirm ? (
+                    <>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        disabled={isDeleting}
+                        onClick={handleDelete}
+                        className="flex-1"
+                      >
+                        {isDeleting ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Deleting...
+                          </span>
+                        ) : (
+                          "Delete"
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      {milestone && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="flex-1 gap-2 text-[color:var(--app-danger)]"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={onClose}
+                        className="flex-1"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={isPending}
+                        className="flex-1"
+                      >
+                        {isPending ? (
+                          <span className="flex items-center gap-2">
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            Saving...
+                          </span>
+                        ) : milestone ? (
+                          "Update Interview"
+                        ) : (
+                          "Save Interview"
+                        )}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </form>
             </div>

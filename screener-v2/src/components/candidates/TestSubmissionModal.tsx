@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, BookOpen } from "lucide-react";
+import { X, Zap, BookOpen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
@@ -18,6 +18,7 @@ interface TestSubmissionModalProps {
   onClose: () => void;
   candidateId: string;
   milestoneId: string;
+  milestone?: { mode?: string; date?: string; score?: number; result?: string; notes?: string };
   onSuccess?: () => void;
 }
 
@@ -26,16 +27,19 @@ export function TestSubmissionModal({
   onClose,
   candidateId,
   milestoneId,
+  milestone,
   onSuccess
 }: TestSubmissionModalProps) {
-  const [mode, setMode] = useState<CandidateMilestoneMode>("manual");
+  const [mode, setMode] = useState<CandidateMilestoneMode>((milestone?.mode as CandidateMilestoneMode) || "manual");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
-    date: "",
-    score: "",
-    result: "",
-    notes: ""
+    date: milestone?.date ? new Date(milestone.date).toISOString().slice(0, 16) : "",
+    score: milestone?.score ? String(milestone.score) : "",
+    result: milestone?.result || "",
+    notes: milestone?.notes || ""
   });
 
   const isPlatform = mode === "platform";
@@ -75,6 +79,30 @@ export function TestSubmissionModal({
     }
   };
 
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        onSuccess?.();
+        onClose();
+      } else {
+        const data = await response.json();
+        setError(data.error || "Failed to delete test");
+        setShowDeleteConfirm(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error deleting test");
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const createTestHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestoneId}` as Route;
 
   return (
@@ -103,7 +131,9 @@ export function TestSubmissionModal({
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
                     <Zap className="h-5 w-5 text-amber-500" />
                   </div>
-                  <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Add Test Result</h2>
+                  <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
+                    {milestone ? "Update Test Result" : "Add Test Result"}
+                  </h2>
                 </div>
                 <button
                   onClick={onClose}
@@ -229,28 +259,72 @@ export function TestSubmissionModal({
                     </label>
 
                     <div className="flex gap-3 border-t border-[color:var(--app-border)] pt-4">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={onClose}
-                        className="flex-1"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={isPending}
-                        className="flex-1"
-                      >
-                        {isPending ? (
-                          <span className="flex items-center gap-2">
-                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                            Saving...
-                          </span>
-                        ) : (
-                          "Save Result"
-                        )}
-                      </Button>
+                      {showDeleteConfirm ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            disabled={isDeleting}
+                            onClick={handleDelete}
+                            className="flex-1"
+                          >
+                            {isDeleting ? (
+                              <span className="flex items-center gap-2">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                Deleting...
+                              </span>
+                            ) : (
+                              "Delete"
+                            )}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => setShowDeleteConfirm(false)}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          {milestone && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => setShowDeleteConfirm(true)}
+                              className="flex-1 gap-2 text-[color:var(--app-danger)]"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={onClose}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={isPending}
+                            className="flex-1"
+                          >
+                            {isPending ? (
+                              <span className="flex items-center gap-2">
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                Saving...
+                              </span>
+                            ) : milestone ? (
+                              "Update Result"
+                            ) : (
+                              "Save Result"
+                            )}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </motion.form>
                 )}

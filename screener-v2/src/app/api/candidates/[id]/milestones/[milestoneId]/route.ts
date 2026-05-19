@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
+import { prisma } from "@/lib/db/prisma";
+import { cuidLike } from "@/lib/tokens/token-service";
 import {
   candidateMilestoneResultValues,
   candidateMilestoneModeValues,
@@ -107,6 +109,57 @@ export async function POST(
       id,
       "error",
       error instanceof Error ? error.message : "Could not update milestone."
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string; milestoneId: string }> }
+) {
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
+  const { session } = auth;
+
+  const { id: candidateId, milestoneId } = await params;
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const milestone = await tx.candidateMilestone.findUnique({
+        where: { id: milestoneId },
+        select: { title: true, mode: true, type: true }
+      });
+
+      if (!milestone) {
+        throw new Error("Milestone not found");
+      }
+
+      await tx.candidateMilestone.delete({
+        where: { id: milestoneId }
+      });
+
+      await tx.candidateActivityEvent.create({
+        data: {
+          id: cuidLike(),
+          candidateId,
+          actorId: session.userId ?? null,
+          actorName: session.name ?? null,
+          event: "milestone_deleted",
+          entityType: "milestone",
+          entityId: milestoneId,
+          detail: `${milestone.title} (${milestone.mode || milestone.type})`,
+          createdAt: new Date()
+        }
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Could not delete milestone." },
+      { status: 400 }
     );
   }
 }

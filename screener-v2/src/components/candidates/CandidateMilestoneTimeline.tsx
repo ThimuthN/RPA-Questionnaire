@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { X } from "lucide-react";
 import {
   CandidateAssessmentPill,
   CandidateMilestoneStatusPill,
@@ -666,6 +667,7 @@ function AdvancedReviewCard({
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [interviewModalOpen, setInterviewModalOpen] = useState(false);
   const [pendingMilestoneId, setPendingMilestoneId] = useState("");
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
 
   const handleAddMilestone = async (type: "advanced_test" | "interview") => {
     setCreateError("");
@@ -706,14 +708,41 @@ function AdvancedReviewCard({
     setInterviewModalOpen(false);
     setIsCreatingTest(false);
     setIsCreatingInterview(false);
+    setEditingMilestoneId(null);
+    setPendingMilestoneId("");
   };
 
   const handleModalSuccess = () => {
     setPendingMilestoneId("");
+    setEditingMilestoneId(null);
     handleModalClose();
-    // Reload to show the new milestone in the list
+    // Reload to show the updated milestone in the list
     window.location.reload();
   };
+
+  const handleDeleteMilestone = async (milestoneId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Remove this item? This action is logged.")) return;
+
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, {
+        method: "DELETE"
+      });
+
+      if (response.ok) {
+        window.location.reload();
+      } else {
+        const data = await response.json();
+        setCreateError(data.error || "Failed to delete milestone");
+      }
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Error deleting milestone");
+    }
+  };
+
+  const editingMilestone = editingMilestoneId
+    ? groupedMilestones.find((m) => m.id === editingMilestoneId)
+    : null;
 
   return (
     <div className="space-y-5">
@@ -732,35 +761,56 @@ function AdvancedReviewCard({
             const result = derivedResult(m);
             const setupHref = `/create-test?candidateId=${candidateId}&milestoneId=${m.id}` as Route;
             const canCreateAssessment = m.mode === "platform" && !m.assessment;
+            const handleEdit = () => {
+              setEditingMilestoneId(m.id);
+              if (m.type === "advanced_test" || m.type === "review_round") {
+                setTestModalOpen(true);
+              } else if (m.type === "interview") {
+                setInterviewModalOpen(true);
+              }
+            };
             return (
-              <button
+              <div
                 key={m.id}
-                type="button"
-                onClick={() => onSelectMilestone?.(m.id)}
-                className="w-full text-left group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-2">
-                      <CandidateMilestoneTypePill type={m.type} />
-                      <CandidateMilestoneStatusPill status={m.status} />
+                className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
+                <div className="flex items-start justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={handleEdit}
+                    className="flex-1 text-left">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          <CandidateMilestoneTypePill type={m.type} />
+                          <CandidateMilestoneStatusPill status={m.status} />
+                        </div>
+                        {result && <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm text-[color:var(--app-heading)]">{m.title}</p>
+                        <p className="text-xs text-[color:var(--app-muted)] mt-1">{stepSummary(m, false)}</p>
+                      </div>
+                      {canCreateAssessment ? (
+                        <div className="pt-1">
+                          <Link href={setupHref}>
+                            <Button type="button" variant="secondary" className="px-3 py-1.5 text-xs">
+                              Create assessment
+                            </Button>
+                          </Link>
+                        </div>
+                      ) : null}
                     </div>
-                    {result && <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm text-[color:var(--app-heading)]">{m.title}</p>
-                    <p className="text-xs text-[color:var(--app-muted)] mt-1">{stepSummary(m, false)}</p>
-                  </div>
-                  {canCreateAssessment ? (
-                    <div className="pt-1">
-                      <Link href={setupHref}>
-                        <Button type="button" variant="secondary" className="px-3 py-1.5 text-xs">
-                          Create assessment
-                        </Button>
-                      </Link>
-                    </div>
-                  ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteMilestone(m.id, e)}
+                    className="rounded p-1.5 opacity-0 group-hover:opacity-100 transition hover:bg-[color:var(--app-danger)]/10"
+                    title="Delete milestone"
+                    aria-label="Delete milestone">
+                    <X className="h-4 w-4 text-[color:var(--app-danger)]" />
+                  </button>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -800,21 +850,33 @@ function AdvancedReviewCard({
         </div>
       </div>
 
-      {/* Modals for test and interview submission */}
-      {pendingMilestoneId && (
+      {/* Modals for test and interview submission/editing */}
+      {(pendingMilestoneId || editingMilestoneId) && (
         <>
           <TestSubmissionModal
             isOpen={testModalOpen}
             onClose={handleModalClose}
             candidateId={candidateId}
-            milestoneId={pendingMilestoneId}
+            milestoneId={pendingMilestoneId || editingMilestoneId || ""}
+            milestone={editingMilestone ? {
+              mode: editingMilestone.mode,
+              date: editingMilestone.date,
+              score: editingMilestone.score,
+              result: editingMilestone.result,
+              notes: editingMilestone.notes
+            } : undefined}
             onSuccess={handleModalSuccess}
           />
           <InterviewSchedulingModal
             isOpen={interviewModalOpen}
             onClose={handleModalClose}
             candidateId={candidateId}
-            milestoneId={pendingMilestoneId}
+            milestoneId={pendingMilestoneId || editingMilestoneId || ""}
+            milestone={editingMilestone ? {
+              date: editingMilestone.date,
+              result: editingMilestone.result,
+              notes: editingMilestone.notes
+            } : undefined}
             onSuccess={handleModalSuccess}
           />
         </>
