@@ -662,9 +662,34 @@ export async function createCandidatesBatch(
   let createdCount = 0;
   const baselineMilestones = defaultCandidateMilestones();
 
-  // Prepare all candidate data and milestone data in advance
-  const candidateCreates: Parameters<typeof prisma.candidate.createMany>[0]['data'] = [];
-  const milestoneCreates: Parameters<typeof prisma.candidateMilestone.createMany>[0]['data'] = [];
+  // Prepare all candidate data and milestone data in advance for batch creation
+  const candidateCreates: Array<{
+    id: string;
+    fullName: string;
+    email: string;
+    phone: string | null;
+    roleId: string | null;
+    positionAppliedFor: string | null;
+    batchId: string | null;
+    resumeSource: string | null;
+    hrOwner: string | null;
+    intakeBucket: string;
+    stage: string;
+    finalDecision: string;
+    nextAction: string;
+    screeningStatus: string | null;
+    candidateFolderUrl: string | null;
+    notesSummary: string | null;
+  }> = [];
+  const milestoneCreates: Array<{
+    id: string;
+    candidateId: string;
+    type: string;
+    title: string;
+    status: string;
+    sortOrder: number;
+    mode: string;
+  }> = [];
 
   for (const input of normalizedInputs) {
     const role = input.positionAppliedFor?.trim()
