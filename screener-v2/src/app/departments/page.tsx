@@ -91,7 +91,12 @@ export default async function DepartmentsPage({
                         className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
                       >
                         <td className="px-4 py-3">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">{department.name}</p>
+                          <a
+                            href={`/departments/${department.id}`}
+                            className="text-sm font-medium text-[color:var(--app-brand)] hover:underline"
+                          >
+                            {department.name}
+                          </a>
                         </td>
                         <td className="px-4 py-3 text-sm text-[color:var(--app-muted)]">
                           <code className="text-xs font-mono">{department.slug}</code>
