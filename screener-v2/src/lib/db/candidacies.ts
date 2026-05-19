@@ -50,10 +50,10 @@ export async function createOrUpdateDepartmentCandidacy(input: CreateOrUpdateCan
     },
     update: {
       status: input.status ?? "active",
-      roleId: input.roleId ?? undefined,
-      hrOwnerId: input.hrOwnerId ?? undefined,
-      nominatedBy: input.nominatedBy ?? undefined,
-      nominationNote: input.nominationNote ?? undefined,
+      ...(input.roleId && { roleId: input.roleId }),
+      ...(input.hrOwnerId && { hrOwnerId: input.hrOwnerId }),
+      ...(input.nominatedBy && { nominatedBy: input.nominatedBy }),
+      ...(input.nominationNote && { nominationNote: input.nominationNote }),
       updatedAt: new Date()
     },
     create: {
@@ -362,11 +362,11 @@ export async function batchCreateCandidaciesForJob(
     }
   });
 
-  if (!jobPosting || !jobPosting.role) {
+  if (!jobPosting?.role) {
     throw new Error("Job posting or role not found");
   }
 
-  const departmentId = jobPosting.role.departmentId;
+  const departmentId = jobPosting.role.departmentId!;
   const roleId = jobPosting.role.id;
 
   // Batch create candidacies
