@@ -149,13 +149,13 @@ export default async function CandidateApplicantsPage({
               <table className="min-w-[1100px] w-full table-fixed text-left">
                 <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                   <tr>
-                    <th className="w-[22%] px-4 py-3 font-medium">Person</th>
-                    <th className="w-[20%] px-4 py-3 font-medium">Applied job</th>
-                    <th className="w-[12%] px-4 py-3 font-medium">Applied</th>
-                    <th className="w-[10%] px-4 py-3 font-medium">Resume</th>
-                    <th className="w-[12%] px-4 py-3 font-medium">Status</th>
-                    <th className="w-[10%] px-4 py-3 font-medium">Owner</th>
-                    <th className="w-[14%] px-4 py-3 font-medium text-right">Review</th>
+                    <th scope="col" className="w-[22%] px-4 py-3 font-medium">Person</th>
+                    <th scope="col" className="w-[20%] px-4 py-3 font-medium">Applied job</th>
+                    <th scope="col" className="w-[12%] px-4 py-3 font-medium">Applied</th>
+                    <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
+                    <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
+                    <th scope="col" className="w-[10%] px-4 py-3 font-medium">Owner</th>
+                    <th scope="col" className="w-[14%] px-4 py-3 font-medium text-right">Review</th>
                   </tr>
                 </thead>
                 <tbody>

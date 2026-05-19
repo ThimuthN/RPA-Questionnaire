@@ -11,22 +11,22 @@ import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/type
 import type { CandidateWorkspaceItem } from "@/lib/candidates/workspace";
 
 const stageOrder: Record<CandidateStage, number> = {
-  new: 1,
-  screening: 2,
-  interview: 3,
-  testing: 4,
-  decision: 5,
-  offer: 6,
+  applicant: 1,
+  pipeline: 2,
+  screening: 3,
+  interview: 4,
+  testing: 5,
+  decision: 6,
   closed: 7
 };
 
 const nextStageLabel: Record<CandidateStage, string | null> = {
-  new: "Send to Screener",
+  applicant: "Move to Pipeline",
+  pipeline: "Send to Screener",
   screening: "Move to Interview",
   interview: "Move to Review",
   testing: "Finalize",
-  decision: "Offer",
-  offer: "Close",
+  decision: "Close",
   closed: null
 };
 
@@ -120,15 +120,15 @@ export function CandidateWorkspaceTable({
           <table className="w-full table-fixed text-left">
             <thead className={tableHeadClassName}>
               <tr>
-                <th className="w-12 px-4 py-3 font-medium">
+                <th scope="col" className="w-12 px-4 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th className="w-[24%] px-4 py-3 font-medium">Name</th>
-                <th className="w-[13%] px-4 py-3 font-medium">Owner</th>
-                <th className="w-[19%] px-4 py-3 font-medium">Status</th>
-                <th className="w-[16%] px-4 py-3 font-medium">Department</th>
-                <th className="w-[8%] px-4 py-3 font-medium">Updated</th>
-                <th className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
+                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Name</th>
+                <th scope="col" className="w-[13%] px-4 py-3 font-medium">Owner</th>
+                <th scope="col" className="w-[19%] px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="w-[16%] px-4 py-3 font-medium">Department</th>
+                <th scope="col" className="w-[8%] px-4 py-3 font-medium">Updated</th>
+                <th scope="col" className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>

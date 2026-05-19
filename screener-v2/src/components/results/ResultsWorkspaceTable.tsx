@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useEffect, useState } from "react";
 import type { ResultReviewState } from "@/lib/assessment-engine/types";
-import { candidateStageLabels, type CandidateUiStatus } from "@/lib/candidates/types";
+import { candidateStageLabels } from "@/lib/candidates/types";
 import { BulkReviewControls } from "@/components/results/BulkReviewControls";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -20,13 +20,6 @@ const actionPillSecondaryClassName =
 
 function toneForStatus(status: ResultStatusFilter) {
   return status === "pass" ? "emerald" : status === "review" ? "amber" : "red";
-}
-
-function linkedStatusLabel(status: CandidateUiStatus) {
-  if (status === "moved_forward") return "Advanced";
-  if (status === "need_review") return "Needs review";
-  if (status === "rejected") return "Closed";
-  return "In progress";
 }
 
 function reviewStateTone(state: ResultReviewState) {
@@ -119,14 +112,14 @@ export function ResultsWorkspaceTable({
               }}
             >
               <tr>
-                <th className="w-12 px-4 py-3">Select</th>
-                <th className="w-[21%] px-4 py-3">Participant</th>
-                <th className="w-[17%] px-4 py-3">Assessment</th>
-                <th className="w-[11%] px-4 py-3">Score</th>
-                <th className="w-[11%] px-4 py-3">Review</th>
-                <th className="w-[14%] px-4 py-3">Linked record</th>
-                <th className="w-[10%] px-4 py-3">Submitted</th>
-                <th className="w-[16%] px-4 py-3 text-right">Actions</th>
+                <th scope="col" className="w-12 px-4 py-3">Select</th>
+                <th scope="col" className="w-[21%] px-4 py-3">Participant</th>
+                <th scope="col" className="w-[17%] px-4 py-3">Assessment</th>
+                <th scope="col" className="w-[11%] px-4 py-3">Score</th>
+                <th scope="col" className="w-[11%] px-4 py-3">Review</th>
+                <th scope="col" className="w-[14%] px-4 py-3">Linked record</th>
+                <th scope="col" className="w-[10%] px-4 py-3">Submitted</th>
+                <th scope="col" className="w-[16%] px-4 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -188,7 +181,7 @@ export function ResultsWorkspaceTable({
                         <div className="space-y-1">
                           <p className="text-[color:var(--app-text)]">{row.candidateOwner || "Linked profile"}</p>
                           <p className="text-xs text-[color:var(--app-muted)]">
-                            {row.candidateStage ? candidateStageLabels[row.candidateStage] : row.candidateUiStatus ? linkedStatusLabel(row.candidateUiStatus) : "No stage"}
+                            {row.candidateStage ? candidateStageLabels[row.candidateStage] : "No stage"}
                           </p>
                         </div>
                       ) : (

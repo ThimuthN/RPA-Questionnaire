@@ -101,22 +101,22 @@ export default function EmployeesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[color:var(--app-border)]">
-                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                <th scope="col" className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
                   ID
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                <th scope="col" className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
                   Name
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                <th scope="col" className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
                   Title
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                <th scope="col" className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
                   Status
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
+                <th scope="col" className="text-left py-3 px-4 font-medium text-[color:var(--app-muted)] text-xs uppercase tracking-[0.08em]">
                   Start Date
                 </th>
-                <th className="text-left py-3 px-4"></th>
+                <th scope="col" className="text-left py-3 px-4"></th>
               </tr>
             </thead>
             <tbody>

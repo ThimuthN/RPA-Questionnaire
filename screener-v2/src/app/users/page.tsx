@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SignalCard } from "@/components/primitives/SignalCard";
+import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { AddUserModal } from "@/components/users/AddUserModal";
@@ -9,22 +10,6 @@ import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { UserFilters } from "@/components/users/UserFilters";
 import { requireAdminPageSession } from "@/lib/auth/guards";
 import { listAppUsers, type AppUserRow } from "@/lib/auth/app-auth";
-
-const accessLevelTones = {
-  admin: "purple" as const,
-  recruiter: "blue" as const,
-  hiring_manager: "emerald" as const,
-  interviewer: "teal" as const,
-  member: "blue" as const
-};
-
-const accessLevelLabels: Record<string, string> = {
-  admin: "Admin",
-  recruiter: "Recruiter",
-  hiring_manager: "Hiring Manager",
-  interviewer: "Interviewer",
-  member: "Member"
-};
 
 function formatRelativeTime(date: Date | null): string {
   if (!date) return "Never";
@@ -52,8 +37,7 @@ export default async function UsersPage({
 
   const totalUsers = users.length;
   const activeUsers = users.filter((u) => u.isActive).length;
-  const interviewers = users.filter((u) => u.isInterviewer && u.isActive).length;
-  const admins = users.filter((u) => u.accessLevel === "admin").length;
+  const admins = users.filter((u) => u.role?.label === "System Admin" && u.isActive).length;
 
   return (
     <SceneShell
@@ -64,20 +48,37 @@ export default async function UsersPage({
       subtitle="Manage user access and interview capacity."
     >
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-3">
           <SignalCard label="Team members" value={totalUsers.toString()} tone="blue" />
           <SignalCard label="Active" value={activeUsers.toString()} tone="emerald" />
-          <SignalCard label="Interviewers" value={interviewers.toString()} tone="blue" />
           <SignalCard label="Admins" value={admins.toString()} tone="amber" />
         </div>
 
         <StagePanel className="space-y-5">
+          {params.created && (
+            <NotificationBanner tone="success">
+              User created successfully: {params.created}
+            </NotificationBanner>
+          )}
+
+          {params.updated && (
+            <NotificationBanner tone="success">
+              User updated successfully: {params.updated}
+            </NotificationBanner>
+          )}
+
+          {params.error && (
+            <NotificationBanner tone="error">
+              {params.error}
+            </NotificationBanner>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl text-[color:var(--app-heading)]">Team members</h2>
               <p className="text-sm text-[color:var(--app-muted)]">Manage your hiring platform users.</p>
             </div>
-            <AddUserModal created={params.created} updated={params.updated} error={params.error} />
+            <AddUserModal />
           </div>
 
           <UserFilters users={users} />
@@ -90,13 +91,13 @@ export default async function UsersPage({
                 <table className="w-full text-left">
                   <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Member</th>
-                      <th className="px-4 py-3 font-medium">Email</th>
-                      <th className="px-4 py-3 font-medium">Role</th>
-                      <th className="px-4 py-3 font-medium">Department</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Last active</th>
-                      <th className="px-4 py-3 font-medium text-right">Actions</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Member</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Email</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Role</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Department</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Last active</th>
+                      <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -107,7 +108,6 @@ export default async function UsersPage({
                             <UserAvatarInitials name={user.name} email={user.email} size="md" />
                             <div className="space-y-0.5">
                               <p className="text-sm text-[color:var(--app-heading)]">{user.name || "Unnamed"}</p>
-                              {user.title && <p className="text-xs text-[color:var(--app-muted)]">{user.title}</p>}
                             </div>
                           </div>
                         </td>
@@ -116,8 +116,8 @@ export default async function UsersPage({
                         </td>
                         <td className="px-4 py-3">
                           <StatusPill
-                            label={accessLevelLabels[user.accessLevel] || user.accessLevel}
-                            tone={accessLevelTones[user.accessLevel as keyof typeof accessLevelTones] || "blue"}
+                            label={user.role?.label || "—"}
+                            tone="blue"
                           />
                         </td>
                         <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">

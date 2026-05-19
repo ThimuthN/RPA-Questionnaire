@@ -1,6 +1,7 @@
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SignalCard } from "@/components/primitives/SignalCard";
+import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { DepartmentModal } from "@/components/departments/DepartmentModal";
@@ -36,19 +37,37 @@ export default async function DepartmentsPage({
         </div>
 
         <StagePanel className="space-y-5">
+          {params.created && (
+            <NotificationBanner tone="success">
+              Department created successfully: {params.created}
+            </NotificationBanner>
+          )}
+
+          {params.updated && (
+            <NotificationBanner tone="success">
+              Department updated successfully: {params.updated}
+            </NotificationBanner>
+          )}
+
+          {params.deleted && (
+            <NotificationBanner tone="success">
+              Department deleted successfully.
+            </NotificationBanner>
+          )}
+
+          {params.error && (
+            <NotificationBanner tone="error">
+              {params.error}
+            </NotificationBanner>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl text-[color:var(--app-heading)]">Departments</h2>
               <p className="text-sm text-[color:var(--app-muted)]">Manage your organization&apos;s departments.</p>
             </div>
-            <DepartmentModal created={params.created} updated={params.updated} error={params.error} />
+            <DepartmentModal />
           </div>
-
-          {params.deleted ? (
-            <div className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-              Department deleted.
-            </div>
-          ) : null}
 
           <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
             {departments.length === 0 ? (
@@ -58,11 +77,11 @@ export default async function DepartmentsPage({
                 <table className="w-full text-left">
                   <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Name</th>
-                      <th className="px-4 py-3 font-medium">Slug</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Sort Order</th>
-                      <th className="px-4 py-3 font-medium text-right">Actions</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Name</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Slug</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Sort Order</th>
+                      <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
