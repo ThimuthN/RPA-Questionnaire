@@ -689,11 +689,11 @@ export async function createCandidatesBatch(
   const milestoneCreates: Array<{
     id: string;
     candidateId: string;
-    type: string;
+    type: CandidateMilestoneType;
     title: string;
-    status: string;
+    status: CandidateMilestoneStatus;
     sortOrder: number;
-    mode: string;
+    mode: CandidateMilestoneMode;
   }> = [];
 
   for (const input of normalizedInputs) {
