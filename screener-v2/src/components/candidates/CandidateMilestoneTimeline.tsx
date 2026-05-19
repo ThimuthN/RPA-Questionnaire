@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import {
   CandidateAssessmentPill,
@@ -661,6 +662,7 @@ function AdvancedReviewCard({
   groupedMilestones: CandidateMilestoneRecord[];
   onSelectMilestone?: (milestoneId: string) => void;
 }) {
+  const router = useRouter();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
   const [isCreatingInterview, setIsCreatingInterview] = useState(false);
   const [createError, setCreateError] = useState("");
@@ -716,8 +718,7 @@ function AdvancedReviewCard({
     setPendingMilestoneId("");
     setEditingMilestoneId(null);
     handleModalClose();
-    // Reload to show the updated milestone in the list
-    window.location.reload();
+    router.refresh();
   };
 
   const handleDeleteMilestone = async (milestoneId: string, e: React.MouseEvent) => {
@@ -730,7 +731,7 @@ function AdvancedReviewCard({
       });
 
       if (response.ok) {
-        window.location.reload();
+        router.refresh();
       } else {
         const data = await response.json();
         setCreateError(data.error || "Failed to delete milestone");
