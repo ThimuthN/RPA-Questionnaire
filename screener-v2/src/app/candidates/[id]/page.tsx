@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { notFound } from "next/navigation";
-import { CandidateUiStatusPill } from "@/components/candidates/CandidatePills";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
@@ -16,7 +15,6 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
-import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
@@ -33,16 +31,8 @@ function currentAssessmentStatus(candidate: CandidateData) {
   return latestAssessment(candidate)?.status ?? "none";
 }
 
-function currentUiStatus(candidate: CandidateData) {
-  return getCandidateUiStatus({
-    stage: candidate.stage,
-    finalDecision: candidate.finalDecision,
-    nextAction: candidate.nextAction,
-  });
-}
-
 function nextPrompt(candidate: CandidateData) {
-  if (candidate.intakeBucket === "applicant") {
+  if (candidate.stage === "applicant") {
     return "Review the application and move them into the pipeline when you're ready.";
   }
   if (!candidate.resumes.length) return "Add a resume if you need one for review.";
@@ -138,7 +128,6 @@ export default async function CandidateDetailPage({
   }
 
   const pageState = await searchParams;
-  const uiStatus = currentUiStatus(candidate);
   const latest = latestAssessment(candidate);
   const activeApplication = primaryApplication(candidate);
   const currentResume = candidate.resumes[0] ?? null;
@@ -152,12 +141,11 @@ export default async function CandidateDetailPage({
   const activityFeed = buildCandidateActivityFeed(candidate);
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
-      <CandidateUiStatusPill status={uiStatus} />
       {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
       {candidate.hrOwner ? (
         <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
       ) : null}
-      <StatusPill label={candidate.intakeBucket === "applicant" ? "Applicant" : "Pipeline"} tone={candidate.intakeBucket === "applicant" ? "amber" : "blue"} />
+      <StatusPill label={candidate.stage === "applicant" ? "Applicant" : "Pipeline"} tone={candidate.stage === "applicant" ? "amber" : "blue"} />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
     </div>
   );
@@ -170,7 +158,7 @@ export default async function CandidateDetailPage({
       title={candidate.fullName}
       subtitle={candidate.roleLabel || candidate.email}
       utility={
-        <Link href={(candidate.intakeBucket === "applicant" ? "/people/candidates/applicants" : "/candidates") as Route}>
+        <Link href={(candidate.stage === "applicant" ? "/people/candidates/applicants" : "/candidates") as Route}>
           <Button variant="secondary">Back to candidates</Button>
         </Link>
       }
@@ -196,14 +184,14 @@ export default async function CandidateDetailPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {candidate.intakeBucket === "applicant" && activeApplication ? (
+              {candidate.stage === "applicant" && activeApplication ? (
                 <form action={`/api/candidate-applications/${activeApplication.id}`} method="post">
                   <input type="hidden" name="action" value="promote" />
                   <input type="hidden" name="returnTo" value={`/candidates/${candidate.id}` as Route} />
                   <Button type="submit">Move to pipeline</Button>
                 </form>
               ) : null}
-              <EditCandidateInfoModal candidate={candidate} uiStatus={uiStatus} />
+              <EditCandidateInfoModal candidate={candidate} />
               <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                 <ConfirmSubmitButton
                   variant="danger"

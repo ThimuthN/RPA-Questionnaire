@@ -1,23 +1,14 @@
 export const candidateStageValues = [
-  "new",
+  "applicant",
+  "pipeline",
   "screening",
   "interview",
   "testing",
   "decision",
-  "offer",
   "closed"
 ] as const;
 
 export type CandidateStage = (typeof candidateStageValues)[number];
-
-export const candidateFinalDecisionValues = [
-  "in_process",
-  "selected",
-  "rejected",
-  "on_hold"
-] as const;
-
-export type CandidateFinalDecision = (typeof candidateFinalDecisionValues)[number];
 
 export const candidateNextActionValues = [
   "schedule_interview",
@@ -62,34 +53,14 @@ export const candidateAssessmentStatusValues = [
 
 export type CandidateAssessmentStatus = (typeof candidateAssessmentStatusValues)[number];
 
-export const candidateUiStatusValues = [
-  "in_progress",
-  "need_review",
-  "moved_forward",
-  "rejected"
-] as const;
-
-export type CandidateUiStatus = (typeof candidateUiStatusValues)[number];
-
-export const candidateIntakeBucketValues = ["pipeline", "applicant"] as const;
-
-export type CandidateIntakeBucket = (typeof candidateIntakeBucketValues)[number];
-
 export const candidateStageLabels: Record<CandidateStage, string> = {
-  new: "Pipeline",
+  applicant: "Applicants",
+  pipeline: "Pipeline",
   screening: "Screener",
   interview: "Interview",
   testing: "Advanced Review",
   decision: "Finalized",
-  offer: "Offer",
   closed: "Closed"
-};
-
-export const candidateFinalDecisionLabels: Record<CandidateFinalDecision, string> = {
-  in_process: "In Process",
-  selected: "Selected",
-  rejected: "Rejected",
-  on_hold: "On Hold"
 };
 
 export const candidateNextActionLabels: Record<CandidateNextAction, string> = {
@@ -127,18 +98,6 @@ export const candidateAssessmentStatusLabels: Record<CandidateAssessmentStatus, 
   failed: "Failed"
 };
 
-export const candidateUiStatusLabels: Record<CandidateUiStatus, string> = {
-  in_progress: "In progress",
-  need_review: "Need review",
-  moved_forward: "Moved forward",
-  rejected: "Rejected"
-};
-
-export const candidateIntakeBucketLabels: Record<CandidateIntakeBucket, string> = {
-  pipeline: "Pipeline",
-  applicant: "Applicants"
-};
-
 export const resumeSourceOptions = [
   "LinkedIn",
   "Referral",
@@ -152,10 +111,6 @@ export function isCandidateStage(value: string): value is CandidateStage {
   return (candidateStageValues as readonly string[]).includes(value);
 }
 
-export function isCandidateFinalDecision(value: string): value is CandidateFinalDecision {
-  return (candidateFinalDecisionValues as readonly string[]).includes(value);
-}
-
 export function isCandidateNextAction(value: string): value is CandidateNextAction {
   return (candidateNextActionValues as readonly string[]).includes(value);
 }
@@ -166,12 +121,4 @@ export function isCandidateScreeningStatus(value: string): value is CandidateScr
 
 export function isCandidateAssessmentStatus(value: string): value is CandidateAssessmentStatus {
   return (candidateAssessmentStatusValues as readonly string[]).includes(value);
-}
-
-export function isCandidateUiStatus(value: string): value is CandidateUiStatus {
-  return (candidateUiStatusValues as readonly string[]).includes(value);
-}
-
-export function isCandidateIntakeBucket(value: string): value is CandidateIntakeBucket {
-  return (candidateIntakeBucketValues as readonly string[]).includes(value);
 }

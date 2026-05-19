@@ -5,8 +5,7 @@ import { resultReviewStateValues, type ResultReviewState } from "@/lib/assessmen
 import { Button } from "@/components/primitives/Button";
 import {
   candidateNoteTypeLabels,
-  candidateNoteTypeValues,
-  candidateUiStatusValues
+  candidateNoteTypeValues
 } from "@/lib/candidates/types";
 
 const fieldClass =
@@ -14,13 +13,6 @@ const fieldClass =
 
 const inputClass =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2.5 text-sm text-[color:var(--app-text)] outline-none";
-
-const linkedStatusLabels: Record<(typeof candidateUiStatusValues)[number], string> = {
-  in_progress: "In progress",
-  need_review: "Needs review",
-  moved_forward: "Advanced",
-  rejected: "Closed"
-};
 
 const reviewStateLabels: Record<ResultReviewState, string> = {
   unreviewed: "Unreviewed",
@@ -45,7 +37,7 @@ export function BulkReviewControls({
   onSelectAll: () => void;
   onClearSelection: () => void;
 }) {
-  const [action, setAction] = useState<"set_review_state" | "assign_owner" | "set_ui_status" | "add_note">("set_review_state");
+  const [action, setAction] = useState<"set_review_state" | "assign_owner" | "add_note">("set_review_state");
   if (selectedCount === 0) {
     return null;
   }
@@ -93,12 +85,11 @@ export function BulkReviewControls({
             name="action"
             value={action}
             onChange={(event) =>
-              setAction(event.target.value as "set_review_state" | "assign_owner" | "set_ui_status" | "add_note")
+              setAction(event.target.value as "set_review_state" | "assign_owner" | "add_note")
             }
             className={fieldClass}
           >
             <option value="set_review_state">Update review state</option>
-            <option value="set_ui_status">Update linked status</option>
             <option value="assign_owner">Assign linked owner</option>
             <option value="add_note">Add linked note</option>
           </select>
@@ -121,19 +112,6 @@ export function BulkReviewControls({
           <label className="grid gap-2">
             <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Linked owner</span>
             <input name="owner" placeholder="Owner or reviewer" className={inputClass} />
-          </label>
-        ) : null}
-
-        {action === "set_ui_status" ? (
-          <label className="grid gap-2">
-            <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Linked status</span>
-            <select name="status" defaultValue="moved_forward" className={fieldClass}>
-              {candidateUiStatusValues.map((status) => (
-                <option key={status} value={status}>
-                  {linkedStatusLabels[status]}
-                </option>
-              ))}
-            </select>
           </label>
         ) : null}
 

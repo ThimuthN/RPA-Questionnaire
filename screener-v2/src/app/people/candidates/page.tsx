@@ -96,12 +96,11 @@ export default async function PeopleCandidatesPage({
 
   const [page, departments] = await Promise.all([
     listCandidateWorkspacePage({
-      intakeBucket: "pipeline",
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
       stage: candidateStageValues.includes(params.stage as CandidateStage)
         ? (params.stage as CandidateStage)
-        : "new",
+        : "pipeline",
       owner: params.owner?.trim() || undefined,
       assessmentStatus: candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)
         ? (params.assessmentStatus as CandidateAssessmentStatus)

@@ -41,7 +41,9 @@ export async function POST(request: Request) {
       userId: session.userId,
       email: session.email,
       name: session.name,
-      accessLevel: session.accessLevel
+      roleId: session.roleId,
+      departmentId: session.departmentId,
+      permissions: session.permissions
     });
     const redirectTarget = sanitizeNextPath(body.next);
     const response = isFormRequest(request)

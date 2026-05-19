@@ -8,7 +8,6 @@ function candidate(overrides: Partial<CandidateListItem>): CandidateListItem {
     fullName: "Jane Doe",
     email: "jane@example.com",
     stage: "screening",
-    finalDecision: "in_process",
     nextAction: "follow_up",
     createdAt: "2026-03-20T00:00:00.000Z",
     updatedAt: "2026-03-20T00:00:00.000Z",

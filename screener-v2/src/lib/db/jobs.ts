@@ -1,8 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
-import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
-import type { CandidateIntakeBucket } from "@/lib/candidates/types";
 import {
   candidateApplicationStatusValues,
   isActiveApplicationStatus,
@@ -75,7 +73,6 @@ function mapApplication(row: {
     fullName: string;
     email: string;
     hrOwner: string | null;
-    intakeBucket: string;
     _count: { resumes: number };
   };
   jobPosting: {
@@ -91,7 +88,6 @@ function mapApplication(row: {
     candidateName: row.candidate.fullName,
     candidateEmail: row.candidate.email,
     candidateOwner: row.candidate.hrOwner ?? undefined,
-    candidateIntakeBucket: row.candidate.intakeBucket as CandidateIntakeBucket,
     hasResume: row.candidate._count.resumes > 0,
     jobPostingId: row.jobPosting.id,
     jobSlug: row.jobPosting.slug,
@@ -252,7 +248,6 @@ export async function getJobPosting(jobId: string) {
               fullName: true,
               email: true,
               hrOwner: true,
-              intakeBucket: true,
               _count: {
                 select: {
                   resumes: true
@@ -426,9 +421,6 @@ export async function listApplicantWorkspacePage(filters: {
 
   const rows = await prisma.candidateApplication.findMany({
     where: {
-      candidate: {
-        intakeBucket: "applicant"
-      },
       ...(filters.jobId ? { jobPostingId: filters.jobId } : {}),
       ...(filters.status
         ? { status: filters.status }
@@ -446,7 +438,6 @@ export async function listApplicantWorkspacePage(filters: {
           fullName: true,
           email: true,
           hrOwner: true,
-          intakeBucket: true,
           _count: {
             select: {
               resumes: true
@@ -677,8 +668,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
         resumeSource: "Company Website",
-        intakeBucket: "applicant",
-        ...candidateUiStatusToStoredFields("in_progress")
+        stage: "pipeline"
       });
       existingCandidate = {
         id: created.id,
@@ -753,8 +743,6 @@ export async function updateCandidateApplicationLifecycle(input: {
   action: "review" | "promote" | "close";
   hrOwner?: string;
 }) {
-  const fields = candidateUiStatusToStoredFields("in_progress");
-
   return prisma.$transaction(async (tx) => {
     const application = await tx.candidateApplication.findUnique({
       where: { id: input.applicationId },
@@ -807,10 +795,7 @@ export async function updateCandidateApplicationLifecycle(input: {
         where: { id: application.candidateId },
         data: {
           hrOwner: input.hrOwner?.trim() || undefined,
-          intakeBucket: "pipeline",
-          stage: fields.stage,
-          finalDecision: fields.finalDecision,
-          nextAction: fields.nextAction
+          stage: "pipeline"
         }
       });
     }

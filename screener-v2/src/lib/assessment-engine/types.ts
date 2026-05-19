@@ -1,5 +1,5 @@
 import type { SectionId } from "@/lib/sections/types";
-import type { CandidateAssessmentStatus, CandidateNextAction, CandidateStage, CandidateUiStatus } from "@/lib/candidates/types";
+import type { CandidateAssessmentStatus, CandidateNextAction, CandidateStage } from "@/lib/candidates/types";
 import type { ExamDefinitionId as RegistryExamDefinitionId } from "@/lib/exams/definitions";
 
 export type RoleId = "Intern" | "Associate" | "SE" | "SeniorSE" | "TechLead";
@@ -421,7 +421,6 @@ export interface ResultSummary {
   candidateOwner?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
-  candidateUiStatus?: CandidateUiStatus;
   candidateAssessmentStatus?: CandidateAssessmentStatus;
   candidateLatestActivityAt?: string;
   candidateStaleDays?: number;

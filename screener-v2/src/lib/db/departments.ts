@@ -9,6 +9,16 @@ export type DepartmentRecord = {
   sortOrder: number;
 };
 
+export type DepartmentDetail = DepartmentRecord;
+
+export type DepartmentUserRecord = {
+  id: string;
+  name: string | null;
+  email: string;
+  role: { id: string; label: string } | null;
+  permissionCount: number;
+};
+
 function slugify(name: string): string {
   return name
     .toLowerCase()
@@ -49,6 +59,50 @@ export async function getDepartment(id: string): Promise<DepartmentRecord | null
       sortOrder: true
     }
   });
+}
+
+export async function getDepartmentDetail(id: string): Promise<DepartmentDetail | null> {
+  return prisma.department.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      isActive: true,
+      sortOrder: true
+    }
+  });
+}
+
+export async function listDepartmentUsers(departmentId: string): Promise<DepartmentUserRecord[]> {
+  const users = await prisma.user.findMany({
+    where: { departmentId, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: {
+        select: {
+          id: true,
+          label: true
+        }
+      },
+      permissionOverrides: {
+        select: {
+          action: true
+        }
+      }
+    },
+    orderBy: [{ name: "asc" }, { email: "asc" }]
+  });
+
+  return users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    permissionCount: user.permissionOverrides?.length ?? 0
+  }));
 }
 
 export async function createDepartment(input: {

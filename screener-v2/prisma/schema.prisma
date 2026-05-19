@@ -8,12 +8,33 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-enum AppAccessLevel {
-  admin
-  recruiter
-  hiring_manager
-  interviewer
-  member
+enum AttemptStatus {
+  in_progress
+  submitted
+  graded
+  reviewed
+}
+
+enum ResultReviewState {
+  unreviewed
+  reviewed
+  flagged
+}
+
+enum CandidateMilestoneStatus {
+  pending
+  in_progress
+  completed
+  passed
+  failed
+}
+
+enum CandidateOfferStatus {
+  draft
+  sent
+  accepted
+  rejected
+  expired
 }
 
 model Department {
@@ -35,26 +56,25 @@ model Department {
 }
 
 model User {
-  id            String             @id @default(cuid())
-  email         String             @unique
-  name          String?
-  title         String?
-  department    String?
-  departmentId  String?
-  phone         String?
-  accessLevel   AppAccessLevel     @default(member)
-  passwordHash  String?
-  isInterviewer Boolean            @default(false)
-  isActive      Boolean            @default(true)
-  lastLoginAt   DateTime?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  dept          Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  ownedCandidates Candidate[]       @relation("HROwner")
-  interviewPanels InterviewPanelMember[]
-  interviewFeedbacks InterviewFeedback[]
+  id                      String                @id @default(cuid())
+  email                   String                @unique
+  name                    String?
+  departmentId            String?
+  roleId                  String?
+  passwordHash            String?
+  isActive                Boolean               @default(true)
+  lastLoginAt             DateTime?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  dept                    Department?           @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  role                    RoleCatalog?          @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  ownedCandidates         Candidate[]           @relation("HROwner")
+  interviewPanels         InterviewPanelMember[]
+  interviewFeedbacks      InterviewFeedback[]
+  permissionOverrides     UserPermissionOverride[]
 
   @@index([departmentId])
+  @@index([roleId])
 }
 
 model AssessmentTemplate {
@@ -154,24 +174,52 @@ model Invite {
 }
 
 model RoleCatalog {
-  id              String   @id @default(cuid())
-  slug            String   @unique
-  label           String
-  department      String?
-  departmentId    String?
-  sortOrder       Int      @default(0)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  dept            Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  candidates      Candidate[]
-  employees       Employee[]
-  jobPostings     JobPosting[]
-  departmentCandidacies DepartmentCandidacy[]
+  id                      String                      @id @default(cuid())
+  slug                    String                      @unique
+  label                   String
+  department              String?
+  departmentId            String?
+  sortOrder               Int                         @default(0)
+  isActive                Boolean                     @default(true)
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  dept                    Department?                 @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  candidates              Candidate[]
+  employees               Employee[]
+  jobPostings             JobPosting[]
+  departmentCandidacies   DepartmentCandidacy[]
+  users                   User[]
+  permissions             RolePermissionTemplate[]
 
   @@index([isActive, sortOrder])
   @@index([label, department])
   @@index([departmentId])
+}
+
+model RolePermissionTemplate {
+  id        String   @id @default(cuid())
+  roleId    String
+  role      RoleCatalog @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission String
+  scope     String   @default("own_dept")
+  createdAt DateTime @default(now())
+
+  @@unique([roleId, permission])
+  @@index([roleId])
+}
+
+model UserPermissionOverride {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission String
+  action    String
+  grantedBy String
+  reason    String?
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, permission])
+  @@index([userId])
 }
 
 model Participant {
@@ -188,11 +236,11 @@ model Participant {
 }
 
 model Attempt {
-  id                     String   @id @default(cuid())
+  id                     String         @id @default(cuid())
   assessmentVersionId    String
   inviteId               String?
   participantId          String
-  contextType            String   @default("general")
+  contextType            String         @default("general")
   integrityPreset        String?
   roleId                 String?
   passTargetPercent      Int
@@ -202,24 +250,24 @@ model Attempt {
   sectionStateJson       Json?
   seed                   Int
   stage                  String
-  status                 String
+  status                 AttemptStatus
   coreQuestionIdsJson    Json
   coreAnswersJson        Json
   practicalAnswerJson    Json
-  practicalEarned        Float    @default(0)
-  practicalPossible      Float    @default(0)
+  practicalEarned        Float          @default(0)
+  practicalPossible      Float          @default(0)
   logicReasoningAnswerJson Json?
-  logicReasoningEarned   Float    @default(0)
-  logicReasoningPossible Float    @default(0)
+  logicReasoningEarned   Float          @default(0)
+  logicReasoningPossible Float          @default(0)
   remainingCoreSeconds   Int
   remainingPracticalSeconds Int
   remainingLogicReasoningSeconds Int?
-  stateVersion           Int      @default(0)
+  stateVersion           Int            @default(0)
   integrityJson          Json
-  startedAt              DateTime @default(now())
+  startedAt              DateTime       @default(now())
   submittedAt            DateTime?
-  invite                 Invite?  @relation(fields: [inviteId], references: [id], onDelete: SetNull)
-  participant            Participant @relation(fields: [participantId], references: [id], onDelete: Restrict)
+  invite                 Invite?        @relation(fields: [inviteId], references: [id], onDelete: SetNull)
+  participant            Participant    @relation(fields: [participantId], references: [id], onDelete: Restrict)
   result                 Result?
   candidateAssessment    CandidateAssessment?
   candidateAssessmentAttempts CandidateAssessmentAttempt[]
@@ -230,10 +278,10 @@ model Attempt {
 }
 
 model Result {
-  id               String   @id @default(cuid())
-  attemptId        String   @unique
-  contextType      String   @default("general")
-  reviewState      String   @default("unreviewed")
+  id               String              @id @default(cuid())
+  attemptId        String              @unique
+  contextType      String              @default("general")
+  reviewState      ResultReviewState   @default(unreviewed)
   corePercent      Float
   practicalPercent Float
   finalPercent     Float
@@ -241,8 +289,8 @@ model Result {
   borderline       Boolean
   breakdownJson    Json
   exportedAt       DateTime?
-  createdAt        DateTime @default(now())
-  attempt          Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  createdAt        DateTime            @default(now())
+  attempt          Attempt             @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 
   @@index([finalPercent])
   @@index([reviewState, createdAt])
@@ -272,14 +320,11 @@ model Candidate {
   batchId            String?
   resumeSource       String?
   hrOwner            String?
-  intakeBucket       String   @default("pipeline")
-  stage              String   @default("new")
-  finalDecision      String   @default("in_process")
+  stage              String   @default("pipeline")
   nextAction         String   @default("none")
   screeningStatus    String?
   candidateFolderUrl String?
   notesSummary       String?
-  uiStatus           String   @default("in_progress")
   orgStatus          String   @default("active")
   searchVector       Unsupported("tsvector")?
   createdAt          DateTime @default(now())
@@ -301,11 +346,7 @@ model Candidate {
   @@index([departmentId])
   @@index([hrOwnerId])
   @@index([stage, updatedAt])
-  @@index([intakeBucket, updatedAt])
-  @@index([intakeBucket, stage, updatedAt]) // Compound index for efficient filtering by both intake and stage
-  @@index([finalDecision, stage, updatedAt])
   @@index([fullName])
-  @@index([uiStatus, updatedAt])
   @@index(fields: [searchVector], type: Gin, map: "candidate_fts_idx")
 }
 
@@ -393,11 +434,11 @@ model CandidateNote {
 }
 
 model CandidateMilestone {
-  id                   String   @id @default(cuid())
+  id                   String                    @id @default(cuid())
   candidateId          String
   type                 String
   title                String
-  status               String
+  status               CandidateMilestoneStatus
   sortOrder            Int
   mode                 String
   date                 DateTime?
@@ -405,14 +446,15 @@ model CandidateMilestone {
   score                Float?
   result               String?
   recommendation       String?
-  candidateAssessmentId String?  @unique
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  candidate            Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  candidateAssessment  CandidateAssessment? @relation(fields: [candidateAssessmentId], references: [id], onDelete: SetNull)
+  candidateAssessmentId String?                  @unique
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  candidate            Candidate                 @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  candidateAssessment  CandidateAssessment?      @relation(fields: [candidateAssessmentId], references: [id], onDelete: SetNull)
   checks               CandidateMilestoneCheck[]
   interviewPanel       InterviewPanel?
 
+  @@unique([candidateId, sortOrder])
   @@index([candidateId, sortOrder])
 }
 
@@ -513,7 +555,7 @@ model Employee {
   level            String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  candidate        Candidate?  @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  candidate        Candidate?  @relation(fields: [candidateId], references: [id], onDelete: Restrict)
   role             RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
   department       Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   manager          Employee?   @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
@@ -593,21 +635,21 @@ model PerformanceReview {
 }
 
 model CandidateOffer {
-  id                 String    @id @default(cuid())
-  candidateId        String    @unique
-  status             String    @default("draft")
-  compensationType   String    @default("salary")
+  id                 String                @id @default(cuid())
+  candidateId        String                @unique
+  status             CandidateOfferStatus  @default(draft)
+  compensationType   String                @default("salary")
   compensationAmount Int?
-  currency           String    @default("USD")
+  currency           String                @default("USD")
   targetStartDate    DateTime?
   expiresAt          DateTime?
   offerNotes         String?
   sentAt             DateTime?
   respondedAt        DateTime?
   createdById        String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  candidate          Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  candidate          Candidate             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([status, updatedAt])
   @@index([candidateId])

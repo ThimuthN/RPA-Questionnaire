@@ -1,5 +1,3 @@
-import type { AppAccessLevel } from "@/lib/auth/session";
-
 export type AppAction =
   | "manage_users"
   | "create_role"
@@ -9,24 +7,29 @@ export type AppAction =
   | "edit_job"
   | "view_candidates"
   | "manage_candidates"
+  | "promote_candidate"
+  | "delete_candidate"
+  | "hire_candidate"
   | "create_invite"
   | "view_results"
   | "manage_addons";
 
-const PERMISSIONS: Record<AppAction, AppAccessLevel[]> = {
-  manage_users: ["admin"],
-  create_role: ["admin", "recruiter"],
-  edit_role: ["admin", "recruiter"],
-  delete_role: ["admin"],
-  create_job: ["admin", "recruiter", "hiring_manager"],
-  edit_job: ["admin", "recruiter", "hiring_manager"],
-  view_candidates: ["admin", "recruiter", "hiring_manager"],
-  manage_candidates: ["admin", "recruiter"],
-  create_invite: ["admin", "recruiter", "hiring_manager"],
-  view_results: ["admin", "recruiter", "hiring_manager", "interviewer"],
-  manage_addons: ["admin"]
+// Default permission mappings for reference
+// These are now defined in RolePermissionTemplate table
+// This mapping is kept for documentation purposes
+export const DEFAULT_PERMISSIONS: Record<AppAction, string> = {
+  manage_users: "manage_users",
+  create_role: "create_role",
+  edit_role: "edit_role",
+  delete_role: "delete_role",
+  create_job: "create_job",
+  edit_job: "edit_job",
+  view_candidates: "view_candidates",
+  manage_candidates: "manage_candidates",
+  promote_candidate: "promote_candidate",
+  delete_candidate: "delete_candidate",
+  hire_candidate: "hire_candidate",
+  create_invite: "create_invite",
+  view_results: "view_results",
+  manage_addons: "manage_addons"
 };
-
-export function can(accessLevel: AppAccessLevel, action: AppAction): boolean {
-  return PERMISSIONS[action]?.includes(accessLevel) ?? false;
-}

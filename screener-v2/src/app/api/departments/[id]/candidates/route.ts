@@ -14,10 +14,8 @@ export async function GET(
 
   const { id: departmentId } = await params;
 
-  // Check permission: admin/recruiter can view all depts
-  const canView =
-    session.accessLevel === "admin" ||
-    session.accessLevel === "recruiter";
+  // Check permission: users with view_candidates permission can view
+  const canView = session.permissions.includes("view_candidates");
 
   if (!canView) {
     return NextResponse.json(

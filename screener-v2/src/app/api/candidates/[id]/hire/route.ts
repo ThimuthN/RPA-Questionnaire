@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireApiSession } from '@/lib/auth/guards';
+import { requireApiSession, requirePermission } from '@/lib/auth/guards';
 import { createRequestLogContext, logRouteError } from '@/lib/server/logger';
 import { prisma } from '@/lib/db/prisma';
 import { createEmployee } from '@/lib/employees/queries';
@@ -16,6 +16,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const auth = await requireApiSession();
     if (!auth.ok) return auth.response;
 
+    // Check permission
+    const permissionCheck = await requirePermission(auth.session, 'hire_candidate');
+    if (!permissionCheck.ok) return permissionCheck.response;
+
     const body = await request.json();
     const parsed = HireSchema.safeParse(body);
 
@@ -23,19 +27,50 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Invalid input' }, { status: 400 });
     }
 
-    // Fetch candidate and offer
+    // Fetch candidate and offer with assessments
     const candidate = await prisma.candidate.findUnique({
       where: { id },
-      include: { offer: true },
+      include: {
+        offer: true,
+        assessments: {
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            attempt: {
+              select: {
+                result: { select: { pass: true } }
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!candidate) {
       return NextResponse.json({ ok: false, message: 'Candidate not found' }, { status: 404 });
     }
 
+    // Validation: Candidate must be in decision stage
+    if (candidate.stage !== 'closed') {
+      return NextResponse.json(
+        { ok: false, message: 'Candidate must be in decision stage before hiring' },
+        { status: 400 }
+      );
+    }
+
+    // Validation: Offer must exist and be accepted
     if (!candidate.offer || candidate.offer.status !== 'accepted') {
       return NextResponse.json(
         { ok: false, message: 'Offer must be in accepted status before hiring' },
+        { status: 400 }
+      );
+    }
+
+    // Validation: Must have a passed assessment
+    const passedAssessment = candidate.assessments.find((a) => a.attempt?.result?.pass === true);
+    if (!passedAssessment) {
+      return NextResponse.json(
+        { ok: false, message: 'Candidate must have a passed assessment before hiring' },
         { status: 400 }
       );
     }
@@ -66,8 +101,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       where: { id },
       data: {
         stage: 'closed',
-        finalDecision: 'selected',
-        intakeBucket: 'pipeline',
       },
     });
 

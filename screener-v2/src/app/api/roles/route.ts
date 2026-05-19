@@ -41,7 +41,7 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "create_role");
+  const permission = await requirePermission(auth.session, "create_role");
   if (!permission.ok) {
     return permission.response;
   }

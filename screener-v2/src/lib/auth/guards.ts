@@ -6,7 +6,7 @@ import {
   getRuntimeSession,
   runtimeSessionMatchesAttempt
 } from "@/lib/auth/runtime-session";
-import { can, type AppAction } from "@/lib/auth/permissions";
+import type { AppAction } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
 
 type ApiAuthSuccess = { ok: true; session: AppSession };
@@ -33,7 +33,7 @@ export async function requireAdminPageSession(
   fallbackPath: Route = "/create-test"
 ) {
   const session = await requirePageSession(nextPath);
-  if (session.accessLevel !== "admin") {
+  if (!session.permissions.includes("manage_users")) {
     redirect(fallbackPath);
   }
   return session;
@@ -52,14 +52,16 @@ export async function requireAdminApiSession(): Promise<ApiAuthSuccess | ApiAuth
   if (!auth.ok) {
     return auth;
   }
-  if (auth.session.accessLevel !== "admin") {
+  if (!auth.session.permissions.includes("manage_users")) {
     return { ok: false, response: forbiddenApi() };
   }
   return auth;
 }
 
 export function requirePermission(session: AppSession, action: AppAction) {
-  if (!can(session.accessLevel, action)) {
+  // Check if the permission for this action is in the session permissions
+  // For now, map actions to permissions (action name is same as permission name)
+  if (!session.permissions.includes(action)) {
     return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
   }
   return { ok: true as const };

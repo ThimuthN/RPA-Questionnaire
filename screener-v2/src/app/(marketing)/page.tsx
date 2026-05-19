@@ -18,13 +18,15 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
+import { candidateStageLabels } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 
-function candidateStatusTone(status: string) {
-  if (status === "need_review") return "amber";
-  if (status === "moved_forward") return "emerald";
-  if (status === "rejected") return "red";
+function candidateStatusTone(stage: string) {
+  if (stage === "interview") return "amber";
+  if (stage === "testing") return "amber";
+  if (stage === "decision") return "amber";
+  if (stage === "closed") return "emerald";
   return "blue";
 }
 
@@ -42,7 +44,7 @@ export default async function MarketingHomePage() {
   const secondaryHeroLabel = session ? "Open results" : "Watch demo";
   const [candidateWorkspace, resultWorkspace] = session
       ? await Promise.all([
-        listCandidateWorkspacePage({ intakeBucket: "pipeline", sort: "inbox", pageSize: 5 }),
+        listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),
         listResultWorkspacePage({ pageSize: 5 })
       ])
     : [null, null];
@@ -337,7 +339,7 @@ export default async function MarketingHomePage() {
                                   </p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
-                                  <StatusPill label={candidate.uiStatus.replace(/_/g, " ")} tone={candidateStatusTone(candidate.uiStatus)} />
+                                  <StatusPill label={candidateStageLabels[candidate.stage]} tone={candidateStatusTone(candidate.stage)} />
                                   <StatusPill label={`${candidate.staleDays}d stale`} tone={candidate.staleDays >= 7 ? "red" : "neutral"} />
                                 </div>
                               </div>

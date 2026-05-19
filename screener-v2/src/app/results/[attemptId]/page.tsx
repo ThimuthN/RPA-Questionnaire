@@ -19,7 +19,7 @@ import { copy } from "@/lib/design/copy";
 import type { ResultSummary } from "@/lib/assessment-engine/types";
 import { confidenceBand } from "@/lib/assessment-engine/thresholds";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
-import { candidateStageLabels, candidateUiStatusLabels } from "@/lib/candidates/types";
+import { candidateStageLabels } from "@/lib/candidates/types";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
 
@@ -155,9 +155,6 @@ export default async function ResultDetailPage({
               {candidate ? (
                 <div className="mt-4 space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    {row.candidateUiStatus ? (
-                      <StatusPill label={candidateUiStatusLabels[row.candidateUiStatus]} tone={row.candidateUiStatus === "moved_forward" ? "emerald" : row.candidateUiStatus === "need_review" ? "amber" : row.candidateUiStatus === "rejected" ? "red" : "blue"} />
-                    ) : null}
                     {row.candidateStage ? (
                       <StatusPill label={candidateStageLabels[row.candidateStage]} tone="neutral" />
                     ) : null}

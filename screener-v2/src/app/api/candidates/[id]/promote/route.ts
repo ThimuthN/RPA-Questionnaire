@@ -1,25 +1,25 @@
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { candidateStageValues, type CandidateStage } from "@/lib/candidates/types";
 import { cuidLike } from "@/lib/tokens/token-service";
 
 const stageOrder: Record<CandidateStage, number> = {
-  new: 1,
-  screening: 2,
-  interview: 3,
-  testing: 4,
-  decision: 5,
-  offer: 6,
+  applicant: 1,
+  pipeline: 2,
+  screening: 3,
+  interview: 4,
+  testing: 5,
+  decision: 6,
   closed: 7
 };
 
 const nextStage: Record<CandidateStage, CandidateStage | null> = {
-  new: "screening",
+  applicant: "pipeline",
+  pipeline: "screening",
   screening: "interview",
   interview: "testing",
   testing: "decision",
-  decision: "offer",
-  offer: "closed",
+  decision: "closed",
   closed: null
 };
 
@@ -31,12 +31,33 @@ export async function POST(
   if (!auth.ok) {
     return auth.response;
   }
+
+  // Check permission
+  const permissionCheck = await requirePermission(auth.session, "promote_candidate");
+  if (!permissionCheck.ok) {
+    return permissionCheck.response;
+  }
+
   const { session } = auth;
   const { id: candidateId } = await params;
 
   const candidate = await prisma.candidate.findUnique({
     where: { id: candidateId },
-    select: { id: true, stage: true }
+    select: {
+      id: true,
+      stage: true,
+      assessments: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          attempt: {
+            select: {
+              result: { select: { pass: true } }
+            }
+          }
+        }
+      }
+    }
   });
 
   if (!candidate) {
@@ -51,6 +72,28 @@ export async function POST(
       { error: `Cannot promote from stage ${currentStage}` },
       { status: 400 }
     );
+  }
+
+  // Validation: Cannot promote to closed without passed assessment
+  if (next === "closed") {
+    const passedAssessment = candidate.assessments.find((a) => a.attempt?.result?.pass === true);
+    if (!passedAssessment) {
+      return Response.json(
+        { error: "Cannot close candidate without a passed assessment. Complete and pass an assessment first." },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Validation: Cannot promote to testing without a completed assessment
+  if (next === "testing" && currentStage === "screening") {
+    const hasAssessment = candidate.assessments.length > 0;
+    if (!hasAssessment) {
+      return Response.json(
+        { error: "Cannot advance to testing without an assessment. Create an assessment first." },
+        { status: 400 }
+      );
+    }
   }
 
   await prisma.$transaction(async (tx) => {

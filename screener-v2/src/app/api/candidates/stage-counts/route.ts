@@ -6,25 +6,18 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   await requireApiSession();
 
-  const [stageCounts, applicantCount] = await Promise.all([
-    prisma.candidate.groupBy({
-      by: ["stage"],
-      where: { intakeBucket: "pipeline" },
-      _count: true
-    }),
-    prisma.candidate.count({
-      where: { intakeBucket: "applicant" }
-    })
-  ]);
+  const stageCounts = await prisma.candidate.groupBy({
+    by: ["stage"],
+    _count: true
+  });
 
   const counts: Record<string, number> = {
-    applicants: applicantCount,
-    new: 0,
+    applicant: 0,
+    pipeline: 0,
     screening: 0,
     interview: 0,
     testing: 0,
     decision: 0,
-    offer: 0,
     closed: 0
   };
 

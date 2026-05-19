@@ -6,7 +6,6 @@ import type { AppUserRow } from "@/lib/auth/app-auth";
 
 export function UserFilters({ users }: { users: AppUserRow[] }) {
   const [search, setSearch] = useState("");
-  const [accessLevelFilter, setAccessLevelFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active">("all");
 
@@ -22,34 +21,21 @@ export function UserFilters({ users }: { users: AppUserRow[] }) {
         user.name?.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase());
 
-      const matchesAccessLevel = accessLevelFilter === "all" || user.accessLevel === accessLevelFilter;
       const matchesDept = departmentFilter === "all" || user.dept?.name === departmentFilter;
       const matchesStatus = statusFilter === "all" || (statusFilter === "active" && user.isActive);
 
-      return matchesSearch && matchesAccessLevel && matchesDept && matchesStatus;
+      return matchesSearch && matchesDept && matchesStatus;
     });
-  }, [users, search, accessLevelFilter, departmentFilter, statusFilter]);
+  }, [users, search, departmentFilter, statusFilter]);
 
   return (
     <div className="space-y-4 border-b border-[color:var(--app-border)] pb-4">
-      <div className="grid gap-4 lg:grid-cols-4">
+      <div className="grid gap-4 lg:grid-cols-3">
         <FormInput
           placeholder="Search by name or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-
-        <select
-          value={accessLevelFilter}
-          onChange={(e) => setAccessLevelFilter(e.target.value)}
-          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-        >
-          <option value="all">All roles</option>
-          <option value="admin">Admin</option>
-          <option value="recruiter">Recruiter</option>
-          <option value="hiring_manager">Hiring Manager</option>
-          <option value="interviewer">Interviewer</option>
-        </select>
 
         <select
           value={departmentFilter}

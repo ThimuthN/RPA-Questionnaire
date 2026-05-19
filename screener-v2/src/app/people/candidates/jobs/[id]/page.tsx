@@ -171,19 +171,11 @@ export default async function EditJobPostingPage({
                         <p className="text-xs text-[color:var(--app-muted)]">{application.candidateEmail}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {application.candidateIntakeBucket === "applicant" ? (
-                          <Link href={`/people/candidates/applicants/${application.id}` as Route}>
-                            <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
-                              Open review
-                            </Button>
-                          </Link>
-                        ) : (
-                          <Link href={`/candidates/${application.candidateId}` as Route}>
-                            <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
-                              Open candidate
-                            </Button>
-                          </Link>
-                        )}
+                        <Link href={`/candidates/${application.candidateId}` as Route}>
+                          <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
+                            Open candidate
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   ))}

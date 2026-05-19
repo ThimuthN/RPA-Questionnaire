@@ -82,7 +82,6 @@ describe("candidate department separation", () => {
         email: "diana@example.com",
         fullName: "Diana",
         stage: "screening",
-        finalDecision: "in_process",
         hrOwnerId: "user-1",
         departmentId: "dept-eng",
         roleId: "role-eng",
@@ -98,7 +97,6 @@ describe("candidate department separation", () => {
       expect(updatedCandidate.email).toBe(candidate.email);
       expect(updatedCandidate.fullName).toBe(candidate.fullName);
       expect(updatedCandidate.stage).toBe(candidate.stage);
-      expect(updatedCandidate.finalDecision).toBe(candidate.finalDecision);
       expect(updatedCandidate.hrOwnerId).toBe(candidate.hrOwnerId);
       expect(updatedCandidate.departmentId).toBe("dept-product");
       expect(updatedCandidate.roleId).toBeNull();

@@ -146,8 +146,7 @@ export async function listCandidaciesForDepartment(filters: ListCandidaciesForDe
             fullName: true,
             email: true,
             phone: true,
-            stage: true,
-            finalDecision: true
+            stage: true
           }
         },
         department: {
@@ -188,7 +187,6 @@ export async function listCandidaciesForDepartment(filters: ListCandidaciesForDe
       candidateEmail: r.candidate.email,
       candidatePhone: r.candidate.phone ?? undefined,
       candidateStage: r.candidate.stage,
-      candidateFinalDecision: r.candidate.finalDecision,
       departmentName: r.department.name,
       roleName: r.role?.label ?? undefined,
       createdAt: r.createdAt.toISOString(),

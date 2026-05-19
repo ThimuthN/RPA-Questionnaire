@@ -182,7 +182,7 @@ export async function resolveOrCreateRoleCatalogEntry(input: {
 export async function getRoleUsageCounts(roleId: string) {
   const [openJobCount, pipelineCandidateCount] = await Promise.all([
     prisma.jobPosting.count({ where: { roleId, isOpen: true } }),
-    prisma.candidate.count({ where: { roleId, intakeBucket: "pipeline" } })
+    prisma.candidate.count({ where: { roleId, stage: "pipeline" } })
   ]);
   return { openJobCount, pipelineCandidateCount };
 }

@@ -5,8 +5,7 @@ import type {
 } from "@/lib/assessment-engine/types";
 import type {
   CandidateNextAction,
-  CandidateStage,
-  CandidateUiStatus
+  CandidateStage
 } from "@/lib/candidates/types";
 import { getIntegrityRiskLevel, getIntegrityRiskScore, getResultStatus, type IntegrityRiskLevel, type ResultStatusFilter } from "@/lib/results/triage";
 
@@ -23,7 +22,6 @@ export interface WorkspaceResultRow extends ResultSummary {
   candidateRoleLabel?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
-  candidateUiStatus?: CandidateUiStatus;
   candidateLatestActivityAt?: string;
   candidateStaleDays?: number;
   candidateNotesSummary?: string;
@@ -54,7 +52,6 @@ type WorkspaceResultExtras = {
   candidateOwner?: string;
   candidateStage?: CandidateStage;
   candidateNextAction?: CandidateNextAction;
-  candidateUiStatus?: CandidateUiStatus;
   candidateLatestActivityAt?: string;
   candidateStaleDays?: number;
   candidateNotesSummary?: string;
@@ -117,7 +114,6 @@ export function toWorkspaceResultRow(
     candidateOwner: extras?.candidateOwner,
     candidateStage: extras?.candidateStage,
     candidateNextAction: extras?.candidateNextAction,
-    candidateUiStatus: extras?.candidateUiStatus,
     candidateLatestActivityAt: extras?.candidateLatestActivityAt,
     candidateStaleDays: extras?.candidateStaleDays,
     candidateNotesSummary: extras?.candidateNotesSummary,

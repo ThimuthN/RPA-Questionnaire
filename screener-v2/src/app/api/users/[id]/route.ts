@@ -7,12 +7,8 @@ import { updateAppUser, deactivateAppUser, reactivateAppUser } from "@/lib/auth/
 const updateUserSchema = z.object({
   action: z.enum(["update", "deactivate", "reactivate"]).default("update"),
   name: z.string().optional(),
-  title: z.string().optional(),
-  department: z.string().optional(),
   departmentId: z.string().optional(),
-  phone: z.string().optional(),
-  accessLevel: z.enum(["admin", "recruiter", "hiring_manager", "interviewer"]).optional(),
-  isInterviewer: z.boolean().optional(),
+  roleId: z.string().optional(),
   isActive: z.boolean().optional()
 });
 
@@ -50,12 +46,8 @@ export async function POST(
       await updateAppUser({
         userId: id,
         name: body.name,
-        title: body.title,
-        department: body.department,
         departmentId: body.departmentId,
-        phone: body.phone,
-        accessLevel: body.accessLevel,
-        isInterviewer: body.isInterviewer,
+        roleId: body.roleId,
         isActive: body.isActive,
         actorId: auth.session.userId,
         actorEmail: auth.session.email

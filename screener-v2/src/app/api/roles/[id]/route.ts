@@ -17,7 +17,7 @@ export async function PUT(
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "edit_role");
+  const permission = await requirePermission(auth.session, "edit_role");
   if (!permission.ok) {
     return permission.response;
   }
@@ -56,7 +56,7 @@ export async function DELETE(
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "delete_role");
+  const permission = await requirePermission(auth.session, "delete_role");
   if (!permission.ok) {
     return permission.response;
   }

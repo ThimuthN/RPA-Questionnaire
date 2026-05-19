@@ -1,18 +1,13 @@
 import type { Route } from "next";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db/prisma";
+import { getEffectivePermissions } from "@/lib/auth/permission-evaluator";
 import {
   SESSION_COOKIE_NAME,
   sanitizeNextPath,
   verifySessionToken,
-  type AppAccessLevel,
   type AppSession
 } from "@/lib/auth/session";
-
-function normalizeAccessLevel(accessLevel: string): AppAccessLevel {
-  const valid: AppAccessLevel[] = ["admin", "recruiter", "hiring_manager", "interviewer", "member"];
-  return valid.includes(accessLevel as AppAccessLevel) ? (accessLevel as AppAccessLevel) : "member";
-}
 
 export async function getAppSession(): Promise<AppSession | null> {
   const cookieStore = await cookies();
@@ -26,7 +21,8 @@ export async function getAppSession(): Promise<AppSession | null> {
       id: true,
       email: true,
       name: true,
-      accessLevel: true
+      roleId: true,
+      departmentId: true
     }
   });
 
@@ -34,12 +30,17 @@ export async function getAppSession(): Promise<AppSession | null> {
     return null;
   }
 
+  // Load fresh permissions for this session
+  const permissions = await getEffectivePermissions(user.id);
+
   return {
     ...session,
     userId: user.id,
     email: user.email,
     name: user.name,
-    accessLevel: normalizeAccessLevel(user.accessLevel)
+    roleId: user.roleId,
+    departmentId: user.departmentId,
+    permissions
   };
 }
 

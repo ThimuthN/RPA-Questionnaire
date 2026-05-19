@@ -51,7 +51,6 @@ export type CandidateApplicationListItem = {
   candidateName: string;
   candidateEmail: string;
   candidateOwner?: string;
-  candidateIntakeBucket: "pipeline" | "applicant";
   hasResume: boolean;
   jobPostingId: string;
   jobSlug: string;

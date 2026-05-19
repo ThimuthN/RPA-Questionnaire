@@ -1,9 +1,7 @@
 import type {
   CandidateAssessmentStatus,
-  CandidateNextAction,
-  CandidateUiStatus
+  CandidateNextAction
 } from "@/lib/candidates/types";
-import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import type { CandidateDetail, CandidateListItem, CandidateNoteRecord } from "@/lib/db/candidates";
 
 export type CandidateOpenWorkBucket =
@@ -17,7 +15,6 @@ export type CandidateOpenWorkBucket =
 export type CandidateListSort = "updated_desc" | "updated_asc" | "name_asc" | "stale_desc" | "inbox";
 
 export interface CandidateWorkspaceItem extends CandidateListItem {
-  uiStatus: CandidateUiStatus;
   latestAssessmentStatus: CandidateAssessmentStatus;
   latestActivityAt: string;
   staleDays: number;
@@ -76,7 +73,7 @@ function latestActivityAt(candidate: CandidateListItem) {
 
 function openWorkBucket(args: {
   hasResume: boolean;
-  uiStatus: CandidateUiStatus;
+  stage: string;
   staleDays: number;
   assessmentStatus: CandidateAssessmentStatus;
   nextAction: CandidateNextAction;
@@ -91,32 +88,26 @@ function openWorkBucket(args: {
   ) {
     return "ready_for_review" as const;
   }
-  if (args.staleDays >= 7 && args.uiStatus !== "moved_forward" && args.uiStatus !== "rejected") {
+  if (args.staleDays >= 7 && args.stage !== "decision" && args.stage !== "closed") {
     return "stalled" as const;
   }
-  if (args.uiStatus === "moved_forward") return "moved_forward" as const;
+  if (args.stage === "decision") return "moved_forward" as const;
   return "in_progress" as const;
 }
 
 export function toCandidateWorkspaceItem(candidate: CandidateListItem): CandidateWorkspaceItem {
   const assessmentStatus = latestAssessmentStatus(candidate);
-  const uiStatus = getCandidateUiStatus({
-    stage: candidate.stage,
-    finalDecision: candidate.finalDecision,
-    nextAction: candidate.nextAction,
-  });
   const activityAt = latestActivityAt(candidate);
   const staleDays = daysSince(activityAt);
 
   return {
     ...candidate,
-    uiStatus,
     latestAssessmentStatus: assessmentStatus,
     latestActivityAt: activityAt,
     staleDays,
     openWorkBucket: openWorkBucket({
       hasResume: candidate.hasResume,
-      uiStatus,
+      stage: candidate.stage,
       staleDays,
       assessmentStatus,
       nextAction: candidate.nextAction

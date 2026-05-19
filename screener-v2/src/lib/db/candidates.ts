@@ -25,15 +25,11 @@ import {
 import { listRoleCatalog, resolveOrCreateRoleCatalogEntry } from "@/lib/roles/catalog";
 import type {
   CandidateAssessmentStatus,
-  CandidateFinalDecision,
-  CandidateIntakeBucket,
   CandidateNextAction,
   CandidateNoteType,
   CandidateScreeningStatus,
-  CandidateStage,
-  CandidateUiStatus
+  CandidateStage
 } from "@/lib/candidates/types";
-import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { linkCandidateAssessmentAttemptInTx } from "@/lib/db/candidate-assessment-links";
 import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import { cuidLike } from "@/lib/tokens/token-service";
@@ -55,9 +51,7 @@ export interface CandidateRecord {
   resumeSource?: string;
   hrOwner?: string;
   hrOwnerId?: string;
-  intakeBucket: CandidateIntakeBucket;
   stage: CandidateStage;
-  finalDecision: CandidateFinalDecision;
   nextAction: CandidateNextAction;
   screeningStatus?: CandidateScreeningStatus;
   orgStatus?: "active" | "talent_pool" | "org_rejected";
@@ -205,9 +199,7 @@ export interface CandidateDetail extends CandidateRecord {
 export interface CandidateWorkspaceFilters {
   q?: string;
   roleId?: string;
-  intakeBucket?: CandidateIntakeBucket;
   jobId?: string;
-  status?: CandidateUiStatus;
   stage?: CandidateStage;
   owner?: string;
   assessmentStatus?: CandidateAssessmentStatus;
@@ -253,9 +245,7 @@ export function mapCandidate(row: {
   batchId: string | null;
   resumeSource: string | null;
   hrOwner: string | null;
-  intakeBucket: string;
   stage: string;
-  finalDecision: string;
   nextAction: string;
   screeningStatus: string | null;
   candidateFolderUrl: string | null;
@@ -279,9 +269,7 @@ export function mapCandidate(row: {
     resumeSource: row.resumeSource ?? undefined,
     hrOwner: row.hrOwner ?? undefined,
     hrOwnerId: row.hrOwnerId ?? undefined,
-    intakeBucket: row.intakeBucket as CandidateIntakeBucket,
     stage: row.stage as CandidateStage,
-    finalDecision: row.finalDecision as CandidateFinalDecision,
     nextAction: row.nextAction as CandidateNextAction,
     screeningStatus: (row.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
@@ -568,9 +556,7 @@ export async function createCandidate(input: {
   batchId?: string;
   resumeSource?: string;
   hrOwner?: string;
-  intakeBucket?: CandidateIntakeBucket;
   stage?: CandidateStage;
-  finalDecision?: CandidateFinalDecision;
   nextAction?: CandidateNextAction;
   screeningStatus?: CandidateScreeningStatus;
   candidateFolderUrl?: string;
@@ -602,9 +588,7 @@ export async function createCandidate(input: {
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
-        intakeBucket: input.intakeBucket ?? "pipeline",
-        stage: input.stage ?? "new",
-        finalDecision: input.finalDecision ?? "in_process",
+        stage: input.stage ?? "applicant",
         nextAction: input.nextAction ?? "none",
         screeningStatus: input.screeningStatus ?? null,
         candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
@@ -654,9 +638,7 @@ export async function createCandidatesBatch(
     batchId?: string;
     resumeSource?: string;
     hrOwner?: string;
-    intakeBucket?: CandidateIntakeBucket;
     stage?: CandidateStage;
-    finalDecision?: CandidateFinalDecision;
     nextAction?: CandidateNextAction;
     screeningStatus?: CandidateScreeningStatus;
     candidateFolderUrl?: string;
@@ -698,9 +680,7 @@ export async function createCandidatesBatch(
     batchId: string | null;
     resumeSource: string | null;
     hrOwner: string | null;
-    intakeBucket: string;
     stage: string;
-    finalDecision: string;
     nextAction: string;
     screeningStatus: string | null;
     candidateFolderUrl: string | null;
@@ -735,9 +715,7 @@ export async function createCandidatesBatch(
       batchId: input.batchId?.trim() || null,
       resumeSource: input.resumeSource?.trim() || null,
       hrOwner: input.hrOwner?.trim() || null,
-      intakeBucket: input.intakeBucket ?? "pipeline",
-      stage: input.stage ?? "new",
-      finalDecision: input.finalDecision ?? "in_process",
+      stage: input.stage ?? "applicant",
       nextAction: input.nextAction ?? "none",
       screeningStatus: input.screeningStatus ?? null,
       candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
@@ -782,7 +760,6 @@ export async function updateCandidate(
     departmentId?: string;
     hrOwnerId?: string;
     stage: CandidateStage;
-    finalDecision: CandidateFinalDecision;
     nextAction: CandidateNextAction;
     screeningStatus?: CandidateScreeningStatus;
     candidateFolderUrl?: string;
@@ -811,7 +788,6 @@ export async function updateCandidate(
         phone: true,
         roleId: true,
         stage: true,
-        finalDecision: true,
         nextAction: true,
         hrOwner: true,
         screeningStatus: true
@@ -832,7 +808,6 @@ export async function updateCandidate(
         departmentId: input.departmentId || null,
         hrOwnerId: input.hrOwnerId || null,
         stage: input.stage,
-        finalDecision: input.finalDecision,
         nextAction: input.nextAction,
         screeningStatus: input.screeningStatus ?? null,
         candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
@@ -859,7 +834,6 @@ export async function updateCandidate(
     if (current && current.email !== normalizedEmail) changedFields.push("email");
     if (current && current.phone !== (input.phone?.trim() || null)) changedFields.push("phone");
     if (current && current.stage !== input.stage) changedFields.push("stage");
-    if (current && current.finalDecision !== input.finalDecision) changedFields.push("decision");
     if (current && current.nextAction !== input.nextAction) changedFields.push("nextAction");
     if (current && current.hrOwner !== (input.hrOwner?.trim() || null)) changedFields.push("owner");
     if (current && current.screeningStatus !== (input.screeningStatus ?? null)) changedFields.push("screeningStatus");
@@ -1209,9 +1183,9 @@ async function logActivityEvent(
 
 export async function bulkUpdateCandidates(input: {
   candidateIds: string[];
-  action: "assign_owner" | "set_ui_status" | "add_note" | "set_department" | "nominate_to_dept" | "set_org_status";
+  action: "assign_owner" | "set_stage" | "add_note" | "set_department" | "nominate_to_dept" | "set_org_status";
   owner?: string;
-  status?: CandidateUiStatus;
+  stage?: CandidateStage;
   roleId?: string;
   departmentId?: string;
   hrOwnerId?: string;
@@ -1251,18 +1225,15 @@ export async function bulkUpdateCandidates(input: {
     return { updatedCount: candidateIds.length };
   }
 
-  if (input.action === "set_ui_status") {
-    if (!input.status) {
-      throw new Error("Choose a status.");
+  if (input.action === "set_stage") {
+    if (!input.stage) {
+      throw new Error("Choose a stage.");
     }
 
-    const fields = candidateUiStatusToStoredFields(input.status);
     await prisma.candidate.updateMany({
       where: { id: { in: candidateIds } },
       data: {
-        stage: fields.stage,
-        finalDecision: fields.finalDecision,
-        nextAction: fields.nextAction,
+        stage: input.stage,
         updatedAt: new Date()
       }
     });
@@ -1843,25 +1814,17 @@ export async function findExistingCandidateByEmail(email: string) {
 
 function buildCandidateWhere(filters?: {
   roleId?: string;
-  intakeBucket?: CandidateIntakeBucket;
   stage?: CandidateStage;
-  finalDecision?: CandidateFinalDecision;
   q?: string;
   owner?: string;
 }): Prisma.CandidateWhereInput {
   const where: Prisma.CandidateWhereInput = {};
 
-  if (filters?.intakeBucket) {
-    where.intakeBucket = filters.intakeBucket;
-  }
   if (filters?.roleId) {
     where.roleId = filters.roleId;
   }
   if (filters?.stage) {
     where.stage = filters.stage;
-  }
-  if (filters?.finalDecision) {
-    where.finalDecision = filters.finalDecision;
   }
   if (filters?.owner) {
     where.hrOwnerId = filters.owner;
@@ -1874,17 +1837,13 @@ function buildCandidateWhere(filters?: {
 
 export async function listCandidates(filters?: {
   roleId?: string;
-  intakeBucket?: CandidateIntakeBucket;
   stage?: CandidateStage;
-  finalDecision?: CandidateFinalDecision;
   assessmentStatus?: CandidateAssessmentStatus;
 }) {
   const rows = await prisma.candidate.findMany({
     where: buildCandidateWhere({
-      intakeBucket: filters?.intakeBucket,
       roleId: filters?.roleId,
-      stage: filters?.stage,
-      finalDecision: filters?.finalDecision
+      stage: filters?.stage
     }),
     orderBy: { updatedAt: "desc" },
     include: {
@@ -1992,7 +1951,6 @@ export async function listCandidateWorkspacePage(
   const skip = (page - 1) * pageSize;
 
   const where = buildCandidateWhere({
-    intakeBucket: filters.intakeBucket,
     roleId: filters.roleId,
     stage: filters.stage,
     owner: filters.owner
@@ -2121,7 +2079,6 @@ export async function listCandidateWorkspacePage(
   });
 
   const workspaceRows = candidates.map(toCandidateWorkspaceItem).filter((row) => {
-    if (filters.status && row.uiStatus !== filters.status) return false;
     if (filters.assessmentStatus) {
       const status = row.latestAssessment?.status ?? "none";
       if (status !== filters.assessmentStatus) return false;

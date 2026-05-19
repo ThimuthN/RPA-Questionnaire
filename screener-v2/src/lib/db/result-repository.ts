@@ -7,15 +7,12 @@ import {
 import { attachExistingAssessmentToMilestone } from "@/lib/db/candidates";
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
 import { syncCandidateAssessmentLatestAttemptInTx } from "@/lib/db/candidate-assessment-links";
-import { getCandidateUiStatus } from "@/lib/candidates/ui-status";
 import type {
   CandidateAssessmentStatus,
-  CandidateFinalDecision,
   CandidateNoteType,
   CandidateNextAction,
   CandidateScreeningStatus,
-  CandidateStage,
-  CandidateUiStatus
+  CandidateStage
 } from "@/lib/candidates/types";
 import type {
   DetailedResultSummary,
@@ -109,7 +106,6 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
                   hrOwner: true,
                   stage: true,
                   nextAction: true,
-                  finalDecision: true,
                   screeningStatus: true,
                   notesSummary: true,
                   updatedAt: true,
@@ -140,13 +136,6 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         : row.borderline
           ? "review"
           : "failed";
-      const uiStatus: CandidateUiStatus | undefined = candidate
-        ? getCandidateUiStatus({
-            stage: candidate.stage as CandidateStage,
-            finalDecision: candidate.finalDecision as CandidateFinalDecision,
-            nextAction: candidate.nextAction as CandidateNextAction,
-          })
-        : undefined;
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
       const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
       const staleDays = Math.max(
@@ -164,7 +153,6 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         candidateOwner: candidate?.hrOwner ?? undefined,
         candidateStage: candidate?.stage as CandidateStage | undefined,
         candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
-        candidateUiStatus: uiStatus,
         candidateLatestActivityAt: latestActivityAt,
         candidateStaleDays: staleDays,
         candidateNotesSummary: candidate?.notesSummary ?? undefined
@@ -207,7 +195,6 @@ export async function listResultWorkspacePage(
                   hrOwner: true,
                   stage: true,
                   nextAction: true,
-                  finalDecision: true,
                   screeningStatus: true,
                   notesSummary: true,
                   updatedAt: true,
@@ -234,13 +221,6 @@ export async function listResultWorkspacePage(
         : row.borderline
           ? "review"
           : "failed";
-      const uiStatus: CandidateUiStatus | undefined = candidate
-        ? getCandidateUiStatus({
-            stage: candidate.stage as CandidateStage,
-            finalDecision: candidate.finalDecision as CandidateFinalDecision,
-            nextAction: candidate.nextAction as CandidateNextAction,
-          })
-        : undefined;
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
       const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
       const staleDays = Math.max(
@@ -258,7 +238,6 @@ export async function listResultWorkspacePage(
         candidateOwner: candidate?.hrOwner ?? undefined,
         candidateStage: candidate?.stage as CandidateStage | undefined,
         candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
-        candidateUiStatus: uiStatus,
         candidateLatestActivityAt: latestActivityAt,
         candidateStaleDays: staleDays,
         candidateNotesSummary: candidate?.notesSummary ?? undefined
@@ -294,10 +273,9 @@ export async function listResultWorkspacePage(
 
 export async function bulkUpdateResults(input: {
   attemptIds: string[];
-  action: "set_review_state" | "assign_owner" | "set_ui_status" | "add_note";
+  action: "set_review_state" | "assign_owner" | "add_note";
   reviewState?: ResultReviewState;
   owner?: string;
-  status?: CandidateUiStatus;
   noteBody?: string;
   noteType?: CandidateNoteType;
   createdById?: string;
@@ -349,9 +327,8 @@ export async function bulkUpdateResults(input: {
 
   return bulkUpdateCandidates({
     candidateIds,
-    action: input.action,
+    action: input.action as any,
     owner: input.owner,
-    status: input.status,
     noteBody: input.noteBody,
     noteType: input.noteType,
     createdById: input.createdById
@@ -410,7 +387,6 @@ export async function getDetailedResult(
               hrOwner: true,
               stage: true,
               nextAction: true,
-              finalDecision: true,
               screeningStatus: true,
               notesSummary: true,
               updatedAt: true,
@@ -448,13 +424,6 @@ export async function getDetailedResult(
     candidateOwner: candidate?.hrOwner ?? undefined,
     candidateStage: candidate?.stage as CandidateStage | undefined,
     candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
-    candidateUiStatus: candidate
-      ? getCandidateUiStatus({
-          stage: candidate.stage as CandidateStage,
-          finalDecision: candidate.finalDecision as CandidateFinalDecision,
-          nextAction: candidate.nextAction as CandidateNextAction,
-        })
-      : undefined,
     candidateLatestActivityAt: candidate?.updatedAt?.toISOString(),
     candidateStaleDays: candidate?.updatedAt
       ? Math.max(0, Math.floor((Date.now() - candidate.updatedAt.getTime()) / (1000 * 60 * 60 * 24)))

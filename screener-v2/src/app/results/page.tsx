@@ -14,7 +14,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { ResultsFiltersModal } from "@/components/results/ResultsFiltersModal";
 import { requirePageSession } from "@/lib/auth/guards";
-import { candidateStageLabels, candidateStageValues, type CandidateUiStatus } from "@/lib/candidates/types";
+import { candidateStageLabels, candidateStageValues } from "@/lib/candidates/types";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import { integrityRiskLevelValues, parseResultsWorkspaceQuery, resultScoreBandValues, toResultsWorkspaceSearchParams } from "@/lib/results/query";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";

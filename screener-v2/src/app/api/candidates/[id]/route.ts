@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import {
-  candidateFinalDecisionValues,
   candidateNextActionValues,
   candidateScreeningStatusValues,
   candidateStageValues,
-  candidateUiStatusValues
+  type CandidateStage,
+  type CandidateNextAction
 } from "@/lib/candidates/types";
-import { candidateUiStatusToStoredFields } from "@/lib/candidates/ui-status";
 import { updateCandidate } from "@/lib/db/candidates";
+import { prisma } from "@/lib/db/prisma";
 
 const updateCandidateSchema = z.object({
   fullName: z.string().min(2),
@@ -22,9 +22,7 @@ const updateCandidateSchema = z.object({
   resumeSource: z.string().optional(),
   hrOwner: z.string().optional(),
   hrOwnerId: z.string().optional(),
-  uiStatus: z.enum(candidateUiStatusValues).optional(),
   stage: z.enum(candidateStageValues).optional(),
-  finalDecision: z.enum(candidateFinalDecisionValues).optional(),
   nextAction: z.enum(candidateNextActionValues).optional(),
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
@@ -40,23 +38,54 @@ export async function POST(
     return auth.response;
   }
 
+  // Check permission
+  const permissionCheck = await requirePermission(auth.session, "manage_candidates");
+  if (!permissionCheck.ok) return permissionCheck.response;
+
   try {
     const { id } = await params;
     const body = updateCandidateSchema.parse(Object.fromEntries((await request.formData()).entries()));
-    const derivedStatus = body.uiStatus
-      ? candidateUiStatusToStoredFields(body.uiStatus)
-      : (() => {
-          if (!body.stage || !body.finalDecision || !body.nextAction) {
-            throw new Error("Candidate status is required.");
-          }
 
-          return {
-            stage: body.stage,
-            finalDecision: body.finalDecision,
-            nextAction: body.nextAction,
-            screeningStatus: body.screeningStatus || undefined
-          };
-        })();
+    // Fetch current candidate to get existing stage/nextAction if not provided
+    const current = await prisma.candidate.findUnique({
+      where: { id },
+      select: { stage: true, nextAction: true }
+    });
+    if (!current) {
+      throw new Error("Candidate not found");
+    }
+
+    // Validate foreign keys exist
+    if (body.roleId) {
+      const role = await prisma.roleCatalog.findUnique({
+        where: { id: body.roleId },
+        select: { id: true }
+      });
+      if (!role) {
+        throw new Error("Invalid roleId: role not found");
+      }
+    }
+
+    if (body.departmentId) {
+      const dept = await prisma.department.findUnique({
+        where: { id: body.departmentId },
+        select: { id: true }
+      });
+      if (!dept) {
+        throw new Error("Invalid departmentId: department not found");
+      }
+    }
+
+    if (body.hrOwnerId) {
+      const user = await prisma.user.findUnique({
+        where: { id: body.hrOwnerId },
+        select: { id: true }
+      });
+      if (!user) {
+        throw new Error("Invalid hrOwnerId: user not found");
+      }
+    }
+
     await updateCandidate(id, {
       fullName: body.fullName,
       email: body.email,
@@ -70,7 +99,9 @@ export async function POST(
       hrOwnerId: body.hrOwnerId,
       candidateFolderUrl: body.candidateFolderUrl,
       notesSummary: body.notesSummary,
-      ...derivedStatus
+      stage: body.stage || (current.stage as CandidateStage),
+      nextAction: body.nextAction || (current.nextAction as CandidateNextAction),
+      screeningStatus: body.screeningStatus || undefined
     });
 
     const url = new URL(`/candidates/${id}`, request.url);

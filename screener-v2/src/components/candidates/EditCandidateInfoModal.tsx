@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
-import { resumeSourceOptions, type CandidateUiStatus } from "@/lib/candidates/types";
+import { resumeSourceOptions } from "@/lib/candidates/types";
 import type { CandidateDetail } from "@/lib/db/candidates";
 
 interface DepartmentOption {
@@ -22,11 +22,9 @@ interface UserOption {
 }
 
 export function EditCandidateInfoModal({
-  candidate,
-  uiStatus
+  candidate
 }: {
   candidate: CandidateDetail;
-  uiStatus: CandidateUiStatus;
 }) {
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
@@ -180,7 +178,6 @@ export function EditCandidateInfoModal({
                             {submitError}
                           </div>
                         )}
-                        <input type="hidden" name="uiStatus" value={uiStatus} />
                         <input type="hidden" name="phone" value={candidate.phone || ""} />
                         <input type="hidden" name="batchId" value={candidate.batchId || ""} />
                         <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />

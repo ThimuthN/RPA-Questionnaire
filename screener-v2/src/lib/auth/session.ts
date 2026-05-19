@@ -9,15 +9,15 @@ import {
 export const SESSION_COOKIE_NAME = "assessment_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
-export type AppAccessLevel = "admin" | "recruiter" | "hiring_manager" | "interviewer" | "member";
-
-export interface AppSession {
+export type AppSession = {
   userId: string | null;
   email: string;
   name?: string | null;
-  accessLevel: AppAccessLevel;
+  roleId: string | null;
+  departmentId: string | null;
+  permissions: string[];
   exp: number;
-}
+};
 
 function getSessionSecret() {
   const secret = process.env.AUTH_SESSION_SECRET;
@@ -52,8 +52,7 @@ export async function verifySessionToken(token?: string | null): Promise<AppSess
     if (!payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
       return null;
     }
-    const validAccessLevels: AppAccessLevel[] = ["admin", "recruiter", "hiring_manager", "interviewer", "member"];
-    if (!validAccessLevels.includes(payload.accessLevel)) {
+    if (!Array.isArray(payload.permissions)) {
       return null;
     }
     return payload;

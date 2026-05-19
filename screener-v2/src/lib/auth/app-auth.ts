@@ -1,18 +1,17 @@
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { logAudit } from "@/lib/auth/audit";
-import type { AppAccessLevel, AppSession } from "@/lib/auth/session";
+import { getEffectivePermissions } from "@/lib/auth/permission-evaluator";
+import type { AppSession } from "@/lib/auth/session";
 
 export type AppUserRow = {
   id: string;
   email: string;
   name: string | null;
-  title: string | null;
   departmentId: string | null;
   dept: { id: string; name: string } | null;
-  phone: string | null;
-  accessLevel: AppAccessLevel;
-  isInterviewer: boolean;
+  roleId: string | null;
+  role: { id: string; label: string } | null;
   isActive: boolean;
   lastLoginAt: Date | null;
   createdAt: Date;
@@ -42,11 +41,53 @@ export async function ensureBootstrapAdmin() {
     return;
   }
 
+  // Create or get system admin role
+  let adminRole = await prisma.roleCatalog.findFirst({
+    where: { slug: "system_admin" }
+  });
+
+  if (!adminRole) {
+    adminRole = await prisma.roleCatalog.create({
+      data: {
+        slug: "system_admin",
+        label: "System Admin",
+        isActive: true
+      }
+    });
+
+    // Create all permissions for the system admin role
+    const permissions = [
+      "manage_users",
+      "create_role",
+      "edit_role",
+      "delete_role",
+      "create_job",
+      "edit_job",
+      "view_candidates",
+      "manage_candidates",
+      "create_invite",
+      "view_results",
+      "manage_addons"
+    ];
+
+    for (const permission of permissions) {
+      await prisma.rolePermissionTemplate.create({
+        data: {
+          roleId: adminRole.id,
+          permission,
+          scope: "global"
+        }
+      }).catch(() => {
+        // Ignore duplicates
+      });
+    }
+  }
+
   await prisma.user.create({
     data: {
       email,
       name,
-      accessLevel: "admin",
+      roleId: adminRole.id,
       passwordHash: hashPassword(password),
       isActive: true
     }
@@ -57,7 +98,16 @@ export async function authenticateAppUser(email: string, password: string): Prom
   const normalizedEmail = normalizeEmail(email);
 
   const user = await prisma.user.findUnique({
-    where: { email: normalizedEmail }
+    where: { email: normalizedEmail },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      roleId: true,
+      departmentId: true,
+      passwordHash: true,
+      isActive: true
+    }
   });
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
@@ -73,11 +123,16 @@ export async function authenticateAppUser(email: string, password: string): Prom
     data: { lastLoginAt: new Date() }
   });
 
+  // Load permissions for this user
+  const permissions = await getEffectivePermissions(user.id);
+
   return {
     userId: user.id,
     email: user.email,
     name: user.name,
-    accessLevel: user.accessLevel,
+    roleId: user.roleId,
+    departmentId: user.departmentId,
+    permissions,
     exp: 0
   };
 }
@@ -89,14 +144,14 @@ export async function listAppUsers(): Promise<AppUserRow[]> {
       id: true,
       email: true,
       name: true,
-      title: true,
       departmentId: true,
       dept: {
         select: { id: true, name: true }
       },
-      phone: true,
-      accessLevel: true,
-      isInterviewer: true,
+      roleId: true,
+      role: {
+        select: { id: true, label: true }
+      },
       isActive: true,
       lastLoginAt: true,
       createdAt: true,
@@ -109,12 +164,8 @@ export async function createAppUser(input: {
   email: string;
   name?: string;
   password: string;
-  title?: string;
-  department?: string;
   departmentId?: string;
-  phone?: string;
-  accessLevel: AppAccessLevel;
-  isInterviewer?: boolean;
+  roleId?: string;
   actorId?: string | null;
   actorEmail?: string | null;
 }) {
@@ -125,24 +176,22 @@ export async function createAppUser(input: {
     data: {
       email,
       name: input.name?.trim() || null,
-      title: input.title?.trim() || null,
-      department: input.department?.trim() || null,
       departmentId: input.departmentId || null,
-      phone: input.phone?.trim() || null,
-      accessLevel: input.accessLevel,
-      passwordHash,
-      isInterviewer: input.isInterviewer || false
+      roleId: input.roleId || null,
+      passwordHash
     },
     select: {
       id: true,
       email: true,
       name: true,
-      title: true,
-      department: true,
       departmentId: true,
-      phone: true,
-      accessLevel: true,
-      isInterviewer: true,
+      dept: {
+        select: { id: true, name: true }
+      },
+      roleId: true,
+      role: {
+        select: { id: true, label: true }
+      },
       isActive: true,
       lastLoginAt: true,
       createdAt: true,
@@ -158,7 +207,7 @@ export async function createAppUser(input: {
     targetType: "user",
     after: {
       email: created.email,
-      accessLevel: created.accessLevel,
+      roleId: created.roleId,
       departmentId: created.departmentId
     }
   });
@@ -169,29 +218,21 @@ export async function createAppUser(input: {
 export async function updateAppUser(input: {
   userId: string;
   name?: string;
-  title?: string;
-  department?: string;
   departmentId?: string;
-  phone?: string;
-  accessLevel?: AppAccessLevel;
-  isInterviewer?: boolean;
+  roleId?: string;
   isActive?: boolean;
   actorId?: string | null;
   actorEmail?: string | null;
 }) {
   const before = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { accessLevel: true }
+    select: { roleId: true }
   });
 
   const data: Record<string, any> = {};
   if (input.name !== undefined) data.name = input.name?.trim() || null;
-  if (input.title !== undefined) data.title = input.title?.trim() || null;
-  if (input.department !== undefined) data.department = input.department?.trim() || null;
   if (input.departmentId !== undefined) data.departmentId = input.departmentId || null;
-  if (input.phone !== undefined) data.phone = input.phone?.trim() || null;
-  if (input.accessLevel !== undefined) data.accessLevel = input.accessLevel;
-  if (input.isInterviewer !== undefined) data.isInterviewer = input.isInterviewer;
+  if (input.roleId !== undefined) data.roleId = input.roleId || null;
   if (input.isActive !== undefined) data.isActive = input.isActive;
 
   const updated = await prisma.user.update({
@@ -201,12 +242,14 @@ export async function updateAppUser(input: {
       id: true,
       email: true,
       name: true,
-      title: true,
-      department: true,
       departmentId: true,
-      phone: true,
-      accessLevel: true,
-      isInterviewer: true,
+      dept: {
+        select: { id: true, name: true }
+      },
+      roleId: true,
+      role: {
+        select: { id: true, label: true }
+      },
       isActive: true,
       lastLoginAt: true,
       createdAt: true,
@@ -214,15 +257,15 @@ export async function updateAppUser(input: {
     }
   });
 
-  const accessLevelChanged = Boolean(before && before.accessLevel !== updated.accessLevel);
+  const roleChanged = Boolean(before && before.roleId !== updated.roleId);
   await logAudit({
     action: "user_updated",
     actorId: input.actorId ?? null,
     actorEmail: input.actorEmail ?? undefined,
     targetId: updated.id,
     targetType: "user",
-    before: accessLevelChanged && before ? { accessLevel: before.accessLevel } : undefined,
-    after: accessLevelChanged ? { accessLevel: updated.accessLevel } : undefined
+    before: roleChanged && before ? { roleId: before.roleId } : undefined,
+    after: roleChanged ? { roleId: updated.roleId } : undefined
   });
 
   return updated;

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { parseCandidateCsv } from "@/lib/candidates/csv";
-import { candidateNoteTypeValues, candidateUiStatusValues } from "@/lib/candidates/types";
+import { candidateNoteTypeValues, candidateStageValues } from "@/lib/candidates/types";
 import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
 import { createOrUpdateDepartmentCandidacy } from "@/lib/db/candidacies";
 import { prisma } from "@/lib/db/prisma";
@@ -12,9 +12,9 @@ const MAX_BULK_IDS_PER_REQUEST = 500;
 const MAX_CSV_ROWS_PER_IMPORT = 1000;
 
 const bulkSchema = z.object({
-  action: z.enum(["assign_owner", "set_ui_status", "add_note", "set_department", "import_csv", "nominate_to_dept", "set_org_status"]),
+  action: z.enum(["assign_owner", "set_stage", "add_note", "set_department", "import_csv", "nominate_to_dept", "set_org_status"]),
   owner: z.string().optional(),
-  status: z.enum(candidateUiStatusValues).optional(),
+  stage: z.enum(candidateStageValues).optional(),
   roleId: z.string().optional(), // deprecated: use departmentId for set_department action
   departmentId: z.string().optional(),
   hrOwnerId: z.string().optional(),
@@ -38,6 +38,10 @@ export async function POST(request: Request) {
     return auth.response;
   }
   const { session } = auth;
+
+  // Check permission
+  const permissionCheck = await requirePermission(auth.session, "manage_candidates");
+  if (!permissionCheck.ok) return permissionCheck.response;
 
   if (!(await checkBulkOpRateLimit(session.userId ?? ""))) {
     const url = redirectUrl(request, "");
@@ -132,7 +136,7 @@ export async function POST(request: Request) {
       candidateIds: ids,
       action: parsed.action as any,
       owner: parsed.owner,
-      status: parsed.status,
+      stage: parsed.stage,
       roleId: parsed.roleId,
       departmentId: parsed.departmentId,
       hrOwnerId: parsed.hrOwnerId,

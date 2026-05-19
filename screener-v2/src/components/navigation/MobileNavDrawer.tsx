@@ -19,7 +19,7 @@ export function MobileNavDrawer({
   open: boolean;
   items: Array<{ href: Route; label: string; icon: LucideIcon }>;
   pathname: string;
-  viewer: Pick<AppSession, "email" | "name" | "accessLevel"> | null;
+  viewer: Pick<AppSession, "email" | "name" | "permissions" | "departmentId"> | null;
   onClose: () => void;
 }) {
   if (!open) return null;
@@ -40,7 +40,6 @@ export function MobileNavDrawer({
             <div className="space-y-1">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Workspace</p>
               <p className="text-lg text-[color:var(--app-heading)]">{viewer?.name || viewer?.email || "Northstar"}</p>
-              {viewer ? <p className="text-sm text-[color:var(--app-muted)]">{viewer.accessLevel}</p> : null}
             </div>
           </div>
           <button

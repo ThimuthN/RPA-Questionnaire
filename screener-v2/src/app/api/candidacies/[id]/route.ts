@@ -37,10 +37,8 @@ export async function PATCH(
       );
     }
 
-    // Check permission: admin/recruiter can manage; hiring_manager restricted by departmentId (future)
-    const canManage =
-      session.accessLevel === "admin" ||
-      session.accessLevel === "recruiter";
+    // Check permission: users with manage_candidates permission can update
+    const canManage = session.permissions.includes("manage_candidates");
 
     if (!canManage) {
       return NextResponse.json(

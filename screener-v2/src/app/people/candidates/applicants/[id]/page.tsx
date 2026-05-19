@@ -96,7 +96,7 @@ export default async function ApplicantReviewPage({
                 label={candidateApplicationStatusLabels[detail.status]}
                 tone={applicationTone(detail.status)}
               />
-              <StatusPill label={detail.candidate.intakeBucket === "applicant" ? "Applicant" : "Pipeline"} tone="blue" />
+              <StatusPill label={detail.candidate.stage === "applicant" ? "Applicant" : "Pipeline"} tone="blue" />
             </div>
           </div>
 
