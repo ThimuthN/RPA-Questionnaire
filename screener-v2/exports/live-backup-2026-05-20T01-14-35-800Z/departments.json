@@ -1,0 +1,200 @@
+[
+  {
+    "id": "e7153376-772c-4715-bf01-1e40e34ee47f",
+    "slug": "rpa-sl",
+    "name": "RPA SL",
+    "isActive": true,
+    "sortOrder": 4,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "f81a67a9-d8f0-4adc-97a4-011e15df9fb1",
+    "slug": "engineering-sl",
+    "name": "Engineering SL",
+    "isActive": true,
+    "sortOrder": 2,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "b111fc10-3f30-4ed2-ad72-ec9fe03b31a9",
+    "slug": "rpa-ind",
+    "name": "RPA IND",
+    "isActive": true,
+    "sortOrder": 3,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "f2604683-6f96-424f-9011-955de913e1ab",
+    "slug": "engineering-ind",
+    "name": "Engineering IND",
+    "isActive": true,
+    "sortOrder": 1,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "cmpd1zoeg0005ew1wfxuzcmdk",
+    "slug": "inactive-1779220572999",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:56:13.001Z",
+    "updatedAt": "2026-05-19T19:56:13.001Z"
+  },
+  {
+    "id": "cmpd1zqzs000aew1wc8sfvtma",
+    "slug": "inactive-1779220576359",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:56:16.360Z",
+    "updatedAt": "2026-05-19T19:56:16.360Z"
+  },
+  {
+    "id": "cmpd20emz0005ewawufiq0ih1",
+    "slug": "inactive-1779220607002",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:56:47.004Z",
+    "updatedAt": "2026-05-19T19:56:47.004Z"
+  },
+  {
+    "id": "cmpd20grm000aewawd98kjlft",
+    "slug": "inactive-1779220609761",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:56:49.762Z",
+    "updatedAt": "2026-05-19T19:56:49.762Z"
+  },
+  {
+    "id": "cmpd227wr0005ew34xiarbjv7",
+    "slug": "inactive-1779220691593",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:58:11.595Z",
+    "updatedAt": "2026-05-19T19:58:11.595Z"
+  },
+  {
+    "id": "cmpd229yf000aew34h63cgb2g",
+    "slug": "inactive-1779220694244",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T19:58:14.247Z",
+    "updatedAt": "2026-05-19T19:58:14.247Z"
+  },
+  {
+    "id": "cmpd257im0005ew1s3v7nnz16",
+    "slug": "inactive-1779220831052",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T20:00:31.055Z",
+    "updatedAt": "2026-05-19T20:00:31.055Z"
+  },
+  {
+    "id": "cmpd25a2w000aew1sf4hbm4k9",
+    "slug": "inactive-1779220834374",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T20:00:34.376Z",
+    "updatedAt": "2026-05-19T20:00:34.376Z"
+  },
+  {
+    "id": "system-dept",
+    "slug": "system",
+    "name": "System",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T22:23:06.694Z",
+    "updatedAt": "2026-05-19T22:23:06.694Z"
+  },
+  {
+    "id": "cmpdcfpxh0003ew8s3sb8lfus",
+    "slug": "inactive-1779238117636",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:48:37.637Z",
+    "updatedAt": "2026-05-20T00:48:37.637Z"
+  },
+  {
+    "id": "cmpdcfr1d0005ew8s52yzpex8",
+    "slug": "test-dept-1-1779238119072",
+    "name": "Dept 1",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:48:39.073Z",
+    "updatedAt": "2026-05-20T00:48:39.073Z"
+  },
+  {
+    "id": "cmpdcg3lk0008ew8smbdigzko",
+    "slug": "inactive-1779238135351",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:48:55.352Z",
+    "updatedAt": "2026-05-20T00:48:55.352Z"
+  },
+  {
+    "id": "cmpdcpu3r0000eweog5aotygi",
+    "slug": "test-test-dept-1779238586632",
+    "name": "Test Dept",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:29.607Z",
+    "updatedAt": "2026-05-20T00:56:29.607Z"
+  },
+  {
+    "id": "cmpdcpu3r0000ewi0mgvpmyb7",
+    "slug": "test-test-dept-1779238586619",
+    "name": "Test Dept",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:29.607Z",
+    "updatedAt": "2026-05-20T00:56:29.607Z"
+  },
+  {
+    "id": "cmpdcpvm20001ewfs0n2deets",
+    "slug": "test-test-dept-1779238591560",
+    "name": "Test Dept",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:31.562Z",
+    "updatedAt": "2026-05-20T00:56:31.562Z"
+  },
+  {
+    "id": "cmpdcpy9s0005ew8cbppicy5t",
+    "slug": "inactive-1779238595007",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:35.009Z",
+    "updatedAt": "2026-05-20T00:56:35.009Z"
+  },
+  {
+    "id": "cmpdcq0z8000aew8ccfy0urdp",
+    "slug": "inactive-1779238598515",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:38.517Z",
+    "updatedAt": "2026-05-20T00:56:38.517Z"
+  },
+  {
+    "id": "cmpdcqfwc000oew7ka0i992df",
+    "slug": "test-department-1779238617850-1779238617850",
+    "name": "Department-1779238617850",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T00:56:57.852Z",
+    "updatedAt": "2026-05-20T01:11:46.097Z"
+  }
+]

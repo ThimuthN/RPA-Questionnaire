@@ -1,0 +1,17 @@
+[
+  {
+    "id": "cmpbk1nw40002l10auti19p0l",
+    "action": "user_created",
+    "actorId": "cmo1ihrfx0000jn0aqa4osbod",
+    "actorEmail": "hrsl@innobothealth.com",
+    "targetId": "cmpbk1nv80001l10ak1jvgfj5",
+    "targetType": "user",
+    "before": null,
+    "after": {
+      "email": "sbandara@innobothealth.com",
+      "accessLevel": "recruiter",
+      "departmentId": null
+    },
+    "createdAt": "2026-05-18T18:46:06.388Z"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "departments": 5,
+  "roles": 20,
+  "role_permission_templates": 9,
+  "users": 15,
+  "candidates": 58,
+  "department_candidacies": 57,
+  "jobs": 2,
+  "employees": 0
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "4c259a4a-9e52-48ef-b60c-372444dfa122",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "manage_users",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "991a12bc-9ce0-4cc2-ac43-4d1e42255c18",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "manage_roles",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "7c0b505a-d545-455f-b7cd-4c4a7a94c3c1",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "manage_candidates",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "007432b7-8c52-4f92-b349-7d0cbe44a3d4",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "view_candidates",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "8a42b605-ac52-4895-94d5-28492f3e1b49",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "manage_addons",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "bc8b5aaa-ad5d-4ded-9e62-debc2bd269fb",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "create_job",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "aa48a047-d27e-4d9c-9497-11f7cce9cb58",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "edit_job",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "ddfbb6af-ac39-49b5-abde-e3d1c16788d8",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "create_invite",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  },
+  {
+    "id": "873d884a-1d97-4c58-abb7-c0d6eb8119ed",
+    "roleId": "704533d3-02e7-4a47-a988-288fae03c244",
+    "permission": "view_results",
+    "scope": "global",
+    "createdAt": "2026-05-19T20:53:22.431Z"
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "departments": 9,
+  "roles": 22,
+  "users": 17,
+  "candidates": 62,
+  "candidate_resumes": 59,
+  "candidate_applications": 1,
+  "department_candidacies": 61,
+  "candidate_notes": 13,
+  "candidate_milestones": 314,
+  "candidate_activity_events": 28,
+  "jobs": 2,
+  "employees": 1,
+  "offers": 0,
+  "audit_logs": 1
+}

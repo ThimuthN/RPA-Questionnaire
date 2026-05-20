@@ -1,0 +1,23 @@
+[
+  {
+    "id": "cmpdcpxqo0007ew6sr4n2pj0t",
+    "candidateId": null,
+    "employeeNumber": "EMP001",
+    "fullName": "Test Candidate",
+    "email": "candidate-1779238593603@test.com",
+    "phone": null,
+    "title": null,
+    "roleId": null,
+    "departmentId": null,
+    "managerId": null,
+    "employmentType": "full_time",
+    "employmentStatus": "active",
+    "startDate": "2026-05-20T00:56:34.316Z",
+    "probationEndDate": null,
+    "endDate": null,
+    "location": null,
+    "level": null,
+    "createdAt": "2026-05-20T00:56:34.320Z",
+    "updatedAt": "2026-05-20T00:56:34.320Z"
+  }
+]

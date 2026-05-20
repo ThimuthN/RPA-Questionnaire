@@ -1,0 +1,145 @@
+[
+  {
+    "id": "6c4fc377df1e44f4a9c85a0b339f791d",
+    "candidateId": "fae8fb7302c449d49ce1347932cb80fc",
+    "type": "screening",
+    "body": "Assessment link: https://screenerlive.vercel.app/a/djnzpgp8?t=Pwgq17SmXfMqo0H0vd-ChTiXilQv_0RD\r\nAssessment ID: DJNZPGP8\r\nAccess code: 763374",
+    "createdAt": "2026-03-26T10:58:10.173Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuwfme70001l10acpt1gmu9",
+    "updatedById": null
+  },
+  {
+    "id": "e77d8b68b5b541888bfa78d050a317a5",
+    "candidateId": "f9e07265f29f4919b1cbc65761509ae2",
+    "type": "general",
+    "body": "Assessment link: https://screenerlive.vercel.app/a/dyzydaa1?t=HtQyqLnSteXZijPJ50Dzm45j1tgKeMiB\r\nAssessment ID: DYZYDAA1\r\nAccess code: 374801",
+    "createdAt": "2026-03-31T17:46:56.360Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuwfme70001l10acpt1gmu9",
+    "updatedById": null
+  },
+  {
+    "id": "c6182af529bd445aa0bdf0fc709e236d",
+    "candidateId": "a14bbc4893904cfc8624f0a2eacab2c8",
+    "type": "general",
+    "body": "test",
+    "createdAt": "2026-05-12T13:25:07.898Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuwfme70001l10acpt1gmu9",
+    "updatedById": null
+  },
+  {
+    "id": "dec4ae51629e459a88dc632ec880a2dd",
+    "candidateId": "27b84e9f06f94a64a54bc9521fdf47e3",
+    "type": "general",
+    "body": "No RPA experience \r\nlow python experience \r\nSuitable for Associate SE",
+    "createdAt": "2026-05-15T17:36:41.122Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "eabb5e6b972b46ae9ab7df25ea6d776d",
+    "candidateId": "32a3e45b4dc34fd09c9441313cc49e5f",
+    "type": "general",
+    "body": "Moved to screener.",
+    "createdAt": "2026-05-15T17:41:06.702Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "6621d40be9a34ea68817c8d6b78227b3",
+    "candidateId": "ed16bc74091d48a49f86ca19f4bc6b51",
+    "type": "general",
+    "body": "Only processing uipath skills and not enough python skills.",
+    "createdAt": "2026-05-15T17:47:55.106Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "4e1686cfe10d4fe7ab2cb2e48ee157f0",
+    "candidateId": "ed16bc74091d48a49f86ca19f4bc6b51",
+    "type": "general",
+    "body": "posessing*",
+    "createdAt": "2026-05-15T17:48:32.083Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "fa8e5604c3254945a300c3364beb9df9",
+    "candidateId": "8a80513138554ed8858c835cf1af2885",
+    "type": "general",
+    "body": "Possess both RPA and Python skills. Moved for a screener",
+    "createdAt": "2026-05-15T17:53:30.874Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "1144c3806b8a4fce88bf511eab541b0a",
+    "candidateId": "1bc22bab1332443ca2a557ca334da9b9",
+    "type": "general",
+    "body": "Moved for a screener",
+    "createdAt": "2026-05-15T17:55:30.078Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "dc6892458ba94929988006a65996f85f",
+    "candidateId": "331939bba3834439809a657967bd9566",
+    "type": "general",
+    "body": "Moved for a screener",
+    "createdAt": "2026-05-15T18:01:42.520Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "6f487593c7f14b758419c201f878a844",
+    "candidateId": "ed16bc74091d48a49f86ca19f4bc6b51",
+    "type": "general",
+    "body": "Correction: Since there's an opening for a uipath developer, I have moved him for a screener",
+    "createdAt": "2026-05-15T18:11:49.608Z",
+    "updatedAt": "2026-05-15T19:04:42.037Z",
+    "deletedAt": null,
+    "createdById": "cmmuxnshf0002k00am5gyuc9r",
+    "updatedById": null
+  },
+  {
+    "id": "6c565f7ce59c4c78ae92dfd375af19ba",
+    "candidateId": "1ed19b7ca7f8473db4fb80fcef1dbad7",
+    "type": "general",
+    "body": "Answered good for all the questions \r\nFit for a SE role \r\nmove forward",
+    "createdAt": "2026-05-18T16:15:00.416Z",
+    "updatedAt": "2026-05-18T16:15:00.416Z",
+    "deletedAt": null,
+    "createdById": "cmmuwfme70001l10acpt1gmu9",
+    "updatedById": null
+  },
+  {
+    "id": "90f43b88ed56421f9f5502647f32a031",
+    "candidateId": "b6791e222ae14d90b6b69e5b871df85b",
+    "type": "general",
+    "body": "Test",
+    "createdAt": "2026-05-19T12:09:27.285Z",
+    "updatedAt": "2026-05-19T12:09:27.285Z",
+    "deletedAt": null,
+    "createdById": "cmmuwfme70001l10acpt1gmu9",
+    "updatedById": null
+  }
+]

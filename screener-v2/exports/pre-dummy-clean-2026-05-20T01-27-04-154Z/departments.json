@@ -1,0 +1,83 @@
+[
+  {
+    "id": "f2604683-6f96-424f-9011-955de913e1ab",
+    "slug": "engineering-ind",
+    "name": "Engineering IND",
+    "isActive": true,
+    "sortOrder": 1,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "f81a67a9-d8f0-4adc-97a4-011e15df9fb1",
+    "slug": "engineering-sl",
+    "name": "Engineering SL",
+    "isActive": true,
+    "sortOrder": 2,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "b111fc10-3f30-4ed2-ad72-ec9fe03b31a9",
+    "slug": "rpa-ind",
+    "name": "RPA IND",
+    "isActive": true,
+    "sortOrder": 3,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "e7153376-772c-4715-bf01-1e40e34ee47f",
+    "slug": "rpa-sl",
+    "name": "RPA SL",
+    "isActive": true,
+    "sortOrder": 4,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "cmpddpw1l0000ewro1d2qz4s4",
+    "slug": "test-test-dept-1779240268775",
+    "name": "Test Dept",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T01:24:31.738Z",
+    "updatedAt": "2026-05-20T01:24:31.738Z"
+  },
+  {
+    "id": "cmpddpxb30001ew94704ybyfp",
+    "slug": "test-test-dept-1779240273373",
+    "name": "Test Dept",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T01:24:33.375Z",
+    "updatedAt": "2026-05-20T01:24:33.375Z"
+  },
+  {
+    "id": "cmpddpzpo0005ewq8wqbynbu7",
+    "slug": "inactive-1779240276491",
+    "name": "Inactive Department",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T01:24:36.492Z",
+    "updatedAt": "2026-05-20T01:24:36.492Z"
+  },
+  {
+    "id": "cmpddq1ww000aewq8k6de2s7x",
+    "slug": "inactive-1779240279343",
+    "name": "Inactive",
+    "isActive": false,
+    "sortOrder": 0,
+    "createdAt": "2026-05-20T01:24:39.344Z",
+    "updatedAt": "2026-05-20T01:24:39.344Z"
+  },
+  {
+    "id": "system-dept",
+    "slug": "system",
+    "name": "System",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T22:23:06.694Z",
+    "updatedAt": "2026-05-19T22:23:06.694Z"
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "id": "cmoa5nm780001l80ac22eg8w6",
+    "slug": "smdlasmdmsadmsakldmlsmdksakdmasld",
+    "title": "SMdlasmdmsadmsakldmlsmdksakdmasld",
+    "roleId": "fa84338681856eda063c79c266b7ff06",
+    "departmentId": "b111fc10-3f30-4ed2-ad72-ec9fe03b31a9",
+    "screenerPresetId": null,
+    "summary": "SMdlasmdmsadmsakldmlsmdksakdmasld",
+    "description": "<p>SMdlasmdmsadmsakldmlsmdksakdmasldSMdlasmdmsadmsakldmlsmdksakdmasld</p>",
+    "salaryMin": null,
+    "salaryMax": null,
+    "teamSize": null,
+    "techStack": null,
+    "remotePolicy": null,
+    "isPublished": false,
+    "isOpen": true,
+    "createdAt": "2026-04-22T14:35:47.876Z",
+    "updatedAt": "2026-05-01T14:05:31.787Z"
+  },
+  {
+    "id": "cmomzezyd0001ewb0dc1j529g",
+    "slug": "rpa-operations-analyst-demo",
+    "title": "RPA Operations Analyst",
+    "roleId": "424c0e510740e5fd20a39c16b30b7afd",
+    "departmentId": "b111fc10-3f30-4ed2-ad72-ec9fe03b31a9",
+    "screenerPresetId": null,
+    "summary": "Own daily bot monitoring, triage exceptions fast, and keep hiring operations moving with clear status control.",
+    "description": "<h2>Role summary</h2><p>Northstar is hiring an RPA Operations Analyst to keep hiring automation running cleanly across intake, review, and assessment workflows.</p><h3>What you will do</h3><ul><li>Review workflow exceptions and unblock priority cases.</li><li>Coordinate with HR and operations on urgent applicant movement.</li><li>Keep assessment and candidate flow reliable day to day.</li></ul><h3>Why this role matters</h3><p>This role helps the team move faster without losing control.</p>",
+    "salaryMin": null,
+    "salaryMax": null,
+    "teamSize": null,
+    "techStack": null,
+    "remotePolicy": null,
+    "isPublished": true,
+    "isOpen": true,
+    "createdAt": "2026-05-01T14:02:08.387Z",
+    "updatedAt": "2026-05-01T14:02:08.387Z"
+  }
+]

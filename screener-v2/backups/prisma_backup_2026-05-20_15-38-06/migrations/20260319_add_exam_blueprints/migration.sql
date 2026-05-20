@@ -1,0 +1,5 @@
+ALTER TABLE "Invite"
+ADD COLUMN IF NOT EXISTS "blueprintJson" JSONB;
+
+ALTER TABLE "Attempt"
+ADD COLUMN IF NOT EXISTS "blueprintJson" JSONB;

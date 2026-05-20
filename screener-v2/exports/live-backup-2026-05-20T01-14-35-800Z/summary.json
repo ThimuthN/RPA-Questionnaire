@@ -1,0 +1,15 @@
+{
+  "exportedAt": "2026-05-20T01:14:53.671Z",
+  "counts": {
+    "departments": 22,
+    "roles": 23,
+    "users": 17,
+    "candidates": 63,
+    "candidateResumes": 59,
+    "candidateApplications": 1,
+    "departmentCandidacies": 51,
+    "jobs": 2,
+    "employees": 1,
+    "auditLogs": 1
+  }
+}

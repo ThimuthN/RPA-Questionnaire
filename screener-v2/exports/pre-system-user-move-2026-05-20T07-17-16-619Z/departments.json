@@ -1,0 +1,110 @@
+[
+  {
+    "id": "f2604683-6f96-424f-9011-955de913e1ab",
+    "slug": "engineering-ind",
+    "name": "Engineering IND",
+    "isActive": true,
+    "sortOrder": 1,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "f81a67a9-d8f0-4adc-97a4-011e15df9fb1",
+    "slug": "engineering-sl",
+    "name": "Engineering SL",
+    "isActive": true,
+    "sortOrder": 2,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "b111fc10-3f30-4ed2-ad72-ec9fe03b31a9",
+    "slug": "rpa-ind",
+    "name": "RPA IND",
+    "isActive": true,
+    "sortOrder": 3,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "e7153376-772c-4715-bf01-1e40e34ee47f",
+    "slug": "rpa-sl",
+    "name": "RPA SL",
+    "isActive": true,
+    "sortOrder": 4,
+    "createdAt": "2026-05-18T18:37:55.405Z",
+    "updatedAt": "2026-05-18T18:37:55.405Z"
+  },
+  {
+    "id": "cmpdpm2uf0000ew1c6hl9a6pk",
+    "slug": "rcm",
+    "name": "RCM",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:29.320Z",
+    "updatedAt": "2026-05-20T06:57:29.320Z"
+  },
+  {
+    "id": "cmpdpm3lo0001ew1cxrwj80ae",
+    "slug": "ba",
+    "name": "BA",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:30.300Z",
+    "updatedAt": "2026-05-20T06:57:30.300Z"
+  },
+  {
+    "id": "cmpdpm43l0002ew1c3kn5asdg",
+    "slug": "bi",
+    "name": "BI",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:30.946Z",
+    "updatedAt": "2026-05-20T06:57:30.946Z"
+  },
+  {
+    "id": "cmpdpm4nv0003ew1cs01bs3z1",
+    "slug": "qa",
+    "name": "QA",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:31.675Z",
+    "updatedAt": "2026-05-20T06:57:31.675Z"
+  },
+  {
+    "id": "cmpdpm5ui0004ew1ckvbf7i5i",
+    "slug": "hr",
+    "name": "HR",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:33.211Z",
+    "updatedAt": "2026-05-20T06:57:33.211Z"
+  },
+  {
+    "id": "cmpdpm6gv0005ew1cf9j92sjq",
+    "slug": "it",
+    "name": "IT",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:34.015Z",
+    "updatedAt": "2026-05-20T06:57:34.015Z"
+  },
+  {
+    "id": "cmpdpm79q0006ew1c0tgrc68e",
+    "slug": "marketing",
+    "name": "Marketing",
+    "isActive": true,
+    "sortOrder": 100,
+    "createdAt": "2026-05-20T06:57:35.054Z",
+    "updatedAt": "2026-05-20T06:57:35.054Z"
+  },
+  {
+    "id": "system-dept",
+    "slug": "system",
+    "name": "System",
+    "isActive": true,
+    "sortOrder": 0,
+    "createdAt": "2026-05-19T22:23:06.694Z",
+    "updatedAt": "2026-05-19T22:23:06.694Z"
+  }
+]
