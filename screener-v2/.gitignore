@@ -13,5 +13,6 @@ docs-devserver.log
 .vercel
 .env*.local
 *.tsbuildinfo
+exports/
 
 .vercel
