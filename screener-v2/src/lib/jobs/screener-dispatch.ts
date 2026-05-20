@@ -2,6 +2,7 @@ import { buildDraftsFromPreset } from "@/lib/addons/catalog";
 import { createInvite } from "@/lib/db/runtime-repository";
 import { sendEmail } from "@/lib/email/send";
 import { screenerInviteEmail } from "@/lib/email/templates/screener-invite";
+import { getConfiguredAppUrl } from "@/lib/server/app-url";
 import { logError } from "@/lib/server/logger";
 import type { AssessmentPresetEntry } from "@/lib/addons/catalog";
 
@@ -31,7 +32,10 @@ export async function dispatchJobScreener(input: {
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://northstar.local";
+    const appUrl = getConfiguredAppUrl();
+    if (!appUrl) {
+      throw new Error("APP_URL or VERCEL_URL must be configured before sending screener invites.");
+    }
     const inviteUrl = `${appUrl}/a/${invite.row.slug}?t=${encodeURIComponent(invite.token)}`;
 
     await sendEmail({
