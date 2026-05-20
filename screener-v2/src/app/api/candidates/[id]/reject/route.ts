@@ -37,6 +37,7 @@ export async function POST(
     await tx.candidate.update({
       where: { id },
       data: {
+        stage: "finalized",
         orgStatus: "org_rejected",
         orgStage: "finalized",
         finalizedAs: "rejected",

@@ -41,9 +41,9 @@ export async function POST(
     }
 
     // Validation: Cannot delete hired candidates
-    if (candidate.stage === "closed") {
+    if (candidate.stage === "finalized") {
       const url = new URL("/candidates", request.url);
-      url.searchParams.set("error", "Cannot delete a hired candidate. Please terminate the employee record first.");
+      url.searchParams.set("error", "Cannot delete a finalized candidate. Please terminate the employee record first.");
       return NextResponse.redirect(url, 303);
     }
 

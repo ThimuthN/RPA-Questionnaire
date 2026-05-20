@@ -30,7 +30,7 @@ export async function POST(
         orgStatus: "active",
         orgStage: "active",
         finalizedAs: null,
-        stage: candidate.finalizedAs === "hired" ? "decision" : undefined,
+        stage: candidate.finalizedAs === "hired" ? "advanced_review" : undefined,
         updatedAt: new Date()
       }
     });

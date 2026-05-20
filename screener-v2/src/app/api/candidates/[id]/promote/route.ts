@@ -76,19 +76,9 @@ export async function POST(
     );
   }
 
-  if (next === "closed") {
-    const passedAssessment = candidate.assessments.find((assessment) => assessment.attempt?.result?.pass === true);
-    if (!passedAssessment) {
-      return Response.json(
-        { error: "Cannot close candidate without a passed assessment. Complete and pass an assessment first." },
-        { status: 400 }
-      );
-    }
-  }
-
   if (
-    candidateStageOrder[next] >= candidateStageOrder.testing &&
-    candidateStageOrder[currentStage] < candidateStageOrder.testing
+    candidateStageOrder[next] >= candidateStageOrder.advanced_review &&
+    candidateStageOrder[currentStage] < candidateStageOrder.advanced_review
   ) {
     const hasAssessment = candidate.assessments.length > 0;
     if (!hasAssessment) {

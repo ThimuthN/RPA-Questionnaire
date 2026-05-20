@@ -5,12 +5,12 @@ import { candidateMilestoneTypeValues } from "@/lib/candidates/milestones";
 import { prisma } from "@/lib/db/prisma";
 
 const createMilestoneSchema = z.object({
-  type: z.enum(["advanced_test", "interview"]),
+  type: z.enum(["advanced_review", "interview"]),
   title: z.string().optional()
 });
 
 function getDefaultMilestoneTitle(type: string) {
-  if (type === "advanced_test") {
+  if (type === "advanced_review") {
     return "Additional test";
   }
   if (type === "interview") {
@@ -45,32 +45,32 @@ export async function POST(
       );
     }
 
-    // Find the decision milestone to determine where to insert the new milestone
-    const decisionMilestone = await prisma.candidateMilestone.findFirst({
-      where: { candidateId, type: "decision" },
+    // Find the finalized milestone to determine where to insert the new milestone
+    const finalizedMilestone = await prisma.candidateMilestone.findFirst({
+      where: { candidateId, type: "finalized" },
       select: { sortOrder: true }
     });
 
-    if (!decisionMilestone) {
+    if (!finalizedMilestone) {
       return NextResponse.json(
-        { error: "Decision milestone not found" },
+        { error: "Finalized milestone not found" },
         { status: 500 }
       );
     }
 
-    // Find the highest sortOrder in the advanced section (before decision)
+    // Find the highest sortOrder in the advanced section (before finalized)
     const lastAdvancedMilestone = await prisma.candidateMilestone.findFirst({
       where: {
         candidateId,
         sortOrder: {
-          lt: decisionMilestone.sortOrder
+          lt: finalizedMilestone.sortOrder
         }
       },
       select: { sortOrder: true },
       orderBy: { sortOrder: "desc" }
     });
 
-    // Assign sortOrder between last advanced milestone and decision
+    // Assign sortOrder between last advanced milestone and finalized
     const newSortOrder = lastAdvancedMilestone
       ? lastAdvancedMilestone.sortOrder + 1
       : 41;
@@ -81,7 +81,7 @@ export async function POST(
         type: body.type,
         title: body.title || getDefaultMilestoneTitle(body.type),
         status: "not_started",
-        mode: body.type === "advanced_test" ? "platform" : "manual",
+        mode: body.type === "advanced_review" ? "platform" : "manual",
         sortOrder: newSortOrder
       }
     });

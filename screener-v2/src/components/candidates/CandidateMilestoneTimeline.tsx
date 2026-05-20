@@ -39,8 +39,8 @@ function groupMilestonesForTimeline(milestones: CandidateMilestoneRecord[]): Tim
   let advancedMilestones: CandidateMilestoneRecord[] = [];
 
   for (const m of sorted) {
-    if (m.type === "decision") {
-      // Add any accumulated advanced milestones as a group before decision
+    if (m.type === "finalized") {
+      // Add any accumulated advanced milestones as a group before finalized
       if (advancedMilestones.length > 0) {
         result.push({
           id: "advanced_review_group",
@@ -136,15 +136,15 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
     return "Interview notes";
   }
 
-  if (type === "decision") {
-    return "Decision notes";
+  if (type === "finalized") {
+    return "Finalized notes";
   }
 
   return "Feedback";
 }
 
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
-  if (type === "screener" || type === "advanced_test" || type === "review_round") {
+  if (type === "screener" || type === "advanced_review" || type === "review_round") {
     return mode === "platform" ? "Save step" : "Save notes";
   }
 
@@ -572,7 +572,7 @@ function MilestonePanelContent({
     return <ScreenerMilestoneCard candidateId={candidateId} milestone={milestone} />;
   }
 
-  if (milestone.type === "advanced_test" || milestone.type === "review_round") {
+  if (milestone.type === "advanced_review" || milestone.type === "review_round") {
     return <TestMilestoneCard candidateId={candidateId} milestone={milestone} />;
   }
 
@@ -619,7 +619,7 @@ function DocumentationMilestoneCard({
           idPrefix={`doc-result-${milestone.id}`}
           defaultValue={milestone.result || ""}
           options={
-            milestone.type === "decision"
+            milestone.type === "finalized"
               ? [
                   { value: "", label: "Not set" },
                   { value: "accept", label: "Accept" },
@@ -671,9 +671,9 @@ function AdvancedReviewCard({
   const [pendingMilestoneId, setPendingMilestoneId] = useState("");
   const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
 
-  const handleAddMilestone = async (type: "advanced_test" | "interview") => {
+  const handleAddMilestone = async (type: "advanced_review" | "interview") => {
     setCreateError("");
-    const setter = type === "advanced_test" ? setIsCreatingTest : setIsCreatingInterview;
+    const setter = type === "advanced_review" ? setIsCreatingTest : setIsCreatingInterview;
 
     try {
       setter(true);
@@ -689,7 +689,7 @@ function AdvancedReviewCard({
         setPendingMilestoneId(newMilestone.id);
 
         // Open the appropriate modal instead of redirecting
-        if (type === "advanced_test") {
+        if (type === "advanced_review") {
           setTestModalOpen(true);
         } else {
           setInterviewModalOpen(true);
@@ -764,7 +764,7 @@ function AdvancedReviewCard({
             const canCreateAssessment = m.mode === "platform" && !m.assessment;
             const handleEdit = () => {
               setEditingMilestoneId(m.id);
-              if (m.type === "advanced_test" || m.type === "review_round") {
+              if (m.type === "advanced_review" || m.type === "review_round") {
                 setTestModalOpen(true);
               } else if (m.type === "interview") {
                 setInterviewModalOpen(true);
@@ -828,7 +828,7 @@ function AdvancedReviewCard({
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button
             type="button"
-            onClick={() => handleAddMilestone("advanced_test")}
+            onClick={() => handleAddMilestone("advanced_review")}
             disabled={isCreatingTest}
             variant="secondary"
             className="flex-1"

@@ -181,7 +181,7 @@ export default async function CandidateDetailPage({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Candidate lifecycle</p>
-              <h2 className="text-3xl text-[color:var(--app-heading)]">Current decision</h2>
+              <h2 className="text-3xl text-[color:var(--app-heading)]">Current status</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
                 Track where things stand and what should happen next.
               </p>
@@ -282,7 +282,7 @@ export default async function CandidateDetailPage({
               <div className="space-y-1">
                 <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate journey</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Follow the process from first review to final decision.
+                  Follow the process from first review to finalization.
                 </p>
               </div>
               <CandidateMilestoneTimeline

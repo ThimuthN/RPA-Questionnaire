@@ -5,9 +5,8 @@ export const candidateStageOrder: Record<CandidateStage, number> = {
   pipeline: 2,
   screening: 3,
   interview: 4,
-  testing: 5,
-  decision: 6,
-  closed: 7
+  advanced_review: 5,
+  finalized: 6
 };
 
 export const candidateStageActionLabels: Record<CandidateStage, string> = {
@@ -15,9 +14,8 @@ export const candidateStageActionLabels: Record<CandidateStage, string> = {
   pipeline: "Move to Pipeline",
   screening: "Move to Screener",
   interview: "Move to Interview",
-  testing: "Move to Advanced Review",
-  decision: "Move to Finalized",
-  closed: "Close Candidate"
+  advanced_review: "Move to Advanced Review",
+  finalized: "Move to Finalized"
 };
 
 export function normalizeCandidateStage(stage: string): CandidateStage {

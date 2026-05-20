@@ -76,32 +76,32 @@ describe("Candidate Workflow and Stage Transitions", () => {
       expect(updated.stage).toBe("interview");
     });
 
-    it("should support progression: interview -> testing", async () => {
+    it("should support progression: interview -> advanced_review", async () => {
       const candidate = await createTestCandidate({ stage: "interview" });
 
       const updated = await prisma.candidate.update({
         where: { id: candidate.id },
-        data: { stage: "testing" }
+        data: { stage: "advanced_review" }
       });
 
-      expect(updated.stage).toBe("testing");
+      expect(updated.stage).toBe("advanced_review");
     });
 
-    it("should support progression: testing -> decision", async () => {
-      const candidate = await createTestCandidate({ stage: "testing" });
+    it("should support progression: advanced_review -> finalized", async () => {
+      const candidate = await createTestCandidate({ stage: "advanced_review" });
 
       const updated = await prisma.candidate.update({
         where: { id: candidate.id },
-        data: { stage: "decision" }
+        data: { stage: "finalized" }
       });
 
-      expect(updated.stage).toBe("decision");
+      expect(updated.stage).toBe("finalized");
     });
 
-    it("should require assessment before progressing to closed", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+    it("should require assessment before progressing to finalized", async () => {
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
-      // Without assessment, should not be closeable
+      // Without assessment, should not be finalizable
       const response = await testFetch(`/api/candidates/${candidate.id}/promote`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${testUser.token}` }
@@ -115,10 +115,10 @@ describe("Candidate Workflow and Stage Transitions", () => {
     it("should complete full hiring workflow: screening -> offer -> hire", async () => {
       const candidate = await createTestCandidate({ stage: "screening" });
 
-      // Progress to decision
+      // Progress to advanced_review
       await prisma.candidate.update({
         where: { id: candidate.id },
-        data: { stage: "decision" }
+        data: { stage: "advanced_review" }
       });
 
       // Create and accept offer
@@ -133,10 +133,10 @@ describe("Candidate Workflow and Stage Transitions", () => {
       // Create passed assessment
       await createTestAssessment(candidate.id);
 
-      // Progress to closed
+      // Progress to finalized
       await prisma.candidate.update({
         where: { id: candidate.id },
-        data: { stage: "closed" }
+        data: { stage: "finalized" }
       });
 
       // Hire candidate
@@ -157,7 +157,7 @@ describe("Candidate Workflow and Stage Transitions", () => {
     });
 
     it("should allow hiring without creating employee record", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
       // Create offer and assessment
       await prisma.candidateOffer.create({
@@ -197,8 +197,8 @@ describe("Candidate Workflow and Stage Transitions", () => {
       expect(updated.stage).toBe("screening");
     });
 
-    it("should allow setting candidate to closed without hiring", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+    it("should allow setting candidate to finalized without hiring", async () => {
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
       // Create a failed assessment (simulating rejection)
       const participant = await prisma.participant.create({
@@ -261,8 +261,8 @@ describe("Candidate Workflow and Stage Transitions", () => {
   });
 
   describe("Candidate Lifecycle Constraints", () => {
-    it("should prevent modifying closed/hired candidates", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+    it("should prevent modifying finalized/hired candidates", async () => {
+      const candidate = await createTestCandidate({ stage: "finalized" });
       await prisma.employee.create({
         data: {
           candidateId: candidate.id,
@@ -283,7 +283,7 @@ describe("Candidate Workflow and Stage Transitions", () => {
     });
 
     it("should prevent deletion of hired candidates", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
       const employee = await prisma.employee.create({
         data: {
           candidateId: candidate.id,
@@ -344,7 +344,7 @@ describe("Candidate Workflow and Stage Transitions", () => {
     });
 
     it("should find passed assessment for promotion", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
       const { assessment } = await createTestAssessment(candidate.id);
 
       const assessments = await prisma.candidateAssessment.findMany({

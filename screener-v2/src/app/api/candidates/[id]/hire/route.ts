@@ -49,6 +49,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const scopedPermission = await requirePermissionForDepartment(auth.session, 'hire_candidate', candidate.departmentId);
     if (!scopedPermission.ok) return scopedPermission.response;
 
+    // Validation: Candidate must be in finalized stage
+    if (candidate.stage !== 'finalized') {
+      return NextResponse.json(
+        { ok: false, message: 'Candidate must be in finalized stage before hiring' },
+        { status: 400 }
+      );
+    }
+
     // Validation: Offer must exist and be accepted
     if (!candidate.offer || candidate.offer.status !== 'accepted') {
       return NextResponse.json(
@@ -91,7 +99,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const updated = await prisma.candidate.update({
       where: { id },
       data: {
-        stage: 'closed',
+        stage: 'finalized',
         orgStage: 'finalized',
         finalizedAs: 'hired',
       },

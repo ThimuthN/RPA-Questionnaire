@@ -76,7 +76,7 @@ export class RoleService {
     const pipelineCandidates = await prisma.candidate.count({
       where: {
         roleId: id,
-        stage: { not: "closed" }
+        stage: { not: "finalized" }
       }
     });
     if (pipelineCandidates > 0) {
@@ -115,7 +115,7 @@ export class RoleService {
       prisma.candidate.count({
         where: {
           roleId: id,
-          stage: { not: "closed" }
+          stage: { not: "finalized" }
         }
       })
     ]);

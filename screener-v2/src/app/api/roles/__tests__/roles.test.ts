@@ -208,11 +208,11 @@ describe("Roles API", () => {
       expect(deleted).toBeNull();
     });
 
-    it("should allow deletion of closed candidates", async () => {
+    it("should allow deletion of finalized candidates", async () => {
       const role = await createTestRole("Test Role", testDepartment.id);
       const candidate = await createTestCandidate({
         roleId: role.id,
-        stage: "closed"
+        stage: "finalized"
       });
 
       const response = await testFetch(`/api/roles/${role.id}`, {

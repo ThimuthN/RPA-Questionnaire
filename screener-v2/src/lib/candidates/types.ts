@@ -3,9 +3,8 @@ export const candidateStageValues = [
   "pipeline",
   "screening",
   "interview",
-  "testing",
-  "decision",
-  "closed"
+  "advanced_review",
+  "finalized"
 ] as const;
 
 export type CandidateStage = (typeof candidateStageValues)[number];
@@ -58,9 +57,8 @@ export const candidateStageLabels: Record<CandidateStage, string> = {
   pipeline: "Pipeline",
   screening: "Screener",
   interview: "Interview",
-  testing: "Advanced Review",
-  decision: "Finalized",
-  closed: "Closed"
+  advanced_review: "Advanced Review",
+  finalized: "Finalized"
 };
 
 export const candidateNextActionLabels: Record<CandidateNextAction, string> = {

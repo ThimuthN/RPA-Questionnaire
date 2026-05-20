@@ -5,16 +5,15 @@ import type { Route } from "next";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-type CandidatesView = "jobs" | "applicants" | "pipeline" | "screener" | "interview" | "testing" | "finalized";
+type CandidatesView = "jobs" | "applicants" | "pipeline" | "screener" | "interview" | "advanced_review" | "finalized";
 
 interface StageCounts {
   applicant: number;
   pipeline: number;
   screening: number;
   interview: number;
-  testing: number;
-  decision: number;
-  closed: number;
+  advanced_review: number;
+  finalized: number;
 }
 
 const items: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
@@ -23,8 +22,8 @@ const items: Array<{ key: CandidatesView; label: string; countKey: keyof StageCo
   { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: "/people/candidates?stage=pipeline" as Route },
   { key: "screener", label: "Screener", countKey: "screening", href: "/people/candidates?stage=screening" as Route },
   { key: "interview", label: "Interview", countKey: "interview", href: "/people/candidates?stage=interview" as Route },
-  { key: "testing", label: "Advanced Review", countKey: "testing", href: "/people/candidates?stage=testing" as Route },
-  { key: "finalized", label: "Finalized", countKey: "decision", href: "/people/candidates?stage=finalized" as Route }
+  { key: "advanced_review", label: "Advanced Review", countKey: "advanced_review", href: "/people/candidates?stage=advanced_review" as Route },
+  { key: "finalized", label: "Finalized", countKey: "finalized", href: "/people/candidates?stage=finalized" as Route }
 ];
 
 export function CandidatesViewSwitch({ current }: { current: CandidatesView }) {

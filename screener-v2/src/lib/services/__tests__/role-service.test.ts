@@ -52,11 +52,11 @@ describe("RoleService", () => {
       expect(() => roleService.deleteRole(role.id)).rejects.toThrow("pipeline");
     });
 
-    it("should allow deletion with closed candidates", async () => {
+    it("should allow deletion with finalized candidates", async () => {
       const role = await roleService.createRole("Test Role", testDept.id);
       await createTestCandidate({
         roleId: role.id,
-        stage: "closed"
+        stage: "finalized"
       });
 
       const deleted = await roleService.deleteRole(role.id);

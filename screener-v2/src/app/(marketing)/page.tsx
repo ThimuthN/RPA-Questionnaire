@@ -24,9 +24,8 @@ import { listResultWorkspacePage } from "@/lib/db/repositories";
 
 function candidateStatusTone(stage: string) {
   if (stage === "interview") return "amber";
-  if (stage === "testing") return "amber";
-  if (stage === "decision") return "amber";
-  if (stage === "closed") return "emerald";
+  if (stage === "advanced_review") return "amber";
+  if (stage === "finalized") return "emerald";
   return "blue";
 }
 

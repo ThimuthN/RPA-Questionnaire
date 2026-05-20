@@ -53,7 +53,7 @@ export function FinalizeActionBar({
     <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-[color:var(--app-heading)]">
-          {isFinalized ? `Finalized as ${finalizedAs || "closed"}` : "Finalize candidate"}
+          {isFinalized ? `Finalized as ${finalizedAs || "unknown"}` : "Finalize candidate"}
         </p>
         {!isFinalized ? (
           <p className="text-xs text-[color:var(--app-muted)]">

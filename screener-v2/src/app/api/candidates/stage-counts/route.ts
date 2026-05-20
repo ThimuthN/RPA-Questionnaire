@@ -21,9 +21,8 @@ export async function GET() {
     pipeline: 0,
     screening: 0,
     interview: 0,
-    testing: 0,
-    decision: finalizedCount,
-    closed: 0
+    advanced_review: 0,
+    finalized: finalizedCount
   };
 
   for (const group of stageCounts) {

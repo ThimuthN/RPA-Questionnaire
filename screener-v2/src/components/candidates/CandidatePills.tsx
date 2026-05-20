@@ -41,12 +41,10 @@ function assessmentTone(status: CandidateAssessmentStatus) {
 
 function stageTone(stage: CandidateStage) {
   switch (stage) {
-    case "closed":
+    case "finalized":
       return "emerald" as const;
-    case "testing":
+    case "advanced_review":
       return "blue" as const;
-    case "decision":
-      return "amber" as const;
     default:
       return "teal" as const;
   }

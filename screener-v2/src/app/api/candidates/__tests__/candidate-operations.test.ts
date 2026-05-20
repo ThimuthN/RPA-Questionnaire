@@ -23,8 +23,8 @@ describe("Candidate Operations", () => {
   });
 
   describe("DELETE /api/candidates/[id]/delete", () => {
-    it("should reject delete of hired candidates (stage=closed with employee)", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+    it("should reject delete of hired candidates (stage=finalized with employee)", async () => {
+      const candidate = await createTestCandidate({ stage: "finalized" });
       const employee = await prisma.employee.create({
         data: {
           candidateId: candidate.id,
@@ -49,7 +49,7 @@ describe("Candidate Operations", () => {
     });
 
     it("should reject delete of candidate with pending offer", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
       await prisma.candidateOffer.create({
         data: {
           candidateId: candidate.id,
@@ -119,8 +119,8 @@ describe("Candidate Operations", () => {
   });
 
   describe("POST /api/candidates/[id]/promote", () => {
-    it("should reject promote to closed without passed assessment", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+    it("should reject promote to finalized without passed assessment", async () => {
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
       const response = await testFetch(`/api/candidates/${candidate.id}/promote`, {
         method: "POST",
@@ -134,11 +134,11 @@ describe("Candidate Operations", () => {
       const candidate_after = await prisma.candidate.findUnique({
         where: { id: candidate.id }
       });
-      expect(candidate_after?.stage).toBe("decision");
+      expect(candidate_after?.stage).toBe("finalized");
     });
 
-    it("should reject promote to testing without assessment", async () => {
-      const candidate = await createTestCandidate({ stage: "screening" });
+    it("should reject promote to advanced_review without assessment", async () => {
+      const candidate = await createTestCandidate({ stage: "interview" });
 
       const response = await testFetch(`/api/candidates/${candidate.id}/promote`, {
         method: "POST",
@@ -151,7 +151,7 @@ describe("Candidate Operations", () => {
     });
 
     it("should allow promote with valid stage transition and passed assessment", async () => {
-      const candidate = await createTestCandidate({ stage: "decision" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
       // Create assessment with passed result
       const participant = await prisma.participant.create({
@@ -216,12 +216,12 @@ describe("Candidate Operations", () => {
       const candidate_after = await prisma.candidate.findUnique({
         where: { id: candidate.id }
       });
-      expect(candidate_after?.stage).toBe("closed");
+      expect(candidate_after?.stage).toBe("finalized");
     });
   });
 
   describe("POST /api/candidates/[id]/hire", () => {
-    it("should reject hire of candidate not in closed stage", async () => {
+    it("should reject hire of candidate not in finalized stage", async () => {
       const candidate = await createTestCandidate({ stage: "interview" });
 
       const response = await testFetch(`/api/candidates/${candidate.id}/hire`, {
@@ -235,11 +235,11 @@ describe("Candidate Operations", () => {
 
       expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.message).toContain("decision stage");
+      expect(data.message).toContain("finalized stage");
     });
 
     it("should reject hire without accepted offer", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
 
       const response = await testFetch(`/api/candidates/${candidate.id}/hire`, {
         method: "POST",
@@ -256,7 +256,7 @@ describe("Candidate Operations", () => {
     });
 
     it("should reject hire without passed assessment", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
       await prisma.candidateOffer.create({
         data: {
           candidateId: candidate.id,
@@ -280,7 +280,7 @@ describe("Candidate Operations", () => {
     });
 
     it("should successfully hire candidate with all preconditions met", async () => {
-      const candidate = await createTestCandidate({ stage: "closed" });
+      const candidate = await createTestCandidate({ stage: "finalized" });
       const offer = await prisma.candidateOffer.create({
         data: {
           candidateId: candidate.id,

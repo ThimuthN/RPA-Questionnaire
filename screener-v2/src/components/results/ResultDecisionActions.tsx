@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { CandidateStage } from "@/lib/candidates/types";
 import type { ButtonProps } from "@/components/primitives/Button";
 
-type ResultDecisionActionStage = Extract<CandidateStage, "decision" | "screening" | "closed">;
+type ResultDecisionActionStage = Extract<CandidateStage, "finalized" | "screening">;
 
 export type ResultDecisionAction = {
   stage: ResultDecisionActionStage;
@@ -13,7 +13,7 @@ export type ResultDecisionAction = {
 
 const resultDecisionActions: readonly ResultDecisionAction[] = [
   {
-    stage: "decision",
+    stage: "finalized",
     label: "Move forward",
     buttonVariant: "primary",
     barButtonClassName:
@@ -25,13 +25,6 @@ const resultDecisionActions: readonly ResultDecisionAction[] = [
     buttonVariant: "secondary",
     barButtonClassName:
       "rounded-full border border-[color:var(--app-warning)]/30 bg-[color:var(--app-warning-soft)] px-4 py-2 text-sm text-[color:var(--app-warning)] transition hover:brightness-95"
-  },
-  {
-    stage: "closed",
-    label: "Reject",
-    buttonVariant: "secondary",
-    barButtonClassName:
-      "rounded-full border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] px-4 py-2 text-sm text-[color:var(--app-danger)] transition hover:brightness-95"
   }
 ];
 

@@ -95,7 +95,7 @@ export default async function PeopleCandidatesPage({
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
   const session = await requirePageSession(nextPath);
 
-  const isFinalizedView = params.stage === "finalized" || params.stage === "decision";
+  const isFinalizedView = params.stage === "finalized";
   const selectedStage = !isFinalizedView && candidateStageValues.includes(params.stage as CandidateStage)
     ? (params.stage as CandidateStage)
     : "pipeline";
@@ -156,8 +156,8 @@ export default async function PeopleCandidatesPage({
                 params.stage === "applicant" ? "applicants" :
                 params.stage === "screening" ? "screener" :
                 params.stage === "interview" ? "interview" :
-                params.stage === "testing" ? "testing" :
-                params.stage === "decision" || params.stage === "finalized" ? "finalized" :
+                params.stage === "advanced_review" ? "advanced_review" :
+                params.stage === "finalized" ? "finalized" :
                 "pipeline"
               }
             />

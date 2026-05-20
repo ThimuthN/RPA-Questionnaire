@@ -88,10 +88,10 @@ function openWorkBucket(args: {
   ) {
     return "ready_for_review" as const;
   }
-  if (args.staleDays >= 7 && args.stage !== "decision" && args.stage !== "closed") {
+  if (args.staleDays >= 7 && args.stage !== "finalized" && args.stage !== "finalized") {
     return "stalled" as const;
   }
-  if (args.stage === "decision") return "moved_forward" as const;
+  if (args.stage === "finalized") return "moved_forward" as const;
   return "in_progress" as const;
 }
 

@@ -3,8 +3,8 @@ export const candidateMilestoneTypeValues = [
   "screener",
   "interview",
   "review_round",
-  "advanced_test",
-  "decision"
+  "advanced_review",
+  "finalized"
 ] as const;
 
 export type CandidateMilestoneType = (typeof candidateMilestoneTypeValues)[number];
@@ -32,8 +32,8 @@ export const candidateMilestoneTypeLabels: Record<CandidateMilestoneType, string
   screener: "Screener",
   interview: "Interview",
   review_round: "Review round",
-  advanced_test: "Advanced test",
-  decision: "Decision"
+  advanced_review: "Advanced Review",
+  finalized: "Finalized"
 };
 
 export const candidateMilestoneStatusLabels: Record<CandidateMilestoneStatus, string> = {
@@ -114,10 +114,10 @@ export const milestoneCheckDefs: Record<CandidateMilestoneType, CheckDefinition[
     { type: 'review_assessment', label: 'Assessment', required: false },
     { type: 'review_notes', label: 'Interview notes', required: false }
   ],
-  advanced_test: [
+  advanced_review: [
     { type: 'review_notes', label: 'Notes', required: false }
   ],
-  decision: [
+  finalized: [
     { type: 'final_decision', label: 'Final decision', required: true }
   ]
 };
@@ -194,8 +194,8 @@ export function defaultCandidateMilestones() {
       mode: "manual" as const
     },
     {
-      type: "decision" as const,
-      title: "Decision",
+      type: "finalized" as const,
+      title: "Finalized",
       status: "not_started" as const,
       sortOrder: 9999,
       mode: "manual" as const

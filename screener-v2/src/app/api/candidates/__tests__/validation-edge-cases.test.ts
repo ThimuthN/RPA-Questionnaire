@@ -144,7 +144,7 @@ describe("API Validation Edge Cases", () => {
     });
 
     it("should accept all valid stage values", async () => {
-      const validStages = ["applicant", "pipeline", "screening", "interview", "testing", "decision", "closed"];
+      const validStages = ["applicant", "pipeline", "screening", "interview", "advanced_review", "finalized", "finalized"];
 
       for (const stage of validStages) {
         const response = await testFetch("/api/candidates", {
