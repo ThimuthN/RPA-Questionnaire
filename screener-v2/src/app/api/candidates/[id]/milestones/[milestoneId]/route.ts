@@ -65,7 +65,7 @@ export async function POST(
 
     if (action === "status") {
       const body = quickStatusSchema.parse(raw);
-      await quickUpdateCandidateMilestoneStatus(id, milestoneId, body.status);
+      await quickUpdateCandidateMilestoneStatus(id, milestoneId, body.status, session.userId ?? undefined, session.name || session.email || "System");
       return redirectToCandidate(request, id, "updated");
     }
 
@@ -99,7 +99,9 @@ export async function POST(
       notes: body.notes,
       score: parsedScore,
       result: body.result || undefined,
-      recommendation: body.recommendation
+      recommendation: body.recommendation,
+      actorId: session.userId ?? undefined,
+      actorName: session.name || session.email || "System"
     });
 
     return redirectToCandidate(request, id, "updated");

@@ -25,7 +25,8 @@ export async function PUT(
       noteId,
       candidateId,
       body: body.body,
-      updatedById: session.userId ?? undefined
+      updatedById: session.userId ?? undefined,
+      updatedByName: session.name || session.email || "System"
     });
 
     return NextResponse.json({ success: true });
@@ -60,7 +61,8 @@ export async function DELETE(
     await deleteCandidateNote({
       noteId,
       candidateId,
-      deletedById: session.userId ?? undefined
+      deletedById: session.userId ?? undefined,
+      deletedByName: session.name || session.email || "System"
     });
 
     return NextResponse.json({ success: true });

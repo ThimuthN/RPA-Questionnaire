@@ -37,7 +37,8 @@ export async function POST(
     const result = await setOrgStatus(
       candidateId,
       input.orgStatus,
-      session.userId ?? undefined
+      session.userId ?? undefined,
+      session.name || session.email || "System"
     );
 
     return NextResponse.json(result);

@@ -137,6 +137,7 @@ export async function POST(request: Request) {
           roleId: parsed.roleId,
           hrOwnerId: parsed.hrOwnerId,
           nominatedBy: session.userId ?? undefined,
+          nominatedByName: session.name || session.email || "System",
           nominationNote: parsed.nominationNote,
           source: "nominated"
         });

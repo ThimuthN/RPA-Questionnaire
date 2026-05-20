@@ -103,6 +103,7 @@ export async function POST(
         id: cuidLike(),
         candidateId,
         actorId: session.userId,
+        actorName: session.name || session.email || "System",
         event: "stage_advanced",
         detail: `${candidate.stage} -> ${next}`,
         createdAt: new Date()

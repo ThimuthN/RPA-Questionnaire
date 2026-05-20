@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       roleId: input.roleId,
       hrOwnerId: input.hrOwnerId,
       nominatedBy: input.nominatedBy || (session.userId ?? undefined),
+      nominatedByName: session.name || session.email || "System",
       nominationNote: input.nominationNote,
       jobPostingId: input.jobPostingId,
       source: (input.source || "manual") as "manual" | "job_application" | "nominated"

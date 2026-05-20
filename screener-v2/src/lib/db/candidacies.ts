@@ -31,6 +31,7 @@ interface CreateOrUpdateCandidacyInput {
   status?: DepartmentCandidacyStatus;
   source?: "manual" | "job_application" | "nominated";
   nominatedBy?: string;
+  nominatedByName?: string;
   nominationNote?: string;
   jobPostingId?: string;
 }
@@ -115,6 +116,7 @@ export async function createOrUpdateDepartmentCandidacy(input: CreateOrUpdateCan
         id: cuidLike(),
         candidateId: input.candidateId,
         actorId: input.nominatedBy,
+        actorName: input.nominatedByName,
         event: "department_transferred",
         entityType: "candidacy",
         entityId: current.id,
@@ -281,7 +283,8 @@ export async function listCandidaciesForCandidate(candidateId: string) {
 export async function updateDepartmentCandidacyStatus(
   candidacyId: string,
   status: DepartmentCandidacyStatus,
-  actorId?: string
+  actorId?: string,
+  actorName?: string
 ) {
   const updated = await prisma.$transaction(async (tx) => {
     const candidacy = await tx.departmentCandidacy.update({
@@ -301,6 +304,7 @@ export async function updateDepartmentCandidacyStatus(
         id: cuidLike(),
         candidateId: candidacy.candidateId,
         actorId,
+        actorName,
         event: "candidacy_status_changed",
         entityType: "candidacy",
         detail: `${candidacy.department.name}: ${status}`,
@@ -329,7 +333,8 @@ export async function updateDepartmentCandidacyStatus(
 export async function setOrgStatus(
   candidateId: string,
   orgStatus: CandidateOrgStatus,
-  actorId?: string
+  actorId?: string,
+  actorName?: string
 ) {
   const updated = await prisma.$transaction(async (tx) => {
     // Update candidate org status
@@ -363,6 +368,7 @@ export async function setOrgStatus(
         id: cuidLike(),
         candidateId,
         actorId,
+        actorName,
         event: "org_status_changed",
         detail: orgStatus,
         createdAt: new Date()

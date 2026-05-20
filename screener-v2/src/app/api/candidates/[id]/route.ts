@@ -115,7 +115,8 @@ export async function POST(
       stage: body.stage || (current.stage as CandidateStage),
       nextAction: body.nextAction || (current.nextAction as CandidateNextAction),
       screeningStatus: body.screeningStatus || undefined,
-      actorId: auth.session.userId ?? undefined
+      actorId: auth.session.userId ?? undefined,
+      actorName: auth.session.name || auth.session.email || "System"
     });
 
     const url = new URL(`/candidates/${id}`, request.url);

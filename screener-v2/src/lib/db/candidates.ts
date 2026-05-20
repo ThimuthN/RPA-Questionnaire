@@ -797,6 +797,7 @@ export async function updateCandidate(
     candidateFolderUrl?: string;
     notesSummary?: string;
     actorId?: string;
+    actorName?: string;
   }
 ) {
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -883,7 +884,8 @@ export async function updateCandidate(
         candidateId,
         event: "candidate_profile_updated",
         detail: `Updated: ${changedFields.join(", ")}`,
-        actorId: input.actorId
+        actorId: input.actorId,
+        actorName: input.actorName
       });
     }
 
@@ -1106,6 +1108,7 @@ export async function updateCandidateNote(input: {
   candidateId: string;
   body: string;
   updatedById?: string;
+  updatedByName?: string;
 }) {
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.candidateNote.update({
@@ -1135,6 +1138,7 @@ export async function updateCandidateNote(input: {
         id: cuidLike(),
         candidateId: input.candidateId,
         actorId: input.updatedById ?? null,
+        actorName: input.updatedByName ?? null,
         event: "note_updated",
         entityType: "note",
         entityId: input.noteId,
@@ -1153,6 +1157,7 @@ export async function deleteCandidateNote(input: {
   noteId: string;
   candidateId: string;
   deletedById?: string;
+  deletedByName?: string;
 }) {
   const result = await prisma.$transaction(async (tx) => {
     const deleted = await tx.candidateNote.update({
@@ -1180,6 +1185,7 @@ export async function deleteCandidateNote(input: {
         id: cuidLike(),
         candidateId: input.candidateId,
         actorId: input.deletedById ?? null,
+        actorName: input.deletedByName ?? null,
         event: "note_deleted",
         entityType: "note",
         entityId: input.noteId,
@@ -1417,6 +1423,7 @@ export async function updateCandidateMilestone(
     result?: CandidateMilestoneResult;
     recommendation?: string;
     actorId?: string;
+    actorName?: string;
   }
 ) {
   const milestone = await prisma.candidateMilestone.findFirst({
@@ -1472,7 +1479,8 @@ export async function updateCandidateMilestone(
         entityType: "milestone",
         entityId: milestoneId,
         detail: `${milestone.title}: ${changedFields.join(", ")}`,
-        actorId: input.actorId
+        actorId: input.actorId,
+        actorName: input.actorName
       });
     }
 
@@ -1490,7 +1498,8 @@ export async function quickUpdateCandidateMilestoneStatus(
   candidateId: string,
   milestoneId: string,
   status: CandidateMilestoneStatus,
-  actorId?: string
+  actorId?: string,
+  actorName?: string
 ) {
   const milestone = await prisma.candidateMilestone.findFirst({
     where: {
@@ -1526,7 +1535,8 @@ export async function quickUpdateCandidateMilestoneStatus(
         entityType: "milestone",
         entityId: milestoneId,
         detail: `${milestone.title}: ${milestone.status} → ${status}`,
-        actorId
+        actorId,
+        actorName
       });
     }
 

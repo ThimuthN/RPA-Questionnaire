@@ -55,7 +55,8 @@ export async function PATCH(
       updated = await updateDepartmentCandidacyStatus(
         candidacyId,
         input.status,
-        session.userId ?? undefined
+        session.userId ?? undefined,
+        session.name || session.email || "System"
       );
     } else {
       // Update other fields
