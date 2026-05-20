@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { parseCandidateCsv } from "@/lib/candidates/csv";
 import { candidateNoteTypeValues, candidateStageValues } from "@/lib/candidates/types";
 import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
@@ -12,16 +12,15 @@ const MAX_BULK_IDS_PER_REQUEST = 500;
 const MAX_CSV_ROWS_PER_IMPORT = 1000;
 
 const bulkSchema = z.object({
-  action: z.enum(["assign_owner", "set_stage", "add_note", "set_department", "import_csv", "nominate_to_dept", "set_org_status"]),
+  action: z.enum(["assign_owner", "set_stage", "add_note", "import_csv", "nominate_to_dept"]),
   owner: z.string().optional(),
   stage: z.enum(candidateStageValues).optional(),
-  roleId: z.string().optional(), // deprecated: use departmentId for set_department action
+  roleId: z.string().optional(),
   departmentId: z.string().optional(),
   hrOwnerId: z.string().optional(),
   noteBody: z.string().optional(),
   noteType: z.enum(candidateNoteTypeValues).optional(),
   nominationNote: z.string().optional(),
-  orgStatus: z.enum(["active", "talent_pool", "org_rejected"]).optional(),
   returnTo: z.string().optional()
 });
 
@@ -102,8 +101,34 @@ export async function POST(request: Request) {
       url.searchParams.set("error", `Maximum ${MAX_BULK_IDS_PER_REQUEST} candidates per request`);
       return NextResponse.redirect(url, 303);
     }
-    // Handle new bulk actions that aren't in bulkUpdateCandidates yet
-    if (parsed.action === "nominate_to_dept" && parsed.departmentId) {
+
+    const selectedCandidates = await prisma.candidate.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, departmentId: true, orgStage: true }
+    });
+    for (const candidate of selectedCandidates) {
+      const scopedPermission = await requirePermissionForDepartment(session, "manage_candidates", candidate.departmentId);
+      if (!scopedPermission.ok) return scopedPermission.response;
+      if (candidate.orgStage === "finalized") {
+        throw new Error("Finalized candidates must be reverted before editing.");
+      }
+    }
+
+    if (parsed.action === "nominate_to_dept") {
+      if (!parsed.departmentId) {
+        throw new Error("Choose a target department for the transfer.");
+      }
+      if (!parsed.roleId) {
+        throw new Error("Choose a target role for the transfer.");
+      }
+      const role = await prisma.roleCatalog.findUnique({
+        where: { id: parsed.roleId },
+        select: { departmentId: true }
+      });
+      if (!role || role.departmentId !== parsed.departmentId) {
+        throw new Error("Role must belong to the selected department.");
+      }
+
       let count = 0;
       for (const candidateId of ids) {
         await createOrUpdateDepartmentCandidacy({
@@ -121,17 +146,6 @@ export async function POST(request: Request) {
       return NextResponse.redirect(url, 303);
     }
 
-    if (parsed.action === "set_org_status" && parsed.orgStatus) {
-      const { setOrgStatus } = await import("@/lib/db/candidacies");
-      let count = 0;
-      for (const candidateId of ids) {
-        await setOrgStatus(candidateId, parsed.orgStatus as "active" | "talent_pool" | "org_rejected", session.userId ?? undefined);
-        count++;
-      }
-      url.searchParams.set("updated", String(count));
-      return NextResponse.redirect(url, 303);
-    }
-
     const result = await bulkUpdateCandidates({
       candidateIds: ids,
       action: parsed.action as any,
@@ -143,7 +157,6 @@ export async function POST(request: Request) {
       noteBody: parsed.noteBody,
       noteType: parsed.noteType,
       nominationNote: parsed.nominationNote,
-      orgStatus: parsed.orgStatus,
       createdById: session.userId ?? undefined
     });
 

@@ -218,7 +218,7 @@ export interface CandidateWorkspacePage {
   total: number;
   page: number;
   pageSize: number;
-  roleOptions: Array<{ id: string; label: string }>;
+  roleOptions: Array<{ id: string; label: string; departmentId?: string }>;
   ownerOptions: Array<{ id: string; label: string }>;
   summary: CandidateOpenWorkSummary;
 }
@@ -819,6 +819,8 @@ export async function updateCandidate(
         email: true,
         phone: true,
         roleId: true,
+        positionAppliedFor: true,
+        departmentId: true,
         stage: true,
         nextAction: true,
         hrOwner: true,
@@ -832,12 +834,16 @@ export async function updateCandidate(
         fullName: input.fullName.trim(),
         email: normalizedEmail,
         phone: input.phone?.trim() || null,
-        roleId: resolvedRole?.id ?? null,
-        positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
+        roleId: input.roleId !== undefined ? resolvedRole?.id ?? null : current?.roleId,
+        positionAppliedFor: input.roleId !== undefined
+          ? null
+          : input.positionAppliedFor !== undefined
+            ? resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)
+            : current?.positionAppliedFor,
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
         hrOwner: input.hrOwner?.trim() || null,
-        departmentId: input.departmentId || null,
+        departmentId: input.departmentId !== undefined ? input.departmentId || null : current?.departmentId,
         hrOwnerId: input.hrOwnerId || null,
         stage: input.stage,
         nextAction: input.nextAction,
@@ -865,6 +871,8 @@ export async function updateCandidate(
     if (current && current.fullName !== input.fullName.trim()) changedFields.push("name");
     if (current && current.email !== normalizedEmail) changedFields.push("email");
     if (current && current.phone !== (input.phone?.trim() || null)) changedFields.push("phone");
+    if (input.roleId !== undefined && current && current.roleId !== (resolvedRole?.id ?? null)) changedFields.push("role");
+    if (input.departmentId !== undefined && current && current.departmentId !== (input.departmentId || null)) changedFields.push("department");
     if (current && current.stage !== input.stage) changedFields.push("stage");
     if (current && current.nextAction !== input.nextAction) changedFields.push("nextAction");
     if (current && current.hrOwner !== (input.hrOwner?.trim() || null)) changedFields.push("owner");
@@ -2117,7 +2125,8 @@ export async function listCandidateWorkspacePage(
   const sorted = sortCandidateWorkspaceItems(workspaceRows, filters.sort ?? "updated_desc");
   const roleOptions = (await listRoleCatalog()).map((role) => ({
     id: role.id,
-    label: role.label
+    label: role.label,
+    departmentId: role.departmentId
   }));
 
   // Get owners from User table instead of deriving from candidates

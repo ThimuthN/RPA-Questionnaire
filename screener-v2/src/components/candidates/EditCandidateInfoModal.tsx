@@ -5,16 +5,8 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
-import { RolePicker, type RolePickerOption } from "@/components/roles/RolePicker";
 import { resumeSourceOptions } from "@/lib/candidates/types";
 import type { CandidateDetail } from "@/lib/db/candidates";
-
-interface DepartmentOption {
-  id: string;
-  name: string;
-  slug: string;
-  isActive: boolean;
-}
 
 interface UserOption {
   id: string;
@@ -31,34 +23,8 @@ export function EditCandidateInfoModal({
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [owners, setOwners] = useState<UserOption[]>([]);
-  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>(candidate.departmentId || "");
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>(candidate.hrOwnerId || "");
-  const [selectedRole, setSelectedRole] = useState<RolePickerOption | null>(
-    candidate.roleId && candidate.roleLabel
-      ? {
-          id: candidate.roleId,
-          label: candidate.roleLabel,
-          departmentId: candidate.departmentId,
-          departmentName: candidate.departmentName
-        }
-      : null
-  );
-
-  async function loadDepartments() {
-    try {
-      const response = await fetch("/api/departments", { cache: "no-store" });
-      const data = await response.json();
-      if (Array.isArray(data)) {
-        setDepartments(data);
-      } else if (Array.isArray(data.departments)) {
-        setDepartments(data.departments);
-      }
-    } catch {
-      // Silently fail - departments are optional
-    }
-  }
 
   async function loadOwners(deptId: string) {
     if (!deptId) {
@@ -83,13 +49,8 @@ export function EditCandidateInfoModal({
   }, []);
 
   useEffect(() => {
-    loadDepartments();
-    loadOwners(selectedDepartmentId);
+    loadOwners(candidate.departmentId || "");
   }, []);
-
-  useEffect(() => {
-    loadOwners(selectedDepartmentId);
-  }, [selectedDepartmentId]);
 
   useEffect(() => {
     if (!open) return;
@@ -182,7 +143,6 @@ export function EditCandidateInfoModal({
                         <input type="hidden" name="batchId" value={candidate.batchId || ""} />
                         <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
                         <input type="hidden" name="hrOwnerId" value={selectedOwnerId} />
-                        <input type="hidden" name="departmentId" value={selectedDepartmentId} />
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <label className="grid gap-1">
@@ -208,33 +168,17 @@ export function EditCandidateInfoModal({
                             />
                           </label>
 
-                          <label className="grid gap-1">
+                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
                             <span className="text-sm text-[color:var(--app-text)]">Department</span>
-                            <select
-                              value={selectedDepartmentId}
-                              onChange={(e) => setSelectedDepartmentId(e.target.value)}
-                              disabled={isSubmitting}
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
-                            >
-                              <option value="">Select department</option>
-                              {departments.filter(d => d.isActive).map((dept) => (
-                                <option key={dept.id} value={dept.id}>
-                                  {dept.name}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
+                            <p className="text-sm text-[color:var(--app-heading)]">{candidate.departmentName || "Not assigned"}</p>
+                            <p className="text-xs text-[color:var(--app-muted)]">Use Transfer department to change this bucket.</p>
+                          </div>
 
-                          <RolePicker
-                            name="roleId"
-                            label="Role"
-                            value={selectedRole}
-                            onChange={setSelectedRole}
-                            placeholder="Optional"
-                            helperText="Choose a saved role, or update the catalog from Manage roles."
-                            layout="stacked"
-                            className="grid gap-1"
-                          />
+                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                            <span className="text-sm text-[color:var(--app-text)]">Role</span>
+                            <p className="text-sm text-[color:var(--app-heading)]">{candidate.roleLabel || "Role not set"}</p>
+                            <p className="text-xs text-[color:var(--app-muted)]">Role changes follow the same transfer flow.</p>
+                          </div>
 
                           <label className="grid gap-1">
                             <span className="text-sm text-[color:var(--app-text)]">Owner</span>

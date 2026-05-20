@@ -230,7 +230,7 @@ export async function updateAppUser(input: {
 }) {
   const before = await prisma.user.findUnique({
     where: { id: input.userId },
-    select: { roleId: true }
+    select: { departmentId: true, roleId: true }
   });
 
   const data: Record<string, any> = {};
@@ -238,6 +238,13 @@ export async function updateAppUser(input: {
   if (input.departmentId !== undefined) data.departmentId = input.departmentId || null;
   if (input.roleId !== undefined) data.roleId = input.roleId || null;
   if (input.isActive !== undefined) data.isActive = input.isActive;
+
+  // Auto-clear role if department is changing and no explicit roleId provided
+  const departmentChanged = before && input.departmentId !== undefined && before.departmentId !== (input.departmentId || null);
+  const roleExplicitlySet = input.roleId !== undefined;
+  if (departmentChanged && !roleExplicitlySet) {
+    data.roleId = null;
+  }
 
   const updated = await prisma.user.update({
     where: { id: input.userId },

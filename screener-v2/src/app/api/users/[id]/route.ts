@@ -12,7 +12,7 @@ const updateUserSchema = z.object({
   departmentId: z.string().optional(),
   roleId: z.string().optional(),
   isActive: z.boolean().optional()
-});
+}).describe("When changing departmentId without providing a roleId, the user's role is automatically cleared to require explicit assignment in the new department");
 
 export async function POST(
   request: Request,
@@ -50,6 +50,8 @@ export async function POST(
       if (!role) {
         throw new Error("Role not found.");
       }
+      // Role must belong to the target department. If changing departments without providing
+      // a valid role, the role will be auto-cleared to require explicit reassignment.
       if (targetDepartmentId && role.departmentId !== targetDepartmentId) {
         throw new Error("Role must belong to the selected department.");
       }

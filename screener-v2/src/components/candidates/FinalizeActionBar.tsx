@@ -51,6 +51,16 @@ export function FinalizeActionBar({
 
   return (
     <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-[color:var(--app-heading)]">
+          {isFinalized ? `Finalized as ${finalizedAs || "closed"}` : "Finalize candidate"}
+        </p>
+        {!isFinalized ? (
+          <p className="text-xs text-[color:var(--app-muted)]">
+            Reject finalizes immediately. Hire requires the accepted-offer and passed-assessment checks.
+          </p>
+        ) : null}
+      </div>
       <div className="flex flex-wrap items-center gap-2">
         {!isFinalized && permissions.includes("hire_candidate") ? (
           <Button type="button" disabled={Boolean(pendingAction)} onClick={() => submit("hire")}>

@@ -63,7 +63,7 @@ export function CandidateWorkspaceTable({
 }: {
   rows: CandidateWorkspaceItem[];
   currentPathAndQuery: string;
-  roleOptions?: Array<{ id: string; label: string }>;
+  roleOptions?: Array<{ id: string; label: string; departmentId?: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
   permissions?: string[];
 }) {

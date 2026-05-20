@@ -45,7 +45,7 @@ export async function POST(
     // Fetch current candidate to get existing stage/nextAction if not provided
     const current = await prisma.candidate.findUnique({
       where: { id },
-      select: { stage: true, nextAction: true, departmentId: true, orgStage: true }
+      select: { stage: true, nextAction: true, departmentId: true, roleId: true, orgStage: true }
     });
     if (!current) {
       throw new Error("Candidate not found");
@@ -56,6 +56,13 @@ export async function POST(
 
     if (current.orgStage === "finalized") {
       throw new Error("Finalized candidates must be reverted before editing.");
+    }
+
+    if (
+      (body.departmentId && body.departmentId !== current.departmentId) ||
+      (body.roleId && body.roleId !== current.roleId)
+    ) {
+      throw new Error("Use Transfer department to change a candidate's department or role.");
     }
 
     // Validate foreign keys exist
@@ -107,7 +114,8 @@ export async function POST(
       notesSummary: body.notesSummary,
       stage: body.stage || (current.stage as CandidateStage),
       nextAction: body.nextAction || (current.nextAction as CandidateNextAction),
-      screeningStatus: body.screeningStatus || undefined
+      screeningStatus: body.screeningStatus || undefined,
+      actorId: auth.session.userId ?? undefined
     });
 
     const url = new URL(`/candidates/${id}`, request.url);

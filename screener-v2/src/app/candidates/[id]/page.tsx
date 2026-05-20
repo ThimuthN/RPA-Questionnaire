@@ -4,17 +4,17 @@ import { notFound } from "next/navigation";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
-import { DeptCandidacyPanel } from "@/components/candidates/DeptCandidacyPanel";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
-import { OrgStatusControl } from "@/components/candidates/OrgStatusControl";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
+import { TransferCandidateAction } from "@/components/candidates/TransferCandidateAction";
 import { Button } from "@/components/primitives/Button";
 import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getCandidateDetail } from "@/lib/db/candidates";
@@ -146,7 +146,10 @@ export default async function CandidateDetailPage({
       {candidate.hrOwner ? (
         <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
       ) : null}
-      <StatusPill label={candidate.stage === "applicant" ? "Applicant" : "Pipeline"} tone={candidate.stage === "applicant" ? "amber" : "blue"} />
+      <StatusPill
+        label={candidateStageLabels[candidate.stage as CandidateStage] ?? candidate.stage}
+        tone={candidate.stage === "applicant" ? "amber" : "blue"}
+      />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
     </div>
   );
@@ -195,6 +198,9 @@ export default async function CandidateDetailPage({
               {session.permissions.includes("manage_candidates") ? (
                 <EditCandidateInfoModal candidate={candidate} />
               ) : null}
+              {session.permissions.includes("manage_candidates") && candidate.orgStage !== "finalized" ? (
+                <TransferCandidateAction candidateId={candidate.id} />
+              ) : null}
               {session.permissions.includes("delete_candidate") ? (
                 <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                   <ConfirmSubmitButton
@@ -211,6 +217,13 @@ export default async function CandidateDetailPage({
           <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
             <div className="min-w-0 space-y-4">
               {outcomeBadges}
+
+              <FinalizeActionBar
+                candidateId={candidate.id}
+                orgStage={candidate.orgStage}
+                finalizedAs={candidate.finalizedAs}
+                permissions={session.permissions}
+              />
 
               <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 lg:grid-cols-3">
                 <div className="space-y-1">
@@ -370,37 +383,6 @@ export default async function CandidateDetailPage({
                 </details>
               </div>
             </section>
-
-            <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
-              <FinalizeActionBar
-                candidateId={candidate.id}
-                orgStage={candidate.orgStage}
-                finalizedAs={candidate.finalizedAs}
-                permissions={session.permissions}
-              />
-            </section>
-
-            <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-[color:var(--app-heading)]">Organization Status</h3>
-                <OrgStatusControl
-                  candidateId={candidate.id}
-                  currentStatus={(candidate.orgStatus as any) || "active"}
-                />
-              </div>
-            </section>
-
-            {candidate.departmentCandidacies && candidate.departmentCandidacies.length > 0 && (
-              <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-[color:var(--app-heading)]">Department Candidacies</h3>
-                  <DeptCandidacyPanel
-                    candidateId={candidate.id}
-                    candidacies={candidate.departmentCandidacies as any}
-                  />
-                </div>
-              </section>
-            )}
 
             <section className="border-t border-[color:var(--app-border)] pt-5">
               <CandidateActivityModal items={activityFeed} />
