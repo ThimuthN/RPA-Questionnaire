@@ -27,7 +27,9 @@ export async function GET() {
   };
 
   for (const group of stageCounts) {
-    if (group.stage in counts) {
+    if (group.stage === "new") {
+      counts.pipeline += group._count;
+    } else if (group.stage in counts) {
       counts[group.stage] = group._count;
     }
   }

@@ -203,6 +203,7 @@ export interface CandidateWorkspaceFilters {
   roleId?: string;
   jobId?: string;
   stage?: CandidateStage;
+  stageValues?: string[];
   departmentId?: string;
   orgStage?: "active" | "finalized";
   finalizedAs?: "hired" | "rejected";
@@ -1847,6 +1848,7 @@ export async function findExistingCandidateByEmail(email: string) {
 function buildCandidateWhere(filters?: {
   roleId?: string;
   stage?: CandidateStage;
+  stageValues?: string[];
   departmentId?: string;
   orgStage?: "active" | "finalized";
   finalizedAs?: "hired" | "rejected";
@@ -1858,7 +1860,9 @@ function buildCandidateWhere(filters?: {
   if (filters?.roleId) {
     where.roleId = filters.roleId;
   }
-  if (filters?.stage) {
+  if (filters?.stageValues?.length) {
+    where.stage = { in: filters.stageValues };
+  } else if (filters?.stage) {
     where.stage = filters.stage;
   }
   if (filters?.departmentId) {
@@ -1997,6 +2001,7 @@ export async function listCandidateWorkspacePage(
   const where = buildCandidateWhere({
     roleId: filters.roleId,
     stage: filters.stage,
+    stageValues: filters.stageValues,
     departmentId: filters.departmentId,
     orgStage: filters.orgStage,
     finalizedAs: filters.finalizedAs,

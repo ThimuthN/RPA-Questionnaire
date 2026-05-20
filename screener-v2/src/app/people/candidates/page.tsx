@@ -99,13 +99,17 @@ export default async function PeopleCandidatesPage({
   const selectedStage = !isFinalizedView && candidateStageValues.includes(params.stage as CandidateStage)
     ? (params.stage as CandidateStage)
     : "pipeline";
+  const selectedStageValues = !isFinalizedView && selectedStage === "pipeline"
+    ? ["pipeline", "new"]
+    : undefined;
 
   const [page, departments] = await Promise.all([
     listCandidateWorkspacePage({
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
       departmentId: params.departmentId?.trim() || undefined,
-      stage: isFinalizedView ? undefined : selectedStage,
+      stage: isFinalizedView || selectedStageValues ? undefined : selectedStage,
+      stageValues: selectedStageValues,
       orgStage: isFinalizedView ? "finalized" : "active",
       finalizedAs: params.finalizedAs === "hired" || params.finalizedAs === "rejected"
         ? params.finalizedAs

@@ -30,6 +30,10 @@ const nextStageLabel: Record<CandidateStage, string | null> = {
   closed: null
 };
 
+function normalizeStage(stage: string): CandidateStage {
+  return stage === "new" ? "pipeline" : (stage as CandidateStage);
+}
+
 const tableShellClassName =
   "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
 
@@ -139,6 +143,7 @@ export function CandidateWorkspaceTable({
               {rows.map((candidate) => {
                 const action = contextualAction(candidate);
                 const isSelected = selectedCandidateIds.includes(candidate.id);
+                const stage = normalizeStage(candidate.stage);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
@@ -163,7 +168,7 @@ export function CandidateWorkspaceTable({
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
-                          {permissions.includes("promote_candidate") && nextStageLabel[candidate.stage as CandidateStage] ? (
+                          {permissions.includes("promote_candidate") && nextStageLabel[stage] ? (
                             <button
                               type="button"
                               disabled={promoting[candidate.id]}
@@ -187,9 +192,9 @@ export function CandidateWorkspaceTable({
                                 }
                               }}
                               className={actionPillSecondaryClassName + " disabled:opacity-50"}
-                              title={nextStageLabel[candidate.stage as CandidateStage] || ""}
+                              title={nextStageLabel[stage] || ""}
                             >
-                              <span>{nextStageLabel[candidate.stage as CandidateStage]}</span>
+                              <span>{nextStageLabel[stage]}</span>
                               <ChevronRight className="h-3 w-3" />
                             </button>
                           ) : null}
@@ -198,13 +203,13 @@ export function CandidateWorkspaceTable({
                           <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
                         )}
                         <p className="text-xs text-[color:var(--app-muted)]">
-                          {candidate.currentFocus || candidateStageLabels[candidate.stage as CandidateStage]}
+                          {candidate.currentFocus || candidateStageLabels[stage]}
                         </p>
                       </div>
                     </td>
                     <td className={tableCellClassName}>
                       <span className="text-sm text-[color:var(--app-text)] truncate">
-                        {candidate.roleDepartment || "—"}
+                        {candidate.departmentName || candidate.roleDepartment || "-"}
                       </span>
                     </td>
                     <td className={tableCellClassName}>
