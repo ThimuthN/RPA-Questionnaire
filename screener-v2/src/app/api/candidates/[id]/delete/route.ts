@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { deleteCandidate } from "@/lib/db/candidates";
 import { prisma } from "@/lib/db/prisma";
 
@@ -12,12 +12,6 @@ export async function POST(
     return auth.response;
   }
 
-  // Check permission
-  const permissionCheck = await requirePermission(auth.session, "delete_candidate");
-  if (!permissionCheck.ok) {
-    return permissionCheck.response;
-  }
-
   try {
     const { id } = await context.params;
 
@@ -27,6 +21,7 @@ export async function POST(
       select: {
         id: true,
         stage: true,
+        departmentId: true,
         employee: true,
         offer: true,
         interviewPanels: { select: { id: true } },
@@ -38,6 +33,11 @@ export async function POST(
       const url = new URL("/candidates", request.url);
       url.searchParams.set("error", "Candidate not found");
       return NextResponse.redirect(url, 303);
+    }
+
+    const permissionCheck = await requirePermissionForDepartment(auth.session, "delete_candidate", candidate.departmentId);
+    if (!permissionCheck.ok) {
+      return permissionCheck.response;
     }
 
     // Validation: Cannot delete hired candidates

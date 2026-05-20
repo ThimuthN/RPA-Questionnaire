@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireApiSession, requirePermission } from '@/lib/auth/guards';
+import { requireApiSession, requirePermissionForDepartment } from '@/lib/auth/guards';
 import { createRequestLogContext, logRouteError } from '@/lib/server/logger';
 import { prisma } from '@/lib/db/prisma';
 import { createEmployee } from '@/lib/employees/queries';
@@ -15,10 +15,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const auth = await requireApiSession();
     if (!auth.ok) return auth.response;
-
-    // Check permission
-    const permissionCheck = await requirePermission(auth.session, 'hire_candidate');
-    if (!permissionCheck.ok) return permissionCheck.response;
 
     const body = await request.json();
     const parsed = HireSchema.safeParse(body);
@@ -50,13 +46,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Candidate not found' }, { status: 404 });
     }
 
-    // Validation: Candidate must be in decision stage
-    if (candidate.stage !== 'closed') {
-      return NextResponse.json(
-        { ok: false, message: 'Candidate must be in decision stage before hiring' },
-        { status: 400 }
-      );
-    }
+    const scopedPermission = await requirePermissionForDepartment(auth.session, 'hire_candidate', candidate.departmentId);
+    if (!scopedPermission.ok) return scopedPermission.response;
 
     // Validation: Offer must exist and be accepted
     if (!candidate.offer || candidate.offer.status !== 'accepted') {
@@ -101,6 +92,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       where: { id },
       data: {
         stage: 'closed',
+        orgStage: 'finalized',
+        finalizedAs: 'hired',
       },
     });
 

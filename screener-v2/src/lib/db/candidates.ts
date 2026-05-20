@@ -55,6 +55,8 @@ export interface CandidateRecord {
   nextAction: CandidateNextAction;
   screeningStatus?: CandidateScreeningStatus;
   orgStatus?: "active" | "talent_pool" | "org_rejected";
+  orgStage?: "active" | "finalized";
+  finalizedAs?: "hired" | "rejected";
   candidateFolderUrl?: string;
   notesSummary?: string;
   createdAt: string;
@@ -168,7 +170,7 @@ export interface DepartmentCandidacyDetail {
   departmentId: string;
   roleId?: string;
   hrOwnerId?: string;
-  status: "active" | "talent_pool" | "dept_rejected";
+  status: "active" | "talent_pool" | "dept_rejected" | "transferred_out";
   source: "manual" | "job_application" | "nominated";
   nominatedBy?: string;
   nominationNote?: string;
@@ -201,6 +203,9 @@ export interface CandidateWorkspaceFilters {
   roleId?: string;
   jobId?: string;
   stage?: CandidateStage;
+  departmentId?: string;
+  orgStage?: "active" | "finalized";
+  finalizedAs?: "hired" | "rejected";
   owner?: string;
   assessmentStatus?: CandidateAssessmentStatus;
   sort?: CandidateListSort;
@@ -272,6 +277,9 @@ export function mapCandidate(row: {
     stage: row.stage as CandidateStage,
     nextAction: row.nextAction as CandidateNextAction,
     screeningStatus: (row.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
+    orgStatus: row.orgStatus ?? undefined,
+    orgStage: (row.orgStage as "active" | "finalized" | null) ?? undefined,
+    finalizedAs: (row.finalizedAs as "hired" | "rejected" | null) ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
     notesSummary: row.notesSummary ?? undefined,
     createdAt: row.createdAt.toISOString(),
@@ -621,6 +629,30 @@ export async function createCandidate(input: {
         mode: milestone.mode
       }))
     });
+
+    if (candidate.departmentId) {
+      await tx.departmentCandidacy.upsert({
+        where: {
+          candidateId_departmentId: {
+            candidateId: candidate.id,
+            departmentId: candidate.departmentId
+          }
+        },
+        update: {
+          roleId: candidate.roleId,
+          status: "active",
+          updatedAt: new Date()
+        },
+        create: {
+          id: cuidLike(),
+          candidateId: candidate.id,
+          departmentId: candidate.departmentId,
+          roleId: candidate.roleId,
+          status: "active",
+          source: "manual"
+        }
+      });
+    }
 
     return candidate;
   });
@@ -1815,6 +1847,9 @@ export async function findExistingCandidateByEmail(email: string) {
 function buildCandidateWhere(filters?: {
   roleId?: string;
   stage?: CandidateStage;
+  departmentId?: string;
+  orgStage?: "active" | "finalized";
+  finalizedAs?: "hired" | "rejected";
   q?: string;
   owner?: string;
 }): Prisma.CandidateWhereInput {
@@ -1825,6 +1860,15 @@ function buildCandidateWhere(filters?: {
   }
   if (filters?.stage) {
     where.stage = filters.stage;
+  }
+  if (filters?.departmentId) {
+    where.departmentId = filters.departmentId;
+  }
+  if (filters?.orgStage) {
+    where.orgStage = filters.orgStage;
+  }
+  if (filters?.finalizedAs) {
+    where.finalizedAs = filters.finalizedAs;
   }
   if (filters?.owner) {
     where.hrOwnerId = filters.owner;
@@ -1953,6 +1997,9 @@ export async function listCandidateWorkspacePage(
   const where = buildCandidateWhere({
     roleId: filters.roleId,
     stage: filters.stage,
+    departmentId: filters.departmentId,
+    orgStage: filters.orgStage,
+    finalizedAs: filters.finalizedAs,
     owner: filters.owner
   });
 

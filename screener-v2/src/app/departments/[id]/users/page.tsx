@@ -1,12 +1,13 @@
 import Link from "next/link";
-import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
+import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
+import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 
 export default async function DepartmentUsersPage({
@@ -22,10 +23,17 @@ export default async function DepartmentUsersPage({
     notFound();
   }
 
-  const users = await listDepartmentUsers(id);
+  const [users, roles] = await Promise.all([
+    listDepartmentUsers(id),
+    prisma.roleCatalog.findMany({
+      where: { departmentId: id, isActive: true },
+      select: { id: true, label: true },
+      orderBy: { sortOrder: "asc" }
+    })
+  ]);
 
   const tabs = [
-    { label: "Roles", href: `/departments/${id}`, active: false },
+    { label: "Overview", href: `/departments/${id}`, active: false },
     { label: "Users", href: `/departments/${id}/users`, active: true }
   ];
 
@@ -109,9 +117,11 @@ export default async function DepartmentUsersPage({
                             {user.permissionCount} permission{user.permissionCount !== 1 ? "s" : ""}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <Button variant="ghost" className="px-3 py-2 text-xs">
-                              Edit
-                            </Button>
+                            <DepartmentUserActions
+                              departmentId={id}
+                              user={{ id: user.id, name: user.name, email: user.email, roleId: user.roleId }}
+                              roles={roles}
+                            />
                           </td>
                         </tr>
                       ))}

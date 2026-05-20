@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
 import { updateAppUser, deactivateAppUser, reactivateAppUser } from "@/lib/auth/app-auth";
+import { prisma } from "@/lib/db/prisma";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 
 const updateUserSchema = z.object({
   action: z.enum(["update", "deactivate", "reactivate"]).default("update"),
@@ -16,7 +18,7 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
@@ -28,6 +30,39 @@ export async function POST(
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
     const body = updateUserSchema.parse(rawBody);
+
+    const current = await prisma.user.findUnique({
+      where: { id },
+      select: { departmentId: true }
+    });
+    if (!current) {
+      throw new Error("User not found.");
+    }
+    const targetDepartmentId = body.departmentId ?? current.departmentId;
+    const permission = await requirePermissionForDepartment(auth.session, "manage_users", targetDepartmentId);
+    if (!permission.ok) return permission.response;
+
+    if (body.roleId) {
+      const role = await prisma.roleCatalog.findUnique({
+        where: { id: body.roleId },
+        select: { departmentId: true }
+      });
+      if (!role) {
+        throw new Error("Role not found.");
+      }
+      if (targetDepartmentId && role.departmentId !== targetDepartmentId) {
+        throw new Error("Role must belong to the selected department.");
+      }
+      if (auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "manage_users"))) {
+        const rolePermissions = await prisma.rolePermissionTemplate.findMany({
+          where: { roleId: body.roleId },
+          select: { permission: true }
+        });
+        if (rolePermissions.some((rolePermission) => !auth.session.permissions.includes(rolePermission.permission))) {
+          throw new Error("You can only assign roles within your own permission set.");
+        }
+      }
+    }
 
     if (body.action === "deactivate") {
       if (auth.session.userId === id) {

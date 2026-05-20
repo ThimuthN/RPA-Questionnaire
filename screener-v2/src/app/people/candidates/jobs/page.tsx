@@ -134,10 +134,22 @@ export default async function CandidateJobsPage({
               render: (job) => <p className="text-sm text-[color:var(--app-muted)]">{new Date(job.updatedAt).toLocaleDateString()}</p>
             },
             {
-              header: "Open",
+              header: "Actions",
               width: "w-[14%]",
               render: (job) => (
-                <div className="text-right">
+                <div className="flex flex-wrap justify-end gap-2">
+                  <form action={`/api/jobs/${job.id}`} method="post">
+                    <input type="hidden" name="action" value="toggle_published" />
+                    <Button type="submit" variant="secondary">
+                      {job.isPublished ? "Unpublish" : "Publish"}
+                    </Button>
+                  </form>
+                  <form action={`/api/jobs/${job.id}`} method="post">
+                    <input type="hidden" name="action" value="toggle_open" />
+                    <Button type="submit" variant="secondary">
+                      {job.isOpen ? "Close" : "Open"}
+                    </Button>
+                  </form>
                   <Link href={`/people/candidates/jobs/${job.id}` as Route}>
                     <Button>Open</Button>
                   </Link>

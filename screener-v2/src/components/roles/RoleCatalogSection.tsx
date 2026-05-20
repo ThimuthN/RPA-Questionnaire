@@ -19,6 +19,9 @@ interface EditorState {
   id?: string;
   label: string;
   departmentId: string;
+  description: string;
+  experienceLevel: string;
+  requirements: string;
   isActive: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;
@@ -27,10 +30,19 @@ interface EditorState {
 const emptyEditor: EditorState = {
   label: "",
   departmentId: "",
+  description: "",
+  experienceLevel: "",
+  requirements: "",
   isActive: true
 };
 
-export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RolePickerOption[] }) {
+export function RoleCatalogSection({
+  initialRoles = [],
+  departmentId
+}: {
+  initialRoles?: RolePickerOption[];
+  departmentId?: string;
+}) {
   const [roles, setRoles] = useState<RolePickerOption[]>(initialRoles);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
   const [loading, setLoading] = useState(initialRoles.length === 0);
@@ -64,7 +76,8 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
   async function loadRoles() {
     setLoading(true);
     try {
-      const response = await fetch("/api/roles", { cache: "no-store" });
+      const params = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : "";
+      const response = await fetch(`/api/roles${params}`, { cache: "no-store" });
       const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[] };
       if (data.ok && Array.isArray(data.roles)) {
         setRoles(data.roles);
@@ -77,7 +90,7 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
   }
 
   function beginCreate() {
-    setEditor(emptyEditor);
+    setEditor({ ...emptyEditor, departmentId: departmentId ?? "" });
     setError("");
     setModalOpen(true);
   }
@@ -87,6 +100,9 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
       id: role.id,
       label: role.label,
       departmentId: role.departmentId ?? "",
+      description: role.description ?? "",
+      experienceLevel: role.experienceLevel ?? "",
+      requirements: role.requirements ?? "",
       isActive: role.isActive ?? true,
       openJobCount: role.openJobCount,
       pipelineCandidateCount: role.pipelineCandidateCount
@@ -109,6 +125,9 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
         body: JSON.stringify({
           label: editor.label.trim(),
           departmentId: editor.departmentId || undefined,
+          description: editor.description.trim(),
+          experienceLevel: editor.experienceLevel || undefined,
+          requirements: editor.requirements.trim(),
           isActive: editor.isActive
         })
       });
@@ -180,7 +199,14 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
             {
               header: "Role",
               width: "w-[30%]",
-              render: (role) => <p className="text-sm font-medium text-[color:var(--app-heading)]">{role.label}</p>
+              render: (role) => (
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-[color:var(--app-heading)]">{role.label}</p>
+                  {role.experienceLevel ? (
+                    <p className="text-xs capitalize text-[color:var(--app-muted)]">{role.experienceLevel}</p>
+                  ) : null}
+                </div>
+              )
             },
             {
               header: "Department",
@@ -273,6 +299,43 @@ export function RoleCatalogSection({ initialRoles = [] }: { initialRoles?: RoleP
             ))}
           </select>
         </div>
+
+        <label className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Description</span>
+          <textarea
+            value={editor.description}
+            onChange={(e) => setEditor((current) => ({ ...current, description: e.target.value }))}
+            placeholder="What this role does in the organization."
+            rows={3}
+            className="min-h-[92px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
+          />
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Experience level</span>
+          <select
+            value={editor.experienceLevel}
+            onChange={(e) => setEditor((current) => ({ ...current, experienceLevel: e.target.value }))}
+            className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
+          >
+            <option value="">Not specified</option>
+            <option value="junior">Junior</option>
+            <option value="mid">Mid</option>
+            <option value="senior">Senior</option>
+            <option value="lead">Lead</option>
+          </select>
+        </label>
+
+        <label className="grid gap-1">
+          <span className="text-sm text-[color:var(--app-text)]">Requirements</span>
+          <textarea
+            value={editor.requirements}
+            onChange={(e) => setEditor((current) => ({ ...current, requirements: e.target.value }))}
+            placeholder="Skills, qualifications, and expectations."
+            rows={4}
+            className="min-h-[110px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
+          />
+        </label>
 
         {editor.id && (
           <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

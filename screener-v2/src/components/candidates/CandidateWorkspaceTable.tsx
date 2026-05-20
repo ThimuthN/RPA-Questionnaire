@@ -70,12 +70,14 @@ export function CandidateWorkspaceTable({
   rows,
   currentPathAndQuery,
   roleOptions,
-  departmentOptions
+  departmentOptions,
+  permissions = []
 }: {
   rows: CandidateWorkspaceItem[];
   currentPathAndQuery: string;
   roleOptions?: Array<{ id: string; label: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
+  permissions?: string[];
 }) {
   const router = useRouter();
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
@@ -107,13 +109,15 @@ export function CandidateWorkspaceTable({
   return (
     <form action="/api/candidates/bulk" method="post" className="space-y-4">
       <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-      <CandidateBulkActionsBar
-        selectedCount={selectedCandidateIds.length}
-        onSelectAll={selectAllOnPage}
-        onClearSelection={clearSelection}
-        roleOptions={roleOptions}
-        departmentOptions={departmentOptions}
-      />
+      {permissions.includes("manage_candidates") ? (
+        <CandidateBulkActionsBar
+          selectedCount={selectedCandidateIds.length}
+          onSelectAll={selectAllOnPage}
+          onClearSelection={clearSelection}
+          roleOptions={roleOptions}
+          departmentOptions={departmentOptions}
+        />
+      ) : null}
 
       <div className={tableShellClassName}>
         <div className="overflow-x-auto lg:overflow-visible">
@@ -159,7 +163,7 @@ export function CandidateWorkspaceTable({
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
-                          {nextStageLabel[candidate.stage as CandidateStage] ? (
+                          {permissions.includes("promote_candidate") && nextStageLabel[candidate.stage as CandidateStage] ? (
                             <button
                               type="button"
                               disabled={promoting[candidate.id]}
@@ -228,21 +232,16 @@ export function CandidateWorkspaceTable({
                         <Link href={`/candidates/${candidate.id}` as Route} className={actionPillSecondaryClassName}>
                           Profile
                         </Link>
-                        {rejectConfirming === candidate.id ? (
+                        {permissions.includes("manage_candidates") && rejectConfirming === candidate.id ? (
                           <>
                             <button
                               type="button"
                               onClick={async () => {
                                 try {
-                                  const res = await fetch(`/api/candidates/${candidate.id}`, {
+                                  const res = await fetch(`/api/candidates/${candidate.id}/reject`, {
                                     method: "POST",
                                     headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify({
-                                      fullName: candidate.fullName,
-                                      email: candidate.email,
-                                      stage: "closed",
-                                      nextAction: "none"
-                                    })
+                                    body: JSON.stringify({})
                                   });
                                   if (res.ok) {
                                     router.refresh();
@@ -269,7 +268,7 @@ export function CandidateWorkspaceTable({
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </>
-                        ) : (
+                        ) : permissions.includes("manage_candidates") ? (
                           <button
                             type="button"
                             onClick={() => setRejectConfirming(candidate.id)}
@@ -278,7 +277,7 @@ export function CandidateWorkspaceTable({
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   </tr>

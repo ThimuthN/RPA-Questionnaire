@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import {
   candidateNextActionValues,
   candidateScreeningStatusValues,
@@ -20,7 +20,7 @@ const candidateSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   roleId: z.string().optional(),
-  departmentId: z.string().optional(),
+  departmentId: z.string().min(1, "Choose a department."),
   positionAppliedFor: z.string().optional(),
   batchId: z.string().optional(),
   resumeSource: z.string().optional(),
@@ -41,35 +41,38 @@ export async function POST(request: Request) {
   }
   const { session } = auth;
 
-  // Check permission
-  const permissionCheck = await requirePermission(auth.session, "manage_candidates");
-  if (!permissionCheck.ok) return permissionCheck.response;
-
   const formRequest = isFormRequest(request);
   const rawBody = formRequest ? Object.fromEntries((await request.formData()).entries()) : await request.json();
 
   try {
     const body = candidateSchema.parse(rawBody);
 
-    // Validate foreign keys exist
-    if (body.roleId) {
-      const role = await prisma.roleCatalog.findUnique({
-        where: { id: body.roleId },
-        select: { id: true }
-      });
-      if (!role) {
-        throw new Error("Invalid roleId: role not found");
-      }
+    if (!body.roleId) {
+      throw new Error("Choose a role for this candidate.");
     }
 
-    if (body.departmentId) {
-      const dept = await prisma.department.findUnique({
+    const permissionCheck = await requirePermissionForDepartment(auth.session, "manage_candidates", body.departmentId);
+    if (!permissionCheck.ok) return permissionCheck.response;
+
+    const [role, dept] = await Promise.all([
+      prisma.roleCatalog.findUnique({
+        where: { id: body.roleId },
+        select: { id: true, departmentId: true }
+      }),
+      prisma.department.findUnique({
         where: { id: body.departmentId },
         select: { id: true }
-      });
-      if (!dept) {
-        throw new Error("Invalid departmentId: department not found");
-      }
+      })
+    ]);
+
+    if (!role) {
+      throw new Error("Invalid roleId: role not found");
+    }
+    if (!dept) {
+      throw new Error("Invalid departmentId: department not found");
+    }
+    if (role.departmentId !== body.departmentId) {
+      throw new Error("Role must belong to the selected department.");
     }
 
     if (body.hrOwnerId) {

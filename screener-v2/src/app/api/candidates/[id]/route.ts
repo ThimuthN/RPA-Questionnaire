@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import {
   candidateNextActionValues,
   candidateScreeningStatusValues,
@@ -38,10 +38,6 @@ export async function POST(
     return auth.response;
   }
 
-  // Check permission
-  const permissionCheck = await requirePermission(auth.session, "manage_candidates");
-  if (!permissionCheck.ok) return permissionCheck.response;
-
   try {
     const { id } = await params;
     const body = updateCandidateSchema.parse(Object.fromEntries((await request.formData()).entries()));
@@ -49,20 +45,30 @@ export async function POST(
     // Fetch current candidate to get existing stage/nextAction if not provided
     const current = await prisma.candidate.findUnique({
       where: { id },
-      select: { stage: true, nextAction: true }
+      select: { stage: true, nextAction: true, departmentId: true, orgStage: true }
     });
     if (!current) {
       throw new Error("Candidate not found");
+    }
+
+    const permissionCheck = await requirePermissionForDepartment(auth.session, "manage_candidates", current.departmentId);
+    if (!permissionCheck.ok) return permissionCheck.response;
+
+    if (current.orgStage === "finalized") {
+      throw new Error("Finalized candidates must be reverted before editing.");
     }
 
     // Validate foreign keys exist
     if (body.roleId) {
       const role = await prisma.roleCatalog.findUnique({
         where: { id: body.roleId },
-        select: { id: true }
+        select: { id: true, departmentId: true }
       });
       if (!role) {
         throw new Error("Invalid roleId: role not found");
+      }
+      if (body.departmentId && role.departmentId !== body.departmentId) {
+        throw new Error("Role must belong to the selected department.");
       }
     }
 

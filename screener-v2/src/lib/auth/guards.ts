@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/runtime-session";
 import type { AppAction } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
+import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 
 type ApiAuthSuccess = { ok: true; session: AppSession };
 type ApiAuthFailure = { ok: false; response: NextResponse };
@@ -62,6 +63,17 @@ export function requirePermission(session: AppSession, action: AppAction) {
   // Check if the permission for this action is in the session permissions
   // For now, map actions to permissions (action name is same as permission name)
   if (!session.permissions.includes(action)) {
+    return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
+  }
+  return { ok: true as const };
+}
+
+export async function requirePermissionForDepartment(
+  session: AppSession,
+  action: AppAction,
+  departmentId?: string | null
+) {
+  if (!(await canUsePermissionForDepartment(session, action, departmentId))) {
     return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
   }
   return { ok: true as const };

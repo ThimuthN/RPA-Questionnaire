@@ -10,6 +10,7 @@ import {
   type JobPostingListItem
 } from "@/lib/jobs/types";
 import { mapCandidate } from "@/lib/db/candidates";
+import { cuidLike } from "@/lib/tokens/token-service";
 
 type JobPostingRow = {
   id: string;
@@ -682,14 +683,42 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       existingCandidate = await findExistingCandidateByEmail(normalizedEmail);
     }
   } else {
-    await prisma.candidate.update({
-      where: { id: existingCandidate.id },
-      data: {
-        fullName: input.fullName.trim(),
-        phone: input.phone?.trim() || undefined,
-        roleId: job.roleId ?? undefined,
-        departmentId: job.role?.departmentId ?? undefined,
-        positionAppliedFor: job.title
+    const candidateId = existingCandidate.id;
+    await prisma.$transaction(async (tx) => {
+      await tx.candidate.update({
+        where: { id: candidateId },
+        data: {
+          fullName: input.fullName.trim(),
+          phone: input.phone?.trim() || undefined,
+          roleId: job.roleId ?? undefined,
+          departmentId: job.role?.departmentId ?? undefined,
+          positionAppliedFor: job.title
+        }
+      });
+
+      if (job.role?.departmentId) {
+        await tx.departmentCandidacy.upsert({
+          where: {
+            candidateId_departmentId: {
+              candidateId,
+              departmentId: job.role.departmentId
+            }
+          },
+          update: {
+            roleId: job.roleId,
+            status: "active",
+            updatedAt: new Date()
+          },
+          create: {
+            id: cuidLike(),
+            candidateId,
+            departmentId: job.role.departmentId,
+            roleId: job.roleId,
+            status: "active",
+            source: "job_application",
+            jobPostingId: job.id
+          }
+        });
       }
     });
   }

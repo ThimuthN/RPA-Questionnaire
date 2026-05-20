@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { prisma } from "@/lib/db/prisma";
 
 const assignUserSchema = z.object({
@@ -16,12 +17,14 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
   const { id: departmentId } = await params;
+  const permission = await requirePermissionForDepartment(auth.session, "manage_users", departmentId);
+  if (!permission.ok) return permission.response;
 
   try {
     const body = assignUserSchema.parse(await request.json());
@@ -68,6 +71,20 @@ export async function POST(
       );
     }
 
+    if (auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "manage_users"))) {
+      const rolePermissions = await prisma.rolePermissionTemplate.findMany({
+        where: { roleId: body.roleId },
+        select: { permission: true }
+      });
+      const outsideAssigner = rolePermissions.find((rolePermission) => !auth.session.permissions.includes(rolePermission.permission));
+      if (outsideAssigner) {
+        return NextResponse.json(
+          { ok: false, message: "You can only assign roles within your own permission set." },
+          { status: 403 }
+        );
+      }
+    }
+
     // Assign user to department and role
     await prisma.user.update({
       where: { id: body.userId },
@@ -97,12 +114,14 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
   const { id: departmentId } = await params;
+  const permission = await requirePermissionForDepartment(auth.session, "manage_users", departmentId);
+  if (!permission.ok) return permission.response;
 
   try {
     const body = removeUserSchema.parse(await request.json());

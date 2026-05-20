@@ -13,6 +13,7 @@ export type DepartmentUserRecord = {
   id: string;
   name: string | null;
   email: string;
+  roleId: string | null;
   role: { id: string; label: string } | null;
   permissionCount: number;
 };
@@ -66,6 +67,7 @@ export async function listDepartmentUsers(departmentId: string): Promise<Departm
       id: true,
       name: true,
       email: true,
+      roleId: true,
       role: {
         select: {
           id: true,
@@ -85,6 +87,7 @@ export async function listDepartmentUsers(departmentId: string): Promise<Departm
     id: user.id,
     name: user.name,
     email: user.email,
+    roleId: user.roleId,
     role: user.role,
     permissionCount: user.permissionOverrides?.length ?? 0
   }));

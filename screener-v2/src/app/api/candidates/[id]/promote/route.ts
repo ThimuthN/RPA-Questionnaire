@@ -1,4 +1,4 @@
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { candidateStageValues, type CandidateStage } from "@/lib/candidates/types";
 import { cuidLike } from "@/lib/tokens/token-service";
@@ -32,12 +32,6 @@ export async function POST(
     return auth.response;
   }
 
-  // Check permission
-  const permissionCheck = await requirePermission(auth.session, "promote_candidate");
-  if (!permissionCheck.ok) {
-    return permissionCheck.response;
-  }
-
   const { session } = auth;
   const { id: candidateId } = await params;
 
@@ -46,6 +40,8 @@ export async function POST(
     select: {
       id: true,
       stage: true,
+      departmentId: true,
+      orgStage: true,
       assessments: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -62,6 +58,15 @@ export async function POST(
 
   if (!candidate) {
     return Response.json({ error: "Candidate not found" }, { status: 404 });
+  }
+
+  const permissionCheck = await requirePermissionForDepartment(auth.session, "promote_candidate", candidate.departmentId);
+  if (!permissionCheck.ok) {
+    return permissionCheck.response;
+  }
+
+  if (candidate.orgStage === "finalized") {
+    return Response.json({ error: "Finalized candidates cannot be promoted." }, { status: 400 });
   }
 
   const currentStage = candidate.stage as CandidateStage;

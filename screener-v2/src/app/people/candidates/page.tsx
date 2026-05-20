@@ -34,6 +34,7 @@ type PageState = {
   stages?: string;
   owner?: string;
   assessmentStatus?: string;
+  finalizedAs?: string;
   sort?: string;
   page?: string;
   pageSize?: string;
@@ -92,15 +93,23 @@ export default async function PeopleCandidatesPage({
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
-  await requirePageSession(nextPath);
+  const session = await requirePageSession(nextPath);
+
+  const isFinalizedView = params.stage === "finalized" || params.stage === "decision";
+  const selectedStage = !isFinalizedView && candidateStageValues.includes(params.stage as CandidateStage)
+    ? (params.stage as CandidateStage)
+    : "pipeline";
 
   const [page, departments] = await Promise.all([
     listCandidateWorkspacePage({
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
-      stage: candidateStageValues.includes(params.stage as CandidateStage)
-        ? (params.stage as CandidateStage)
-        : "pipeline",
+      departmentId: params.departmentId?.trim() || undefined,
+      stage: isFinalizedView ? undefined : selectedStage,
+      orgStage: isFinalizedView ? "finalized" : "active",
+      finalizedAs: params.finalizedAs === "hired" || params.finalizedAs === "rejected"
+        ? params.finalizedAs
+        : undefined,
       owner: params.owner?.trim() || undefined,
       assessmentStatus: candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)
         ? (params.assessmentStatus as CandidateAssessmentStatus)
@@ -140,10 +149,11 @@ export default async function PeopleCandidatesPage({
             <CandidatesViewSwitch
               current={
                 params.stage === "new" ? "pipeline" :
+                params.stage === "applicant" ? "applicants" :
                 params.stage === "screening" ? "screener" :
                 params.stage === "interview" ? "interview" :
                 params.stage === "testing" ? "testing" :
-                params.stage === "decision" ? "finalized" :
+                params.stage === "decision" || params.stage === "finalized" ? "finalized" :
                 "pipeline"
               }
             />
@@ -191,6 +201,18 @@ export default async function PeopleCandidatesPage({
                   ))}
                 </select>
                 <select
+                  name="departmentId"
+                  defaultValue={params.departmentId ?? ""}
+                  className={filterFieldClassName()}
+                >
+                  <option value="">All departments</option>
+                  {departments.map((department) => (
+                    <option key={department.id} value={department.id}>
+                      {department.name}
+                    </option>
+                  ))}
+                </select>
+                <select
                   name="owner"
                   defaultValue={params.owner ?? ""}
                   className={filterFieldClassName()}
@@ -214,6 +236,17 @@ export default async function PeopleCandidatesPage({
                     </option>
                   ))}
                 </select>
+                {isFinalizedView ? (
+                  <select
+                    name="finalizedAs"
+                    defaultValue={params.finalizedAs ?? ""}
+                    className={filterFieldClassName()}
+                  >
+                    <option value="">All finalized</option>
+                    <option value="hired">Hired</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                ) : null}
                 <select
                   name="sort"
                   defaultValue={params.sort ?? "inbox"}
@@ -267,6 +300,7 @@ export default async function PeopleCandidatesPage({
                 currentPathAndQuery={currentPathAndQuery}
                 roleOptions={page.roleOptions}
                 departmentOptions={departments.map(d => ({ id: d.id, name: d.name }))}
+                permissions={session.permissions}
               />
             </StaggerItem>
           )}

@@ -10,6 +10,9 @@ export interface RolePickerOption {
   departmentId?: string;
   departmentName?: string;
   department?: string; // Backward compatibility
+  description?: string;
+  experienceLevel?: string;
+  requirements?: string;
   isActive?: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;
@@ -26,12 +29,18 @@ type EditorState = {
   id?: string;
   label: string;
   departmentId: string;
+  description: string;
+  experienceLevel: string;
+  requirements: string;
   isActive: boolean;
 };
 
 const emptyEditor: EditorState = {
   label: "",
   departmentId: "",
+  description: "",
+  experienceLevel: "",
+  requirements: "",
   isActive: true
 };
 
@@ -44,6 +53,7 @@ export function RolePicker({
   placeholder = "Select role",
   helperText,
   onChange,
+  departmentId,
   className,
   layout = "inline"
 }: {
@@ -55,6 +65,7 @@ export function RolePicker({
   placeholder?: string;
   helperText?: string;
   onChange?: (next: RolePickerOption | null) => void;
+  departmentId?: string | null;
   className?: string;
   layout?: "inline" | "stacked";
 }) {
@@ -88,7 +99,8 @@ export function RolePicker({
       setLoading(true);
     }
     try {
-      const response = await fetch("/api/roles", { cache: "no-store" });
+      const params = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : "";
+      const response = await fetch(`/api/roles${params}`, { cache: "no-store" });
       const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[]; message?: string };
       if (data.ok && Array.isArray(data.roles)) {
         setOptions(data.roles);
@@ -106,7 +118,7 @@ export function RolePicker({
   useEffect(() => {
     void loadRoles({ keepCurrentOptions: hasInitialOptions });
     void loadDepartments();
-  }, [hasInitialOptions]);
+  }, [hasInitialOptions, departmentId]);
 
   useEffect(() => {
     setMounted(true);
@@ -124,7 +136,11 @@ export function RolePicker({
   }, [managerOpen]);
 
   const selectedRole = value !== undefined ? value : internalValue;
-  const selectableOptions = options.filter((option) => option.isActive !== false || option.id === selectedRole?.id);
+  const selectableOptions = options.filter(
+    (option) =>
+      (option.isActive !== false || option.id === selectedRole?.id) &&
+      (!departmentId || option.departmentId === departmentId || option.id === selectedRole?.id)
+  );
 
   const selectedValue = useMemo(() => {
     if (!selectedRole?.id) return "";
@@ -148,6 +164,9 @@ export function RolePicker({
       id: role.id,
       label: role.label,
       departmentId: role.departmentId ?? "",
+      description: role.description ?? "",
+      experienceLevel: role.experienceLevel ?? "",
+      requirements: role.requirements ?? "",
       isActive: role.isActive ?? true
     });
     setError("");
@@ -157,6 +176,9 @@ export function RolePicker({
     const payload = {
       label: editor.label.trim(),
       departmentId: editor.departmentId,
+      description: editor.description.trim(),
+      experienceLevel: editor.experienceLevel,
+      requirements: editor.requirements.trim(),
       isActive: editor.isActive
     };
 
@@ -281,6 +303,43 @@ export function RolePicker({
                           </option>
                         ))}
                       </select>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-[color:var(--app-text)]">Description</span>
+                      <textarea
+                        value={editor.description}
+                        onChange={(event) => setEditor((current) => ({ ...current, description: event.target.value }))}
+                        placeholder="What this role does in the organization."
+                        rows={3}
+                        className="min-h-[92px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-[color:var(--app-text)]">Experience level</span>
+                      <select
+                        value={editor.experienceLevel}
+                        onChange={(event) => setEditor((current) => ({ ...current, experienceLevel: event.target.value }))}
+                        className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      >
+                        <option value="">Not specified</option>
+                        <option value="junior">Junior</option>
+                        <option value="mid">Mid</option>
+                        <option value="senior">Senior</option>
+                        <option value="lead">Lead</option>
+                      </select>
+                    </label>
+
+                    <label className="grid gap-1">
+                      <span className="text-sm text-[color:var(--app-text)]">Requirements</span>
+                      <textarea
+                        value={editor.requirements}
+                        onChange={(event) => setEditor((current) => ({ ...current, requirements: event.target.value }))}
+                        placeholder="Skills, qualifications, and expectations."
+                        rows={4}
+                        className="min-h-[110px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                      />
                     </label>
 
                     <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

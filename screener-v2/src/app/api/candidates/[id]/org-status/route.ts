@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { setOrgStatus } from "@/lib/db/candidacies";
+import { prisma } from "@/lib/db/prisma";
 
 const setOrgStatusSchema = z.object({
   orgStatus: z.enum(["active", "talent_pool", "org_rejected"])
@@ -22,6 +23,16 @@ export async function POST(
   try {
     const body = await request.json();
     const input = setOrgStatusSchema.parse(body);
+
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      select: { departmentId: true }
+    });
+    if (!candidate) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+    }
+    const permission = await requirePermissionForDepartment(session, "manage_candidates", candidate.departmentId);
+    if (!permission.ok) return permission.response;
 
     const result = await setOrgStatus(
       candidateId,

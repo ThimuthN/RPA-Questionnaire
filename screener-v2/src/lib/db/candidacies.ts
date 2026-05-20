@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
 
-export type DepartmentCandidacyStatus = "active" | "talent_pool" | "dept_rejected";
+export type DepartmentCandidacyStatus = "active" | "talent_pool" | "dept_rejected" | "transferred_out";
 export type CandidateOrgStatus = "active" | "talent_pool" | "org_rejected";
 
 export interface DepartmentCandidacyRecord {
@@ -41,51 +41,91 @@ interface CreateOrUpdateCandidacyInput {
  * Efficient: single database round-trip.
  */
 export async function createOrUpdateDepartmentCandidacy(input: CreateOrUpdateCandidacyInput) {
-  const candidacy = await prisma.departmentCandidacy.upsert({
-    where: {
-      candidateId_departmentId: {
+  const candidacy = await prisma.$transaction(async (tx) => {
+    await tx.departmentCandidacy.updateMany({
+      where: {
         candidateId: input.candidateId,
-        departmentId: input.departmentId
+        departmentId: { not: input.departmentId },
+        status: "active"
+      },
+      data: {
+        status: "transferred_out",
+        updatedAt: new Date()
       }
-    },
-    update: {
-      status: input.status ?? "active",
-      ...(input.roleId && { roleId: input.roleId }),
-      ...(input.hrOwnerId && { hrOwnerId: input.hrOwnerId }),
-      ...(input.nominatedBy && { nominatedBy: input.nominatedBy }),
-      ...(input.nominationNote && { nominationNote: input.nominationNote }),
-      updatedAt: new Date()
-    },
-    create: {
-      id: cuidLike(),
-      candidateId: input.candidateId,
-      departmentId: input.departmentId,
-      roleId: input.roleId ?? undefined,
-      hrOwnerId: input.hrOwnerId ?? undefined,
-      status: input.status ?? "active",
-      source: input.source ?? "manual",
-      nominatedBy: input.nominatedBy ?? undefined,
-      nominationNote: input.nominationNote ?? undefined,
-      jobPostingId: input.jobPostingId ?? undefined
-    },
-    include: {
-      candidate: {
-        select: {
-          fullName: true,
-          email: true
+    });
+
+    const current = await tx.departmentCandidacy.upsert({
+      where: {
+        candidateId_departmentId: {
+          candidateId: input.candidateId,
+          departmentId: input.departmentId
         }
       },
-      department: {
-        select: {
-          name: true
-        }
+      update: {
+        status: input.status ?? "active",
+        roleId: input.roleId ?? null,
+        ...(input.hrOwnerId && { hrOwnerId: input.hrOwnerId }),
+        ...(input.nominatedBy && { nominatedBy: input.nominatedBy }),
+        ...(input.nominationNote && { nominationNote: input.nominationNote }),
+        updatedAt: new Date()
       },
-      role: {
-        select: {
-          label: true
+      create: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        departmentId: input.departmentId,
+        roleId: input.roleId ?? undefined,
+        hrOwnerId: input.hrOwnerId ?? undefined,
+        status: input.status ?? "active",
+        source: input.source ?? "manual",
+        nominatedBy: input.nominatedBy ?? undefined,
+        nominationNote: input.nominationNote ?? undefined,
+        jobPostingId: input.jobPostingId ?? undefined
+      },
+      include: {
+        candidate: {
+          select: {
+            fullName: true,
+            email: true
+          }
+        },
+        department: {
+          select: {
+            name: true
+          }
+        },
+        role: {
+          select: {
+            label: true
+          }
         }
       }
-    }
+    });
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: {
+        departmentId: input.departmentId,
+        roleId: input.roleId ?? null,
+        updatedAt: new Date()
+      }
+    });
+
+    await tx.candidateActivityEvent.create({
+      data: {
+        id: cuidLike(),
+        candidateId: input.candidateId,
+        actorId: input.nominatedBy,
+        event: "department_transferred",
+        entityType: "candidacy",
+        entityId: current.id,
+        detail: current.role?.label
+          ? `Transferred to ${current.department.name} as ${current.role.label}`
+          : `Transferred to ${current.department.name}`,
+        createdAt: new Date()
+      }
+    });
+
+    return current;
   });
 
   return {
@@ -297,6 +337,8 @@ export async function setOrgStatus(
       where: { id: candidateId },
       data: {
         orgStatus,
+        orgStage: orgStatus === "org_rejected" ? "finalized" : "active",
+        finalizedAs: orgStatus === "org_rejected" ? "rejected" : null,
         updatedAt: new Date()
       }
     });
@@ -334,6 +376,8 @@ export async function setOrgStatus(
     id: updated.id,
     candidateId: updated.id,
     orgStatus: updated.orgStatus as CandidateOrgStatus,
+    orgStage: updated.orgStage,
+    finalizedAs: updated.finalizedAs ?? undefined,
     updatedAt: updated.updatedAt.toISOString()
   };
 }

@@ -7,6 +7,10 @@ export interface RoleCatalogEntry {
   label: string;
   departmentId?: string;
   department?: string; // deprecated: kept for backward compatibility during migration
+  departmentName?: string;
+  description?: string;
+  experienceLevel?: string;
+  requirements?: string;
   sortOrder: number;
   isActive: boolean;
 }
@@ -26,6 +30,10 @@ function mapRole(row: {
   label: string;
   departmentId?: string | null;
   department?: string | null;
+  dept?: { name: string } | null;
+  description?: string | null;
+  experienceLevel?: string | null;
+  requirements?: string | null;
   sortOrder: number;
   isActive: boolean;
 }): RoleCatalogEntry {
@@ -34,7 +42,11 @@ function mapRole(row: {
     slug: row.slug,
     label: row.label,
     departmentId: row.departmentId ?? undefined,
-    department: row.department ?? undefined,
+    department: row.dept?.name ?? row.department ?? undefined,
+    departmentName: row.dept?.name ?? row.department ?? undefined,
+    description: row.description ?? undefined,
+    experienceLevel: row.experienceLevel ?? undefined,
+    requirements: row.requirements ?? undefined,
     sortOrder: row.sortOrder,
     isActive: row.isActive
   };
@@ -45,6 +57,11 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
     where: {
       ...(includeInactive ? {} : { isActive: true }),
       ...(departmentId ? { departmentId } : {})
+    },
+    include: {
+      dept: {
+        select: { name: true }
+      }
     },
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
@@ -60,7 +77,12 @@ export const listRoleCatalog = unstable_cache(
 
 export async function getRoleCatalogEntry(roleId: string) {
   const row = await prisma.roleCatalog.findUnique({
-    where: { id: roleId }
+    where: { id: roleId },
+    include: {
+      dept: {
+        select: { name: true }
+      }
+    }
   });
 
   return row ? mapRole(row) : null;
@@ -74,6 +96,11 @@ export async function findRoleCatalogEntryByLabel(label: string, departmentId?: 
   const rows = await prisma.roleCatalog.findMany({
     where: {
       OR: [{ label: trimmed }, { slug }]
+    },
+    include: {
+      dept: {
+        select: { name: true }
+      }
     },
     orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
   });
@@ -89,6 +116,9 @@ export async function findRoleCatalogEntryByLabel(label: string, departmentId?: 
 export async function createRoleCatalogEntry(input: {
   label: string;
   departmentId?: string;
+  description?: string;
+  experienceLevel?: string;
+  requirements?: string;
 }) {
   const label = input.label.trim();
   if (!label) {
@@ -124,8 +154,16 @@ export async function createRoleCatalogEntry(input: {
       slug: slugifyRoleLabel(label),
       label,
       departmentId: deptId,
+      description: input.description?.trim() || null,
+      experienceLevel: input.experienceLevel?.trim() || null,
+      requirements: input.requirements?.trim() || null,
       sortOrder: (last?.sortOrder ?? -1) + 1,
       isActive: true
+    },
+    include: {
+      dept: {
+        select: { name: true }
+      }
     }
   });
 
@@ -138,6 +176,9 @@ export async function updateRoleCatalogEntry(
   input: {
     label: string;
     departmentId?: string;
+    description?: string;
+    experienceLevel?: string;
+    requirements?: string;
     isActive?: boolean;
   }
 ) {
@@ -176,7 +217,15 @@ export async function updateRoleCatalogEntry(
       slug: slugifyRoleLabel(label),
       label,
       departmentId: deptId,
+      description: input.description?.trim() || null,
+      experienceLevel: input.experienceLevel?.trim() || null,
+      requirements: input.requirements?.trim() || null,
       isActive: input.isActive
+    },
+    include: {
+      dept: {
+        select: { name: true }
+      }
     }
   });
 

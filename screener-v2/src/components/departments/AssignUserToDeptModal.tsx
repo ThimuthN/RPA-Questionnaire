@@ -16,7 +16,7 @@ export function AssignUserToDeptModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [users, setUsers] = useState<Array<{ id: string; name: string; departmentId: string | null }>>([]);
+  const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string; departmentId: string | null; dept?: { name: string } | null }>>([]);
   const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +34,7 @@ export function AssignUserToDeptModal({
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           const usersList = Array.isArray(usersData) ? usersData : usersData.users || [];
-          setUsers(usersList.filter((u: any) => !u.departmentId));
+          setUsers(usersList.filter((u: any) => u.departmentId !== departmentId));
         }
 
         if (rolesRes.ok) {
@@ -100,7 +100,7 @@ export function AssignUserToDeptModal({
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Assign user to department">
         <div className="space-y-1 mb-6">
           <p className="text-sm text-[color:var(--app-muted)]">
-            Add an existing user to {departmentName} and assign them a role.
+            Add an existing user to {departmentName} and assign them a department role.
           </p>
         </div>
 
@@ -129,7 +129,8 @@ export function AssignUserToDeptModal({
               </option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
-                  {user.name}
+                  {user.name || user.email}
+                  {user.departmentId ? ` - currently in ${user.dept?.name || "another department"}` : " - unassigned"}
                 </option>
               ))}
             </select>

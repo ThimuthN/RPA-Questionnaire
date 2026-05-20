@@ -8,7 +8,12 @@ export async function GET() {
 
   const stageCounts = await prisma.candidate.groupBy({
     by: ["stage"],
+    where: { orgStage: "active" },
     _count: true
+  });
+
+  const finalizedCount = await prisma.candidate.count({
+    where: { orgStage: "finalized" }
   });
 
   const counts: Record<string, number> = {
@@ -17,7 +22,7 @@ export async function GET() {
     screening: 0,
     interview: 0,
     testing: 0,
-    decision: 0,
+    decision: finalizedCount,
     closed: 0
   };
 

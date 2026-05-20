@@ -179,6 +179,9 @@ model RoleCatalog {
   label                   String
   department              String?
   departmentId            String
+  description             String?
+  experienceLevel         String?
+  requirements            String?
   sortOrder               Int                         @default(0)
   isActive                Boolean                     @default(true)
   createdAt               DateTime                    @default(now())
@@ -326,6 +329,8 @@ model Candidate {
   candidateFolderUrl String?
   notesSummary       String?
   orgStatus          String   @default("active")
+  orgStage           String   @default("active")
+  finalizedAs        String?
   searchVector       Unsupported("tsvector")?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

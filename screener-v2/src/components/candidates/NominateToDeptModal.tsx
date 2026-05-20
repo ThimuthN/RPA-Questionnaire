@@ -68,7 +68,7 @@ export function NominateToDeptModal({
         const rolesResponse = await fetch("/api/roles");
         if (rolesResponse.ok) {
           const rolesData = await rolesResponse.json();
-          setRoles(rolesData);
+          setRoles(Array.isArray(rolesData) ? rolesData : rolesData.roles || []);
         }
       }
     } catch (err) {
@@ -88,6 +88,11 @@ export function NominateToDeptModal({
       setIsPending(false);
       return;
     }
+    if (!formData.roleId) {
+      setError("Select a role for the target department");
+      setIsPending(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/candidacies", {
@@ -96,7 +101,7 @@ export function NominateToDeptModal({
         body: JSON.stringify({
           candidateId,
           departmentId: formData.departmentId,
-          roleId: formData.roleId || undefined,
+          roleId: formData.roleId,
           nominationNote: formData.nominationNote || undefined
         })
       });
@@ -107,10 +112,10 @@ export function NominateToDeptModal({
         onClose();
       } else {
         const data = await response.json();
-        setError(data.error || "Failed to nominate candidate");
+        setError(data.error || "Failed to transfer candidate");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error nominating candidate");
+      setError(err instanceof Error ? err.message : "Error transferring candidate");
     } finally {
       setIsPending(false);
     }
@@ -147,7 +152,7 @@ export function NominateToDeptModal({
                     <Send className="h-5 w-5 text-brand-500" />
                   </div>
                   <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
-                    Nominate to Department
+                    Transfer to Department
                   </h2>
                 </div>
                 <button
@@ -194,7 +199,7 @@ export function NominateToDeptModal({
                 {formData.departmentId && (
                   <label className="grid gap-2">
                     <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">
-                      Role (Optional)
+                      Role
                     </span>
                     <select
                       value={formData.roleId}
@@ -204,7 +209,7 @@ export function NominateToDeptModal({
                       disabled={isPending || availableRoles.length === 0}
                       className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80"
                     >
-                      <option value="">No specific role</option>
+                      <option value="">Select a role</option>
                       {availableRoles.map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.label}
@@ -216,7 +221,7 @@ export function NominateToDeptModal({
 
                 <label className="grid gap-2">
                   <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">
-                    Nomination Note (Optional)
+                    Transfer Note (Optional)
                   </span>
                   <textarea
                     value={formData.nominationNote}
@@ -224,7 +229,7 @@ export function NominateToDeptModal({
                       setFormData((prev) => ({ ...prev, nominationNote: e.target.value }))
                     }
                     rows={3}
-                    placeholder="Why are you nominating them? Any context for this department?"
+                    placeholder="Why is this department a better fit?"
                     className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80 min-h-[100px] resize-y"
                   />
                 </label>
@@ -240,16 +245,16 @@ export function NominateToDeptModal({
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isPending || !formData.departmentId}
+                    disabled={isPending || !formData.departmentId || !formData.roleId}
                     className="flex-1"
                   >
                     {isPending ? (
                       <span className="flex items-center gap-2">
                         <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Nominating...
+                        Transferring...
                       </span>
                     ) : (
-                      "Nominate"
+                      "Transfer Candidate"
                     )}
                   </Button>
                 </div>

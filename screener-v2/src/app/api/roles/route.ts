@@ -5,7 +5,10 @@ import { createRoleCatalogEntry, listRoleCatalog, getRoleUsageCounts } from "@/l
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
-  departmentId: z.string().optional().or(z.literal(""))
+  departmentId: z.string().optional().or(z.literal("")),
+  description: z.string().optional(),
+  experienceLevel: z.string().optional().or(z.literal("")),
+  requirements: z.string().optional()
 });
 
 export async function GET(request: Request) {
@@ -27,6 +30,10 @@ export async function GET(request: Request) {
         label: role.label,
         departmentId: role.departmentId ?? "",
         department: role.department ?? "",
+        departmentName: role.departmentName ?? role.department ?? "",
+        description: role.description ?? "",
+        experienceLevel: role.experienceLevel ?? "",
+        requirements: role.requirements ?? "",
         isActive: role.isActive,
         openJobCount: counts.openJobCount,
         pipelineCandidateCount: counts.pipelineCandidateCount
@@ -54,7 +61,10 @@ export async function POST(request: Request) {
     const body = createRoleSchema.parse(await request.json());
     const role = await createRoleCatalogEntry({
       label: body.label,
-      departmentId: body.departmentId || undefined
+      departmentId: body.departmentId || undefined,
+      description: body.description,
+      experienceLevel: body.experienceLevel || undefined,
+      requirements: body.requirements
     });
 
     return NextResponse.json({
@@ -63,6 +73,10 @@ export async function POST(request: Request) {
         id: role.id,
         label: role.label,
         departmentId: role.departmentId ?? "",
+        departmentName: role.departmentName ?? "",
+        description: role.description ?? "",
+        experienceLevel: role.experienceLevel ?? "",
+        requirements: role.requirements ?? "",
         isActive: role.isActive
       }
     });

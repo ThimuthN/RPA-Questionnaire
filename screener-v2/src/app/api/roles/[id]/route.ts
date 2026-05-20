@@ -6,6 +6,9 @@ import { updateRoleCatalogEntry, getRoleUsageCounts, deleteRoleCatalogEntry } fr
 const updateRoleSchema = z.object({
   label: z.string().min(2),
   departmentId: z.string().optional().or(z.literal("")),
+  description: z.string().optional(),
+  experienceLevel: z.string().optional().or(z.literal("")),
+  requirements: z.string().optional(),
   isActive: z.boolean().default(true)
 });
 
@@ -28,6 +31,9 @@ export async function PUT(
     const role = await updateRoleCatalogEntry(id, {
       label: body.label,
       departmentId: body.departmentId || undefined,
+      description: body.description,
+      experienceLevel: body.experienceLevel || undefined,
+      requirements: body.requirements,
       isActive: body.isActive
     });
 
@@ -37,6 +43,10 @@ export async function PUT(
         id: role.id,
         label: role.label,
         departmentId: role.departmentId ?? "",
+        departmentName: role.departmentName ?? "",
+        description: role.description ?? "",
+        experienceLevel: role.experienceLevel ?? "",
+        requirements: role.requirements ?? "",
         isActive: role.isActive
       }
     });

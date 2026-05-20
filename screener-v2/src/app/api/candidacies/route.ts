@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { createOrUpdateDepartmentCandidacy } from "@/lib/db/candidacies";
+import { prisma } from "@/lib/db/prisma";
 
 const createCandidacySchema = z.object({
   candidateId: z.string().min(1, "Candidate ID required"),
   departmentId: z.string().min(1, "Department ID required"),
-  roleId: z.string().optional(),
+  roleId: z.string().min(1, "Role is required"),
   hrOwnerId: z.string().optional(),
   nominatedBy: z.string().optional(),
   nominationNote: z.string().optional(),
@@ -24,6 +25,31 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const input = createCandidacySchema.parse(body);
+
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: input.candidateId },
+      select: { id: true, departmentId: true, orgStage: true }
+    });
+    if (!candidate) {
+      return NextResponse.json({ error: "Candidate not found" }, { status: 404 });
+    }
+    if (candidate.orgStage === "finalized") {
+      return NextResponse.json({ error: "Finalized candidates cannot be transferred." }, { status: 400 });
+    }
+
+    const permission = await requirePermissionForDepartment(session, "manage_candidates", candidate.departmentId);
+    if (!permission.ok) return permission.response;
+
+    const role = await prisma.roleCatalog.findUnique({
+      where: { id: input.roleId },
+      select: { id: true, departmentId: true }
+    });
+    if (!role) {
+      return NextResponse.json({ error: "Role not found" }, { status: 404 });
+    }
+    if (role.departmentId !== input.departmentId) {
+      return NextResponse.json({ error: "Role must belong to the selected department." }, { status: 400 });
+    }
 
     const candidacy = await createOrUpdateDepartmentCandidacy({
       candidateId: input.candidateId,

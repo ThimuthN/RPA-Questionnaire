@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { Button } from "@/components/primitives/Button";
-import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
@@ -15,21 +13,26 @@ export default async function DepartmentDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await requirePageSession(`/departments/${id}`);
+  await requirePageSession(`/departments/${id}`);
 
   const department = await getDepartment(id);
   if (!department) {
     notFound();
   }
 
-  // Fetch roles for this department
-  const roles = await prisma.roleCatalog.findMany({
-    where: { departmentId: id, isActive: true },
-    orderBy: { sortOrder: "asc" }
-  });
+  const [roles, userCount, openJobCount, activeCandidateCount, finalizedCandidateCount] = await Promise.all([
+    prisma.roleCatalog.findMany({
+      where: { departmentId: id, isActive: true },
+      orderBy: { sortOrder: "asc" }
+    }),
+    prisma.user.count({ where: { departmentId: id, isActive: true } }),
+    prisma.jobPosting.count({ where: { role: { departmentId: id }, isOpen: true } }),
+    prisma.candidate.count({ where: { departmentId: id, orgStage: "active" } }),
+    prisma.candidate.count({ where: { departmentId: id, orgStage: "finalized" } })
+  ]);
 
   const tabs = [
-    { label: "Roles", href: `/departments/${id}`, active: true },
+    { label: "Overview", href: `/departments/${id}`, active: true },
     { label: "Users", href: `/departments/${id}/users`, active: false }
   ];
 
@@ -61,53 +64,35 @@ export default async function DepartmentDetailPage({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[color:var(--app-heading)]">
-                Department Roles
-              </h3>
-              <p className="text-sm text-[color:var(--app-muted)]">
-                {roles.length} role{roles.length !== 1 ? "s" : ""}
-              </p>
+          <div className="space-y-5">
+            <div className="grid gap-3 md:grid-cols-5">
+              {[
+                ["Users", userCount],
+                ["Roles", roles.length],
+                ["Open jobs", openJobCount],
+                ["Active candidates", activeCandidateCount],
+                ["Finalized", finalizedCandidateCount]
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">{label}</p>
+                  <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{value}</p>
+                </div>
+              ))}
             </div>
 
-            {roles.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface)]/50 p-8 text-center">
-                <p className="text-sm text-[color:var(--app-muted)]">No roles defined for this department yet.</p>
-                <p className="mt-2 text-xs text-[color:var(--app-muted)]">Roles can be created from the main Roles admin page.</p>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                      <tr>
-                        <th scope="col" className="px-4 py-3 font-medium">Role</th>
-                        <th scope="col" className="px-4 py-3 font-medium">Sort Order</th>
-                        <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                        <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {roles.map((role) => (
-                        <tr key={role.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
-                          <td className="px-4 py-3 font-medium text-[color:var(--app-heading)]">{role.label}</td>
-                          <td className="px-4 py-3 text-[color:var(--app-text)]">{role.sortOrder}</td>
-                          <td className="px-4 py-3">
-                            <StatusPill label="Active" tone="emerald" />
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <Button variant="ghost" className="text-xs px-2 py-1">
-                              Edit
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+            <RoleCatalogSection
+              departmentId={id}
+              initialRoles={roles.map((role) => ({
+                id: role.id,
+                label: role.label,
+                departmentId: role.departmentId,
+                departmentName: department.name,
+                description: role.description ?? undefined,
+                experienceLevel: role.experienceLevel ?? undefined,
+                requirements: role.requirements ?? undefined,
+                isActive: role.isActive
+              }))}
+            />
           </div>
         </StagePanel>
       </div>

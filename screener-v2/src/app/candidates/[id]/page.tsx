@@ -6,6 +6,7 @@ import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMil
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
 import { DeptCandidacyPanel } from "@/components/candidates/DeptCandidacyPanel";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
+import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
 import { OrgStatusControl } from "@/components/candidates/OrgStatusControl";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
@@ -121,7 +122,7 @@ export default async function CandidateDetailPage({
   }>;
 }) {
   const { id } = await params;
-  await requirePageSession(`/candidates/${id}`);
+  const session = await requirePageSession(`/candidates/${id}`);
   const candidate = await getCandidateDetail(id);
   if (!candidate) {
     notFound();
@@ -191,15 +192,19 @@ export default async function CandidateDetailPage({
                   <Button type="submit">Move to pipeline</Button>
                 </form>
               ) : null}
-              <EditCandidateInfoModal candidate={candidate} />
-              <form action={`/api/candidates/${candidate.id}/delete`} method="post">
-                <ConfirmSubmitButton
-                  variant="danger"
-                  confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data.`}
-                >
-                  Delete candidate
-                </ConfirmSubmitButton>
-              </form>
+              {session.permissions.includes("manage_candidates") ? (
+                <EditCandidateInfoModal candidate={candidate} />
+              ) : null}
+              {session.permissions.includes("delete_candidate") ? (
+                <form action={`/api/candidates/${candidate.id}/delete`} method="post">
+                  <ConfirmSubmitButton
+                    variant="danger"
+                    confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data.`}
+                  >
+                    Delete candidate
+                  </ConfirmSubmitButton>
+                </form>
+              ) : null}
             </div>
           </div>
 
@@ -364,6 +369,15 @@ export default async function CandidateDetailPage({
                   </div>
                 </details>
               </div>
+            </section>
+
+            <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">
+              <FinalizeActionBar
+                candidateId={candidate.id}
+                orgStage={candidate.orgStage}
+                finalizedAs={candidate.finalizedAs}
+                permissions={session.permissions}
+              />
             </section>
 
             <section className="space-y-4 border-t border-[color:var(--app-border)] pt-5">

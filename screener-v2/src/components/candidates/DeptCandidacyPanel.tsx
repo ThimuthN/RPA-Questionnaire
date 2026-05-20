@@ -6,18 +6,20 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { NominateToDeptModal } from "@/components/candidates/NominateToDeptModal";
 
-type DepartmentCandidacyStatus = "active" | "talent_pool" | "dept_rejected";
+type DepartmentCandidacyStatus = "active" | "talent_pool" | "dept_rejected" | "transferred_out";
 
 const statusLabels: Record<DepartmentCandidacyStatus, string> = {
   active: "Active",
   talent_pool: "Talent Pool",
-  dept_rejected: "Passed"
+  dept_rejected: "Rejected",
+  transferred_out: "Transferred"
 };
 
 const statusTones: Record<DepartmentCandidacyStatus, "neutral" | "amber" | "emerald"> = {
   active: "neutral",
   talent_pool: "amber",
-  dept_rejected: "emerald"
+  dept_rejected: "neutral",
+  transferred_out: "amber"
 };
 
 interface DepartmentCandidacy {
@@ -104,7 +106,8 @@ export function DeptCandidacyPanel({
             >
               <option value="active">Active</option>
               <option value="talent_pool">Talent Pool</option>
-              <option value="dept_rejected">Passed</option>
+              <option value="dept_rejected">Rejected</option>
+              <option value="transferred_out">Transferred</option>
             </select>
           </div>
 
@@ -135,7 +138,7 @@ export function DeptCandidacyPanel({
         className="w-full gap-2"
       >
         <Plus className="h-4 w-4" />
-        Nominate to Another Department
+        Transfer to Another Department
       </Button>
 
       <NominateToDeptModal
