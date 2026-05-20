@@ -1,6 +1,5 @@
 import { del } from "@vercel/blob";
 import type { Prisma } from "@prisma/client";
-import { Prisma as PrismaRuntime } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import {
   defaultCandidateMilestones,
@@ -1877,8 +1876,16 @@ function buildCandidateWhere(filters?: {
   if (filters?.owner) {
     where.hrOwnerId = filters.owner;
   }
-  // Note: Search queries are handled separately in listCandidateWorkspacePage using FTS
-  // to avoid O(n) sequential scans on large tables
+  const searchQuery = filters?.q?.trim();
+  if (searchQuery) {
+    where.OR = [
+      { fullName: { contains: searchQuery, mode: "insensitive" } },
+      { email: { contains: searchQuery, mode: "insensitive" } },
+      { hrOwner: { contains: searchQuery, mode: "insensitive" } },
+      { hrOwnerUser: { name: { contains: searchQuery, mode: "insensitive" } } },
+      { hrOwnerUser: { email: { contains: searchQuery, mode: "insensitive" } } }
+    ];
+  }
 
   return where;
 }
@@ -2005,40 +2012,9 @@ export async function listCandidateWorkspacePage(
     departmentId: filters.departmentId,
     orgStage: filters.orgStage,
     finalizedAs: filters.finalizedAs,
-    owner: filters.owner
+    owner: filters.owner,
+    q: filters.q
   });
-
-  // Use FTS for search queries to avoid sequential scans on large tables
-  // Limit to 500 results to prevent memory bloat on broad searches
-  let candidateIds: string[] | null = null;
-  if (filters.q?.trim()) {
-    const searchQuery = filters.q.trim();
-    const ftsResults = await prisma.$queryRaw<Array<{ id: string }>>(
-      PrismaRuntime.sql`SELECT id FROM "Candidate" WHERE search_vector @@ plainto_tsquery('english', ${searchQuery}) LIMIT 500`
-    );
-    candidateIds = ftsResults.map((r) => r.id);
-    if (candidateIds.length === 0) {
-      // No results found
-      return {
-        page,
-        pageSize,
-        total: 0,
-        rows: [],
-        summary: {
-          total: 0,
-          needsResume: 0,
-          testNotSent: 0,
-          inProgress: 0,
-          readyForReview: 0,
-          movedForward: 0,
-          stalled: 0
-        },
-        roleOptions: [],
-        ownerOptions: []
-      };
-    }
-    where.id = { in: candidateIds };
-  }
 
   const [dbCandidates, total] = await Promise.all([
     prisma.candidate.findMany({

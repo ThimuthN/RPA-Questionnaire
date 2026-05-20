@@ -2,37 +2,18 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { FileText, ChevronRight, X, Check } from "lucide-react";
+import { FileText, X, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
 import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
+import {
+  candidateStageActionLabels,
+  getForwardCandidateStages,
+  normalizeCandidateStage
+} from "@/lib/candidates/stage-workflow";
 import type { CandidateWorkspaceItem } from "@/lib/candidates/workspace";
-
-const stageOrder: Record<CandidateStage, number> = {
-  applicant: 1,
-  pipeline: 2,
-  screening: 3,
-  interview: 4,
-  testing: 5,
-  decision: 6,
-  closed: 7
-};
-
-const nextStageLabel: Record<CandidateStage, string | null> = {
-  applicant: "Move to Pipeline",
-  pipeline: "Send to Screener",
-  screening: "Move to Interview",
-  interview: "Move to Review",
-  testing: "Finalize",
-  decision: "Close",
-  closed: null
-};
-
-function normalizeStage(stage: string): CandidateStage {
-  return stage === "new" ? "pipeline" : (stage as CandidateStage);
-}
 
 const tableShellClassName =
   "overflow-hidden rounded-[24px] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)]";
@@ -51,6 +32,9 @@ const actionPillSecondaryClassName =
 
 const actionIconPillClassName =
   "inline-flex h-8 w-8 items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-brand-strong)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-brand-300/50 hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-brand)]";
+
+const stageActionSelectClassName =
+  "h-8 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2.5 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] outline-none transition hover:border-[color:var(--app-border-strong)] focus:border-brand-300/50 disabled:opacity-50";
 
 function contextualAction(candidate: CandidateWorkspaceItem) {
   if (candidate.latestAssessment?.attemptId) {
@@ -110,6 +94,31 @@ export function CandidateWorkspaceTable({
     setSelectedCandidateIds([]);
   }
 
+  async function moveCandidate(candidateId: string, stage: CandidateStage) {
+    setPromoting((current) => ({ ...current, [candidateId]: true }));
+    setPromoteError((current) => ({ ...current, [candidateId]: "" }));
+
+    try {
+      const response = await fetch(`/api/candidates/${candidateId}/promote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage })
+      });
+      const data = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string; message?: string };
+      if (!response.ok || data.ok === false || data.error) {
+        throw new Error(data.error || data.message || "Failed to move candidate.");
+      }
+      router.refresh();
+    } catch (err) {
+      setPromoteError((current) => ({
+        ...current,
+        [candidateId]: err instanceof Error ? err.message : "Failed to move candidate."
+      }));
+    } finally {
+      setPromoting((current) => ({ ...current, [candidateId]: false }));
+    }
+  }
+
   return (
     <form action="/api/candidates/bulk" method="post" className="space-y-4">
       <input type="hidden" name="returnTo" value={currentPathAndQuery} />
@@ -143,7 +152,8 @@ export function CandidateWorkspaceTable({
               {rows.map((candidate) => {
                 const action = contextualAction(candidate);
                 const isSelected = selectedCandidateIds.includes(candidate.id);
-                const stage = normalizeStage(candidate.stage);
+                const stage = normalizeCandidateStage(candidate.stage);
+                const forwardStages = getForwardCandidateStages(stage);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
@@ -167,44 +177,11 @@ export function CandidateWorkspaceTable({
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
-                        <div className="flex items-center gap-1.5">
-                          {permissions.includes("promote_candidate") && nextStageLabel[stage] ? (
-                            <button
-                              type="button"
-                              disabled={promoting[candidate.id]}
-                              onClick={async () => {
-                                setPromoting(prev => ({ ...prev, [candidate.id]: true }));
-                                try {
-                                  const res = await fetch(`/api/candidates/${candidate.id}/promote`, {
-                                    method: "POST"
-                                  });
-                                  if (res.ok) {
-                                    router.refresh();
-                                  } else {
-                                    setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to promote candidate" }));
-                                    setTimeout(() => setPromoteError(prev => ({ ...prev, [candidate.id]: "" })), 3000);
-                                  }
-                                } catch (err) {
-                                  setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unknown error" }));
-                                  setTimeout(() => setPromoteError(prev => ({ ...prev, [candidate.id]: "" })), 3000);
-                                } finally {
-                                  setPromoting(prev => ({ ...prev, [candidate.id]: false }));
-                                }
-                              }}
-                              className={actionPillSecondaryClassName + " disabled:opacity-50"}
-                              title={nextStageLabel[stage] || ""}
-                            >
-                              <span>{nextStageLabel[stage]}</span>
-                              <ChevronRight className="h-3 w-3" />
-                            </button>
-                          ) : null}
-                        </div>
                         {promoteError[candidate.id] && (
                           <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
                         )}
-                        <p className="text-xs text-[color:var(--app-muted)]">
-                          {candidate.currentFocus || candidateStageLabels[stage]}
-                        </p>
+                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{candidateStageLabels[stage]}</p>
+                        <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
                       </div>
                     </td>
                     <td className={tableCellClassName}>
@@ -217,6 +194,27 @@ export function CandidateWorkspaceTable({
                     </td>
                     <td className={tableCellClassName}>
                       <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+                        {permissions.includes("promote_candidate") && forwardStages.length > 0 ? (
+                          <select
+                            aria-label={`Move ${candidate.fullName} to stage`}
+                            value=""
+                            disabled={promoting[candidate.id]}
+                            onChange={(event) => {
+                              const nextStage = event.target.value as CandidateStage;
+                              if (nextStage) {
+                                void moveCandidate(candidate.id, nextStage);
+                              }
+                            }}
+                            className={stageActionSelectClassName}
+                          >
+                            <option value="">Move...</option>
+                            {forwardStages.map((targetStage) => (
+                              <option key={targetStage} value={targetStage}>
+                                {candidateStageActionLabels[targetStage]}
+                              </option>
+                            ))}
+                          </select>
+                        ) : null}
                         {action ? (
                           <Link href={action.href} className={actionPillPrimaryClassName}>
                             {action.label}

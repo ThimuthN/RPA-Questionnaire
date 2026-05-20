@@ -17,10 +17,14 @@ interface DepartmentOption {
 
 export function AddUserModal({
   mode = "create",
-  user
+  user,
+  buttonLabel = mode === "create" ? "Add member" : "Edit",
+  defaultDepartmentId
 }: {
   mode?: "create" | "edit";
   user?: AppUserRow;
+  buttonLabel?: string;
+  defaultDepartmentId?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -49,8 +53,10 @@ export function AddUserModal({
   useEffect(() => {
     if (user?.departmentId) {
       setSelectedDepartmentId(user.departmentId);
+    } else if (defaultDepartmentId) {
+      setSelectedDepartmentId(defaultDepartmentId);
     }
-  }, [user]);
+  }, [defaultDepartmentId, user]);
 
   useEffect(() => {
     if (!selectedDepartmentId) {
@@ -117,17 +123,17 @@ export function AddUserModal({
         setOpen(true);
         loadDepartments();
         if (mode === "create") {
-          setSelectedDepartmentId("");
+          setSelectedDepartmentId(defaultDepartmentId ?? "");
         }
       }}>
-        {mode === "create" ? "Add member" : "Edit"}
+        {buttonLabel}
       </Button>
 
       <Modal isOpen={open} onClose={() => {
         setOpen(false);
         setSubmitError("");
         if (mode === "create") {
-          setSelectedDepartmentId("");
+          setSelectedDepartmentId(defaultDepartmentId ?? "");
         }
       }} title={title}>
         <div className="space-y-1 mb-4">

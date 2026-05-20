@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     });
 
     if (isFormRequest(request)) {
-      const url = new URL("/users", request.url);
+      const url = new URL("/departments", request.url);
       url.searchParams.set("created", created.email);
       return NextResponse.redirect(url, 303);
     }
@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, user: created });
   } catch (error) {
     if (isFormRequest(request)) {
-      const url = new URL("/users", request.url);
+      const url = new URL("/departments", request.url);
       url.searchParams.set("error", error instanceof Error ? error.message : "Could not create user.");
       return NextResponse.redirect(url, 303);
     }

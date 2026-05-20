@@ -23,6 +23,11 @@ export default async function DepartmentDetailPage({
   const [roles, userCount, openJobCount, activeCandidateCount, finalizedCandidateCount] = await Promise.all([
     prisma.roleCatalog.findMany({
       where: { departmentId: id, isActive: true },
+      include: {
+        permissions: {
+          select: { permission: true }
+        }
+      },
       orderBy: { sortOrder: "asc" }
     }),
     prisma.user.count({ where: { departmentId: id, isActive: true } }),
@@ -90,6 +95,7 @@ export default async function DepartmentDetailPage({
                 description: role.description ?? undefined,
                 experienceLevel: role.experienceLevel ?? undefined,
                 requirements: role.requirements ?? undefined,
+                permissions: role.permissions.map((permission) => permission.permission),
                 isActive: role.isActive
               }))}
             />

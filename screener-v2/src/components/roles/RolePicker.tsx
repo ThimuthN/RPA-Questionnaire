@@ -13,6 +13,7 @@ export interface RolePickerOption {
   description?: string;
   experienceLevel?: string;
   requirements?: string;
+  permissions?: string[];
   isActive?: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;

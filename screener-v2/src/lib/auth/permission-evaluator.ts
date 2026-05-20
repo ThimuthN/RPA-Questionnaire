@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/db/prisma";
 import type { AppSession } from "@/lib/auth/session";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
+
+function isKnownPermission(permission: string) {
+  return APP_ACTIONS.includes(permission as (typeof APP_ACTIONS)[number]);
+}
 
 export async function getEffectivePermissions(userId: string): Promise<string[]> {
   const user = await prisma.user.findUnique({
@@ -29,12 +34,17 @@ export async function getEffectivePermissions(userId: string): Promise<string[]>
     });
 
     rolePermissions.forEach((rp) => {
-      permissions.add(rp.permission);
+      if (isKnownPermission(rp.permission)) {
+        permissions.add(rp.permission);
+      }
     });
   }
 
   // Apply overrides
   user.permissionOverrides.forEach((override) => {
+    if (!isKnownPermission(override.permission)) {
+      return;
+    }
     if (override.action === "grant") {
       permissions.add(override.permission);
     } else if (override.action === "revoke") {

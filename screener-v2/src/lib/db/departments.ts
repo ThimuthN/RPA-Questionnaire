@@ -1,5 +1,10 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
+
+function isKnownPermission(permission: string) {
+  return APP_ACTIONS.includes(permission as (typeof APP_ACTIONS)[number]);
+}
 
 export type DepartmentRecord = {
   id: string;
@@ -14,7 +19,8 @@ export type DepartmentUserRecord = {
   name: string | null;
   email: string;
   roleId: string | null;
-  role: { id: string; label: string } | null;
+  role: { id: string; label: string; permissions: string[] } | null;
+  permissionOverrides: Array<{ permission: string; action: string }>;
   permissionCount: number;
 };
 
@@ -71,11 +77,17 @@ export async function listDepartmentUsers(departmentId: string): Promise<Departm
       role: {
         select: {
           id: true,
-          label: true
+          label: true,
+          permissions: {
+            select: {
+              permission: true
+            }
+          }
         }
       },
       permissionOverrides: {
         select: {
+          permission: true,
           action: true
         }
       }
@@ -83,14 +95,33 @@ export async function listDepartmentUsers(departmentId: string): Promise<Departm
     orderBy: [{ name: "asc" }, { email: "asc" }]
   });
 
-  return users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    roleId: user.roleId,
-    role: user.role,
-    permissionCount: user.permissionOverrides?.length ?? 0
-  }));
+  return users.map((user) => {
+    const rolePermissions = user.role?.permissions.map((item) => item.permission).filter(isKnownPermission) ?? [];
+    const permissions = new Set(rolePermissions);
+    const permissionOverrides = user.permissionOverrides.filter((override) => isKnownPermission(override.permission));
+    permissionOverrides.forEach((override) => {
+      if (override.action === "grant") {
+        permissions.add(override.permission);
+      } else if (override.action === "revoke") {
+        permissions.delete(override.permission);
+      }
+    });
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      roleId: user.roleId,
+      role: user.role
+        ? {
+            id: user.role.id,
+            label: user.role.label,
+            permissions: rolePermissions
+          }
+        : null,
+      permissionOverrides,
+      permissionCount: permissions.size
+    };
+  });
 }
 
 export async function createDepartment(input: {

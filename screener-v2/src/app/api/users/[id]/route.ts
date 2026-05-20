@@ -90,7 +90,7 @@ export async function POST(
     }
 
     if (isFormRequest(request)) {
-      const url = new URL("/users", request.url);
+      const url = new URL("/departments", request.url);
       url.searchParams.set("updated", id);
       return NextResponse.redirect(url, 303);
     }
@@ -98,7 +98,7 @@ export async function POST(
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (isFormRequest(request)) {
-      const url = new URL("/users", request.url);
+      const url = new URL("/departments", request.url);
       url.searchParams.set("error", error instanceof Error ? error.message : "Could not update user.");
       return NextResponse.redirect(url, 303);
     }

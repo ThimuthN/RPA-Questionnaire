@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { Modal } from "@/components/primitives/Modal";
 import { FormError } from "@/components/primitives/FormError";
@@ -12,6 +13,7 @@ export function AssignUserToDeptModal({
   departmentId: string;
   departmentName: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -34,7 +36,7 @@ export function AssignUserToDeptModal({
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           const usersList = Array.isArray(usersData) ? usersData : usersData.users || [];
-          setUsers(usersList.filter((u: any) => u.departmentId !== departmentId));
+          setUsers(usersList.filter((user: { departmentId: string | null }) => user.departmentId !== departmentId));
         }
 
         if (rolesRes.ok) {
@@ -81,8 +83,7 @@ export function AssignUserToDeptModal({
       setTimeout(() => {
         setOpen(false);
         setSuccess(false);
-        // Trigger page refresh to show updated users list
-        window.location.reload();
+        router.refresh();
       }, 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -94,13 +95,13 @@ export function AssignUserToDeptModal({
   return (
     <>
       <Button onClick={() => setOpen(true)} variant="secondary" className="px-3 py-2 text-xs">
-        Add User
+        Add existing user
       </Button>
 
-      <Modal isOpen={open} onClose={() => setOpen(false)} title="Assign user to department">
+      <Modal isOpen={open} onClose={() => setOpen(false)} title="Assign existing user">
         <div className="space-y-1 mb-6">
           <p className="text-sm text-[color:var(--app-muted)]">
-            Add an existing user to {departmentName} and assign them a department role.
+            Select an existing organization user and assign them a {departmentName} role.
           </p>
         </div>
 
@@ -125,7 +126,7 @@ export function AssignUserToDeptModal({
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
             >
               <option value="">
-                {loading ? "Loading users..." : users.length === 0 ? "No available users" : "Select a user..."}
+                {loading ? "Loading users..." : users.length === 0 ? "No users outside this department" : "Select an existing user..."}
               </option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
@@ -173,7 +174,7 @@ export function AssignUserToDeptModal({
               disabled={saving}
               className="px-4 py-2"
             >
-              {saving ? "Assigning..." : "Assign User"}
+              {saving ? "Assigning..." : "Assign user"}
             </Button>
           </div>
         </form>

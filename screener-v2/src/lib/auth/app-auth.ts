@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { logAudit } from "@/lib/auth/audit";
 import { getEffectivePermissions } from "@/lib/auth/permission-evaluator";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
 
 export type AppUserRow = {
@@ -72,22 +73,7 @@ export async function ensureBootstrapAdmin() {
       }
     });
 
-    // Create all permissions for the system admin role
-    const permissions = [
-      "manage_users",
-      "create_role",
-      "edit_role",
-      "delete_role",
-      "create_job",
-      "edit_job",
-      "view_candidates",
-      "manage_candidates",
-      "create_invite",
-      "view_results",
-      "manage_addons"
-    ];
-
-    for (const permission of permissions) {
+    for (const permission of APP_ACTIONS) {
       await prisma.rolePermissionTemplate.create({
         data: {
           roleId: adminRole.id,
@@ -104,6 +90,7 @@ export async function ensureBootstrapAdmin() {
     data: {
       email,
       name,
+      departmentId: systemDept.id,
       roleId: adminRole.id,
       passwordHash: hashPassword(password),
       isActive: true

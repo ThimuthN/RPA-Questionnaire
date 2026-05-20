@@ -3,6 +3,7 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
+import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
 import { requirePageSession } from "@/lib/auth/guards";
@@ -27,7 +28,13 @@ export default async function DepartmentUsersPage({
     listDepartmentUsers(id),
     prisma.roleCatalog.findMany({
       where: { departmentId: id, isActive: true },
-      select: { id: true, label: true },
+      select: {
+        id: true,
+        label: true,
+        permissions: {
+          select: { permission: true }
+        }
+      },
       orderBy: { sortOrder: "asc" }
     })
   ]);
@@ -70,7 +77,12 @@ export default async function DepartmentUsersPage({
               <h3 className="text-lg font-semibold text-[color:var(--app-heading)]">
                 Team Members
               </h3>
-              <AssignUserToDeptModal departmentId={id} departmentName={department.name} />
+              <div className="flex flex-wrap items-center gap-2">
+                {department.slug === "system" ? (
+                  <AddUserModal buttonLabel="Create platform user" defaultDepartmentId={id} />
+                ) : null}
+                <AssignUserToDeptModal departmentId={id} departmentName={department.name} />
+              </div>
             </div>
 
             {users.length === 0 ? (
@@ -119,8 +131,19 @@ export default async function DepartmentUsersPage({
                           <td className="px-4 py-3 text-right">
                             <DepartmentUserActions
                               departmentId={id}
-                              user={{ id: user.id, name: user.name, email: user.email, roleId: user.roleId }}
-                              roles={roles}
+                              user={{
+                                id: user.id,
+                                name: user.name,
+                                email: user.email,
+                                roleId: user.roleId,
+                                rolePermissions: user.role?.permissions ?? [],
+                                permissionOverrides: user.permissionOverrides
+                              }}
+                              roles={roles.map((role) => ({
+                                id: role.id,
+                                label: role.label,
+                                permissions: role.permissions.map((permission) => permission.permission)
+                              }))}
                             />
                           </td>
                         </tr>

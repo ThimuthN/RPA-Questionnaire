@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { Activity, Blocks, BriefcaseBusiness, Building, Building2, ClipboardList, RadioTower, UserCog, Users2 } from "lucide-react";
+import { Activity, Blocks, BriefcaseBusiness, Building, Building2, ClipboardList, RadioTower, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -17,7 +17,6 @@ export function getNavItems(viewer: Pick<AppSession, "permissions" | "department
         { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
         ...(viewer.permissions.includes("manage_users")
           ? [
-              { href: "/users" as Route, label: copy.nav.users, icon: UserCog },
               { href: "/departments" as Route, label: "Departments", icon: Building2 }
             ]
           : []),
@@ -42,7 +41,6 @@ export function isNavItemActive(pathname: string, href: string) {
     (href === "/addons" && pathname.startsWith("/addons")) ||
     (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
     (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||
-    (href === "/users" && pathname.startsWith("/users")) ||
     (href.startsWith("/departments/") && pathname.startsWith("/departments/")) ||
     (href === "/departments" && pathname === "/departments")
   );

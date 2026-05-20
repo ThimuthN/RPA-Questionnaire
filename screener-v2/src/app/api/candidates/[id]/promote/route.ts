@@ -1,30 +1,16 @@
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import {
+  canAdvanceCandidateStage,
+  candidateStageOrder,
+  getNextCandidateStage,
+  isCandidateStageValue,
+  normalizeCandidateStage
+} from "@/lib/candidates/stage-workflow";
 import { prisma } from "@/lib/db/prisma";
-import { candidateStageValues, type CandidateStage } from "@/lib/candidates/types";
 import { cuidLike } from "@/lib/tokens/token-service";
 
-const stageOrder: Record<CandidateStage, number> = {
-  applicant: 1,
-  pipeline: 2,
-  screening: 3,
-  interview: 4,
-  testing: 5,
-  decision: 6,
-  closed: 7
-};
-
-const nextStage: Record<CandidateStage, CandidateStage | null> = {
-  applicant: "pipeline",
-  pipeline: "screening",
-  screening: "interview",
-  interview: "testing",
-  testing: "decision",
-  decision: "closed",
-  closed: null
-};
-
 export async function POST(
-  _: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireApiSession();
@@ -34,6 +20,7 @@ export async function POST(
 
   const { session } = auth;
   const { id: candidateId } = await params;
+  const body = await request.json().catch(() => ({}));
 
   const candidate = await prisma.candidate.findUnique({
     where: { id: candidateId },
@@ -69,8 +56,11 @@ export async function POST(
     return Response.json({ error: "Finalized candidates cannot be promoted." }, { status: 400 });
   }
 
-  const currentStage = candidate.stage as CandidateStage;
-  const next = nextStage[currentStage];
+  const currentStage = normalizeCandidateStage(candidate.stage);
+  const requestedStage = typeof body.stage === "string" ? body.stage : undefined;
+  const next = requestedStage && isCandidateStageValue(requestedStage)
+    ? requestedStage
+    : getNextCandidateStage(currentStage);
 
   if (!next) {
     return Response.json(
@@ -79,9 +69,15 @@ export async function POST(
     );
   }
 
-  // Validation: Cannot promote to closed without passed assessment
+  if (!canAdvanceCandidateStage(currentStage, next)) {
+    return Response.json(
+      { error: `Cannot move candidate from ${currentStage} to ${next}.` },
+      { status: 400 }
+    );
+  }
+
   if (next === "closed") {
-    const passedAssessment = candidate.assessments.find((a) => a.attempt?.result?.pass === true);
+    const passedAssessment = candidate.assessments.find((assessment) => assessment.attempt?.result?.pass === true);
     if (!passedAssessment) {
       return Response.json(
         { error: "Cannot close candidate without a passed assessment. Complete and pass an assessment first." },
@@ -90,12 +86,14 @@ export async function POST(
     }
   }
 
-  // Validation: Cannot promote to testing without a completed assessment
-  if (next === "testing" && currentStage === "screening") {
+  if (
+    candidateStageOrder[next] >= candidateStageOrder.testing &&
+    candidateStageOrder[currentStage] < candidateStageOrder.testing
+  ) {
     const hasAssessment = candidate.assessments.length > 0;
     if (!hasAssessment) {
       return Response.json(
-        { error: "Cannot advance to testing without an assessment. Create an assessment first." },
+        { error: "Cannot advance to advanced review without an assessment. Create an assessment first." },
         { status: 400 }
       );
     }
@@ -116,7 +114,7 @@ export async function POST(
         candidateId,
         actorId: session.userId,
         event: "stage_advanced",
-        detail: `${candidate.stage} → ${next}`,
+        detail: `${candidate.stage} -> ${next}`,
         createdAt: new Date()
       }
     });

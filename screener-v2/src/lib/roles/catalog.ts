@@ -1,5 +1,10 @@
 import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
+
+function isKnownPermission(permission: string) {
+  return APP_ACTIONS.includes(permission as (typeof APP_ACTIONS)[number]);
+}
 
 export interface RoleCatalogEntry {
   id: string;
@@ -13,6 +18,7 @@ export interface RoleCatalogEntry {
   requirements?: string;
   sortOrder: number;
   isActive: boolean;
+  permissions?: string[];
 }
 
 function slugifyRoleLabel(value: string) {
@@ -36,6 +42,7 @@ function mapRole(row: {
   requirements?: string | null;
   sortOrder: number;
   isActive: boolean;
+  permissions?: Array<{ permission: string }>;
 }): RoleCatalogEntry {
   return {
     id: row.id,
@@ -48,7 +55,8 @@ function mapRole(row: {
     experienceLevel: row.experienceLevel ?? undefined,
     requirements: row.requirements ?? undefined,
     sortOrder: row.sortOrder,
-    isActive: row.isActive
+    isActive: row.isActive,
+    permissions: row.permissions?.map((item) => item.permission).filter(isKnownPermission) ?? []
   };
 }
 
@@ -61,6 +69,10 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
     include: {
       dept: {
         select: { name: true }
+      },
+      permissions: {
+        select: { permission: true },
+        orderBy: { permission: "asc" }
       }
     },
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
@@ -81,6 +93,10 @@ export async function getRoleCatalogEntry(roleId: string) {
     include: {
       dept: {
         select: { name: true }
+      },
+      permissions: {
+        select: { permission: true },
+        orderBy: { permission: "asc" }
       }
     }
   });
@@ -119,6 +135,7 @@ export async function createRoleCatalogEntry(input: {
   description?: string;
   experienceLevel?: string;
   requirements?: string;
+  permissions?: string[];
 }) {
   const label = input.label.trim();
   if (!label) {
@@ -149,22 +166,43 @@ export async function createRoleCatalogEntry(input: {
     select: { sortOrder: true }
   });
 
-  const created = await prisma.roleCatalog.create({
-    data: {
-      slug: slugifyRoleLabel(label),
-      label,
-      departmentId: deptId,
-      description: input.description?.trim() || null,
-      experienceLevel: input.experienceLevel?.trim() || null,
-      requirements: input.requirements?.trim() || null,
-      sortOrder: (last?.sortOrder ?? -1) + 1,
-      isActive: true
-    },
-    include: {
-      dept: {
-        select: { name: true }
+  const created = await prisma.$transaction(async (tx) => {
+    const role = await tx.roleCatalog.create({
+      data: {
+        slug: slugifyRoleLabel(label),
+        label,
+        departmentId: deptId,
+        description: input.description?.trim() || null,
+        experienceLevel: input.experienceLevel?.trim() || null,
+        requirements: input.requirements?.trim() || null,
+        sortOrder: (last?.sortOrder ?? -1) + 1,
+        isActive: true
       }
+    });
+
+    if (input.permissions) {
+      await tx.rolePermissionTemplate.createMany({
+        data: input.permissions.map((permission) => ({
+          roleId: role.id,
+          permission,
+          scope: "own_dept"
+        })),
+        skipDuplicates: true
+      });
     }
+
+    return tx.roleCatalog.findUniqueOrThrow({
+      where: { id: role.id },
+      include: {
+        dept: {
+          select: { name: true }
+        },
+        permissions: {
+          select: { permission: true },
+          orderBy: { permission: "asc" }
+        }
+      }
+    });
   });
 
   revalidateTag("role-catalog");
@@ -180,6 +218,7 @@ export async function updateRoleCatalogEntry(
     experienceLevel?: string;
     requirements?: string;
     isActive?: boolean;
+    permissions?: string[];
   }
 ) {
   const label = input.label.trim();
@@ -211,22 +250,44 @@ export async function updateRoleCatalogEntry(
     throw new Error("A role with that name already exists in that department.");
   }
 
-  const updated = await prisma.roleCatalog.update({
-    where: { id: roleId },
-    data: {
-      slug: slugifyRoleLabel(label),
-      label,
-      departmentId: deptId,
-      description: input.description?.trim() || null,
-      experienceLevel: input.experienceLevel?.trim() || null,
-      requirements: input.requirements?.trim() || null,
-      isActive: input.isActive
-    },
-    include: {
-      dept: {
-        select: { name: true }
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.roleCatalog.update({
+      where: { id: roleId },
+      data: {
+        slug: slugifyRoleLabel(label),
+        label,
+        departmentId: deptId,
+        description: input.description?.trim() || null,
+        experienceLevel: input.experienceLevel?.trim() || null,
+        requirements: input.requirements?.trim() || null,
+        isActive: input.isActive
       }
+    });
+
+    if (input.permissions) {
+      await tx.rolePermissionTemplate.deleteMany({ where: { roleId } });
+      await tx.rolePermissionTemplate.createMany({
+        data: input.permissions.map((permission) => ({
+          roleId,
+          permission,
+          scope: "own_dept"
+        })),
+        skipDuplicates: true
+      });
     }
+
+    return tx.roleCatalog.findUniqueOrThrow({
+      where: { id: roleId },
+      include: {
+        dept: {
+          select: { name: true }
+        },
+        permissions: {
+          select: { permission: true },
+          orderBy: { permission: "asc" }
+        }
+      }
+    });
   });
 
   revalidateTag("role-catalog");

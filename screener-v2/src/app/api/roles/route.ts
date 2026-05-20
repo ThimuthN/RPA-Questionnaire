@@ -2,13 +2,16 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { createRoleCatalogEntry, listRoleCatalog, getRoleUsageCounts } from "@/lib/roles/catalog";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 
 const createRoleSchema = z.object({
   label: z.string().min(2),
   departmentId: z.string().optional().or(z.literal("")),
   description: z.string().optional(),
   experienceLevel: z.string().optional().or(z.literal("")),
-  requirements: z.string().optional()
+  requirements: z.string().optional(),
+  permissions: z.array(z.string().refine((value) => APP_ACTIONS.includes(value as (typeof APP_ACTIONS)[number]))).optional()
 });
 
 export async function GET(request: Request) {
@@ -34,6 +37,7 @@ export async function GET(request: Request) {
         description: role.description ?? "",
         experienceLevel: role.experienceLevel ?? "",
         requirements: role.requirements ?? "",
+        permissions: role.permissions ?? [],
         isActive: role.isActive,
         openJobCount: counts.openJobCount,
         pipelineCandidateCount: counts.pipelineCandidateCount
@@ -59,12 +63,20 @@ export async function POST(request: Request) {
 
   try {
     const body = createRoleSchema.parse(await request.json());
+    if (body.permissions && auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "create_role"))) {
+      const outsideActor = body.permissions.find((permission) => !auth.session.permissions.includes(permission));
+      if (outsideActor) {
+        throw new Error("You can only create roles within your own permission set.");
+      }
+    }
+
     const role = await createRoleCatalogEntry({
       label: body.label,
       departmentId: body.departmentId || undefined,
       description: body.description,
       experienceLevel: body.experienceLevel || undefined,
-      requirements: body.requirements
+      requirements: body.requirements,
+      permissions: body.permissions
     });
 
     return NextResponse.json({
@@ -77,6 +89,7 @@ export async function POST(request: Request) {
         description: role.description ?? "",
         experienceLevel: role.experienceLevel ?? "",
         requirements: role.requirements ?? "",
+        permissions: role.permissions ?? [],
         isActive: role.isActive
       }
     });

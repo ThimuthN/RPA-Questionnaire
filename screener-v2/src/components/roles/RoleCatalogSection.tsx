@@ -7,6 +7,7 @@ import { FormInput } from "@/components/primitives/FormInput";
 import { FormError } from "@/components/primitives/FormError";
 import { DataTable } from "@/components/primitives/DataTable";
 import type { RolePickerOption } from "@/components/roles/RolePicker";
+import { APP_ACTIONS, APP_ACTION_LABELS, type AppAction } from "@/lib/auth/permissions";
 
 interface DepartmentOption {
   id: string;
@@ -22,6 +23,7 @@ interface EditorState {
   description: string;
   experienceLevel: string;
   requirements: string;
+  permissions: string[];
   isActive: boolean;
   openJobCount?: number;
   pipelineCandidateCount?: number;
@@ -33,6 +35,7 @@ const emptyEditor: EditorState = {
   description: "",
   experienceLevel: "",
   requirements: "",
+  permissions: [],
   isActive: true
 };
 
@@ -103,6 +106,7 @@ export function RoleCatalogSection({
       description: role.description ?? "",
       experienceLevel: role.experienceLevel ?? "",
       requirements: role.requirements ?? "",
+      permissions: role.permissions ?? [],
       isActive: role.isActive ?? true,
       openJobCount: role.openJobCount,
       pipelineCandidateCount: role.pipelineCandidateCount
@@ -128,6 +132,7 @@ export function RoleCatalogSection({
           description: editor.description.trim(),
           experienceLevel: editor.experienceLevel || undefined,
           requirements: editor.requirements.trim(),
+          permissions: editor.permissions,
           isActive: editor.isActive
         })
       });
@@ -177,6 +182,15 @@ export function RoleCatalogSection({
     }
   }
 
+  function togglePermission(permission: AppAction) {
+    setEditor((current) => ({
+      ...current,
+      permissions: current.permissions.includes(permission)
+        ? current.permissions.filter((value) => value !== permission)
+        : [...current.permissions, permission]
+    }));
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -215,15 +229,20 @@ export function RoleCatalogSection({
             },
             {
               header: "In use",
-              width: "w-[20%]",
+              width: "w-[15%]",
               render: (role) =>
                 (role.openJobCount ?? 0) > 0 || (role.pipelineCandidateCount ?? 0) > 0
                   ? `${role.openJobCount ?? 0} job(s) · ${role.pipelineCandidateCount ?? 0} candidate(s)`
                   : "—"
             },
             {
+              header: "Permissions",
+              width: "w-[15%]",
+              render: (role) => `${role.permissions?.length ?? 0} permission${role.permissions?.length === 1 ? "" : "s"}`
+            },
+            {
               header: "Actions",
-              width: "w-[20%]",
+              width: "w-[15%]",
               render: (role) => (
                 <div className="text-right">
                   <Button variant="secondary" onClick={() => beginEdit(role)}>
@@ -336,6 +355,28 @@ export function RoleCatalogSection({
             className="min-h-[110px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
           />
         </label>
+
+        <div className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+          <div>
+            <p className="text-sm font-medium text-[color:var(--app-heading)]">Role permissions</p>
+            <p className="text-xs text-[color:var(--app-muted)]">
+              Defaults for users assigned to this organization role.
+            </p>
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {APP_ACTIONS.map((permission) => (
+              <label key={permission} className="flex items-center gap-2 text-sm text-[color:var(--app-text)]">
+                <input
+                  type="checkbox"
+                  checked={editor.permissions.includes(permission)}
+                  onChange={() => togglePermission(permission)}
+                  className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg)] text-brand-400"
+                />
+                {APP_ACTION_LABELS[permission]}
+              </label>
+            ))}
+          </div>
+        </div>
 
         {editor.id && (
           <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

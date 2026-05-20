@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { updateRoleCatalogEntry, getRoleUsageCounts, deleteRoleCatalogEntry } from "@/lib/roles/catalog";
+import { APP_ACTIONS } from "@/lib/auth/permissions";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 
 const updateRoleSchema = z.object({
   label: z.string().min(2),
@@ -9,7 +11,8 @@ const updateRoleSchema = z.object({
   description: z.string().optional(),
   experienceLevel: z.string().optional().or(z.literal("")),
   requirements: z.string().optional(),
-  isActive: z.boolean().default(true)
+  isActive: z.boolean().default(true),
+  permissions: z.array(z.string().refine((value) => APP_ACTIONS.includes(value as (typeof APP_ACTIONS)[number]))).optional()
 });
 
 export async function PUT(
@@ -28,13 +31,21 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = updateRoleSchema.parse(await request.json());
+    if (body.permissions && auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "edit_role"))) {
+      const outsideActor = body.permissions.find((permission) => !auth.session.permissions.includes(permission));
+      if (outsideActor) {
+        throw new Error("You can only edit roles within your own permission set.");
+      }
+    }
+
     const role = await updateRoleCatalogEntry(id, {
       label: body.label,
       departmentId: body.departmentId || undefined,
       description: body.description,
       experienceLevel: body.experienceLevel || undefined,
       requirements: body.requirements,
-      isActive: body.isActive
+      isActive: body.isActive,
+      permissions: body.permissions
     });
 
     return NextResponse.json({
@@ -47,6 +58,7 @@ export async function PUT(
         description: role.description ?? "",
         experienceLevel: role.experienceLevel ?? "",
         requirements: role.requirements ?? "",
+        permissions: role.permissions ?? [],
         isActive: role.isActive
       }
     });
