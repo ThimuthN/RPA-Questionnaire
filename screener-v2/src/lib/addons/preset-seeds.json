@@ -8,21 +8,13 @@
     "sortOrder": 1,
     "items": [
       {
-        "addonSlug": "core-2-0",
+        "addonSlug": "applied-logic-and-reasoning",
         "sortOrder": 0,
-        "configOverride": {
-          "roleId": "TechLead",
-          "stacks": ["Python"]
-        }
-      },
-      {
-        "addonSlug": "general-capability-assessment",
-        "sortOrder": 1,
         "configOverride": {}
       },
       {
-        "addonSlug": "applied-logic-and-reasoning",
-        "sortOrder": 2,
+        "addonSlug": "python-lead-exam",
+        "sortOrder": 1,
         "configOverride": {}
       }
     ]
@@ -36,21 +28,94 @@
     "sortOrder": 2,
     "items": [
       {
-        "addonSlug": "core-2-0",
+        "addonSlug": "applied-logic-and-reasoning",
         "sortOrder": 0,
-        "configOverride": {
-          "roleId": "SeniorSE",
-          "stacks": ["Python"]
-        }
+        "configOverride": {}
       },
       {
-        "addonSlug": "general-capability-assessment",
+        "addonSlug": "python-senior-exam",
         "sortOrder": 1,
+        "configOverride": {}
+      }
+    ]
+  },
+  {
+    "seedKey": "preset-software-engineer-python",
+    "slug": "software-engineer-python",
+    "label": "Software Engineer Python",
+    "description": "",
+    "isActive": true,
+    "sortOrder": 3,
+    "items": [
+      {
+        "addonSlug": "applied-logic-and-reasoning",
+        "sortOrder": 0,
+        "configOverride": {}
+      },
+      {
+        "addonSlug": "se-python-exam",
+        "sortOrder": 1,
+        "configOverride": {}
+      }
+    ]
+  },
+  {
+    "seedKey": "preset-software-engineer-uipath",
+    "slug": "software-engineer-uipath",
+    "label": "Software Engineer Uipath",
+    "description": "",
+    "isActive": true,
+    "sortOrder": 4,
+    "items": [
+      {
+        "addonSlug": "python-senior-exam",
+        "sortOrder": 0,
         "configOverride": {}
       },
       {
         "addonSlug": "applied-logic-and-reasoning",
-        "sortOrder": 2,
+        "sortOrder": 1,
+        "configOverride": {}
+      }
+    ]
+  },
+  {
+    "seedKey": "preset-associate-software-engineer-python",
+    "slug": "associate-software-engineer-python",
+    "label": "Associate Software Engineer Python",
+    "description": "",
+    "isActive": true,
+    "sortOrder": 5,
+    "items": [
+      {
+        "addonSlug": "applied-logic-and-reasoning",
+        "sortOrder": 0,
+        "configOverride": {}
+      },
+      {
+        "addonSlug": "associate-se-python-exam",
+        "sortOrder": 1,
+        "configOverride": {}
+      }
+    ]
+  },
+  {
+    "seedKey": "preset-associate-software-uipath",
+    "slug": "associate-software-uipath",
+    "label": "Associate Software Uipath",
+    "description": "",
+    "isActive": true,
+    "sortOrder": 6,
+    "items": [
+      {
+        "addonSlug": "python-senior-exam",
+        "sortOrder": 0,
+        "configOverride": {},
+        "weightOverride": 80
+      },
+      {
+        "addonSlug": "applied-logic-and-reasoning",
+        "sortOrder": 1,
         "configOverride": {}
       }
     ]
