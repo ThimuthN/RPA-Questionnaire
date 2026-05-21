@@ -6,7 +6,9 @@ import { core2AddonDefinition } from "@/features/core2/definition";
 import { generalCapabilityAddonDefinition } from "@/features/general-capability/definition";
 import { appliedLogicAddonDefinition } from "@/features/logic-reasoning/definition";
 import { practicalAddonDefinition } from "@/features/practical/definition";
+import { associateSePythonExamAddonDefinition } from "@/features/associate-se-python-exam/definition";
 import { pythonRpaScreenerAddonDefinition } from "@/features/python-rpa-screener/definition";
+import { sePythonExamAddonDefinition } from "@/features/se-python-exam/definition";
 import { pythonSeniorExamAddonDefinition } from "@/features/python-senior-exam/definition";
 import { pythonLeadExamAddonDefinition } from "@/features/python-lead-exam/definition";
 import { imageAnalysisAddonDefinition } from "@/features/image-analysis/definition";
@@ -50,6 +52,8 @@ export const orderedAddonDefinitions = [
   core2AddonDefinition,
   rpaRuntimeAddonDefinition,
   pythonRpaScreenerAddonDefinition,
+  associateSePythonExamAddonDefinition,
+  sePythonExamAddonDefinition,
   pythonSeniorExamAddonDefinition,
   pythonLeadExamAddonDefinition,
   imageAnalysisAddonDefinition,

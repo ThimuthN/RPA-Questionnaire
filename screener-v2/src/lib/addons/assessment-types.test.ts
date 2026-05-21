@@ -33,6 +33,8 @@ describe("addon assessment types", () => {
       "core_2_exam",
       "rpa_runtime_exam",
       "python_rpa_screener_exam",
+      "associate_se_python_exam",
+      "se_python_exam",
       "python_senior_exam",
       "python_lead_exam",
       "ba_iq_test_1st_screening",
