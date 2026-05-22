@@ -24,7 +24,8 @@
     "deck:rpa-day2": "node scripts/generate-rpa-day2-deck.mjs",
     "deck:rpa-day2-10": "node scripts/generate-rpa-day2-10-slides.mjs",
     "deploy:preview": "npx vercel --cwd .. --yes",
-    "deploy:prod": "npx vercel --cwd .. --prod --yes"
+    "deploy:prod": "npx vercel --cwd .. --prod --yes",
+    "staging:migrate": "node scripts/migrate-live-to-staging.mjs --reset"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

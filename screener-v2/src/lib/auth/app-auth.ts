@@ -28,21 +28,7 @@ type AuditActor = {
   actorEmail?: string | null;
 };
 
-export async function ensureBootstrapAdmin() {
-  const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
-  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-  const name = process.env.BOOTSTRAP_ADMIN_NAME?.trim() || "Bootstrap Admin";
-
-  if (!email || !password) {
-    return;
-  }
-
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return;
-  }
-
-  // Ensure System department exists
+async function ensureSystemAdminRole() {
   let systemDept = await prisma.department.findUnique({
     where: { slug: "system" }
   });
@@ -58,7 +44,6 @@ export async function ensureBootstrapAdmin() {
     });
   }
 
-  // Create or get system admin role
   let adminRole = await prisma.roleCatalog.findFirst({
     where: { slug: "system_admin" }
   });
@@ -72,18 +57,52 @@ export async function ensureBootstrapAdmin() {
         departmentId: systemDept.id
       }
     });
+  } else if (adminRole.departmentId !== systemDept.id) {
+    adminRole = await prisma.roleCatalog.update({
+      where: { id: adminRole.id },
+      data: {
+        departmentId: systemDept.id,
+        isActive: true
+      }
+    });
+  }
 
-    for (const permission of APP_ACTIONS) {
-      await prisma.rolePermissionTemplate.create({
+  await prisma.rolePermissionTemplate.createMany({
+    data: APP_ACTIONS.map((permission) => ({
+      roleId: adminRole.id,
+      permission,
+      scope: "global"
+    })),
+    skipDuplicates: true
+  });
+
+  return { systemDept, adminRole };
+}
+
+export async function ensureBootstrapAdmin() {
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+  const name = process.env.BOOTSTRAP_ADMIN_NAME?.trim() || "Bootstrap Admin";
+
+  if (!email || !password) {
+    return;
+  }
+
+  const { systemDept, adminRole } = await ensureSystemAdminRole();
+  const existing = await prisma.user.findUnique({ where: { email } });
+
+  if (existing) {
+    if (existing.roleId !== adminRole.id || existing.departmentId !== systemDept.id || !existing.isActive) {
+      await prisma.user.update({
+        where: { id: existing.id },
         data: {
           roleId: adminRole.id,
-          permission,
-          scope: "global"
+          departmentId: systemDept.id,
+          isActive: true
         }
-      }).catch(() => {
-        // Ignore duplicates
       });
     }
+    return;
   }
 
   await prisma.user.create({

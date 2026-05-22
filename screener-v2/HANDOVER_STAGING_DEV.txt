@@ -1,0 +1,47 @@
+DELETE THIS FILE AFTER READING.
+
+Handover summary for `staging-dev`
+
+1. Branches
+- `main` is the production line.
+- `staging-dev` is the active development/staging line.
+- Work in this repo should continue on `staging-dev` until changes are approved for merge into `main`.
+
+2. Staging app
+- Staging URL: `https://screener-v2-staging.vercel.app`
+- Production was intentionally not touched.
+- Staging uses a separate Neon database from production.
+
+3. What was changed
+- Fixed public invite/test link generation so staging does not fall back to localhost.
+- Replaced the old one-off staging restore scripts with `scripts/migrate-live-to-staging.mjs`.
+- Added `npm run staging:migrate` to reset staging, apply the current schema, seed the current addon catalog/presets, import live data read-only, and verify row counts.
+- Repaired the staging permission bootstrap path so `system_admin` gets the full app permission set.
+- Repaired imported staging users so they are not left with `roleId = null` after migration.
+
+4. Current staging state
+- Data was imported from live into the current `staging-dev` schema.
+- Some source departments were missing in live, so synthetic department rows were created during import to preserve role references.
+- Legacy invite/attempt role tokens that could not be mapped safely were cleared instead of forcing bad foreign keys.
+- Staging user `tnayanapriya@innobothealth.com` was assigned `system_admin` and should see the Departments link after login refresh.
+
+5. Important caveats
+- `.env.local` on this machine points to the live database. Do not use it as a staging source of truth on another machine.
+- The Vercel CLI pulled `.env.staging` file was empty placeholder noise, not real config.
+- If staging shows a DB connection error mentioning `ep-proud-flower-...-pooler`, verify the Vercel project envs for `DATABASE_URL` and `DIRECT_URL`. The direct staging host was the reliable path during repair work.
+- `npm test` is not clean. Current failures are existing test DB/schema drift and broken helpers like `testFetch`.
+
+6. Files and commands you will care about
+- Migration script: `scripts/migrate-live-to-staging.mjs`
+- Bootstrap/permission runtime: `src/lib/auth/app-auth.ts`
+- Navigation gate for Departments: `src/components/navigation/nav-config.ts`
+- Migration command:
+  `npm run staging:migrate`
+
+7. Recommended next steps on a different machine
+- Clone the repo and check out `staging-dev`.
+- Recreate the correct staging env locally; do not copy machine-specific `.env.local` from here.
+- Verify the linked Vercel project is `screener-v2-staging`.
+- Log into staging again if the old session cached missing permissions.
+
+DELETE THIS FILE AFTER READING.
