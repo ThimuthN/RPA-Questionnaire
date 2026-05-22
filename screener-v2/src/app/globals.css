@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── shadcn/ui CSS variable bridge ─────────────────────────────────────────
+   Maps shadcn's expected tokens to the existing --app-* design system.
+   Add shadcn components with: npx shadcn@latest add <component>
+   ─────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --background: 0 0% 95%;
+    --foreground: 210 26% 32%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 26% 32%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 26% 32%;
+    --primary: 177 87% 34%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 186 40% 97%;
+    --secondary-foreground: 210 40% 26%;
+    --muted: 186 30% 94%;
+    --muted-foreground: 200 20% 55%;
+    --accent: 186 30% 94%;
+    --accent-foreground: 210 40% 26%;
+    --destructive: 16 80% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 186 25% 85%;
+    --input: 186 25% 85%;
+    --ring: 177 87% 34%;
+    --radius: 0.875rem;
+  }
+  html[data-theme="dark"] {
+    --background: 215 60% 8%;
+    --foreground: 210 30% 88%;
+    --card: 218 52% 9%;
+    --card-foreground: 210 30% 88%;
+    --popover: 218 52% 9%;
+    --popover-foreground: 210 30% 88%;
+    --primary: 177 76% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 30% 12%;
+    --secondary-foreground: 210 20% 88%;
+    --muted: 220 25% 10%;
+    --muted-foreground: 210 18% 62%;
+    --accent: 220 25% 10%;
+    --accent-foreground: 210 20% 88%;
+    --destructive: 347 60% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 177 76% 40%;
+  }
+}
+
 :root,
 html[data-theme="light"] {
   --ink-950: #050b16;

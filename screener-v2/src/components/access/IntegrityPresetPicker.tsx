@@ -38,9 +38,7 @@ export function IntegrityPresetPicker({
                   : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:border-brand-300/40 hover:bg-[color:var(--app-surface-muted)]"
               }`}
             >
-              <p className={`text-sm ${active ? "text-[color:var(--app-heading)]" : "text-[color:var(--app-heading)]"}`}>
-                {meta.shortLabel}
-              </p>
+              <p className="text-sm text-[color:var(--app-heading)]">{meta.shortLabel}</p>
               <p
                 className={`mt-2 text-xs leading-5 ${
                   active ? "text-[color:var(--app-text)]" : "text-[color:var(--app-muted)]"

@@ -33,6 +33,15 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
 5. Start dev server:
    - `npm run dev`
 
+## Tests
+- Create an isolated test database before running the suite.
+- Copy `.env.test.example` to `.env.test.local`.
+- Set `TEST_DATABASE_URL` and `TEST_DIRECT_URL` to the test database.
+- Run:
+  - `npm test`
+
+Tests intentionally refuse to use `.env` or `.env.local`.
+
 ## Deploy
 - From this folder, use:
   - `npm run deploy:preview`
