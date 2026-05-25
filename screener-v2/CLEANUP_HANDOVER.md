@@ -275,7 +275,9 @@
 - Truth checks:
   - Static source reachability scan: no non-test `src` files are unreachable from both app roots and tests. Only `src/lib/addons/catalog-seeds.ts` and `src/lib/addons/preset-seeds.json` are app-unreachable, and both are used by package-wired add-on sync/tests.
   - `npm.cmd run typecheck:unused`: passed.
-  - Standard lint/test/build checks pending for this batch.
+  - `npm.cmd run lint`: passed.
+  - `npm.cmd test -- --reporter dot`: passed, 32 files / 115 tests.
+  - `npm.cmd run build`: passed and regenerated the route map without `/studio/*`.
 
 ## Deletion Ledger
 - Purpose: track every cleanup deletion so future work can intentionally restore or rebuild only what is genuinely needed.
