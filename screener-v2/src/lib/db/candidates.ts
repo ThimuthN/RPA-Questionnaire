@@ -1083,6 +1083,7 @@ export async function addCandidateNote(input: {
       },
       select: {
         id: true,
+        candidateId: true,
         type: true,
         body: true,
         createdAt: true,
@@ -1100,7 +1101,7 @@ export async function addCandidateNote(input: {
     return created;
   });
 
-  return mapNote(result as any);
+  return mapNote(result);
 }
 
 export async function updateCandidateNote(input: {
@@ -1120,10 +1121,10 @@ export async function updateCandidateNote(input: {
       },
       select: {
         id: true,
+        candidateId: true,
         type: true,
         body: true,
         createdAt: true,
-        updatedAt: true,
         createdById: true
       }
     });
@@ -1150,7 +1151,7 @@ export async function updateCandidateNote(input: {
     return updated;
   });
 
-  return mapNote(result as any);
+  return mapNote(result);
 }
 
 export async function deleteCandidateNote(input: {
@@ -1167,6 +1168,7 @@ export async function deleteCandidateNote(input: {
       },
       select: {
         id: true,
+        candidateId: true,
         type: true,
         body: true,
         createdAt: true,
@@ -1197,7 +1199,7 @@ export async function deleteCandidateNote(input: {
     return deleted;
   });
 
-  return mapNote(result as any);
+  return mapNote(result);
 }
 
 async function logActivityEvent(

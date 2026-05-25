@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { RoleCatalogSection } from "@/components/roles/RoleCatalogSection";
@@ -36,9 +37,9 @@ export default async function DepartmentDetailPage({
     prisma.candidate.count({ where: { departmentId: id, orgStage: "finalized" } })
   ]);
 
-  const tabs = [
-    { label: "Overview", href: `/departments/${id}`, active: true },
-    { label: "Users", href: `/departments/${id}/users`, active: false }
+  const tabs: { label: string; href: Route; active: boolean }[] = [
+    { label: "Overview", href: `/departments/${id}` as Route, active: true },
+    { label: "Users", href: `/departments/${id}/users` as Route, active: false }
   ];
 
   return (
@@ -56,7 +57,7 @@ export default async function DepartmentDetailPage({
               {tabs.map((tab) => (
                 <Link
                   key={tab.href}
-                  href={tab.href as any}
+                  href={tab.href}
                   className={`px-4 py-3 text-sm font-medium border-b-2 transition ${
                     tab.active
                       ? "border-brand text-[color:var(--app-heading)]"

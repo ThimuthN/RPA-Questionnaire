@@ -52,7 +52,7 @@ export function EmployeeGoalCard({ goal }: EmployeeGoalCardProps) {
       <div className="flex gap-2 flex-wrap">
         <StatusPill
           label={GoalStatusLabels[goal.status]}
-          tone={GoalStatusTones[goal.status] as any}
+          tone={GoalStatusTones[goal.status]}
         />
         {goal.targetDate && (
           <StatusPill

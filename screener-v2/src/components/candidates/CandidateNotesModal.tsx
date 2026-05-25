@@ -15,6 +15,7 @@ type CandidateNoteItem = {
   type: (typeof candidateNoteTypeValues)[number];
   body: string;
   createdAt: string;
+  deletedAt?: string | null;
   author?: string | null;
 };
 
@@ -160,7 +161,7 @@ export function CandidateNotesModal({
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const activeNotes = notes.filter(note => !(note as any).deletedAt);
+  const activeNotes = notes.filter(note => !note.deletedAt);
   const latestNote = activeNotes[0] ?? null;
 
   useEffect(() => {

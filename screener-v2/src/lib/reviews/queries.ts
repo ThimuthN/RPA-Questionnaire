@@ -45,7 +45,7 @@ export async function getReviewDetail(id: string): Promise<PerformanceReviewDeta
     return null;
   }
 
-  const { employee, ...rest } = review as any;
+  const { employee, ...rest } = review;
 
   return {
     ...rest,

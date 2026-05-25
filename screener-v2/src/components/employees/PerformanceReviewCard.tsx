@@ -34,7 +34,7 @@ export function PerformanceReviewCard({
         </div>
         <StatusPill
           label={ReviewStatusLabels[review.status]}
-          tone={ReviewStatusTones[review.status] as any}
+          tone={ReviewStatusTones[review.status]}
         />
       </div>
 

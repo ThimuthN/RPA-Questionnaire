@@ -149,7 +149,7 @@ export async function POST(request: Request) {
 
     const result = await bulkUpdateCandidates({
       candidateIds: ids,
-      action: parsed.action as any,
+      action: parsed.action,
       owner: parsed.owner,
       stage: parsed.stage,
       roleId: parsed.roleId,

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -39,9 +40,9 @@ export default async function DepartmentUsersPage({
     })
   ]);
 
-  const tabs = [
-    { label: "Overview", href: `/departments/${id}`, active: false },
-    { label: "Users", href: `/departments/${id}/users`, active: true }
+  const tabs: { label: string; href: Route; active: boolean }[] = [
+    { label: "Overview", href: `/departments/${id}` as Route, active: false },
+    { label: "Users", href: `/departments/${id}/users` as Route, active: true }
   ];
 
   return (
@@ -59,7 +60,7 @@ export default async function DepartmentUsersPage({
               {tabs.map((tab) => (
                 <Link
                   key={tab.href}
-                  href={tab.href as any}
+                  href={tab.href}
                   className={`px-4 py-3 text-sm font-medium border-b-2 transition ${
                     tab.active
                       ? "border-brand text-[color:var(--app-heading)]"

@@ -60,7 +60,9 @@ export const GoalStatusLabels: Record<string, string> = {
   on_hold: 'On Hold',
 };
 
-export const GoalStatusTones: Record<string, string> = {
+type PillTone = "neutral" | "blue" | "teal" | "emerald" | "amber" | "red" | "purple";
+
+export const GoalStatusTones: Record<string, PillTone> = {
   active: 'blue',
   completed: 'emerald',
   cancelled: 'neutral',

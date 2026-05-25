@@ -314,7 +314,7 @@ export async function bulkUpdateResults(input: {
 
   return bulkUpdateCandidates({
     candidateIds,
-    action: input.action as any,
+    action: input.action,
     owner: input.owner,
     noteBody: input.noteBody,
     noteType: input.noteType,

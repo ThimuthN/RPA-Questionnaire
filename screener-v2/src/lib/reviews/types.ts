@@ -48,7 +48,9 @@ export const ReviewStatusLabels: Record<string, string> = {
   acknowledged: 'Acknowledged',
 };
 
-export const ReviewStatusTones: Record<string, string> = {
+type PillTone = "neutral" | "blue" | "teal" | "emerald" | "amber" | "red" | "purple";
+
+export const ReviewStatusTones: Record<string, PillTone> = {
   draft: 'neutral',
   submitted: 'blue',
   acknowledged: 'emerald',
