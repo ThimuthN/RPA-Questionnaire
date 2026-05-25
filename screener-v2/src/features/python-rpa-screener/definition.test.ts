@@ -3,7 +3,7 @@ import { pythonRpaScreenerAddonDefinition } from "@/features/python-rpa-screener
 
 describe("python rpa screener add-on definition", () => {
   it("keeps the shared screener available for compatibility but retires its library slugs", () => {
-    expect(pythonRpaScreenerAddonDefinition.libraryEntries).toBeUndefined();
+    expect("libraryEntries" in pythonRpaScreenerAddonDefinition).toBe(false);
     expect(pythonRpaScreenerAddonDefinition.retiredLibrarySlugs).toEqual([
       "python-rpa-senior-screener",
       "python-rpa-lead-screener"

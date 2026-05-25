@@ -46,7 +46,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
   const auth = await requireApiSession();

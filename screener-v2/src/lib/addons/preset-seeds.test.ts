@@ -38,7 +38,7 @@ describe("addon preset seeds", () => {
           })
         ).not.toThrow();
 
-        if (typeof item.weightOverride === "number") {
+        if ("weightOverride" in item && typeof item.weightOverride === "number") {
           expect(item.weightOverride).toBeGreaterThanOrEqual(0);
           expect(item.weightOverride).toBeLessThanOrEqual(100);
         }

@@ -29,6 +29,6 @@ export const imageAnalysisAddonDefinition = {
   ],
   buildDurationMinutes: () => 45,
   buildConfigSummary: () => "BA IQ Test | 1st Screening",
-  buildRequiredPercent: (config, fallbackPassPercent) => Math.max(fallbackPassPercent, 65),
+  buildRequiredPercent: (_config, fallbackPassPercent) => Math.max(fallbackPassPercent, 65),
   resolveItems: () => buildImageAnalysisQuestions()
 } satisfies AddonDefinitionRegistration;

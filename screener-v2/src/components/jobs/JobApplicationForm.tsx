@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = () => {
     setIsSubmitting(true);
   };
 

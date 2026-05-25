@@ -17,7 +17,7 @@ export default async function DepartmentUsersPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const session = await requirePageSession(`/departments/${id}`);
+  await requirePageSession(`/departments/${id}`);
 
   const department = await getDepartment(id);
   if (!department) {

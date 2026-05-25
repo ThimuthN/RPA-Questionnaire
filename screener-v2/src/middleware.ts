@@ -39,7 +39,6 @@ export const config = {
     "/create-test/:path*",
     "/people/:path*",
     "/results/:path*",
-    "/studio/:path*",
     "/users/:path*",
     "/api/candidates/:path*",
     "/api/candidate-applications/:path*",

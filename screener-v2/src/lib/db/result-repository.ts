@@ -8,16 +8,13 @@ import { attachExistingAssessmentToMilestone } from "@/lib/db/candidates";
 import { bulkUpdateCandidates } from "@/lib/db/candidates";
 import { syncCandidateAssessmentLatestAttemptInTx } from "@/lib/db/candidate-assessment-links";
 import type {
-  CandidateAssessmentStatus,
   CandidateNoteType,
   CandidateNextAction,
-  CandidateScreeningStatus,
   CandidateStage
 } from "@/lib/candidates/types";
 import type {
   DetailedResultSummary,
-  ResultReviewState,
-  ResultSummary
+  ResultReviewState
 } from "@/lib/assessment-engine/types";
 import type { ResultsWorkspaceFilters, WorkspaceResultRow } from "@/lib/results/workspace";
 import { filterResultWorkspaceRows, toWorkspaceResultRow } from "@/lib/results/workspace";
@@ -131,11 +128,6 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
       const candidate = row.attempt.candidateAssessment?.candidate ?? null;
       const summary = toResultSummary(row, attempt, participant, candidate);
       if (!summary) return null;
-      const resultStatus: CandidateAssessmentStatus = row.pass
-        ? "passed"
-        : row.borderline
-          ? "review"
-          : "failed";
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
       const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
       const staleDays = Math.max(
@@ -216,11 +208,6 @@ export async function listResultWorkspacePage(
       const candidate = row.attempt.candidateAssessment?.candidate ?? null;
       const summary = toResultSummary(row, attempt, participant, candidate);
       if (!summary) return null;
-      const resultStatus: CandidateAssessmentStatus = row.pass
-        ? "passed"
-        : row.borderline
-          ? "review"
-          : "failed";
       const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
       const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
       const staleDays = Math.max(
@@ -402,11 +389,6 @@ export async function getDetailedResult(
     }
   });
   const candidate = link?.candidateAssessment.candidate;
-  const resultStatus: CandidateAssessmentStatus = resultRow.pass
-    ? "passed"
-    : resultRow.borderline
-      ? "review"
-      : "failed";
   const baseWithCandidate = toResultSummary(
     resultRow,
     attempt,

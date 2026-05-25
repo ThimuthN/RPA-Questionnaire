@@ -28,10 +28,6 @@ function latestAssessment(candidate: CandidateData) {
   return candidate.assessments[0] ?? null;
 }
 
-function currentAssessmentStatus(candidate: CandidateData) {
-  return latestAssessment(candidate)?.status ?? "none";
-}
-
 function nextPrompt(candidate: CandidateData) {
   if (candidate.stage === "applicant") {
     return "Review the application and move them into the pipeline when you're ready.";
@@ -129,7 +125,6 @@ export default async function CandidateDetailPage({
   }
 
   const pageState = await searchParams;
-  const latest = latestAssessment(candidate);
   const activeApplication = primaryApplication(candidate);
   const currentResume = candidate.resumes[0] ?? null;
   const latestAssessmentState = latestAssessmentSummary(candidate);

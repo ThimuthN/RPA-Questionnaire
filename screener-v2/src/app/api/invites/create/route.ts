@@ -17,7 +17,6 @@ import {
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
-import { prisma } from "@/lib/db/prisma";
 
 const createInviteSchema = z.object({
   assessmentVersionId: z.string().default("v1-default"),

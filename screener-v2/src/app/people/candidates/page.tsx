@@ -16,7 +16,6 @@ import { requirePageSession } from "@/lib/auth/guards";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
-  candidateStageLabels,
   candidateStageValues,
   type CandidateAssessmentStatus,
   type CandidateStage

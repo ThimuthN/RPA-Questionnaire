@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import type { RoleId } from "@/lib/assessment-engine/types";
 import { Button } from "@/components/primitives/Button";
 import { RichTextField } from "@/components/jobs/RichTextField";
 import type { RolePickerOption } from "@/components/roles/RolePicker";

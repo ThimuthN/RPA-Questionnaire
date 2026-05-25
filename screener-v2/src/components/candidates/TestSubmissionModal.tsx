@@ -6,8 +6,6 @@ import { X, Zap, BookOpen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
-import { ChoicePills } from "@/components/primitives/ChoicePills";
-import { StatusPill } from "@/components/primitives/StatusPill";
 import type { CandidateMilestoneMode } from "@/lib/candidates/milestones";
 
 const fieldClassName =

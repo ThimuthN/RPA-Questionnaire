@@ -5,7 +5,6 @@ const authRequiredPrefixes = [
   "/create-test",
   "/people",
   "/results",
-  "/studio",
   "/users",
   "/api/candidates",
   "/api/candidate-applications",

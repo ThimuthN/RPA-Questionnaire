@@ -16,7 +16,7 @@ const updateSchema = z.object({
 });
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireApiSession();
@@ -96,7 +96,7 @@ export async function POST(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdminApiSession();

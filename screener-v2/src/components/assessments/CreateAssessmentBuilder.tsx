@@ -6,7 +6,6 @@ import type { AddonCatalogEntry, AssessmentPresetEntry } from "@/lib/addons/cata
 import { buildDraftFromAddon, buildDraftsFromPreset } from "@/lib/addons/catalog";
 import type {
   ExamBlueprintDraftItem,
-  ExamConfigFieldDefinition,
   IntegrityPresetId
 } from "@/lib/assessment-engine/types";
 import {
@@ -35,7 +34,6 @@ import {
   fetchJsonWithTimeout
 } from "@/lib/http/client";
 import { integrityPresetMeta } from "@/lib/integrity/policy";
-import { cn } from "@/lib/utils";
 
 interface CreateInviteSuccess extends InviteCredentials {
   ok: true;

@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     if (jobDescriptionTextContent(description).length < 20) {
       throw new Error("Description should be at least 20 characters.");
     }
-    const job = await createJobPosting({
+    await createJobPosting({
       title: body.title,
       roleId: body.roleId,
       screenerPresetId: body.screenerPresetId,

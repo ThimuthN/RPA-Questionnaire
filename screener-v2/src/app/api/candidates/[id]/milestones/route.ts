@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
-import { candidateMilestoneTypeValues } from "@/lib/candidates/milestones";
 import { prisma } from "@/lib/db/prisma";
 
 const createMilestoneSchema = z.object({

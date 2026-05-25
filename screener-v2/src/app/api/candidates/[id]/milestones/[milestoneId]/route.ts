@@ -7,7 +7,6 @@ import {
   candidateMilestoneResultValues,
   candidateMilestoneModeValues,
   candidateMilestoneStatusValues,
-  milestoneCheckDefs,
   checkTypeValues,
   type CheckType
 } from "@/lib/candidates/milestones";
@@ -116,7 +115,7 @@ export async function POST(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string; milestoneId: string }> }
 ) {
   const auth = await requireApiSession();

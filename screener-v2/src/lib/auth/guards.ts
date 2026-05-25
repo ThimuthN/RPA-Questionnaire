@@ -60,8 +60,6 @@ export async function requireAdminApiSession(): Promise<ApiAuthSuccess | ApiAuth
 }
 
 export function requirePermission(session: AppSession, action: AppAction) {
-  // Check if the permission for this action is in the session permissions
-  // For now, map actions to permissions (action name is same as permission name)
   if (!session.permissions.includes(action)) {
     return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
   }

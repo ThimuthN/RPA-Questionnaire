@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type {
+  FillBlankQuestion,
   LogicReasoningQuestion,
+  MatchingQuestion,
   PracticalTaskQuestion,
   Question
 } from "@/lib/assessment-engine/types";
 import { randomizeExamQuestion } from "@/lib/exams/question-randomization";
+
+type SingleSelectQuestion = Extract<Question, { format: "single_select" }>;
+type MatchingStandardQuestion = MatchingQuestion & { format: "matching" };
+type FillBlankStandardQuestion = FillBlankQuestion & { format: "fill_blank_constrained" };
 
 function tokenToIndex(token: string | number, options: string[]) {
   if (Number.isInteger(token)) return Number(token);
@@ -50,7 +56,7 @@ describe("question randomization", () => {
     } satisfies Question;
 
     const randomized = findShuffledVariant(
-      (seedKey) => randomizeExamQuestion(sourceQuestion, seedKey) as Question,
+      (seedKey) => randomizeExamQuestion(sourceQuestion, seedKey) as SingleSelectQuestion,
       (question) => question.options ?? []
     );
 
@@ -82,7 +88,7 @@ describe("question randomization", () => {
     } satisfies Question;
 
     const randomized = findShuffledVariant(
-      (seedKey) => randomizeExamQuestion(sourceQuestion, seedKey) as Question,
+      (seedKey) => randomizeExamQuestion(sourceQuestion, seedKey) as FillBlankStandardQuestion,
       (question) => question.choices ?? []
     );
 
@@ -149,7 +155,7 @@ describe("question randomization", () => {
     } satisfies PracticalTaskQuestion;
 
     const randomizedMatching = findShuffledVariant(
-      (seedKey) => randomizeExamQuestion(matchingQuestion, seedKey) as Question,
+      (seedKey) => randomizeExamQuestion(matchingQuestion, seedKey) as MatchingStandardQuestion,
       (question) => question.rightItems ?? []
     );
     const randomizedPractical = findShuffledVariant(

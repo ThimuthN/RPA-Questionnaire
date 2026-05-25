@@ -7,7 +7,6 @@ export function Modal({
   title,
   children,
   footer,
-  onClose,
   maxWidth = "max-w-2xl"
 }: {
   isOpen: boolean;

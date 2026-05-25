@@ -34,13 +34,15 @@ Next.js + TypeScript assessment product for creating tests, running timed assess
    - `npm run dev`
 
 ## Tests
-- Create an isolated test database before running the suite.
-- Copy `.env.test.example` to `.env.test.local`.
-- Set `TEST_DATABASE_URL` and `TEST_DIRECT_URL` to the test database.
-- Run:
+- Run the pure/domain suite:
   - `npm test`
+- For DB-backed verification, create an isolated test database first.
+- Copy `.env.test.example` to `.env.test.local`.
+- Set `TEST_DATABASE_URL` and `TEST_DIRECT_URL` to the isolated test database.
+- Run the guarded DB suite:
+  - `npm run test:db`
 
-Tests intentionally refuse to use `.env` or `.env.local`.
+DB-backed tests intentionally refuse to use `.env` or `.env.local`.
 
 ## Deploy
 - From this folder, use:

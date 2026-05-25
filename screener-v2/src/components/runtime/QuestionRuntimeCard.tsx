@@ -23,7 +23,6 @@ export function QuestionRuntimeCard({
   questionIndex,
   questionCount
 }: QuestionRuntimeCardProps) {
-  const formatKey = String(question?.format || "");
   const formatDefinition = getQuestionRuntimeFormatDefinition(question?.format);
   const Renderer = formatDefinition?.Renderer;
 

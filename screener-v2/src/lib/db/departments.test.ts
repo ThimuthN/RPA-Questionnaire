@@ -238,11 +238,6 @@ describe("department transitions", () => {
   });
 
   it("auto-assigns department when candidate applies to job", () => {
-    const job = {
-      id: "job-1",
-      roleId: "role-1",
-    };
-
     const role = {
       id: "role-1",
       departmentId: "eng",

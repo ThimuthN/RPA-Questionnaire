@@ -9,28 +9,10 @@ import { ChevronDown } from 'lucide-react';
 
 interface EmployeeGoalCardProps {
   goal: EmployeeGoalDetail;
-  onUpdate?: (goalId: string, progress: number, status?: string) => void;
 }
 
-export function EmployeeGoalCard({ goal, onUpdate }: EmployeeGoalCardProps) {
+export function EmployeeGoalCard({ goal }: EmployeeGoalCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isAddingCheckIn, setIsAddingCheckIn] = useState(false);
-  const [checkInNotes, setCheckInNotes] = useState('');
-  const [checkInProgress, setCheckInProgress] = useState(goal.progress);
-
-  const handleAddCheckIn = async () => {
-    if (!checkInNotes.trim()) return;
-
-    try {
-      // In a real implementation, this would call the API
-      // For now, we'll just update local state
-      setCheckInNotes('');
-      setCheckInProgress(goal.progress);
-      setIsAddingCheckIn(false);
-    } catch (error) {
-      console.error('Failed to add check-in:', error);
-    }
-  };
 
   const isOverdue = goal.targetDate && new Date(goal.targetDate) < new Date() && goal.status === 'active';
 
@@ -124,59 +106,6 @@ export function EmployeeGoalCard({ goal, onUpdate }: EmployeeGoalCardProps) {
             </div>
           )}
 
-          {/* Add check-in form */}
-          {!isAddingCheckIn && goal.status === 'active' && (
-            <button
-              onClick={() => setIsAddingCheckIn(true)}
-              className="w-full py-2 px-3 rounded-[12px] border border-[color:var(--app-border)] text-xs font-medium text-[color:var(--app-brand)] hover:bg-[color:var(--app-surface)] transition"
-            >
-              + Add Check-in
-            </button>
-          )}
-
-          {isAddingCheckIn && (
-            <div className="space-y-2 border-t border-[color:var(--app-border)] pt-3">
-              <textarea
-                value={checkInNotes}
-                onChange={(e) => setCheckInNotes(e.target.value)}
-                placeholder="Add notes about progress..."
-                className="w-full rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs focus:outline-none focus:border-[color:var(--app-brand)]"
-                rows={2}
-              />
-              <div className="space-y-1">
-                <label className="text-xs text-[color:var(--app-muted)] font-medium">
-                  Progress: {checkInProgress}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={checkInProgress}
-                  onChange={(e) => setCheckInProgress(Number(e.target.value))}
-                  className="w-full"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleAddCheckIn}
-                  disabled={!checkInNotes.trim()}
-                  className="flex-1 py-1.5 px-3 rounded-[10px] bg-[color:var(--app-brand)] text-white text-xs font-medium disabled:opacity-50 hover:opacity-90 transition"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => {
-                    setIsAddingCheckIn(false);
-                    setCheckInNotes('');
-                    setCheckInProgress(goal.progress);
-                  }}
-                  className="flex-1 py-1.5 px-3 rounded-[10px] border border-[color:var(--app-border)] text-xs font-medium hover:bg-[color:var(--app-surface)] transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

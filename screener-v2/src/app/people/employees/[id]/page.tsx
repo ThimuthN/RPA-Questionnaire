@@ -10,7 +10,6 @@ import { StatusPill } from '@/components/primitives/StatusPill';
 import { Button } from '@/components/primitives/Button';
 import { EmployeeGoalCard } from '@/components/employees/EmployeeGoalCard';
 import { PerformanceReviewCard } from '@/components/employees/PerformanceReviewCard';
-import { ReviewFormModal } from '@/components/employees/ReviewFormModal';
 
 type Tab = 'overview' | 'goals' | 'reviews';
 
@@ -20,13 +19,10 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
   const [reviews, setReviews] = useState<PerformanceReviewRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [id, setId] = useState<string>('');
-  const [reviewFormOpen, setReviewFormOpen] = useState(false);
 
   useEffect(() => {
     const initializeParams = async () => {
       const { id: resolvedId } = await params;
-      setId(resolvedId);
 
       try {
         setLoading(true);
@@ -320,9 +316,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
           <div className="max-w-4xl space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Performance Reviews</h2>
-              <Button variant="secondary" className="text-xs" onClick={() => setReviewFormOpen(true)}>
-                + Create Review
-              </Button>
             </div>
 
             {reviews.length === 0 ? (
@@ -342,15 +335,6 @@ export default function EmployeeProfilePage({ params }: { params: Promise<{ id: 
               </div>
             )}
 
-            <ReviewFormModal
-              isOpen={reviewFormOpen}
-              onClose={() => setReviewFormOpen(false)}
-              onSubmit={async (data) => {
-                // In a real implementation, this would submit to the API
-                console.log('Review submitted:', data);
-                setReviewFormOpen(false);
-              }}
-            />
           </div>
         )}
       </div>

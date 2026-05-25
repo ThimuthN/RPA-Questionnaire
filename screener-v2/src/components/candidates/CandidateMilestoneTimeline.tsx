@@ -20,12 +20,11 @@ import {
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
   candidateMilestoneStatusValues,
-  milestoneCheckDefs,
   type CandidateMilestoneMode,
   type CandidateMilestoneResult,
   type CheckType
 } from "@/lib/candidates/milestones";
-import type { CandidateMilestoneCheckRecord, CandidateMilestoneRecord } from "@/lib/db/candidates";
+import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
 
 type TimelineNode = CandidateMilestoneRecord | { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] };
 
@@ -422,7 +421,6 @@ function ScreenerMilestoneCard({
   const checks = milestone.checks || [];
   const resumeReviewCheck = checks.find((c) => c.type === "resume_review");
   const screenerTestCheck = checks.find((c) => c.type === "screener_test");
-  const defs = milestoneCheckDefs[milestone.type];
   const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
 
   const handleCheckAction = async (checkType: CheckType, status: string) => {
@@ -551,16 +549,14 @@ function RegistrationMilestoneCard({
 function MilestonePanelContent({
   candidateId,
   node,
-  hasResume,
-  onSelectMilestone
+  hasResume
 }: {
   candidateId: string;
   node: TimelineNode;
   hasResume: boolean;
-  onSelectMilestone?: (milestoneId: string) => void;
 }) {
   if (isAdvancedReviewGroup(node)) {
-    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} onSelectMilestone={onSelectMilestone} />;
+    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} />;
   }
 
   const milestone = node;
@@ -655,12 +651,10 @@ function DocumentationMilestoneCard({
 
 function AdvancedReviewCard({
   candidateId,
-  groupedMilestones,
-  onSelectMilestone
+  groupedMilestones
 }: {
   candidateId: string;
   groupedMilestones: CandidateMilestoneRecord[];
-  onSelectMilestone?: (milestoneId: string) => void;
 }) {
   const router = useRouter();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
@@ -886,14 +880,6 @@ function AdvancedReviewCard({
   );
 }
 
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
-      <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export function CandidateMilestoneTimeline({
   candidateId,
   milestones,
@@ -1083,7 +1069,6 @@ export function CandidateMilestoneTimeline({
                   candidateId={candidateId}
                   node={activeNode}
                   hasResume={hasResume}
-                  onSelectMilestone={setActiveMilestoneId}
                 />
               </motion.div>
             </AnimatePresence>

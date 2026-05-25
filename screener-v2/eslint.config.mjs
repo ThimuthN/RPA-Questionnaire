@@ -3,7 +3,7 @@ import nextTypescript from "eslint-config-next/typescript";
 
 export default [
   {
-    ignores: [".next/**", "node_modules/**", "exports/**"]
+    ignores: [".next/**", "node_modules/**", "exports/**", "salvaged/**"]
   },
   ...nextCoreWebVitals,
   ...nextTypescript,

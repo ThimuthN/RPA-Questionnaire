@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireApiSession } from '@/lib/auth/guards';
 import { createInterviewPanel, getInterviewPanelsForCandidate } from '@/lib/interviews/queries';
-import { createRequestLogContext, logRouteError, messageFromError } from '@/lib/server/logger';
+import { createRequestLogContext, logRouteError } from '@/lib/server/logger';
 
 const CreateInterviewPanelSchema = z.object({
   roundName: z.string().min(1).max(100),

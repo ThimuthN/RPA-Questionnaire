@@ -9,39 +9,31 @@ import { Search } from 'lucide-react';
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<EmployeeRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
     const fetchEmployees = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          page: page.toString(),
-          pageSize: pageSize.toString(),
-          ...(search && { search }),
-          ...(departmentFilter && { departmentId: departmentFilter }),
-          ...(statusFilter && { status: statusFilter }),
-        });
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: pageSize.toString(),
+        ...(search && { search }),
+        ...(statusFilter && { status: statusFilter }),
+      });
 
-        const res = await fetch(`/api/employees?${params}`);
-        if (res.ok) {
-          const data: EmployeeWorkspacePage = await res.json();
-          setEmployees(data.items);
-          setTotal(data.total);
-        }
-      } finally {
-        setLoading(false);
+      const res = await fetch(`/api/employees?${params}`);
+      if (res.ok) {
+        const data: EmployeeWorkspacePage = await res.json();
+        setEmployees(data.items);
+        setTotal(data.total);
       }
     };
 
     fetchEmployees();
-  }, [page, search, departmentFilter, statusFilter, pageSize]);
+  }, [page, search, statusFilter, pageSize]);
 
   const hasMore = (page * pageSize) < total;
 
