@@ -255,9 +255,11 @@ export function mapCandidate(row: {
   screeningStatus: string | null;
   candidateFolderUrl: string | null;
   notesSummary: string | null;
+  orgStatus?: string | null;
+  orgStage?: string | null;
+  finalizedAs?: string | null;
   createdAt: Date;
   updatedAt: Date;
-  [key: string]: any; // Allow additional properties for Prisma type inference
 }): CandidateRecord {
   return {
     id: row.id,
@@ -277,7 +279,7 @@ export function mapCandidate(row: {
     stage: row.stage as CandidateStage,
     nextAction: row.nextAction as CandidateNextAction,
     screeningStatus: (row.screeningStatus as CandidateScreeningStatus | null) ?? undefined,
-    orgStatus: row.orgStatus ?? undefined,
+    orgStatus: (row.orgStatus as "active" | "talent_pool" | "org_rejected" | null) ?? undefined,
     orgStage: (row.orgStage as "active" | "finalized" | null) ?? undefined,
     finalizedAs: (row.finalizedAs as "hired" | "rejected" | null) ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
