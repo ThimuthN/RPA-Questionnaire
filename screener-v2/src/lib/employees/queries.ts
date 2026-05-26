@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db/prisma';
 import { EmployeeRecord, EmployeeDetail, EmployeeWorkspacePage } from './types';
 import { generateEmployeeNumber } from './employee-number';
@@ -16,7 +17,7 @@ export async function listEmployeeWorkspacePage(params: ListEmployeesParams): Pr
   const page = Math.max(1, params.page || 1);
   const skip = (page - 1) * pageSize;
 
-  const where: any = {};
+  const where: Prisma.EmployeeWhereInput = {};
 
   if (params.search) {
     where.OR = [
@@ -179,7 +180,7 @@ export interface UpdateEmployeeInput {
 }
 
 export async function updateEmployee(id: string, input: UpdateEmployeeInput): Promise<EmployeeRecord> {
-  const updateData: any = {};
+  const updateData: UpdateEmployeeInput = {};
 
   if (input.fullName !== undefined) updateData.fullName = input.fullName;
   if (input.email !== undefined) updateData.email = input.email;

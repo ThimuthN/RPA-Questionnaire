@@ -73,7 +73,7 @@ export async function createGoal(input: CreateGoalInput): Promise<EmployeeGoalRe
 }
 
 export async function updateGoal(id: string, input: UpdateGoalInput): Promise<EmployeeGoalRecord> {
-  const updateData: any = {};
+  const updateData: UpdateGoalInput = {};
 
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined) updateData.description = input.description;

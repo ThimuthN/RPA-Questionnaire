@@ -1203,7 +1203,7 @@ export async function deleteCandidateNote(input: {
 }
 
 async function logActivityEvent(
-  tx: any,
+  tx: Prisma.TransactionClient,
   input: {
     candidateId: string;
     event: string;
@@ -1249,7 +1249,7 @@ export async function bulkUpdateCandidates(input: {
   }
 
   if (input.action === "assign_owner") {
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: { updatedAt: Date; hrOwnerId?: string; hrOwner?: string | null } = { updatedAt: new Date() };
 
     // Prefer hrOwnerId if provided, otherwise use owner string for backward compatibility
     if (input.hrOwnerId) {

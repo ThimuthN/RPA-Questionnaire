@@ -68,7 +68,7 @@ export async function createReview(input: CreateReviewInput): Promise<Performanc
 }
 
 export async function updateReview(id: string, input: UpdateReviewInput): Promise<PerformanceReviewRecord> {
-  const updateData: any = {};
+  const updateData: UpdateReviewInput = {};
 
   if (input.overallRating !== undefined) updateData.overallRating = input.overallRating;
   if (input.strengths !== undefined) updateData.strengths = input.strengths;
