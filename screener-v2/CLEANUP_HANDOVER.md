@@ -343,6 +343,37 @@
 ### Deleted Legacy Route Surface
 - `/studio/*` redirect-only pages under `src/app/(studio)/studio/**`.
 
+### Batches 10–14 (2026-05-26): Type Cleanup and Orphaned Backend Removal
+
+**Batch 10 — as any casts (13/15 eliminated):**
+- `GoalStatusTones` / `ReviewStatusTones` retyped from `Record<string, string>` to `Record<string, PillTone>`.
+- `CandidateNoteItem` — added `deletedAt?: string | null` to local type; removed cast.
+- `addCandidateNote`, `updateCandidateNote`, `deleteCandidateNote` — added `candidateId: true` to Prisma select; removed `mapNote(result as any)` casts.
+- `bulk/route.ts`, `result-repository.ts` — removed `action as any`; TypeScript flow-narrows the union after early-return branches.
+- `reviews/queries.ts` — removed `review as any` from destructure.
+- `departments/[id]` pages — replaced `href={tab.href as any}` with typed `Route` at definition site.
+- Remaining 2 intentional casts: `LogicReasoningRenderer as any` (plugin registry boundary) and `rawBank as any[]` (JSON import).
+
+**Batch 11 — Orphaned interview-panels and offer API removal:**
+- Deleted 5 interview-panels routes and 2 offer routes — confirmed zero frontend callers.
+- Deleted `src/lib/interviews/` and `src/lib/offers/` — only referenced by now-deleted routes.
+- Moved to `salvaged/lib/interviews/` and `salvaged/lib/offers/` (consensus algorithm, offer status helpers worth restoring when features are rebuilt).
+- Prisma models remain in schema; only the routes and business logic were removed.
+
+**Batch 12 — Typed remaining `any` parameters in DB query helpers:**
+- `logActivityEvent`: `tx: any` → `Prisma.TransactionClient`.
+- `bulkUpdateCandidates assign_owner`: `updateData: any` → inline typed object.
+- `updateGoal`, `updateReview`, `updateEmployee`: `updateData: any` → existing input types.
+- `listEmployeeWorkspacePage`: `where: any` → `Prisma.EmployeeWhereInput`.
+
+**Batch 13 — mapCandidate parameter type tightened:**
+- Removed `[key: string]: any` index signature; added explicit optional fields (`orgStatus`, `orgStage`, `finalizedAs`) with `string | null` types matching Prisma, plus narrow casts at assignment site.
+
+**Batch 14 — Redis client typing:**
+- `rate-limit.ts`: `redisClient: any` → `Redis | null` using type-only import.
+
+**`as any` inventory after Batch 14:** 25 occurrences remaining, all in the question-type plugin runtime (`QuestionRuntimeCard`, `BaseQuestionRendererProps`, `LogicReasoningRenderer`, `PracticalTaskRenderer`, `reviewLines`, `diagnostics.ts`). These are architectural boundaries — fixing requires either generic question types or `unknown` + type guards across all 10+ plugin implementations. Defer until plugin architecture is intentionally revisited.
+
 ## Known Trust Issues
 - A clean schema-only Neon testing branch URL was provided locally in ignored `.env.test.local`.
 - The current testing branch does not match `.env` / `.env.local` runtime database identities.
@@ -355,17 +386,24 @@
 - Remaining `scripts/` entries are package-script-backed or active maintenance tooling and still need normal review before being treated as enterprise-grade.
 
 ## First Slop Audit Notes
-- Legacy redirect routes exist under `(studio)`, `(runtime)/employee`, `(runtime)/quick/live`, `/live`, `/assessments`, and `/candidates`. They may be compatibility paths, so do not delete until current inbound links are confirmed.
-- `as any` casts remain in UI status pills, offer/interview/employee components, DB mappers, and API bulk handling. Treat each as a local patch only when the runtime contract is clear.
+- Legacy redirect routes exist under `(runtime)/employee`, `(runtime)/quick/live`, `/live`, `/assessments`, and `/candidates`. They may be compatibility paths, so do not delete until current inbound links are confirmed.
+- `as any` casts resolved: all incidental casts removed. 25 architectural casts remain in the question-type plugin runtime — documented above.
 - `src/components/jobs/RichTextField.tsx` uses `document.execCommand` and repeated toolbar button markup. This is a good future local refactor candidate if the jobs editor remains in scope.
 - Runtime class composition exists in several UI components. Most are boolean/static class maps, but hotspot file `CreateAssessmentBuilder.tsx` needs a separate cautious pass.
 
+## Verified Baseline (2026-05-26, after Batch 14)
+- `npm run typecheck:unused`: passed.
+- `npm run lint`: passed.
+- `npm test -- --reporter dot`: passed, 32 files / 115 tests.
+- Static reachability: no unreachable non-test src/ files.
+- `as any` count: 25 (all in plugin runtime, intentional).
+
 ## Next Recommended Batch
 1. Provide a current isolated Neon `TEST_DATABASE_URL` and keep it in ignored `.env.test.local`.
-2. Add a safe test DB sync command or document the required manual command.
-3. Run `npm.cmd test` with an isolated `TEST_DATABASE_URL` and record the real failure set from the remaining pure/domain tests.
-4. Review remaining `scripts/` entries one by one against package scripts and current schema.
-5. Continue source cleanup with another static reachability pass, then move into frontend trust cleanup once active code residue is exhausted.
+2. Run `npm run test:db` with the isolated URL and record the real failure set — the DB models that are missing in the testing branch will surface here.
+3. `RichTextField.tsx` — replace `document.execCommand` with `Selection` / `Range` API or switch to a maintained editor library (decide first whether job postings UI stays).
+4. `CreateAssessmentBuilder.tsx` cautious pass — runtime class composition audit.
+5. `hrOwner` deprecated string field — full removal requires UI change (text → user picker) + Prisma schema migration + 28 files with 120+ references. Do this as a dedicated feature branch.
 
 ## Deferred Cleanup Map
 - UI/UX enterprise pass: defer until baseline tests are trustworthy.
