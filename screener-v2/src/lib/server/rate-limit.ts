@@ -1,3 +1,5 @@
+import type { Redis } from '@upstash/redis';
+
 interface RateLimitEntry {
   lastTime: number;
   expiresAt: number;
@@ -6,7 +8,7 @@ interface RateLimitEntry {
 // Use in-memory cache for local development, Redis for distributed deployments
 const isRedisAvailable = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
-let redisClient: any = null;
+let redisClient: Redis | null = null;
 if (isRedisAvailable) {
   // Dynamically import only when Redis credentials are available
   try {
