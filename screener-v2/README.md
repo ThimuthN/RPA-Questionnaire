@@ -17,7 +17,7 @@ Northstar Hiring OS is a candidate management and hiring workflow platform for m
 - Run timed assessments with autosave
 - Auto-score and store results
 - Review results and export CSV/JSON
-- Employee magic-link flow remains dev-style in this version
+- Employee HRMS and onboarding flows are outside the v1 hiring workflow.
 
 ## Local setup
 1. Copy `.env.example` to `.env.local`
