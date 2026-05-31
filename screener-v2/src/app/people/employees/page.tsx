@@ -15,7 +15,7 @@ export default async function EmployeesPage() {
       tone="page"
       eyebrow="Hiring"
       title="Employees"
-      subtitle="Employee management is not available in v1."
+      subtitle="Employee management is outside the v1 hiring workflow. Use the hiring system to finalize candidates."
     >
       <StagePanel className="space-y-4">
         <div className="space-y-3">

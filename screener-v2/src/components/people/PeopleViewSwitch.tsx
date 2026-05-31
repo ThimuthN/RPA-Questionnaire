@@ -5,8 +5,7 @@ import { cn } from "@/lib/utils";
 type PeopleView = "candidates" | "employees";
 
 const items: Array<{ key: PeopleView; label: string; href: Route }> = [
-  { key: "candidates", label: "Candidates", href: "/people/candidates" as Route },
-  { key: "employees", label: "Employees", href: "/people/employees" as Route }
+  { key: "candidates", label: "Candidates", href: "/people/candidates" as Route }
 ];
 
 export function PeopleViewSwitch({ current }: { current: PeopleView }) {
