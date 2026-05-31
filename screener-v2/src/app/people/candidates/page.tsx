@@ -132,7 +132,7 @@ export default async function PeopleCandidatesPage({
         tone="page"
         eyebrow="Hiring"
         title="Candidates"
-        subtitle="Track applicants, pipeline stages, assessments, interviews, and final decisions."
+        subtitle="Track applicants, pipeline, assessments, and final hiring decisions."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="candidates" />

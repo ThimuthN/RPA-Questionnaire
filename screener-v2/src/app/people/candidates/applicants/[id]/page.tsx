@@ -102,7 +102,10 @@ export default async function ApplicantReviewPage({
 
           <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
             <div className="space-y-4">
-              <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="space-y-1 border-t border-[color:var(--app-border)] pt-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Applicant details</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
                   <p className="break-all text-sm text-[color:var(--app-text)]">{detail.candidate.email}</p>

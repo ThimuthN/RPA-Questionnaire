@@ -113,7 +113,7 @@ export default async function EditJobPostingPage({
                 {job.screenerPresetLabel ? (
                   <div className="space-y-2">
                     <StatusPill label={job.screenerPresetLabel} tone="blue" />
-                    <p className="text-xs text-[color:var(--app-muted)]">Applicants receive an automated assessment invite on submission.</p>
+                    <p className="text-xs text-[color:var(--app-muted)]">This job has a screening assessment configured.</p>
                   </div>
                 ) : (
                   <p className="text-xs text-[color:var(--app-muted)]">No screener attached — applicants apply without a test.</p>
