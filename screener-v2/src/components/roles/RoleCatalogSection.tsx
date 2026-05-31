@@ -195,12 +195,12 @@ export function RoleCatalogSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg text-[color:var(--app-heading)]">Roles</h3>
+          <h3 className="text-lg text-[color:var(--app-heading)]">Hiring roles</h3>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Create roles to organize candidates by position and department.
+            Create hiring roles to organize candidates by position and department.
           </p>
         </div>
-        <Button onClick={beginCreate}>New role</Button>
+        <Button onClick={beginCreate}>New hiring role</Button>
       </div>
 
       {error && <p className="text-sm text-[color:var(--app-danger)]">{error}</p>}

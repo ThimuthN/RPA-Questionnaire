@@ -3,8 +3,8 @@ import { z } from "zod";
 import { createAppUser } from "@/lib/auth/app-auth";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { isFormRequest } from "@/lib/http/request";
+import { validateAssignableAccessRole } from "@/lib/auth/access-roles";
 import { prisma } from "@/lib/db/prisma";
-import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 
 const userSchema = z.object({
   name: z.string().optional(),
@@ -65,24 +65,17 @@ export async function POST(request: Request) {
     if (!permission.ok) return permission.response;
 
     if (body.roleId) {
-      const role = await prisma.roleCatalog.findUnique({
-        where: { id: body.roleId },
-        select: { departmentId: true }
-      });
-      if (!role) {
-        throw new Error("Role not found.");
-      }
-      if (body.departmentId && role.departmentId !== body.departmentId) {
-        throw new Error("Role must belong to the selected department.");
-      }
-      if (auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "manage_users"))) {
-        const rolePermissions = await prisma.rolePermissionTemplate.findMany({
-          where: { roleId: body.roleId },
-          select: { permission: true }
-        });
-        if (rolePermissions.some((rolePermission) => !auth.session.permissions.includes(rolePermission.permission))) {
-          throw new Error("You can only assign roles within your own permission set.");
+      const validation = await validateAssignableAccessRole(body.roleId, body.departmentId, auth.session);
+      if (!validation.ok) {
+        if (isFormRequest(request)) {
+          const url = new URL("/departments", request.url);
+          url.searchParams.set("error", validation.message);
+          return NextResponse.redirect(url, 303);
         }
+        return NextResponse.json(
+          { ok: false, message: validation.message },
+          { status: validation.status }
+        );
       }
     }
 

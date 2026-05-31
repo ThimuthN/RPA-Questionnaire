@@ -19,7 +19,7 @@ export function AssignUserToDeptModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string; departmentId: string | null; dept?: { name: string } | null }>>([]);
-  const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
+  const [roles, setRoles] = useState<Array<{ id: string; label: string; permissions?: string[] }>>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export function AssignUserToDeptModal({
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Assign existing user">
         <div className="space-y-1 mb-6">
           <p className="text-sm text-[color:var(--app-muted)]">
-            Select an existing organization user and assign them a {departmentName} role.
+            Select an existing organization user and assign them a {departmentName} access role.
           </p>
         </div>
 
@@ -139,19 +139,22 @@ export function AssignUserToDeptModal({
 
           <div className="grid gap-1">
             <label className="text-sm text-[color:var(--app-text)]" htmlFor="role-select">
-              Role
+              Access role
             </label>
+            {roles.length > 0 && roles.every(r => !r.permissions || r.permissions.length === 0) && (
+              <p className="text-xs text-[color:var(--app-muted)]">Only roles with permissions configured can be assigned as access roles.</p>
+            )}
             <select
               id="role-select"
               name="roleId"
-              disabled={saving || loading || roles.length === 0}
+              disabled={saving || loading || roles.filter(r => r.permissions && r.permissions.length > 0).length === 0}
               required
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
             >
               <option value="">
-                {loading ? "Loading roles..." : roles.length === 0 ? "No available roles" : "Select a role..."}
+                {loading ? "Loading roles..." : roles.filter(r => r.permissions && r.permissions.length > 0).length === 0 ? "No available roles" : "Select a role..."}
               </option>
-              {roles.map((role) => (
+              {roles.filter(r => r.permissions && r.permissions.length > 0).map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.label}
                 </option>

@@ -29,7 +29,7 @@ export function AddUserModal({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-  const [roles, setRoles] = useState<Array<{ id: string; label: string }>>([]);
+  const [roles, setRoles] = useState<Array<{ id: string; label: string; permissions?: string[] }>>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -192,13 +192,17 @@ export function AddUserModal({
 
           <div className="grid gap-1">
             <label className="text-sm text-[color:var(--app-text)]" htmlFor="user-role">
-              Role
+              Access role
             </label>
+            <p className="text-xs text-[color:var(--app-muted)]">Controls what this user can do in the hiring system.</p>
+            {roles.length > 0 && roles.every(r => !r.permissions || r.permissions.length === 0) && (
+              <p className="text-xs text-[color:var(--app-muted)]">Only roles with permissions configured can be assigned as access roles.</p>
+            )}
             <select
               id="user-role"
               name="roleId"
               defaultValue={user?.roleId || ""}
-              disabled={isSubmitting || !selectedDepartmentId || loadingRoles || roles.length === 0}
+              disabled={isSubmitting || !selectedDepartmentId || loadingRoles || roles.filter(r => r.permissions && r.permissions.length > 0).length === 0}
               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
             >
               <option value="">
@@ -206,11 +210,11 @@ export function AddUserModal({
                   ? "Select a department first"
                   : loadingRoles
                   ? "Loading roles..."
-                  : roles.length === 0
+                  : roles.filter(r => r.permissions && r.permissions.length > 0).length === 0
                   ? "No roles available"
                   : "Select a role"}
               </option>
-              {roles.map((role) => (
+              {roles.filter(r => r.permissions && r.permissions.length > 0).map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.label}
                 </option>

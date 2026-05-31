@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
-import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
+import { validateAssignableAccessRole } from "@/lib/auth/access-roles";
 import { prisma } from "@/lib/db/prisma";
 
 const assignUserSchema = z.object({
@@ -53,36 +53,12 @@ export async function POST(
       );
     }
 
-    // Verify role exists and belongs to this department
-    const role = await prisma.roleCatalog.findUnique({
-      where: { id: body.roleId },
-      select: { id: true, departmentId: true }
-    });
-    if (!role) {
+    const validation = await validateAssignableAccessRole(body.roleId, departmentId, auth.session);
+    if (!validation.ok) {
       return NextResponse.json(
-        { ok: false, message: "Role not found" },
-        { status: 404 }
+        { ok: false, message: validation.message },
+        { status: validation.status }
       );
-    }
-    if (role.departmentId !== departmentId) {
-      return NextResponse.json(
-        { ok: false, message: "Role does not belong to this department" },
-        { status: 400 }
-      );
-    }
-
-    if (auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "manage_users"))) {
-      const rolePermissions = await prisma.rolePermissionTemplate.findMany({
-        where: { roleId: body.roleId },
-        select: { permission: true }
-      });
-      const outsideAssigner = rolePermissions.find((rolePermission) => !auth.session.permissions.includes(rolePermission.permission));
-      if (outsideAssigner) {
-        return NextResponse.json(
-          { ok: false, message: "You can only assign roles within your own permission set." },
-          { status: 403 }
-        );
-      }
     }
 
     // Assign user to department and role
