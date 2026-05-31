@@ -243,7 +243,7 @@ export default async function CandidateDetailPage({
                   <p className="text-sm text-[color:var(--app-text)]">{candidate.hrOwner || "No owner assigned"}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Current stage</p>
+                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Pipeline stage</p>
                   <p className="text-sm text-[color:var(--app-brand)]">{candidate.currentFocus || "No active stage yet"}</p>
                 </div>
                 <div className="space-y-1">
@@ -284,9 +284,9 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate journey</h2>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Pipeline activity</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Follow the process from first review to finalization.
+                  Follow candidate activity from first review to final decision.
                 </p>
               </div>
               <CandidateMilestoneTimeline

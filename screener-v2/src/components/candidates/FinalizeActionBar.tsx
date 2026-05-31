@@ -53,23 +53,23 @@ export function FinalizeActionBar({
     <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-[color:var(--app-heading)]">
-          {isFinalized ? `Finalized as ${finalizedAs || "unknown"}` : "Finalize candidate"}
+          {isFinalized ? `Final decision: ${finalizedAs || "unknown"}` : "Final decision"}
         </p>
         {!isFinalized ? (
           <p className="text-xs text-[color:var(--app-muted)]">
-            Reject finalizes the candidate as rejected. Hire records a final hiring decision.
+            Mark the final hiring outcome for this candidate.
           </p>
         ) : null}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {!isFinalized && permissions.includes("hire_candidate") ? (
           <Button type="button" disabled={Boolean(pendingAction)} onClick={() => submit("hire")}>
-            {pendingAction === "hire" ? "Hiring..." : "Hire"}
+            {pendingAction === "hire" ? "Marking as hired..." : "Mark as hired"}
           </Button>
         ) : null}
         {!isFinalized && permissions.includes("manage_candidates") ? (
           <Button type="button" variant="danger" disabled={Boolean(pendingAction)} onClick={() => submit("reject")}>
-            {pendingAction === "reject" ? "Rejecting..." : "Reject"}
+            {pendingAction === "reject" ? "Marking as rejected..." : "Mark as rejected"}
           </Button>
         ) : null}
         {isFinalized && (

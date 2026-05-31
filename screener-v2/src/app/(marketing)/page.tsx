@@ -53,7 +53,7 @@ export default async function MarketingHomePage() {
           {
             label: "Ready for review",
             value: String(candidateWorkspace.summary.readyForReview),
-            detail: "People or work waiting on a decision.",
+            detail: "Candidates waiting on a hiring decision.",
             tone: "text-teal-300"
           },
           {
@@ -73,13 +73,13 @@ export default async function MarketingHomePage() {
           {
             label: "One workflow",
             value: "Track",
-            detail: "Keep the person, role, owner, and history in one place.",
+            detail: "Keep the candidate, role, owner, and history in one place.",
             tone: "text-brand-300"
           },
           {
             label: "Shared review",
             value: "Review",
-            detail: "Assessments, audits, and check-ins stay connected.",
+            detail: "Assessments, notes, and candidate context stay connected.",
             tone: "text-teal-300"
           },
           {
@@ -112,7 +112,7 @@ export default async function MarketingHomePage() {
                       <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Tracking trajectory</p>
                     </div>
                     <div className="max-w-4xl space-y-3">
-                      <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl">Track people.</h1>
+                      <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl">Track candidates.</h1>
                       <div className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl" aria-hidden="true">
                         <TypedWordCycle
                           prefix=""
@@ -147,7 +147,7 @@ export default async function MarketingHomePage() {
                 <StaggerItem>
                   <div className="max-w-4xl">
                     <SignalMarquee
-                      items={["Hiring teams", "People ops", "Internal growth", "Audits", "Progress reviews"]}
+                      items={["Recruiting teams", "Open roles", "Applicants", "Assessments", "Final decisions"]}
                       className="max-w-[40rem]"
                     />
                   </div>
@@ -185,8 +185,8 @@ export default async function MarketingHomePage() {
               </div>
               <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
                 {[
-                  ["01", "Track", "See the person, role, owner, and history right away.", "text-brand-300"],
-                  ["02", "Review", "Run assessments, audits, and check-ins in the same workflow.", "text-teal-300"],
+                  ["01", "Track", "See the candidate, role, owner, and history right away.", "text-brand-300"],
+                  ["02", "Review", "Keep assessments, notes, and resume context in the same workflow.", "text-teal-300"],
                   ["03", "Decide", "Use the full picture to move forward, hold, or follow up.", "text-amber-300"]
                 ].map(([step, label, body, tone], index) => (
                   <ViewportReveal key={step} delay={0.08 + index * 0.06}>
@@ -209,17 +209,17 @@ export default async function MarketingHomePage() {
               <div className="space-y-3">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Where it fits</p>
                 <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
-                  <ScrambleReveal text="Built for hiring teams and people ops." className="text-scramble-glow" />
+                  <ScrambleReveal text="Built for recruiting teams." className="text-scramble-glow" />
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
-                  Use Northstar for hiring, internal growth, audits, and progression reviews.
+                  Use Northstar to manage jobs, applicants, assessments, and final hiring decisions.
                 </p>
               </div>
               <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
                 {[
-                  ["Hiring", "Track candidates, reviews, and next steps without juggling separate tools."],
-                  ["Internal growth", "Review employees for new roles, readiness, and movement."],
-                  ["Audits", "Keep standards, check-ins, and outcomes tied to the right person."]
+                  ["Jobs", "Keep open roles, linked applicants, and hiring context together."],
+                  ["Applicants", "Track candidates from application review through pipeline stages."],
+                  ["Decisions", "Keep assessments, notes, and final hiring outcomes tied to the right candidate."]
                 ].map(([title, body], index) => (
                   <ViewportReveal key={title} delay={0.08 + index * 0.06}>
                     <div className="border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0 first:md:border-l-0 first:md:pl-0">
@@ -260,7 +260,7 @@ export default async function MarketingHomePage() {
                 <StaggerItem>
                   <WorkspaceEmptyState
                     title="Your workspace is ready."
-                    description="Add people, define the role, and start the first review when you're ready."
+                    description="Add candidates, define the role, and start the first review when you're ready."
                   />
                 </StaggerItem>
               ) : null}
@@ -276,7 +276,7 @@ export default async function MarketingHomePage() {
                       <StatusPill label={String(candidateWorkspace.summary.needsResume)} tone="amber" />
                     </div>
                     <CountUpValue value={candidateWorkspace.summary.needsResume} className="font-display text-4xl text-[color:var(--app-heading)]" />
-                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">People who still need the basics in place before review can move.</p>
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Candidates who still need the basics in place before review can move.</p>
                   </section>
                 </StaggerItem>
 
@@ -290,7 +290,7 @@ export default async function MarketingHomePage() {
                       <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
                     </div>
                     <CountUpValue value={candidateWorkspace.summary.readyForReview} className="font-display text-4xl text-[color:var(--app-heading)]" />
-                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Reviews or submitted work waiting on a decision.</p>
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Candidate reviews or submitted assessments waiting on a decision.</p>
                   </section>
                 </StaggerItem>
 
@@ -304,7 +304,7 @@ export default async function MarketingHomePage() {
                       <StatusPill label={String(candidateWorkspace.summary.stalled)} tone="red" />
                     </div>
                     <CountUpValue value={candidateWorkspace.summary.stalled} className="font-display text-4xl text-[color:var(--app-heading)]" />
-                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Work that has been quiet for too long and needs attention.</p>
+                    <p className="max-w-sm text-sm leading-7 text-[color:var(--app-muted)]">Candidate work that has been quiet for too long and needs attention.</p>
                   </section>
                 </StaggerItem>
               </div>

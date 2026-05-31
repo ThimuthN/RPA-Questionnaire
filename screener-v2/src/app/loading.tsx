@@ -22,9 +22,9 @@ export default function Loading() {
 
           <div className="text-center lg:text-left">
             <p className="text-[11px] uppercase tracking-[0.34em] text-brand-300">Northstar loading</p>
-            <h2 className="mt-3 font-display text-3xl text-white md:text-4xl">Tracking the next scene</h2>
+            <h2 className="mt-3 font-display text-3xl text-white md:text-4xl">Loading hiring context</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 md:text-[15px]">
-              Pulling together people, reviews, and results so everything lands in one place.
+              Pulling together jobs, candidates, assessments, and decisions so hiring work lands in one place.
             </p>
 
             <div className="mt-6 flex flex-wrap justify-center gap-2 lg:justify-start">
@@ -46,9 +46,9 @@ export default function Loading() {
                 <div className="loading-bar h-2 w-10 rounded-full bg-white/8 [animation-delay:280ms]" />
               </div>
               <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs uppercase tracking-[0.18em] text-[color:var(--app-scene-muted)] lg:justify-start">
-                <span>People</span>
+                <span>Candidates</span>
                 <span>Assessments</span>
-                <span>Results</span>
+                <span>Decisions</span>
               </div>
             </div>
           </div>

@@ -811,7 +811,7 @@ function AdvancedReviewCard({
         </div>
       ) : (
         <div className="rounded-[16px] border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6 text-center">
-          <p className="text-sm text-[color:var(--app-muted)]">No additional tests or interviews added yet.</p>
+          <p className="text-sm text-[color:var(--app-muted)]">No additional assessments or interview notes added yet.</p>
         </div>
       )}
 
@@ -839,13 +839,13 @@ function AdvancedReviewCard({
             className="flex-1"
           >
             <span>
-              {isCreatingInterview ? "Creating interview..." : "Add interview"}
+              {isCreatingInterview ? "Creating interview note..." : "Add interview note"}
             </span>
           </Button>
         </div>
       </div>
 
-      {/* Modals for test and interview submission/editing */}
+      {/* Modals for assessment and interview-note submission/editing */}
       {(pendingMilestoneId || editingMilestoneId) && (
         <>
           <TestSubmissionModal
@@ -1049,7 +1049,7 @@ export function CandidateMilestoneTimeline({
                   </h3>
                   <p className="max-w-2xl text-sm text-[color:var(--app-text)] mt-2">
                     {isAdvancedReviewGroup(activeNode)
-                      ? `Manage additional tests and interviews (${activeNode.groupedMilestones.length} item${activeNode.groupedMilestones.length === 1 ? "" : "s"})`
+                      ? `Manage additional assessments and interview notes (${activeNode.groupedMilestones.length} item${activeNode.groupedMilestones.length === 1 ? "" : "s"})`
                       : stepSummary(activeNode, hasResume)}
                   </p>
                 </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, MessageSquare, Trash2 } from "lucide-react";
+import { X, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 
@@ -61,10 +61,10 @@ export function InterviewSchedulingModal({
         onClose();
       } else {
         const data = await response.json();
-        setError(data.message || "Failed to save interview");
+        setError(data.message || "Failed to save interview notes");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error saving interview");
+      setError(err instanceof Error ? err.message : "Error saving interview notes");
     } finally {
       setIsPending(false);
     }
@@ -83,11 +83,11 @@ export function InterviewSchedulingModal({
         onClose();
       } else {
         const data = await response.json();
-        setError(data.error || "Failed to delete interview");
+        setError(data.error || "Failed to delete interview notes");
         setShowDeleteConfirm(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error deleting interview");
+      setError(err instanceof Error ? err.message : "Error deleting interview notes");
       setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
@@ -118,10 +118,10 @@ export function InterviewSchedulingModal({
               <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-gradient-to-r from-[color:var(--app-surface)] to-[color:var(--app-surface-soft)] p-6">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10">
-                    <Calendar className="h-5 w-5 text-brand-500" />
+                    <MessageSquare className="h-5 w-5 text-brand-500" />
                   </div>
                   <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
-                    {milestone ? "Update Interview" : "Schedule Interview"}
+                    {milestone ? "Update interview notes" : "Add interview notes"}
                   </h2>
                 </div>
                 <button
@@ -146,7 +146,7 @@ export function InterviewSchedulingModal({
 
                 <label className="grid gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Date & Time</span>
+                    <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Interview date</span>
                   </div>
                   <input
                     type="datetime-local"
@@ -154,7 +154,7 @@ export function InterviewSchedulingModal({
                     onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                     className={fieldClassName}
                   />
-                  <p className="text-xs text-[color:var(--app-muted)]">When the interview took place or will take place</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">Optional date for the interview milestone</p>
                 </label>
 
                 <div className="grid gap-1.5">
@@ -182,10 +182,10 @@ export function InterviewSchedulingModal({
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     rows={4}
-                    placeholder="Feedback, observations, strengths, areas for improvement..."
+                    placeholder="Interview feedback, observations, strengths, and risks..."
                     className={`${fieldClassName} min-h-[116px] resize-y`}
                   />
-                  <p className="text-xs text-[color:var(--app-muted)]">Optional context for future review</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">Optional context for the hiring decision</p>
                 </label>
 
                 <div className="flex gap-3 border-t border-[color:var(--app-border)] pt-4">
@@ -248,9 +248,9 @@ export function InterviewSchedulingModal({
                             Saving...
                           </span>
                         ) : milestone ? (
-                          "Update Interview"
+                          "Update notes"
                         ) : (
-                          "Save Interview"
+                          "Save notes"
                         )}
                       </Button>
                     </>
