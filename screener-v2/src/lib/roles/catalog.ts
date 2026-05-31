@@ -37,6 +37,7 @@ function mapRole(row: {
   departmentId?: string | null;
   department?: string | null;
   dept?: { name: string } | null;
+  departmentName?: string | null;
   description?: string | null;
   experienceLevel?: string | null;
   requirements?: string | null;
@@ -49,8 +50,8 @@ function mapRole(row: {
     slug: row.slug,
     label: row.label,
     departmentId: row.departmentId ?? undefined,
-    department: row.dept?.name ?? row.department ?? undefined,
-    departmentName: row.dept?.name ?? row.department ?? undefined,
+    department: row.dept?.name ?? row.department ?? row.departmentName ?? undefined,
+    departmentName: row.dept?.name ?? row.department ?? row.departmentName ?? undefined,
     description: row.description ?? undefined,
     experienceLevel: row.experienceLevel ?? undefined,
     requirements: row.requirements ?? undefined,
@@ -66,10 +67,17 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
       ...(includeInactive ? {} : { isActive: true }),
       ...(departmentId ? { departmentId } : {})
     },
-    include: {
-      dept: {
-        select: { name: true }
-      },
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      departmentId: true,
+      department: true,
+      description: true,
+      experienceLevel: true,
+      requirements: true,
+      sortOrder: true,
+      isActive: true,
       permissions: {
         select: { permission: true },
         orderBy: { permission: "asc" }
@@ -78,7 +86,20 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
 
-  return rows.map((row) => mapRole(row));
+  // Fetch departments separately to handle orphaned rows gracefully
+  const uniqueDeptIds = [...new Set(rows.map((r) => r.departmentId).filter(Boolean))];
+  const departments = await prisma.department.findMany({
+    where: { id: { in: uniqueDeptIds } },
+    select: { id: true, name: true }
+  });
+  const deptMap = new Map(departments.map((d) => [d.id, d.name]));
+
+  return rows.map((row) => ({
+    ...mapRole({
+      ...row,
+      departmentName: row.departmentId ? deptMap.get(row.departmentId) : undefined
+    })
+  }));
 };
 
 export const listRoleCatalog = unstable_cache(
@@ -90,10 +111,17 @@ export const listRoleCatalog = unstable_cache(
 export async function getRoleCatalogEntry(roleId: string) {
   const row = await prisma.roleCatalog.findUnique({
     where: { id: roleId },
-    include: {
-      dept: {
-        select: { name: true }
-      },
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      departmentId: true,
+      department: true,
+      description: true,
+      experienceLevel: true,
+      requirements: true,
+      sortOrder: true,
+      isActive: true,
       permissions: {
         select: { permission: true },
         orderBy: { permission: "asc" }
@@ -101,7 +129,22 @@ export async function getRoleCatalogEntry(roleId: string) {
     }
   });
 
-  return row ? mapRole(row) : null;
+  if (!row) return null;
+
+  // Fetch department separately to handle orphaned references
+  let deptName: string | undefined;
+  if (row.departmentId) {
+    const dept = await prisma.department.findUnique({
+      where: { id: row.departmentId },
+      select: { name: true }
+    });
+    deptName = dept?.name;
+  }
+
+  return mapRole({
+    ...row,
+    departmentName: deptName
+  });
 }
 
 export async function findRoleCatalogEntryByLabel(label: string, departmentId?: string) {
@@ -113,9 +156,21 @@ export async function findRoleCatalogEntryByLabel(label: string, departmentId?: 
     where: {
       OR: [{ label: trimmed }, { slug }]
     },
-    include: {
-      dept: {
-        select: { name: true }
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      departmentId: true,
+      department: true,
+      description: true,
+      experienceLevel: true,
+      requirements: true,
+      sortOrder: true,
+      isActive: true,
+      createdAt: true,
+      permissions: {
+        select: { permission: true },
+        orderBy: { permission: "asc" }
       }
     },
     orderBy: [{ isActive: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }]
@@ -126,7 +181,22 @@ export async function findRoleCatalogEntryByLabel(label: string, departmentId?: 
     (departmentId && rows.find((candidate) => candidate.departmentId === departmentId)) ??
     rows[0];
 
-  return row ? mapRole(row) : null;
+  if (!row) return null;
+
+  // Fetch department separately to handle orphaned references
+  let deptName: string | undefined;
+  if (row.departmentId) {
+    const dept = await prisma.department.findUnique({
+      where: { id: row.departmentId },
+      select: { name: true }
+    });
+    deptName = dept?.name;
+  }
+
+  return mapRole({
+    ...row,
+    departmentName: deptName
+  });
 }
 
 export async function createRoleCatalogEntry(input: {
@@ -193,10 +263,17 @@ export async function createRoleCatalogEntry(input: {
 
     return tx.roleCatalog.findUniqueOrThrow({
       where: { id: role.id },
-      include: {
-        dept: {
-          select: { name: true }
-        },
+      select: {
+        id: true,
+        slug: true,
+        label: true,
+        departmentId: true,
+        department: true,
+        description: true,
+        experienceLevel: true,
+        requirements: true,
+        sortOrder: true,
+        isActive: true,
         permissions: {
           select: { permission: true },
           orderBy: { permission: "asc" }
@@ -205,8 +282,21 @@ export async function createRoleCatalogEntry(input: {
     });
   });
 
+  // Fetch department separately to handle orphaned references
+  let deptName: string | undefined;
+  if (created.departmentId) {
+    const dept = await prisma.department.findUnique({
+      where: { id: created.departmentId },
+      select: { name: true }
+    });
+    deptName = dept?.name;
+  }
+
   revalidateTag("role-catalog");
-  return mapRole(created);
+  return mapRole({
+    ...created,
+    departmentName: deptName
+  });
 }
 
 export async function updateRoleCatalogEntry(
@@ -278,10 +368,17 @@ export async function updateRoleCatalogEntry(
 
     return tx.roleCatalog.findUniqueOrThrow({
       where: { id: roleId },
-      include: {
-        dept: {
-          select: { name: true }
-        },
+      select: {
+        id: true,
+        slug: true,
+        label: true,
+        departmentId: true,
+        department: true,
+        description: true,
+        experienceLevel: true,
+        requirements: true,
+        sortOrder: true,
+        isActive: true,
         permissions: {
           select: { permission: true },
           orderBy: { permission: "asc" }
@@ -290,8 +387,21 @@ export async function updateRoleCatalogEntry(
     });
   });
 
+  // Fetch department separately to handle orphaned references
+  let deptName: string | undefined;
+  if (updated.departmentId) {
+    const dept = await prisma.department.findUnique({
+      where: { id: updated.departmentId },
+      select: { name: true }
+    });
+    deptName = dept?.name;
+  }
+
   revalidateTag("role-catalog");
-  return mapRole(updated);
+  return mapRole({
+    ...updated,
+    departmentName: deptName
+  });
 }
 
 export async function resolveOrCreateRoleCatalogEntry(input: {
