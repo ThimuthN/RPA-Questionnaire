@@ -16,6 +16,18 @@
   - `src/features/runtime/RuntimeClient.tsx`
   - `src/components/assessments/CreateAssessmentBuilder.tsx`
 
+## Handoff ZIP Hygiene
+Do not include the following in handoff ZIPs. These are already in `.gitignore` and should never be tracked:
+- `.env` (contains secrets; use `.env.example`)
+- `.env.local` (local development overrides)
+- `.next` (build output)
+- `node_modules` (dependencies; recipients run `npm install`)
+- `tsconfig.tsbuildinfo` (build artifact)
+- `*.log` and temp logs (debug only)
+- `salvaged/` (archive material; reference separately if needed)
+
+**Recommendation:** Before zipping, run `git clean -fX -d` to remove untracked files, or use a fresh clone.
+
 ## Baseline From 2026-05-22
 - `npm.cmd run lint`: passed before cleanup work.
 - `npm.cmd test`: unsafe baseline. Before the guard, tests used ambient Prisma env and attempted to run against the configured database.
