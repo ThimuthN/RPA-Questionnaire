@@ -26,9 +26,9 @@ export default async function NewJobPostingPage({
     <SceneShell
       variant="create"
       tone="page"
-      eyebrow="People"
+      eyebrow="Hiring"
       title="New job"
-      subtitle="Add a basic public opening."
+      subtitle="Create a job opening for publication."
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />

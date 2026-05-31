@@ -2,7 +2,7 @@ export const copy = {
   nav: {
     addons: "Add-ons",
     create: "Assessments",
-    candidates: "People",
+    candidates: "Candidates",
     jobs: "Careers",
     run: "Live sessions",
     results: "Results",

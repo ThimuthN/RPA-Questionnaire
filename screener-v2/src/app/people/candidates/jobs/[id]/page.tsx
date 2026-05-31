@@ -45,7 +45,7 @@ export default async function EditJobPostingPage({
     <SceneShell
       variant="create"
       tone="page"
-      eyebrow="People"
+      eyebrow="Hiring"
       title={job.title}
       subtitle="Update the posting and public availability."
       utility={

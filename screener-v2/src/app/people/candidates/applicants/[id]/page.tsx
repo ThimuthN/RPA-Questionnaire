@@ -63,7 +63,7 @@ export default async function ApplicantReviewPage({
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="People"
+      eyebrow="Hiring"
       title={detail.candidate.fullName}
       subtitle={detail.job.title}
       utility={

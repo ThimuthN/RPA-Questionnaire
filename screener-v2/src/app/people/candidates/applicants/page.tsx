@@ -78,9 +78,9 @@ export default async function CandidateApplicantsPage({
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="People"
-      title="Candidates"
-      subtitle="Review external applicants before moving them into the active pipeline."
+      eyebrow="Hiring"
+      title="Applicants"
+      subtitle="Review new applications before moving candidates into the hiring pipeline."
       utility={<PeopleViewSwitch current="candidates" />}
     >
       <div className="space-y-5">
