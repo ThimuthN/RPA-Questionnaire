@@ -87,7 +87,7 @@ export function deriveExamSelectionMetadata(
   if (!entry) {
     return {
       label: "Archived assessment",
-      legacySectionId: undefined as any,
+      legacySectionId: undefined,
       durationMinutes: 60,
       configSummary: "",
       requiredPercent: passPercent

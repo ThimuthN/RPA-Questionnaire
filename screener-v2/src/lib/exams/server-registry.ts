@@ -3,5 +3,9 @@ import { addonDefinitionRegistry } from "@/lib/addons/definitions";
 import type { ExamDefinitionId } from "@/lib/exams/definitions";
 
 export function resolveExamItems(definitionId: ExamDefinitionId, config: Record<string, unknown>): ExamQuestion[] {
-  return addonDefinitionRegistry[definitionId].resolveItems(config);
+  const definition = addonDefinitionRegistry[definitionId];
+  if (!definition) {
+    return [];
+  }
+  return definition.resolveItems(config);
 }
