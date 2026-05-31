@@ -141,13 +141,13 @@ export function JobPostingForm({
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm text-[color:var(--app-text)]">Screener (optional)</span>
+        <span className="text-sm text-[color:var(--app-text)]">Screening assessment (optional)</span>
         <select
           name="screenerPresetId"
           defaultValue={job?.screenerPresetId ?? ""}
           className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
         >
-          <option value="">No screener — applicants apply without a test</option>
+          <option value="">No screening assessment - applicants apply without a test</option>
           {presetOptions.map((preset) => (
             <option key={preset.id} value={preset.id}>
               {preset.label}

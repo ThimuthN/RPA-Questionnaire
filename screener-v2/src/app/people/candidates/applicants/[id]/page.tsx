@@ -87,7 +87,7 @@ export default async function ApplicantReviewPage({
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Applicant review</p>
               <h2 className="text-2xl text-[color:var(--app-heading)]">Review this application</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                Keep the application context here, then move the person into the pipeline only when you are ready.
+                Keep the application context here, then move the candidate into the pipeline only when you are ready.
               </p>
             </div>
 
@@ -208,14 +208,14 @@ export default async function ApplicantReviewPage({
             {detail.job.screenerPresetLabel ? (
               <StagePanel tone="summary" className="space-y-4">
                 <div className="space-y-1">
-                  <h2 className="text-xl text-[color:var(--app-heading)]">Screener</h2>
+                  <h2 className="text-xl text-[color:var(--app-heading)]">Screening assessment</h2>
                   <p className="text-sm text-[color:var(--app-muted)]">View assessment results in the candidate profile.</p>
                 </div>
                 <StatusPill label={detail.job.screenerPresetLabel} tone="blue" />
-                <p className="text-xs text-[color:var(--app-muted)]">This job has a screener test attached.</p>
+                <p className="text-xs text-[color:var(--app-muted)]">This job has a screening assessment attached.</p>
                 <Link href={`/candidates/${detail.candidate.id}` as Route}>
                   <Button type="button" variant="secondary" className="w-full">
-                    View screener results
+                    View assessment results
                   </Button>
                 </Link>
               </StagePanel>

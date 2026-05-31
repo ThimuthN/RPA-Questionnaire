@@ -141,7 +141,7 @@ export default async function CandidateApplicantsPage({
         {page.rows.length === 0 ? (
           <StagePanel className="space-y-3">
             <h2 className="text-2xl text-[color:var(--app-heading)]">No applicants in this view</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Published jobs will start filling this queue when people apply.</p>
+            <p className="text-sm text-[color:var(--app-muted)]">Published jobs will start filling this queue when candidates apply.</p>
           </StagePanel>
         ) : (
           <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">

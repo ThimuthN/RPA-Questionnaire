@@ -109,14 +109,14 @@ export default async function EditJobPostingPage({
                 </Link>
               </div>
               <div className="space-y-2 border-t border-[color:var(--app-border)] pt-4">
-                <p className="text-sm text-[color:var(--app-heading)]">Screener</p>
+                <p className="text-sm text-[color:var(--app-heading)]">Screening assessment</p>
                 {job.screenerPresetLabel ? (
                   <div className="space-y-2">
                     <StatusPill label={job.screenerPresetLabel} tone="blue" />
                     <p className="text-xs text-[color:var(--app-muted)]">This job has a screening assessment configured.</p>
                   </div>
                 ) : (
-                  <p className="text-xs text-[color:var(--app-muted)]">No screener attached — applicants apply without a test.</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">No screening assessment attached - applicants apply without a test.</p>
                 )}
               </div>
 

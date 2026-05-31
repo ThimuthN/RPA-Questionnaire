@@ -28,6 +28,57 @@ Do not include the following in handoff ZIPs. These are already in `.gitignore` 
 
 **Recommendation:** Before zipping, run `git clean -fX -d` to remove untracked files, or use a fresh clone.
 
+## Northstar v1 frontend smoke test
+Use this checklist for a manual frontend QA pass before production sign-off.
+
+### A. Authentication
+- Log in as an admin or HR user.
+- Confirm unauthenticated users can view public Careers pages.
+- Confirm unauthenticated users cannot view internal Jobs, Applicants, Candidates, or employee pages.
+
+### B. Jobs
+- Open internal Jobs at `/people/candidates/jobs`.
+- Create a job from `/people/candidates/jobs/new`.
+- Edit the job from its internal detail page.
+- Publish/unpublish and open/close applications if those controls are visible for the user.
+- Confirm public Careers at `/jobs` shows published open jobs only.
+
+### C. Application and Applicants
+- Submit a public application from a job detail page.
+- Confirm the applicant appears in `/people/candidates/applicants`.
+- Open the applicant review detail page.
+- Mark the applicant under review, move to pipeline, or close the application if those actions are visible.
+
+### D. Candidate Profile
+- Open the candidate detail/profile page.
+- Confirm the resume area shows the attached resume or a clear missing-resume state.
+- Add and view an internal note if the action is available.
+- Add and view a milestone if the action is available.
+- Confirm the page uses `Pipeline stage` and shows the final decision area.
+
+### E. Final Decision
+- Mark a candidate as hired.
+- Mark a candidate as rejected.
+- Confirm the finalized state is visible after the action.
+- Confirm revert is visible only when allowed and returns the candidate to active review.
+
+### F. Disabled Employee HRMS
+- Visit `/people/employees`.
+- Visit `/people/employees/some-id`.
+- Visit `/employee`.
+- Visit `/employee/verify`.
+- Confirm all routes show disabled v1 messaging and do not expose employee HRMS workflows.
+
+### G. Permissions
+- Log in as a lower-permission user if available.
+- Confirm create/edit/final decision actions are hidden or blocked when permissions do not allow them.
+- Confirm unauthorized direct visits redirect or show the existing no-access behavior.
+
+### H. Regression Checks
+- Confirm no visible copy says automatic email is sent.
+- Confirm no visible copy says full offer, onboarding, or employee HRMS is active.
+- Confirm no visible copy says calendar interview scheduling is active.
+
 ## Baseline From 2026-05-22
 - `npm.cmd run lint`: passed before cleanup work.
 - `npm.cmd test`: unsafe baseline. Before the guard, tests used ambient Prisma env and attempted to run against the configured database.
