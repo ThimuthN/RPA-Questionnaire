@@ -16,17 +16,17 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "view_candidates");
+  const permission = await requireCandidatePermission(auth.session, id, "view_candidates");
   if (!permission.ok) {
     return permission.response;
   }
 
-  const { id } = await params;
   try {
     await assertCandidateResumeCandidateExists(id);
   } catch {

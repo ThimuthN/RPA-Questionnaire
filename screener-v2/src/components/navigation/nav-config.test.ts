@@ -39,12 +39,17 @@ describe("nav-config", () => {
       expect(isNavItemActive("/people/candidates/jobs/123", "/people/candidates/jobs")).toBe(true);
     });
 
-    it("marks /people/candidates/applicants as active for Jobs item", () => {
-      expect(isNavItemActive("/people/candidates/applicants", "/people/candidates/jobs")).toBe(true);
+    it("does not mark /people/candidates/applicants as active for both Jobs and Candidates", () => {
+      expect(isNavItemActive("/people/candidates/applicants", "/people/candidates/jobs")).toBe(false);
+      expect(isNavItemActive("/people/candidates/applicants", "/people/candidates")).toBe(true);
     });
 
     it("does not mark /people/candidates as active for Jobs item", () => {
       expect(isNavItemActive("/people/candidates", "/people/candidates/jobs")).toBe(false);
+    });
+
+    it("marks /people/candidates as active for Candidates item", () => {
+      expect(isNavItemActive("/people/candidates", "/people/candidates")).toBe(true);
     });
 
     it("marks /jobs as active for public Careers item", () => {

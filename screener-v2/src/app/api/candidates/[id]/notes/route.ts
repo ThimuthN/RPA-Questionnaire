@@ -14,12 +14,13 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, id, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
@@ -27,7 +28,6 @@ export async function POST(
   const { session } = auth;
 
   try {
-    const { id } = await params;
     const body = noteSchema.parse(Object.fromEntries((await request.formData()).entries()));
     await addCandidateNote({
       candidateId: id,
@@ -40,9 +40,8 @@ export async function POST(
     url.searchParams.set("noteAdded", "1");
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const { id } = await params;
     const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not add note.");
+    url.searchParams.set("error", error instanceof z.ZodError ? "Invalid note." : "Could not add note.");
     return NextResponse.redirect(url, 303);
   }
 }

@@ -12,12 +12,13 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
+  const { id: candidateId, noteId } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, candidateId, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
@@ -25,7 +26,6 @@ export async function PUT(
   const { session } = auth;
 
   try {
-    const { id: candidateId, noteId } = await params;
     const body = updateNoteSchema.parse(await request.json());
 
     await updateCandidateNote({
@@ -46,7 +46,7 @@ export async function PUT(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to update note" },
+      { error: "Could not update note." },
       { status: 500 }
     );
   }
@@ -56,12 +56,13 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; noteId: string }> }
 ) {
+  const { id: candidateId, noteId } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, candidateId, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
@@ -69,8 +70,6 @@ export async function DELETE(
   const { session } = auth;
 
   try {
-    const { id: candidateId, noteId } = await params;
-
     await deleteCandidateNote({
       noteId,
       candidateId,
@@ -79,9 +78,9 @@ export async function DELETE(
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to delete note" },
+      { error: "Could not delete note." },
       { status: 500 }
     );
   }

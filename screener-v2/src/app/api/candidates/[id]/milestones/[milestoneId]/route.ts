@@ -47,23 +47,24 @@ function redirectToCandidate(request: Request, candidateId: string, searchKey: s
   return NextResponse.redirect(url, 303);
 }
 
+class MilestoneNotFoundError extends Error {}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string; milestoneId: string }> }
 ) {
+  const { id, milestoneId } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, id, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
 
   const { session } = auth;
-
-  const { id, milestoneId } = await params;
 
   try {
     const raw = Object.fromEntries((await request.formData()).entries());
@@ -116,7 +117,7 @@ export async function POST(
       request,
       id,
       "error",
-      error instanceof Error ? error.message : "Could not update milestone."
+      error instanceof z.ZodError ? "Invalid milestone update." : "Could not update milestone."
     );
   }
 }
@@ -125,19 +126,18 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; milestoneId: string }> }
 ) {
+  const { id: candidateId, milestoneId } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, candidateId, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
 
   const { session } = auth;
-
-  const { id: candidateId, milestoneId } = await params;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -147,11 +147,11 @@ export async function DELETE(
       });
 
       if (!milestone) {
-        throw new Error("Milestone not found");
+        throw new MilestoneNotFoundError();
       }
 
       if (milestone.candidateId !== candidateId) {
-        throw new Error("Milestone does not belong to this candidate");
+        throw new MilestoneNotFoundError();
       }
 
       await tx.candidateMilestone.delete({
@@ -175,8 +175,12 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof MilestoneNotFoundError) {
+      return NextResponse.json({ error: "Milestone not found." }, { status: 404 });
+    }
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not delete milestone." },
+      { error: "Could not delete milestone." },
       { status: 400 }
     );
   }

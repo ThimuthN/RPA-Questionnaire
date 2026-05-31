@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
@@ -17,6 +17,7 @@ import { StagePanel } from "@/components/scene/StagePanel";
 import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { requirePageSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { getCandidateDetail } from "@/lib/db/candidates";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
 
@@ -119,6 +120,14 @@ export default async function CandidateDetailPage({
 }) {
   const { id } = await params;
   const session = await requirePageSession(`/candidates/${id}`);
+  const permission = await requireCandidatePermission(session, id, "view_candidates");
+  if (!permission.ok) {
+    if (permission.response.status === 404) {
+      notFound();
+    }
+    redirect("/people/candidates");
+  }
+
   const candidate = await getCandidateDetail(id);
   if (!candidate) {
     notFound();

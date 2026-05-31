@@ -23,32 +23,19 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: candidateId } = await params;
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
 
-  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  const permission = await requireCandidatePermission(auth.session, candidateId, "manage_candidates");
   if (!permission.ok) {
     return permission.response;
   }
 
-  const { id: candidateId } = await params;
-
   try {
     const body = createMilestoneSchema.parse(await request.json());
-
-    const candidate = await prisma.candidate.findUnique({
-      where: { id: candidateId },
-      select: { id: true }
-    });
-
-    if (!candidate) {
-      return NextResponse.json(
-        { error: "Candidate not found" },
-        { status: 404 }
-      );
-    }
 
     // Find the finalized milestone to determine where to insert the new milestone
     const finalizedMilestone = await prisma.candidateMilestone.findFirst({
@@ -101,7 +88,7 @@ export async function POST(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to create milestone" },
+      { error: "Could not create milestone." },
       { status: 500 }
     );
   }
