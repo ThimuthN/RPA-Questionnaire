@@ -1,6 +1,7 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import {
   assertCandidateResumeCandidateExists,
   resolveCandidateResumeRecord
@@ -18,6 +19,11 @@ export async function GET(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const permission = requireCandidatePermission(auth.session, "view_candidates");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   const { id } = await params;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { del, put } from "@vercel/blob";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import {
   getLatestCandidateResume,
   initOrUpdateMilestoneCheck
@@ -34,6 +35,11 @@ export async function POST(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {
@@ -138,6 +144,11 @@ export async function GET(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const permission = requireCandidatePermission(auth.session, "view_candidates");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   const { id } = await params;

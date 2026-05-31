@@ -319,6 +319,11 @@ export async function createJobPosting(input: {
   screenerPresetId?: string;
   summary: string;
   description: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  teamSize?: number;
+  techStack?: string;
+  remotePolicy?: string;
   isPublished?: boolean;
   isOpen?: boolean;
 }) {
@@ -332,6 +337,11 @@ export async function createJobPosting(input: {
       screenerPresetId: input.screenerPresetId?.trim() || null,
       summary: input.summary.trim(),
       description: input.description.trim(),
+      salaryMin: input.salaryMin ?? null,
+      salaryMax: input.salaryMax ?? null,
+      teamSize: input.teamSize ?? null,
+      techStack: input.techStack?.trim() || null,
+      remotePolicy: input.remotePolicy?.trim() || null,
       isPublished: Boolean(input.isPublished),
       isOpen: input.isOpen ?? true
     },
@@ -367,12 +377,20 @@ export async function updateJobPosting(
     screenerPresetId?: string;
     summary: string;
     description: string;
+    salaryMin?: number | string | null;
+    salaryMax?: number | string | null;
+    teamSize?: number | string | null;
+    techStack?: string;
+    remotePolicy?: string;
     isPublished?: boolean;
     isOpen?: boolean;
   }
 ) {
   const title = input.title.trim();
   const slug = await uniqueJobSlug(title, jobId);
+  const getSalaryMin = (val?: number | string | null) => val == null ? null : (typeof val === 'number' ? val : Number(val));
+  const getSalaryMax = (val?: number | string | null) => val == null ? null : (typeof val === 'number' ? val : Number(val));
+  const getTeamSize = (val?: number | string | null) => val == null ? null : (typeof val === 'number' ? val : Number(val));
   const row = await prisma.jobPosting.update({
     where: { id: jobId },
     data: {
@@ -382,6 +400,11 @@ export async function updateJobPosting(
       screenerPresetId: input.screenerPresetId === "" ? null : (input.screenerPresetId?.trim() || undefined),
       summary: input.summary.trim(),
       description: input.description.trim(),
+      salaryMin: getSalaryMin(input.salaryMin),
+      salaryMax: getSalaryMax(input.salaryMax),
+      teamSize: getTeamSize(input.teamSize),
+      techStack: input.techStack?.trim() || null,
+      remotePolicy: input.remotePolicy?.trim() || null,
       isPublished: Boolean(input.isPublished),
       isOpen: Boolean(input.isOpen)
     },

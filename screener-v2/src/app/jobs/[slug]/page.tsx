@@ -205,9 +205,9 @@ export default async function PublicJobDetailPage({
               </div>
               {pageState.hasScreener === "1" ? (
                 <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                  <p className="font-medium">Assessment next</p>
+                  <p className="font-medium">Assessment configured</p>
                   <p>
-                    We&apos;ve sent an assessment link to your email address. Check your inbox and complete it within 7 days to move forward.
+                    This job has a screening assessment configured. The hiring team will send next steps if they move your application forward.
                   </p>
                 </div>
               ) : null}

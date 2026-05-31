@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { deleteCandidateNote, updateCandidateNote } from "@/lib/db/candidates";
 
 const updateNoteSchema = z.object({
@@ -15,6 +16,12 @@ export async function PUT(
   if (!auth.ok) {
     return auth.response;
   }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
+  }
+
   const { session } = auth;
 
   try {
@@ -53,6 +60,12 @@ export async function DELETE(
   if (!auth.ok) {
     return auth.response;
   }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
+  }
+
   const { session } = auth;
 
   try {

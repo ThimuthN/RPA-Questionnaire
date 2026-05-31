@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
 import {
@@ -54,6 +55,12 @@ export async function POST(
   if (!auth.ok) {
     return auth.response;
   }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
+  }
+
   const { session } = auth;
 
   const { id, milestoneId } = await params;
@@ -122,6 +129,12 @@ export async function DELETE(
   if (!auth.ok) {
     return auth.response;
   }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
+  }
+
   const { session } = auth;
 
   const { id: candidateId, milestoneId } = await params;
@@ -130,11 +143,15 @@ export async function DELETE(
     await prisma.$transaction(async (tx) => {
       const milestone = await tx.candidateMilestone.findUnique({
         where: { id: milestoneId },
-        select: { title: true, mode: true, type: true }
+        select: { candidateId: true, title: true, mode: true, type: true }
       });
 
       if (!milestone) {
         throw new Error("Milestone not found");
+      }
+
+      if (milestone.candidateId !== candidateId) {
+        throw new Error("Milestone does not belong to this candidate");
       }
 
       await tx.candidateMilestone.delete({

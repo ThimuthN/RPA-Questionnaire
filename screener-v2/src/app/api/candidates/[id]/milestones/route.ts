@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { prisma } from "@/lib/db/prisma";
 
 const createMilestoneSchema = z.object({
@@ -25,6 +26,11 @@ export async function POST(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   const { id: candidateId } = await params;

@@ -10,6 +10,11 @@ const updateJobSchema = z.object({
   screenerPresetId: z.string().optional(),
   summary: z.string().min(8).optional(),
   description: z.string().min(20).optional(),
+  salaryMin: z.string().optional(),
+  salaryMax: z.string().optional(),
+  teamSize: z.string().optional(),
+  techStack: z.string().optional(),
+  remotePolicy: z.string().optional(),
   isPublished: z.string().optional(),
   isOpen: z.string().optional(),
   action: z.enum(["save", "toggle_published", "toggle_open"]).optional()
@@ -44,6 +49,11 @@ export async function POST(
         screenerPresetId: current.screenerPresetId,
         summary: current.summary,
         description: current.description,
+        salaryMin: current.salaryMin,
+        salaryMax: current.salaryMax,
+        teamSize: current.teamSize,
+        techStack: current.techStack,
+        remotePolicy: current.remotePolicy,
         isPublished: !current.isPublished,
         isOpen: current.isOpen
       });
@@ -62,6 +72,11 @@ export async function POST(
         screenerPresetId: current.screenerPresetId,
         summary: current.summary,
         description: current.description,
+        salaryMin: current.salaryMin,
+        salaryMax: current.salaryMax,
+        teamSize: current.teamSize,
+        techStack: current.techStack,
+        remotePolicy: current.remotePolicy,
         isPublished: current.isPublished,
         isOpen: !current.isOpen
       });
@@ -90,6 +105,11 @@ export async function POST(
       screenerPresetId: body.screenerPresetId,
       summary: body.summary,
       description,
+      salaryMin: body.salaryMin ? Number(body.salaryMin) : null,
+      salaryMax: body.salaryMax ? Number(body.salaryMax) : null,
+      teamSize: body.teamSize ? Number(body.teamSize) : null,
+      techStack: body.techStack?.trim(),
+      remotePolicy: body.remotePolicy?.trim(),
       isPublished: body.isPublished === "on",
       isOpen: body.isOpen === "on"
     });

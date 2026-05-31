@@ -4,7 +4,10 @@ import { prisma } from "@/lib/db/prisma";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  await requireApiSession();
+  const auth = await requireApiSession();
+  if (!auth.ok) {
+    return auth.response;
+  }
 
   const stageCounts = await prisma.candidate.groupBy({
     by: ["stage"],

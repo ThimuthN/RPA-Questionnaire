@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
+import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { candidateNoteTypeValues } from "@/lib/candidates/types";
 import { addCandidateNote } from "@/lib/db/candidates";
 
@@ -17,6 +18,12 @@ export async function POST(
   if (!auth.ok) {
     return auth.response;
   }
+
+  const permission = requireCandidatePermission(auth.session, "manage_candidates");
+  if (!permission.ok) {
+    return permission.response;
+  }
+
   const { session } = auth;
 
   try {

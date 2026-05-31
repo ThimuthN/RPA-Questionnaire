@@ -154,9 +154,6 @@ export function JobPostingForm({
             </option>
           ))}
         </select>
-        <p className="text-xs text-[color:var(--app-muted)]">
-          Applicants will automatically receive an assessment link by email after applying.
-        </p>
       </label>
 
       <div className="grid gap-3 sm:grid-cols-2">

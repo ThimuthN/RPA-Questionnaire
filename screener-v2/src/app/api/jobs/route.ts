@@ -10,6 +10,11 @@ const jobSchema = z.object({
   screenerPresetId: z.string().optional(),
   summary: z.string().min(8),
   description: z.string().min(20),
+  salaryMin: z.string().optional(),
+  salaryMax: z.string().optional(),
+  teamSize: z.string().optional(),
+  techStack: z.string().optional(),
+  remotePolicy: z.string().optional(),
   isPublished: z.string().optional(),
   isOpen: z.string().optional()
 });
@@ -37,6 +42,11 @@ export async function POST(request: Request) {
       screenerPresetId: body.screenerPresetId,
       summary: body.summary,
       description,
+      salaryMin: body.salaryMin ? Number(body.salaryMin) : undefined,
+      salaryMax: body.salaryMax ? Number(body.salaryMax) : undefined,
+      teamSize: body.teamSize ? Number(body.teamSize) : undefined,
+      techStack: body.techStack?.trim(),
+      remotePolicy: body.remotePolicy?.trim(),
       isPublished: body.isPublished === "on",
       isOpen: body.isOpen === "on"
     });

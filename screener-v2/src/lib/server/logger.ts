@@ -124,5 +124,15 @@ export function logRouteError(
 }
 
 export function messageFromError(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+  const message = error.message.trim();
+  if (!message || message.length === 0) {
+    return fallback;
+  }
+  if (message.toLowerCase().includes("prisma") || message.toLowerCase().includes("database") || message.toLowerCase().includes("at ")) {
+    return fallback;
+  }
+  return message;
 }
