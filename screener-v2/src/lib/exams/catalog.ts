@@ -36,6 +36,10 @@ export const examCatalog: Record<ExamDefinitionId, ExamDefinitionCatalogEntry> =
 
 export const orderedExamCatalog = [...orderedAddonDefinitions];
 
+function getExamDefinition(definitionId: ExamDefinitionId): ExamDefinitionCatalogEntry | null {
+  return examCatalog[definitionId] ?? null;
+}
+
 export function definitionIdFromLegacySection(sectionId: SectionId): ExamDefinitionId {
   const match = orderedAddonDefinitions.find(
     (definition) => "legacySectionId" in definition && definition.legacySectionId === sectionId
@@ -45,7 +49,14 @@ export function definitionIdFromLegacySection(sectionId: SectionId): ExamDefinit
 }
 
 export function defaultDraftForDefinition(definitionId: ExamDefinitionId): ExamBlueprintDraftItem {
-  const entry = examCatalog[definitionId];
+  const entry = getExamDefinition(definitionId);
+  if (!entry) {
+    return {
+      definitionId,
+      config: {},
+      weight: 1
+    };
+  }
   return {
     definitionId,
     config: structuredClone(entry.defaultConfig),
@@ -72,7 +83,16 @@ export function deriveExamSelectionMetadata(
   config: Record<string, unknown>,
   passPercent: number
 ) {
-  const entry = examCatalog[definitionId];
+  const entry = getExamDefinition(definitionId);
+  if (!entry) {
+    return {
+      label: "Archived assessment",
+      legacySectionId: undefined as any,
+      durationMinutes: 60,
+      configSummary: "",
+      requiredPercent: passPercent
+    };
+  }
   return {
     label: entry.label,
     legacySectionId: entry.legacySectionId,
@@ -83,21 +103,21 @@ export function deriveExamSelectionMetadata(
 }
 
 export function isCoreExamDefinition(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId].scoreSummaryBucket === "core";
+  return examCatalog[definitionId]?.scoreSummaryBucket === "core";
 }
 
 export function isPracticalExamDefinition(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId].scoreSummaryBucket === "practical";
+  return examCatalog[definitionId]?.scoreSummaryBucket === "practical";
 }
 
 export function carriesRoleContext(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId].carriesRoleContext === true;
+  return examCatalog[definitionId]?.carriesRoleContext === true;
 }
 
 export function examPanelClass(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId].panelClass;
+  return examCatalog[definitionId]?.panelClass ?? "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)]";
 }
 
 export function examScoreBarClass(definitionId: ExamDefinitionId) {
-  return examCatalog[definitionId].scoreBarClass;
+  return examCatalog[definitionId]?.scoreBarClass ?? "bg-[color:var(--app-brand)]";
 }
