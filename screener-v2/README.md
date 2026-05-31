@@ -1,6 +1,6 @@
-# Innobot Premium Screener v1
+# Northstar Hiring OS
 
-Next.js + TypeScript assessment product for creating tests, running timed assessments, and reviewing results.
+Northstar Hiring OS is a candidate management and hiring workflow platform for managing jobs, applicants, assessments, and final decisions.
 
 ## Stack
 - Next.js App Router

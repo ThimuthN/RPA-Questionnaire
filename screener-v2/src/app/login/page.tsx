@@ -22,8 +22,8 @@ export default async function LoginPage({
     <SceneShell
       variant="run"
       eyebrow="Login"
-      title="Sign in"
-      subtitle="Use your internal account to manage assessments, view results, and administer users."
+      title="Sign in to Northstar Hiring OS"
+      subtitle="Use your internal account to manage candidates, assessments, results, and hiring workflow access."
     >
       <div className="mx-auto max-w-xl">
         <StagePanel className="space-y-4">

@@ -9,8 +9,8 @@ export const copy = {
     users: "Users"
   },
   landing: {
-    headline: "Create assessments, invite candidates, and review results in one place.",
-    subtext: "A simple workspace for running technical screening and keeping hiring decisions moving.",
+    headline: "Manage jobs, applicants, assessments, and hiring decisions in one place.",
+    subtext: "Northstar helps hiring teams keep candidate work, review context, and final decisions connected.",
     primaryCta: "Create assessment",
     secondaryCta: "Start assessment"
   },

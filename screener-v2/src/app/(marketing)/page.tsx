@@ -94,8 +94,8 @@ export default async function MarketingHomePage() {
     <SceneTransition>
       <SceneShell
         variant="create"
-        eyebrow="Northstar"
-        title={<span className="sr-only">Northstar</span>}
+        eyebrow="Northstar Hiring OS"
+        title={<span className="sr-only">Northstar Hiring OS</span>}
         hideHeader
         tone="page"
       >
@@ -125,7 +125,7 @@ export default async function MarketingHomePage() {
                 </StaggerItem>
                 <StaggerItem>
                   <p className="max-w-2xl text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
-                    Northstar helps hiring teams and people ops manage people, reviews, and next steps in one place.
+                    Northstar helps hiring teams manage jobs, applicants, assessments, and final decisions in one place.
                   </p>
                 </StaggerItem>
                 <StaggerItem>
@@ -180,7 +180,7 @@ export default async function MarketingHomePage() {
                   <ScrambleReveal text="Know who to review. Know what to do next." className="text-scramble-glow" />
                 </h2>
                 <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)]">
-                  Northstar keeps people, reviews, and decisions tied together so nothing gets lost between steps.
+                  Northstar keeps candidates, review context, and decisions tied together so nothing gets lost between steps.
                 </p>
               </div>
               <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
