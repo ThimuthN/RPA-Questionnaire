@@ -33,6 +33,10 @@ export async function POST(
   const permission = await requirePermissionForDepartment(auth.session, "manage_candidates", candidate.departmentId);
   if (!permission.ok) return permission.response;
 
+  if (candidate.orgStage === "finalized") {
+    return NextResponse.json({ ok: false, message: "Candidate is already finalized." }, { status: 400 });
+  }
+
   await prisma.$transaction(async (tx) => {
     await tx.candidate.update({
       where: { id },

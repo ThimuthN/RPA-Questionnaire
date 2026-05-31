@@ -14,7 +14,7 @@ export function getNavItems(viewer: Pick<AppSession, "permissions" | "department
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList },
         { href: "/results" as Route, label: copy.nav.results, icon: Activity },
         { href: "/live" as Route, label: copy.nav.run, icon: RadioTower },
-        { href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness },
+        { href: "/people/candidates/jobs" as Route, label: "Jobs", icon: BriefcaseBusiness },
         ...(viewer.permissions.includes("manage_users")
           ? [
               { href: "/departments" as Route, label: "Departments", icon: Building2 }
@@ -35,9 +35,10 @@ export function getNavItems(viewer: Pick<AppSession, "permissions" | "department
 export function isNavItemActive(pathname: string, href: string) {
   return (
     pathname === href ||
-    (href === "/jobs" && pathname.startsWith("/jobs")) ||
+    (href === "/jobs" && pathname.startsWith("/jobs") && !pathname.startsWith("/jobs/")) ||
+    (href === "/people/candidates/jobs" && (pathname.startsWith("/people/candidates/jobs") || pathname.startsWith("/people/candidates/applicants"))) ||
     (href === "/results" && pathname.startsWith("/results/")) ||
-    (href === "/people/candidates" && (pathname.startsWith("/people") || pathname.startsWith("/candidates"))) ||
+    (href === "/people/candidates" && pathname.startsWith("/people/candidates") && !pathname.includes("/jobs")) ||
     (href === "/addons" && pathname.startsWith("/addons")) ||
     (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
     (href === "/live" && (pathname.startsWith("/live") || pathname.startsWith("/run-test"))) ||

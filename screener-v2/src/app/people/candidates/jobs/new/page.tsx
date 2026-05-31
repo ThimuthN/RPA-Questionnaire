@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { JobPostingForm } from "@/components/jobs/JobPostingForm";
@@ -14,7 +15,10 @@ export default async function NewJobPostingPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requirePageSession("/people/candidates/jobs/new");
+  const session = await requirePageSession("/people/candidates/jobs/new");
+  if (!session.permissions.includes("create_job")) {
+    redirect("/people/candidates/jobs");
+  }
   const pageState = await searchParams;
   const [roles, presets] = await Promise.all([listRoleCatalog(true), listAssessmentPresets(false)]);
 

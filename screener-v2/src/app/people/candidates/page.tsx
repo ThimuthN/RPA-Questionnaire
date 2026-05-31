@@ -130,9 +130,9 @@ export default async function PeopleCandidatesPage({
       <SceneShell
         variant="results"
         tone="page"
-        eyebrow="People"
+        eyebrow="Hiring"
         title="Candidates"
-        subtitle="Search and manage candidates."
+        subtitle="Track applicants, pipeline stages, assessments, interviews, and final decisions."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <PeopleViewSwitch current="candidates" />

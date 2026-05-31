@@ -31,23 +31,27 @@ export default async function CandidateJobsPage({
 }: {
   searchParams: Promise<{ created?: string; updated?: string; error?: string }>;
 }) {
-  await requirePageSession("/people/candidates/jobs");
+  const session = await requirePageSession("/people/candidates/jobs");
   const pageState = await searchParams;
   const jobs = await listJobPostings();
+  const canCreateJob = session.permissions.includes("create_job");
+  const canEditJob = session.permissions.includes("edit_job");
 
   return (
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="People"
-      title="Candidates"
-      subtitle="Manage openings and the public intake path."
+      eyebrow="Hiring"
+      title="Jobs"
+      subtitle="Manage openings, publishing state, and applicant intake."
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />
-          <Link href="/people/candidates/jobs/new">
-            <Button>Add job</Button>
-          </Link>
+          {canCreateJob ? (
+            <Link href="/people/candidates/jobs/new">
+              <Button>Add job</Button>
+            </Link>
+          ) : null}
         </div>
       }
     >
@@ -136,25 +140,31 @@ export default async function CandidateJobsPage({
             {
               header: "Actions",
               width: "w-[14%]",
-              render: (job) => (
-                <div className="flex flex-wrap justify-end gap-2">
-                  <form action={`/api/jobs/${job.id}`} method="post">
-                    <input type="hidden" name="action" value="toggle_published" />
-                    <Button type="submit" variant="secondary">
-                      {job.isPublished ? "Unpublish" : "Publish"}
-                    </Button>
-                  </form>
-                  <form action={`/api/jobs/${job.id}`} method="post">
-                    <input type="hidden" name="action" value="toggle_open" />
-                    <Button type="submit" variant="secondary">
-                      {job.isOpen ? "Close" : "Open"}
-                    </Button>
-                  </form>
-                  <Link href={`/people/candidates/jobs/${job.id}` as Route}>
-                    <Button>Open</Button>
-                  </Link>
-                </div>
-              )
+              render: (job) => {
+                const hasActions = canEditJob;
+                if (!hasActions) {
+                  return <p className="text-xs text-[color:var(--app-muted)]">No actions</p>;
+                }
+                return (
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <form action={`/api/jobs/${job.id}`} method="post">
+                      <input type="hidden" name="action" value="toggle_published" />
+                      <Button type="submit" variant="secondary">
+                        {job.isPublished ? "Unpublish" : "Publish"}
+                      </Button>
+                    </form>
+                    <form action={`/api/jobs/${job.id}`} method="post">
+                      <input type="hidden" name="action" value="toggle_open" />
+                      <Button type="submit" variant="secondary">
+                        {job.isOpen ? "Close" : "Open"}
+                      </Button>
+                    </form>
+                    <Link href={`/people/candidates/jobs/${job.id}` as Route}>
+                      <Button>Open</Button>
+                    </Link>
+                  </div>
+                );
+              }
             }
           ]}
           data={jobs}

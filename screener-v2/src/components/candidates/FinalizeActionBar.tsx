@@ -33,7 +33,7 @@ export function FinalizeActionBar({
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: action === "hire" ? JSON.stringify({ createEmployeeRecord: true }) : JSON.stringify({})
+        body: action === "hire" ? JSON.stringify({ createEmployeeRecord: false }) : JSON.stringify({})
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.ok === false) {
@@ -57,7 +57,7 @@ export function FinalizeActionBar({
         </p>
         {!isFinalized ? (
           <p className="text-xs text-[color:var(--app-muted)]">
-            Reject finalizes immediately. Hire requires the accepted-offer and passed-assessment checks.
+            Reject finalizes the candidate as rejected. Hire records a final hiring decision.
           </p>
         ) : null}
       </div>
@@ -72,7 +72,10 @@ export function FinalizeActionBar({
             {pendingAction === "reject" ? "Rejecting..." : "Reject"}
           </Button>
         ) : null}
-        {isFinalized && permissions.includes("manage_users") ? (
+        {isFinalized && (
+          (finalizedAs === "hired" && permissions.includes("hire_candidate")) ||
+          ((finalizedAs !== "hired" || !finalizedAs) && permissions.includes("manage_candidates"))
+        ) ? (
           <Button type="button" variant="secondary" disabled={Boolean(pendingAction)} onClick={() => submit("revert")}>
             {pendingAction === "revert" ? "Reverting..." : `Revert ${finalizedAs || "finalized"}`}
           </Button>

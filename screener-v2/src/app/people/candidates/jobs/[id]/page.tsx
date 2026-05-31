@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -30,7 +30,10 @@ export default async function EditJobPostingPage({
   searchParams: Promise<{ created?: string; updated?: string; error?: string }>;
 }) {
   const { id } = await params;
-  await requirePageSession(`/people/candidates/jobs/${id}`);
+  const session = await requirePageSession(`/people/candidates/jobs/${id}`);
+  if (!session.permissions.includes("edit_job")) {
+    redirect("/people/candidates/jobs");
+  }
   const pageState = await searchParams;
   const [job, roles, presets] = await Promise.all([getJobPosting(id), listRoleCatalog(true), listAssessmentPresets(false)]);
 

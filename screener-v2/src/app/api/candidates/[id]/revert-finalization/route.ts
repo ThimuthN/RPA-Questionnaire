@@ -20,17 +20,32 @@ export async function POST(
     return NextResponse.json({ ok: false, message: "Candidate not found" }, { status: 404 });
   }
 
-  const permission = await requirePermissionForDepartment(auth.session, "manage_users", candidate.departmentId);
+  const requiredPermission = candidate.finalizedAs === "hired" ? "hire_candidate" : "manage_candidates";
+  const permission = await requirePermissionForDepartment(auth.session, requiredPermission, candidate.departmentId);
   if (!permission.ok) return permission.response;
 
+  if (candidate.orgStage !== "finalized") {
+    return NextResponse.json({ ok: false, message: "Candidate is not finalized." }, { status: 400 });
+  }
+
   await prisma.$transaction(async (tx) => {
+    let newStage: string;
+    if (candidate.finalizedAs === "hired") {
+      newStage = "advanced_review";
+    } else if (candidate.finalizedAs === "rejected") {
+      newStage = "pipeline";
+    } else {
+      newStage = "pipeline";
+    }
+
     await tx.candidate.update({
       where: { id },
       data: {
         orgStatus: "active",
         orgStage: "active",
         finalizedAs: null,
-        stage: candidate.finalizedAs === "hired" ? "advanced_review" : undefined,
+        stage: newStage,
+        nextAction: "none",
         updatedAt: new Date()
       }
     });

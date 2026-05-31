@@ -4,9 +4,12 @@ import { requireApiSession, requirePermissionForDepartment } from '@/lib/auth/gu
 import { createRequestLogContext, logRouteError } from '@/lib/server/logger';
 import { prisma } from '@/lib/db/prisma';
 import { createEmployee } from '@/lib/employees/queries';
+import { cuidLike } from '@/lib/tokens/token-service';
 
 const HireSchema = z.object({
-  createEmployeeRecord: z.boolean().optional().default(true),
+  createEmployeeRecord: z.boolean().optional().default(false),
+  startDate: z.string().optional(),
+  note: z.string().optional()
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -23,23 +26,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Invalid input' }, { status: 400 });
     }
 
-    // Fetch candidate and offer with assessments
+    // Fetch candidate
     const candidate = await prisma.candidate.findUnique({
       where: { id },
-      include: {
-        offer: true,
-        assessments: {
-          orderBy: { createdAt: 'desc' },
-          select: {
-            id: true,
-            attempt: {
-              select: {
-                result: { select: { pass: true } }
-              }
-            }
-          }
-        }
-      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        roleId: true,
+        departmentId: true,
+        orgStage: true
+      }
     });
 
     if (!candidate) {
@@ -49,34 +47,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const scopedPermission = await requirePermissionForDepartment(auth.session, 'hire_candidate', candidate.departmentId);
     if (!scopedPermission.ok) return scopedPermission.response;
 
-    // Validation: Candidate must be in finalized stage
-    if (candidate.stage !== 'finalized') {
-      return NextResponse.json(
-        { ok: false, message: 'Candidate must be in finalized stage before hiring' },
-        { status: 400 }
-      );
-    }
-
-    // Validation: Offer must exist and be accepted
-    if (!candidate.offer || candidate.offer.status !== 'accepted') {
-      return NextResponse.json(
-        { ok: false, message: 'Offer must be in accepted status before hiring' },
-        { status: 400 }
-      );
-    }
-
-    // Validation: Must have a passed assessment
-    const passedAssessment = candidate.assessments.find((a) => a.attempt?.result?.pass === true);
-    if (!passedAssessment) {
-      return NextResponse.json(
-        { ok: false, message: 'Candidate must have a passed assessment before hiring' },
-        { status: 400 }
-      );
+    // Check if already finalized (after permission check to avoid state leak)
+    if (candidate.orgStage === 'finalized') {
+      return NextResponse.json({ ok: false, message: 'Candidate is already finalized.' }, { status: 400 });
     }
 
     // Create employee record if requested
     let newEmployee = null;
     if (parsed.data.createEmployeeRecord) {
+      let startDate = new Date();
+      if (parsed.data.startDate) {
+        const parsedDate = new Date(parsed.data.startDate);
+        if (!isNaN(parsedDate.getTime())) {
+          startDate = parsedDate;
+        }
+      }
       newEmployee = await createEmployee({
         candidateId: id,
         fullName: candidate.fullName,
@@ -88,7 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         managerId: null,
         employmentType: 'full_time',
         employmentStatus: 'active',
-        startDate: candidate.offer.targetStartDate || new Date(),
+        startDate,
         probationEndDate: null,
         location: null,
         level: null,
@@ -102,17 +87,22 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         stage: 'finalized',
         orgStage: 'finalized',
         finalizedAs: 'hired',
+        orgStatus: 'active',
+        nextAction: 'none',
+        updatedAt: new Date()
       },
     });
 
     // Log activity
     await prisma.candidateActivityEvent.create({
       data: {
+        id: cuidLike(),
         candidateId: id,
         actorId: auth.session.userId,
         actorName: auth.session.name || auth.session.email || 'System',
         event: 'hired',
-        detail: newEmployee ? `Hired as ${newEmployee.employeeNumber}` : 'Hired',
+        detail: parsed.data.note?.trim() || 'Marked as hired',
+        createdAt: new Date()
       },
     });
 
