@@ -61,7 +61,7 @@ async function bootstrap() {
 
     // Create new admin user
     const hashedPassword = await hashPassword(password);
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         email,
         name,

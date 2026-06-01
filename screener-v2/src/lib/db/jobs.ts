@@ -206,8 +206,13 @@ export async function getPublicJobPostingBySlug(slug: string) {
   return row ? mapJobPosting(row) : null;
 }
 
-export async function listJobPostings() {
+export async function listJobPostings(departmentId?: string) {
+  const where: Prisma.JobPostingWhereInput = departmentId
+    ? { role: { departmentId } }
+    : {};
+
   const rows = await prisma.jobPosting.findMany({
+    where,
     orderBy: [{ updatedAt: "desc" }, { title: "asc" }],
     include: {
       role: {
