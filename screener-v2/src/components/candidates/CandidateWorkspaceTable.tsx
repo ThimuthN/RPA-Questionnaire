@@ -198,13 +198,10 @@ export function CandidateWorkspaceTable({
             </thead>
             <tbody>
               {rows.map((candidate) => {
-                const action = contextualAction(candidate);
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 const stage = normalizeCandidateStage(candidate.stage);
-                const forwardStages = getForwardCandidateStages(stage);
                 const decision = finalDecisionLabel(candidate);
                 const profileHref = `/people/candidates/${candidate.id}` as Route;
-                const candidateResumeHref = resumeHref(candidate);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
