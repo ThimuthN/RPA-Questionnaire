@@ -18,7 +18,7 @@ interface StageCounts {
 
 const items: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
   { key: "jobs", label: "Jobs", countKey: null, href: "/people/candidates/jobs" as Route },
-  { key: "applicants", label: "Applicants", countKey: "applicant", href: "/people/candidates?stage=applicant" as Route },
+  { key: "applicants", label: "Applicants", countKey: "applicant", href: "/people/candidates/applicants" as Route },
   { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: "/people/candidates?stage=pipeline" as Route },
   { key: "screener", label: "Screening", countKey: "screening", href: "/people/candidates?stage=screening" as Route },
   { key: "interview", label: "Interview", countKey: "interview", href: "/people/candidates?stage=interview" as Route },

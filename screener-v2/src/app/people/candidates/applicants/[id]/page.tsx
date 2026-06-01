@@ -67,7 +67,7 @@ export default async function ApplicantReviewPage({
       tone="page"
       eyebrow="Hiring"
       title={detail.candidate.fullName}
-      subtitle={detail.job.title}
+      subtitle={`Application for ${detail.job.title}`}
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />
@@ -89,7 +89,7 @@ export default async function ApplicantReviewPage({
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Applicant review</p>
               <h2 className="text-2xl text-[color:var(--app-heading)]">Review this application</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                Keep the application context here, then move the candidate into the pipeline only when you are ready.
+                Review the application, resume, and job context before deciding whether this person should enter the candidate pipeline.
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export default async function ApplicantReviewPage({
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision actions</p>
                 <h3 className="text-xl text-[color:var(--app-heading)]">Decide the next step</h3>
-                <p className="text-sm text-[color:var(--app-muted)]">Set an owner, then keep them in review, move them into the pipeline, or close the application.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">Set an owner, then keep the application under review, move it into the pipeline, or close it.</p>
               </div>
 
               {canManageApplications ? (
@@ -165,7 +165,7 @@ export default async function ApplicantReviewPage({
                     defaultValue={detail.candidate.hrOwner || ""}
                     placeholder="Assign an owner"
                   />
-                  <Button type="submit" variant="secondary">Mark under review</Button>
+                  <Button type="submit" variant="secondary">Keep under review</Button>
                 </form>
               ) : null}
 
@@ -179,7 +179,7 @@ export default async function ApplicantReviewPage({
                     defaultValue={detail.candidate.hrOwner || ""}
                     placeholder="Assign an owner"
                   />
-                  <Button type="submit">Move to pipeline</Button>
+                  <Button type="submit">Move to candidate pipeline</Button>
                 </form>
               ) : null}
 
@@ -222,14 +222,14 @@ export default async function ApplicantReviewPage({
             {detail.job.screenerPresetLabel ? (
               <StagePanel tone="summary" className="space-y-4">
                 <div className="space-y-1">
-                  <h2 className="text-xl text-[color:var(--app-heading)]">Screening assessment</h2>
-                  <p className="text-sm text-[color:var(--app-muted)]">View assessment results in the candidate profile.</p>
+                  <h2 className="text-xl text-[color:var(--app-heading)]">Assessment evidence</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">View screening assessment results in the candidate profile.</p>
                 </div>
                 <StatusPill label={detail.job.screenerPresetLabel} tone="blue" />
                 <p className="text-xs text-[color:var(--app-muted)]">This job has a screening assessment attached.</p>
                 <Link href={`/candidates/${detail.candidate.id}` as Route}>
                   <Button type="button" variant="secondary" className="w-full">
-                    View assessment results
+                    View assessment evidence
                   </Button>
                 </Link>
               </StagePanel>

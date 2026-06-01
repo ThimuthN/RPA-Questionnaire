@@ -47,7 +47,7 @@ export default async function EditJobPostingPage({
       tone="page"
       eyebrow="Hiring"
       title={job.title}
-      subtitle="Update the posting and public availability."
+      subtitle="Edit the job opening, public availability, and applicant intake."
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />
@@ -102,6 +102,16 @@ export default async function EditJobPostingPage({
                 <p className="text-sm text-[color:var(--app-heading)]">Applicants</p>
                 <p className="text-3xl text-[color:var(--app-heading)]">{job.applicantCount}</p>
               </div>
+              <Link
+                href={{
+                  pathname: "/people/candidates/applicants",
+                  query: { jobId: job.id }
+                }}
+              >
+                <Button type="button" className="w-full">
+                  Review applicants
+                </Button>
+              </Link>
               <div className="space-y-2">
                 <p className="text-sm text-[color:var(--app-muted)]">Public link</p>
                 <Link href={`/jobs/${job.slug}`} className="text-sm text-[color:var(--app-brand)] hover:underline">
@@ -174,6 +184,11 @@ export default async function EditJobPostingPage({
                         <p className="text-xs text-[color:var(--app-muted)]">{application.candidateEmail}</p>
                       </div>
                       <div className="flex flex-wrap gap-2">
+                        <Link href={`/people/candidates/applicants/${application.id}` as Route}>
+                          <Button type="button" className="px-3 py-2 text-xs">
+                            Review application
+                          </Button>
+                        </Link>
                         <Link href={`/candidates/${application.candidateId}` as Route}>
                           <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
                             Open candidate

@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { FileText, X, Check } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
 import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
@@ -39,14 +40,14 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
   if (candidate.latestAssessment?.attemptId) {
     return {
       href: `/results/${candidate.latestAssessment.attemptId}` as Route,
-      label: "Result"
+      label: "View result"
     };
   }
 
   if (candidate.latestAssessmentStatus === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Send"
+      label: "Send assessment"
     };
   }
 
@@ -60,6 +61,12 @@ function displayStageLabel(stage: CandidateStage) {
 function displayStageActionLabel(stage: CandidateStage) {
   if (stage === "screening") return "Move to Screening";
   return `Move to ${displayStageLabel(stage)}`;
+}
+
+function finalDecisionLabel(candidate: CandidateWorkspaceItem) {
+  if (candidate.finalizedAs === "hired") return "Hired";
+  if (candidate.finalizedAs === "rejected") return "Rejected";
+  return null;
 }
 
 export function CandidateWorkspaceTable({
@@ -76,6 +83,7 @@ export function CandidateWorkspaceTable({
   permissions?: string[];
 }) {
   const router = useRouter();
+  const canManageCandidates = permissions.includes("manage_candidates");
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<string[]>([]);
   const [rejectConfirming, setRejectConfirming] = useState<string | null>(null);
   const [promoteError, setPromoteError] = useState<Record<string, string>>({});
@@ -130,7 +138,7 @@ export function CandidateWorkspaceTable({
   return (
     <form action="/api/candidates/bulk" method="post" className="space-y-4">
       <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-      {permissions.includes("manage_candidates") ? (
+      {canManageCandidates ? (
         <CandidateBulkActionsBar
           selectedCount={selectedCandidateIds.length}
           onSelectAll={selectAllOnPage}
@@ -148,10 +156,10 @@ export function CandidateWorkspaceTable({
                 <th scope="col" className="w-12 px-4 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Name</th>
+                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
                 <th scope="col" className="w-[13%] px-4 py-3 font-medium">Owner</th>
-                <th scope="col" className="w-[19%] px-4 py-3 font-medium">Status</th>
-                <th scope="col" className="w-[16%] px-4 py-3 font-medium">Department</th>
+                <th scope="col" className="w-[19%] px-4 py-3 font-medium">Pipeline</th>
+                <th scope="col" className="w-[16%] px-4 py-3 font-medium">Role / department</th>
                 <th scope="col" className="w-[8%] px-4 py-3 font-medium">Updated</th>
                 <th scope="col" className="w-[15%] px-4 py-3 font-medium text-right">Actions</th>
               </tr>
@@ -162,22 +170,25 @@ export function CandidateWorkspaceTable({
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 const stage = normalizeCandidateStage(candidate.stage);
                 const forwardStages = getForwardCandidateStages(stage);
+                const decision = finalDecisionLabel(candidate);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
-                      <input
-                        type="checkbox"
-                        name="candidateId"
-                        value={candidate.id}
-                        checked={isSelected}
-                        onChange={() => toggleCandidate(candidate.id)}
-                        className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400 cursor-pointer"
-                      />
+                      {canManageCandidates ? (
+                        <input
+                          type="checkbox"
+                          name="candidateId"
+                          value={candidate.id}
+                          checked={isSelected}
+                          onChange={() => toggleCandidate(candidate.id)}
+                          className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-transparent text-brand-400 cursor-pointer"
+                        />
+                      ) : null}
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-1">
                         <p className="font-medium text-[color:var(--app-heading)] truncate">{candidate.fullName}</p>
-                        <p className="text-xs text-[color:var(--app-muted)] truncate">{candidate.roleLabel || "Role not set"}</p>
+                        <p className="text-xs text-[color:var(--app-muted)] truncate">{candidate.email}</p>
                       </div>
                     </td>
                     <td className={tableCellClassName}>
@@ -190,12 +201,20 @@ export function CandidateWorkspaceTable({
                         )}
                         <p className="text-sm font-medium text-[color:var(--app-heading)]">{displayStageLabel(stage)}</p>
                         <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
+                        {decision ? (
+                          <StatusPill label={decision} tone={candidate.finalizedAs === "hired" ? "emerald" : "red"} />
+                        ) : null}
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span className="text-sm text-[color:var(--app-text)] truncate">
-                        {candidate.departmentName || candidate.roleDepartment || "Not assigned"}
-                      </span>
+                      <div className="space-y-1">
+                        <p className="truncate text-sm text-[color:var(--app-text)]">
+                          {candidate.roleLabel || candidate.positionAppliedFor || "Role not set"}
+                        </p>
+                        <p className="truncate text-xs text-[color:var(--app-muted)]">
+                          {candidate.departmentName || candidate.roleDepartment || "Department not assigned"}
+                        </p>
+                      </div>
                     </td>
                     <td className={tableCellClassName}>
                       <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
@@ -234,14 +253,14 @@ export function CandidateWorkspaceTable({
                             target="_blank"
                             rel="noreferrer"
                             className={actionIconPillClassName}
-                            title="Open CV"
-                            aria-label="Open CV"
+                            title="Open resume"
+                            aria-label="Open resume"
                           >
                             <FileText className="h-4 w-4" />
                           </a>
                         ) : null}
                         <Link href={`/candidates/${candidate.id}` as Route} className={actionPillSecondaryClassName}>
-                          Profile
+                          Open profile
                         </Link>
                         {permissions.includes("manage_candidates") && rejectConfirming === candidate.id ? (
                           <>
@@ -279,7 +298,7 @@ export function CandidateWorkspaceTable({
                               <X className="h-3.5 w-3.5" />
                             </button>
                           </>
-                        ) : permissions.includes("manage_candidates") ? (
+                        ) : canManageCandidates ? (
                           <button
                             type="button"
                             onClick={() => setRejectConfirming(candidate.id)}

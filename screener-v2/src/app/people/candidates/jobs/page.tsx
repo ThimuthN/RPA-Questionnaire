@@ -8,6 +8,7 @@ import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { requirePageSession } from "@/lib/auth/guards";
 import { listJobPostings } from "@/lib/db/jobs";
+import type { JobPostingListItem } from "@/lib/jobs/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,13 @@ function NoticeBanner({
       : "rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger)]/10 p-4 text-sm text-white";
 
   return <div className={className}>{children}</div>;
+}
+
+function nextJobAction(job: JobPostingListItem) {
+  if (!job.isPublished) return "Publish job";
+  if (!job.isOpen) return "Open applications";
+  if (job.applicantCount > 0) return "Review applicants";
+  return "Wait for applicants";
 }
 
 export default async function CandidateJobsPage({
@@ -43,7 +51,7 @@ export default async function CandidateJobsPage({
       tone="page"
       eyebrow="Hiring"
       title="Jobs"
-      subtitle="Manage openings, publishing state, and applicant intake."
+      subtitle="Manage job openings, public availability, and applicant intake."
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />
@@ -68,13 +76,16 @@ export default async function CandidateJobsPage({
 
         <div className="space-y-4">
           <h2 className="text-2xl text-[color:var(--app-heading)]">Jobs</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">
+            Keep openings publishable, confirm whether applications are open, and review the applicant queue by job.
+          </p>
           <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Jobs</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Total jobs</p>
             <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
           </div>
           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Published</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Published jobs</p>
             <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.filter((job) => job.isPublished).length}</p>
           </div>
           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
@@ -89,23 +100,18 @@ export default async function CandidateJobsPage({
           columns={[
             {
               header: "Job",
-              width: "w-[28%]",
+              width: "w-[26%]",
               render: (job) => (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
-                  <p className="text-xs text-[color:var(--app-muted)]">{job.summary}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">{job.roleLabel || "No role linked"}</p>
                 </div>
               )
             },
             {
-              header: "Role",
-              width: "w-[16%]",
-              render: (job) =>
-                job.roleLabel ? (
-                  <p className="text-sm text-[color:var(--app-text)]">{job.roleLabel}</p>
-                ) : (
-                  <StatusPill label="No role" tone="amber" />
-                )
+              header: "Summary",
+              width: "w-[18%]",
+              render: (job) => <p className="text-sm text-[color:var(--app-text)]">{job.summary}</p>
             },
             {
               header: "Applicants",
@@ -133,42 +139,62 @@ export default async function CandidateJobsPage({
               )
             },
             {
+              header: "Next action",
+              width: "w-[14%]",
+              render: (job) => <p className="text-sm font-medium text-[color:var(--app-heading)]">{nextJobAction(job)}</p>
+            },
+            {
               header: "Updated",
-              width: "w-[12%]",
+              width: "w-[10%]",
               render: (job) => <p className="text-sm text-[color:var(--app-muted)]">{new Date(job.updatedAt).toLocaleDateString()}</p>
             },
             {
               header: "Actions",
-              width: "w-[14%]",
+              width: "w-[18%]",
               render: (job) => {
-                const hasActions = canEditJob;
-                if (!hasActions) {
-                  return <p className="text-xs text-[color:var(--app-muted)]">No actions</p>;
-                }
                 return (
                   <div className="flex flex-wrap justify-end gap-2">
-                    <form action={`/api/jobs/${job.id}`} method="post">
-                      <input type="hidden" name="action" value="toggle_published" />
-                      <Button type="submit" variant="secondary">
-                        {job.isPublished ? "Unpublish" : "Publish"}
-                      </Button>
-                    </form>
-                    <form action={`/api/jobs/${job.id}`} method="post">
-                      <input type="hidden" name="action" value="toggle_open" />
-                      <Button type="submit" variant="secondary">
-                        {job.isOpen ? "Close" : "Open"}
-                      </Button>
-                    </form>
-                    <Link href={`/people/candidates/jobs/${job.id}` as Route}>
-                      <Button>Open</Button>
+                    <Link
+                      href={{
+                        pathname: "/people/candidates/applicants",
+                        query: { jobId: job.id }
+                      }}
+                    >
+                      <Button type="button">Review applicants</Button>
                     </Link>
+                    {job.isPublished ? (
+                      <Link href={`/jobs/${job.slug}` as Route}>
+                        <Button type="button" variant="secondary">Public page</Button>
+                      </Link>
+                    ) : null}
+                    {canEditJob ? (
+                      <>
+                        <form action={`/api/jobs/${job.id}`} method="post">
+                          <input type="hidden" name="action" value="toggle_published" />
+                          <Button type="submit" variant="ghost">
+                            {job.isPublished ? "Unpublish" : "Publish"}
+                          </Button>
+                        </form>
+                        <form action={`/api/jobs/${job.id}`} method="post">
+                          <input type="hidden" name="action" value="toggle_open" />
+                          <Button type="submit" variant="ghost">
+                            {job.isOpen ? "Close" : "Open"}
+                          </Button>
+                        </form>
+                      </>
+                    ) : null}
+                    {canEditJob ? (
+                      <Link href={`/people/candidates/jobs/${job.id}` as Route}>
+                        <Button type="button" variant="secondary">Edit job</Button>
+                      </Link>
+                    ) : null}
                   </div>
                 );
               }
             }
           ]}
           data={jobs}
-          emptyMessage="Create the first opening to publish a public application page."
+          emptyMessage="Create your first job opening."
         />
         </div>
       </div>

@@ -80,7 +80,7 @@ export default async function CandidateApplicantsPage({
       tone="page"
       eyebrow="Hiring"
       title="Applicants"
-      subtitle="Review new applications before moving candidates into the hiring pipeline."
+      subtitle="Review people who applied to published jobs before moving them into the candidate pipeline."
       utility={<PeopleViewSwitch current="candidates" />}
     >
       <div className="space-y-5">
@@ -88,6 +88,13 @@ export default async function CandidateApplicantsPage({
 
         {params.updated ? <NoticeBanner tone="success">Application updated.</NoticeBanner> : null}
         {params.error ? <NoticeBanner tone="error">{params.error}</NoticeBanner> : null}
+
+        <div className="space-y-1">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Application queue</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">
+            Applicants are people attached to a submitted job application. Move only qualified applications into the candidate pipeline.
+          </p>
+        </div>
 
         <div className="grid gap-3 md:grid-cols-4">
           <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
@@ -113,7 +120,7 @@ export default async function CandidateApplicantsPage({
           <input
             name="q"
             defaultValue={params.q ?? ""}
-            placeholder="Search name, email, or job"
+            placeholder="Search applicant, email, or job"
             className={filterFieldClassName()}
           />
           <select name="jobId" defaultValue={params.jobId ?? ""} className={filterFieldClassName()}>
@@ -125,7 +132,7 @@ export default async function CandidateApplicantsPage({
             ))}
           </select>
           <select name="status" defaultValue={params.status ?? ""} className={filterFieldClassName()}>
-            <option value="">Active statuses</option>
+            <option value="">Open application statuses</option>
             <option value="submitted">Submitted</option>
             <option value="under_review">Under review</option>
             <option value="closed">Closed</option>
@@ -141,7 +148,7 @@ export default async function CandidateApplicantsPage({
         {page.rows.length === 0 ? (
           <StagePanel className="space-y-3">
             <h2 className="text-2xl text-[color:var(--app-heading)]">No applicants in this view</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Published jobs will start filling this queue when candidates apply.</p>
+            <p className="text-sm text-[color:var(--app-muted)]">Published jobs will fill this queue when candidates apply.</p>
           </StagePanel>
         ) : (
           <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
@@ -155,7 +162,7 @@ export default async function CandidateApplicantsPage({
                     <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
                     <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
                     <th scope="col" className="w-[10%] px-4 py-3 font-medium">Owner</th>
-                    <th scope="col" className="w-[14%] px-4 py-3 font-medium text-right">Review</th>
+                    <th scope="col" className="w-[14%] px-4 py-3 font-medium text-right">Next step</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -185,7 +192,7 @@ export default async function CandidateApplicantsPage({
                         <div className="flex items-center justify-end gap-2">
                           <Link href={`/people/candidates/applicants/${row.id}` as Route}>
                             <Button type="button" className="px-3 py-2 text-xs">
-                              Open review
+                              Review application
                             </Button>
                           </Link>
                         </div>

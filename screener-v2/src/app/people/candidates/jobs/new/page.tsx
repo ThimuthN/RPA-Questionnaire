@@ -28,7 +28,7 @@ export default async function NewJobPostingPage({
       tone="page"
       eyebrow="Hiring"
       title="New job"
-      subtitle="Create a job opening for publication."
+      subtitle="Create a job opening for your public careers page."
       utility={
         <div className="flex flex-wrap items-center gap-2">
           <PeopleViewSwitch current="candidates" />
