@@ -152,10 +152,11 @@ export default async function CandidateDetailPage({
     : null;
   const activityFeed = buildCandidateActivityFeed(candidate);
 
-  // Fetch assignments and users for the active application
-  const [assignments, users] = activeApplication
+  // Fetch assignments and users for the active application (or first if none active)
+  const targetApplication = activeApplication || candidate.applications[0] || null;
+  const [assignments, users] = targetApplication
     ? await Promise.all([
-        getApplicationAssignments(activeApplication.id),
+        getApplicationAssignments(targetApplication.id),
         prisma.user.findMany({
           where: { isActive: true },
           select: { id: true, name: true, email: true },
@@ -255,15 +256,18 @@ export default async function CandidateDetailPage({
               </div>
               <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Pipeline stage</p>
-                <p className="text-sm text-[color:var(--app-brand)] mt-1">{candidate.currentFocus || "No active stage yet"}</p>
+                <p className="text-sm text-[color:var(--app-brand)] mt-1">{candidate.currentFocus || (candidate.stage === "applicant" ? "In applicant review" : "Awaiting next action")}</p>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Assessment evidence</p>
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Assessment</p>
                 <p className="text-lg text-[color:var(--app-heading)] mt-1">{latestAssessmentState.title}</p>
                 <p className="text-xs text-[color:var(--app-muted)] mt-1">{latestAssessmentState.detail}</p>
+                {!latestAssessment(candidate) && candidate.stage !== "applicant" && (
+                  <p className="text-xs text-amber-400 mt-2">Assign when ready</p>
+                )}
               </div>
               <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
@@ -300,7 +304,7 @@ export default async function CandidateDetailPage({
           </div>
         </StagePanel>
 
-        <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-7 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
@@ -317,16 +321,38 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <div className="space-y-6 xl:pt-1">
+          <div className="space-y-6">
+            {targetApplication && (
+              <ResponsibleTeamCard
+                applicationId={targetApplication.id}
+                assignments={assignments}
+                users={users}
+                canEdit={session.permissions.includes("manage_candidates")}
+              />
+            )}
+
+            {!targetApplication && candidate.applications.length === 0 && (
+              <section className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">Team members assigned to this candidate.</p>
+                </div>
+                <div className="rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                  <p className="font-medium">No active application</p>
+                  <p className="text-xs opacity-90 mt-1">This is an imported candidate record with no linked job application yet.</p>
+                </div>
+              </section>
+            )}
+
             <section className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-xl text-[color:var(--app-heading)]">Applications</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Keep the linked job history here.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">Linked job applications.</p>
               </div>
 
               <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 {candidate.applications.length === 0 ? (
-                  <p className="text-sm text-[color:var(--app-muted)]">No job applications recorded yet.</p>
+                  <p className="text-sm text-[color:var(--app-muted)]">No applications recorded. Imported candidate — no linked application yet.</p>
                 ) : (
                   candidate.applications.map((application) => (
                     <div
@@ -354,15 +380,6 @@ export default async function CandidateDetailPage({
                 )}
               </div>
             </section>
-
-            {activeApplication && (
-              <ResponsibleTeamCard
-                applicationId={activeApplication.id}
-                assignments={assignments}
-                users={users}
-                canEdit={session.permissions.includes("manage_candidates")}
-              />
-            )}
 
             <section id="resume" className="space-y-4">
               <div className="space-y-1">
