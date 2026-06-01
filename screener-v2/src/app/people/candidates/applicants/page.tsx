@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
+import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { requirePageSession } from "@/lib/auth/guards";
 import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { listApplicantWorkspacePage } from "@/lib/db/jobs";
@@ -44,6 +46,15 @@ function NoticeBanner({
   return <div className={messageTone(tone)}>{children}</div>;
 }
 
+function buildHref(params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
+  const next = new URLSearchParams(params.toString());
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!value) next.delete(key);
+    else next.set(key, value);
+  }
+  return `/people/candidates/applicants${next.toString() ? `?${next.toString()}` : ""}` as Route;
+}
+
 export default async function CandidateApplicantsPage({
   searchParams
 }: {
@@ -61,6 +72,7 @@ export default async function CandidateApplicantsPage({
   if (!session.permissions.includes("view_candidates")) {
     redirect("/people");
   }
+  const hasFilters = Boolean(params.q?.trim() || params.jobId?.trim() || params.status?.trim());
 
   const isGlobalViewCandidates = await hasGlobalPermission(session.userId!, "view_candidates");
   const effectiveDeptId = isGlobalViewCandidates ? undefined : session.departmentId;
@@ -142,7 +154,7 @@ export default async function CandidateApplicantsPage({
             ))}
           </select>
           <select name="status" defaultValue={params.status ?? ""} className={filterFieldClassName()}>
-            <option value="">Open application statuses</option>
+            <option value="">All application statuses</option>
             <option value="submitted">Submitted</option>
             <option value="under_review">Under review</option>
             <option value="closed">Closed</option>
@@ -155,13 +167,25 @@ export default async function CandidateApplicantsPage({
           </Link>
         </form>
 
-        {page.rows.length === 0 ? (
+        {page.total === 0 ? (
           <StagePanel className="space-y-3">
             <h2 className="text-2xl text-[color:var(--app-heading)]">No applicants in this view</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Published jobs will fill this queue when candidates apply.</p>
+            <p className="text-sm text-[color:var(--app-muted)]">
+              {hasFilters
+                ? "No applicants match the current filters. Clear the filters or choose a different job or status."
+                : "Published jobs will fill this queue when candidates apply."}
+            </p>
           </StagePanel>
         ) : (
-          <ApplicantsTable rows={page.rows} users={users} />
+          <>
+            <ApplicantsTable rows={page.rows} users={users} />
+            <PaginationBar
+              page={page.page}
+              pageSize={page.pageSize}
+              total={page.total}
+              makeHref={(nextPage) => buildHref(query, { page: String(nextPage) })}
+            />
+          </>
         )}
       </div>
     </SceneShell>

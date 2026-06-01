@@ -1,4 +1,6 @@
+import type { Route } from "next";
 import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
+import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { getDepartment } from "@/lib/db/departments";
 import { listApplicantWorkspacePage } from "@/lib/db/jobs";
 import type { CandidateApplicationStatus } from "@/lib/jobs/types";
@@ -19,6 +21,15 @@ function filterFieldClassName() {
   return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
 }
 
+function buildHref(departmentId: string, params: URLSearchParams, overrides: Record<string, string | undefined>): Route {
+  const next = new URLSearchParams(params.toString());
+  for (const [key, value] of Object.entries(overrides)) {
+    if (!value) next.delete(key);
+    else next.set(key, value);
+  }
+  return `/departments/${departmentId}/applicants${next.toString() ? `?${next.toString()}` : ""}` as Route;
+}
+
 export default async function DepartmentApplicantsPage({
   params,
   searchParams
@@ -28,6 +39,11 @@ export default async function DepartmentApplicantsPage({
 }) {
   const { id } = await params;
   const pageState = await searchParams;
+  const query = new URLSearchParams(
+    Object.entries(pageState)
+      .filter(([, value]) => typeof value === "string" && value.length > 0)
+      .map(([key, value]) => [key, value as string])
+  );
 
   const session = await requirePageSession(`/departments/${id}/applicants`);
   const permResult = await requirePermissionForDepartment(session, "view_candidates", id);
@@ -58,6 +74,7 @@ export default async function DepartmentApplicantsPage({
   if (!department) {
     notFound();
   }
+  const hasFilters = Boolean(pageState.q?.trim() || pageState.jobId?.trim() || pageState.status?.trim());
 
   return (
     <div className="space-y-4">
@@ -85,19 +102,29 @@ export default async function DepartmentApplicantsPage({
           ))}
         </select>
         <select name="status" defaultValue={pageState.status ?? ""} className={filterFieldClassName()}>
-          <option value="">Open application statuses</option>
+          <option value="">All application statuses</option>
           <option value="submitted">Submitted</option>
           <option value="under_review">Under review</option>
           <option value="closed">Closed</option>
         </select>
       </form>
 
-      {page.rows.length === 0 ? (
+      {page.total === 0 ? (
         <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center text-sm text-[color:var(--app-muted)]">
-          No applicants in this department yet.
+          {hasFilters
+            ? "No applicants match the current department filters."
+            : "No applicants in this department yet."}
         </div>
       ) : (
-        <ApplicantsTable rows={page.rows} users={users} />
+        <>
+          <ApplicantsTable rows={page.rows} users={users} />
+          <PaginationBar
+            page={page.page}
+            pageSize={page.pageSize}
+            total={page.total}
+            makeHref={(nextPage) => buildHref(id, query, { page: String(nextPage) })}
+          />
+        </>
       )}
     </div>
   );

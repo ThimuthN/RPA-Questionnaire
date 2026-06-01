@@ -22,7 +22,7 @@ This repo is not handoff-safe today. Tracked `.env.backup` and `.env.vercel` rem
 | Users/access | Yellow | Department scoping and permission inheritance exist, but role/designation ownership is still mixed and one permission is misleadingly unused. |
 | Job designations | Yellow | Department-scoped designation records exist, but they still carry access permissions, which keeps business designation and access role concerns coupled. |
 | Jobs | Yellow | Jobs can be created, published, and tied to applications, but list pages are still basic and not clearly hardened for scale. |
-| Applicants | Red | Applicant review exists, but the workspace query still fetches broadly and paginates/searches in application memory. |
+| Applicants | Yellow | Applicant review now uses DB-side search, pagination, counts, and department/job/status filters, but bulk assignment still loads all active users and text search is still plain `contains` without dedicated search indexes. |
 | Candidates | Yellow | Candidate list/detail flow is real, but some filtering and sorting still happen after page fetch, so totals and page semantics can drift. |
 | Responsible team | Yellow | Application-based responsible-team assignment exists, but candidates without applications cannot use it and the profile loads all active users instead of department-limited choices. |
 | Assessments/evidence | Yellow | Assessment creation, invites, results, and milestone evidence exist, but department-level assessment review is not a real workspace yet. |
@@ -99,17 +99,48 @@ Gaps:
 
 ### 5. Applicants
 
-Status: Red
+Status: Yellow
 
 Facts:
 
 - Applicant review and promotion flow exists.
 - Applications are first-class records tied to both candidate and job posting.
+- `listApplicantWorkspacePage` now applies department, job, status, and free-text search in the Prisma `where` clause.
+- Applicant pagination is now DB-side with bounded `skip`/`take`, a default page size of 12, and a hard cap of 50.
+- Total count and summary counts now come from Prisma `count()` calls instead of JS counting over the full result set.
+- The applicant list query now selects only list fields needed for the table and avoids loading full job descriptions, resumes, notes, milestones, or assessment payloads.
 
-Gaps:
+Before:
 
-- `listApplicantWorkspacePage` fetches matching application rows, then applies free-text search, pagination, and summary counts in memory.
-- That is directly against the no fetch-all list-page standard for a real ATS.
+- The workspace fetched matching application rows first.
+- Free-text search happened in memory.
+- Pagination happened in memory.
+- Summary counts happened in memory.
+- Job options were not department-scoped.
+
+After:
+
+- Search is DB-side for candidate name, candidate email, owner text, job title, and role label.
+- Pagination is DB-side and clamped to a bounded page window.
+- Summary counts are DB-side.
+- Department applicant job options are department-scoped.
+- Both applicant list pages now expose pagination controls and clearer filtered-empty states.
+
+Remaining risks:
+
+- Applicant bulk team assignment still fetches all active users for the modal instead of a narrower department-aware user set.
+- Free-text search still uses case-insensitive `contains` matching, which is functionally correct but not ideal for larger datasets.
+
+Index review:
+
+- Existing helpful indexes already present:
+  - `CandidateApplication(jobPostingId, status, createdAt)`
+  - `CandidateApplication(candidateId, createdAt)`
+  - `JobPosting(roleId)`
+  - `RoleCatalog(departmentId)`
+- No migration was added in this batch.
+- Recommended later if applicant volume grows materially:
+  - add search-oriented indexes for candidate name/email and job title lookup, likely trigram or full-text depending on the final search direction.
 
 ### 6. Candidates
 
@@ -215,7 +246,7 @@ Gaps:
 ## Recommended next order
 
 1. Remove tracked env files from Git after credential rotation, then verify staging and Blob isolation explicitly.
-2. Fix the applicant workspace query shape so filtering, search, totals, and pagination are DB-driven.
+2. Repair the candidate import dry-run path so imported candidates always land with valid `CandidateApplication` records.
 3. Decide whether `RoleCatalog` will continue to own both designations and access roles; if yes, finish the permission wording cleanup and align `hire_candidate` usage.
 4. Decide whether the department assessments tab becomes a real evidence workspace or should be removed until it is real.
-5. If legacy candidate data must be brought over, design a dry-run-only import path that always creates `CandidateApplication` records instead of orphan candidate records.
+5. Narrow applicant bulk-assignment user loading if the active user base starts growing materially.

@@ -111,6 +111,38 @@ function mapApplication(row: {
   };
 }
 
+function buildApplicantWorkspaceWhere(filters: {
+  q?: string;
+  jobId?: string;
+  status?: CandidateApplicationStatus;
+  departmentId?: string | null;
+}): Prisma.CandidateApplicationWhereInput {
+  const query = filters.q?.trim();
+
+  return {
+    ...(filters.jobId ? { jobPostingId: filters.jobId } : {}),
+    ...(filters.departmentId ? { jobPosting: { role: { departmentId: filters.departmentId } } } : {}),
+    ...(filters.status
+      ? { status: filters.status }
+      : {
+          status: {
+            in: ["submitted", "under_review"] satisfies CandidateApplicationStatus[]
+          }
+        }),
+    ...(query
+      ? {
+          OR: [
+            { candidate: { fullName: { contains: query, mode: "insensitive" } } },
+            { candidate: { email: { contains: query, mode: "insensitive" } } },
+            { candidate: { hrOwner: { contains: query, mode: "insensitive" } } },
+            { jobPosting: { title: { contains: query, mode: "insensitive" } } },
+            { jobPosting: { role: { label: { contains: query, mode: "insensitive" } } } }
+          ]
+        }
+      : {})
+  };
+}
+
 type ListPublicJobPostingsFilters = {
   q?: string;
   department?: string;
@@ -455,68 +487,80 @@ export async function listApplicantWorkspacePage(filters: {
   page?: number;
   pageSize?: number;
 } = {}) {
-  const page = Math.max(1, Number(filters.page ?? 1));
+  const requestedPage = Math.max(1, Number(filters.page ?? 1));
   const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
-  const query = filters.q?.trim().toLowerCase() ?? "";
+  const where = buildApplicantWorkspaceWhere(filters);
+  const total = await prisma.candidateApplication.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * pageSize;
 
-  const rows = await prisma.candidateApplication.findMany({
-    where: {
-      ...(filters.jobId ? { jobPostingId: filters.jobId } : {}),
-      ...(filters.departmentId ? { candidate: { departmentId: filters.departmentId } } : {}),
-      ...(filters.status
-        ? { status: filters.status }
-        : {
-            status: {
-              in: ["submitted", "under_review"]
-            }
-          })
-    },
-    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-    include: {
-      candidate: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
-          hrOwner: true,
-          _count: {
-            select: {
-              resumes: true
+  const [rows, resumeMissing, submitted, underReview, jobOptionRows] = await Promise.all([
+    prisma.candidateApplication.findMany({
+      where,
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      skip,
+      take: pageSize,
+      select: {
+        id: true,
+        candidateId: true,
+        status: true,
+        coverNote: true,
+        createdAt: true,
+        updatedAt: true,
+        candidate: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            hrOwner: true,
+            _count: {
+              select: {
+                resumes: true
+              }
             }
           }
-        }
-      },
-      jobPosting: {
-        include: {
-          role: {
-            select: {
-              label: true,
-              department: true
+        },
+        jobPosting: {
+          select: {
+            id: true,
+            slug: true,
+            title: true,
+            role: {
+              select: {
+                label: true,
+                department: true
+              }
             }
           }
         }
       }
-    }
-  });
-
-  const mapped = rows.map(mapApplication).filter((row) => {
-    if (!query) return true;
-
-    const haystack = [row.candidateName, row.candidateEmail, row.jobTitle, row.roleLabel || "", row.candidateOwner || ""]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
-  });
-
-  const start = (page - 1) * pageSize;
-  const paged = mapped.slice(start, start + pageSize);
-  const jobOptionRows = await prisma.jobPosting.findMany({
-    select: { id: true, title: true }
-  });
+    }),
+    prisma.candidateApplication.count({
+      where: {
+        AND: [where, { candidate: { resumes: { none: {} } } }]
+      }
+    }),
+    prisma.candidateApplication.count({
+      where: {
+        AND: [where, { status: "submitted" }]
+      }
+    }),
+    prisma.candidateApplication.count({
+      where: {
+        AND: [where, { status: "under_review" }]
+      }
+    }),
+    prisma.jobPosting.findMany({
+      where: filters.departmentId ? { role: { departmentId: filters.departmentId } } : {},
+      select: { id: true, title: true },
+      orderBy: [{ title: "asc" }]
+    })
+  ]);
 
   return {
-    rows: paged,
-    total: mapped.length,
+    rows: rows.map(mapApplication),
+    total,
     page,
     pageSize,
     jobOptions: jobOptionRows.map((job) => ({
@@ -524,10 +568,10 @@ export async function listApplicantWorkspacePage(filters: {
       label: job.title
     })),
     summary: {
-      total: mapped.length,
-      resumeMissing: mapped.filter((row) => !row.hasResume).length,
-      submitted: mapped.filter((row) => row.status === "submitted").length,
-      underReview: mapped.filter((row) => row.status === "under_review").length
+      total,
+      resumeMissing,
+      submitted,
+      underReview
     }
   };
 }
