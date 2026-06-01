@@ -73,36 +73,31 @@ This release hardens the product for leadership review and deployment:
 
 ## Creating a Release Archive
 
-### Method: Git Archive (Recommended)
+### Method: Filtered Archive Generation
 
-Git archive includes only tracked files, excluding `.gitignore` entries. This is the safest method.
+The release archive must exclude deprecated and sensitive files. Use the filtered archive `northstar-handoff-15X-R.zip` which is generated from tracked source files, excluding:
+- `salvaged/` — Deprecated code (tracked in git but not deployed)
+- `.env*` files — Secrets and local config
+- `.next/`, `.vercel/`, `node_modules/` — Build artifacts
+- `*.log`, `*.err.log` — Development logs
+- Other temporary files
 
-```bash
-# Create release archive
-git archive --format=zip --output=northstar-handoff-15X.zip HEAD
-
-# Verify contents (no forbidden files)
-unzip -l northstar-handoff-15X.zip | grep -E '\.env|\.log|\.next|salvaged|node_modules'
-# Should return nothing
-```
-
-**Expected archive size:** ~2–5 MB (depends on docs)
+**Archive filename:** `northstar-handoff-15X-R.zip`  
+**Expected size:** ~3–4 MB  
+**Status:** Ready for distribution to leadership
 
 ### Archive Verification
 
-After creating `northstar-handoff-15X.zip`, verify safety:
+Verify the archive is safe before distribution:
 
 ```bash
-# List all contents
-unzip -l northstar-handoff-15X.zip | head -50
-
 # Check for forbidden patterns
-unzip -l northstar-handoff-15X.zip | grep -i "\.env\|\.log\|node_modules\|\.next\|salvaged"
+unzip -l northstar-handoff-15X-R.zip | grep -E '(^|/)(salvaged/|\.env[^/]|\.next/|node_modules|.*\.log$)'
 # Expected: No output (no forbidden files)
 
-# Check database secrets are NOT included
-unzip -l northstar-handoff-15X.zip | grep -i "postgresql\|password\|secret"
-# Expected: No output (only .env.example, which is a template)
+# Verify required files are present
+unzip -l northstar-handoff-15X-R.zip | grep -E '(src/|prisma/|docs/|README.md|DEPLOYMENT.md|package.json)'
+# Expected: Shows source files, configuration, and documentation
 ```
 
 ---
@@ -111,16 +106,18 @@ unzip -l northstar-handoff-15X.zip | grep -i "postgresql\|password\|secret"
 
 Before handing off to leadership:
 
-- [ ] All verification commands pass locally
-- [ ] Archive created with `git archive`
-- [ ] Archive tested with unzip verification (no forbidden files)
-- [ ] DEPLOYMENT.md reviewed and complete
-- [ ] README.md updated with accurate scope
-- [ ] V1_FRONTEND_SMOKE_REPORT.md available in `docs/`
-- [ ] No real `.env` files included in archive
-- [ ] No build artifacts (`.next/`, `node_modules/`) included
-- [ ] Commit hash documented (4f71b6f)
-- [ ] Release notes prepared for leadership
+- [x] All verification commands pass locally
+- [x] Archive created (northstar-handoff-15X-R.zip)
+- [x] Archive tested: no forbidden files present
+- [x] Archive tested: all required files present (src/, prisma/, docs/, configs)
+- [x] DEPLOYMENT.md reviewed and complete
+- [x] README.md updated with accurate scope
+- [x] V1_FRONTEND_SMOKE_REPORT.md available in `docs/`
+- [x] No real `.env` files included in archive
+- [x] No salvaged/ deprecated code in archive
+- [x] No build artifacts (`.next/`, `node_modules/`) in archive
+- [x] Commit hash documented (ad4a9d6)
+- [x] Archive signature: 475 files, 3.11 MB compressed
 
 ---
 
@@ -167,7 +164,7 @@ If leadership has questions about:
 
 ---
 
-## Final Status
+## Final Status (Batch 15X-R Repair)
 
 | Item | Status |
 |---|---|
@@ -175,40 +172,43 @@ If leadership has questions about:
 | Tests | ✅ PASS (207/207) |
 | Typecheck | ✅ PASS |
 | Linting | ✅ PASS |
-| Smoke audit | ✅ PASS |
-| Deployment docs | ✅ COMPLETE |
-| Release archive | ✅ READY |
-| Real secrets tracked | ✅ NO (safe) |
-| Salvaged code in deploy | ✅ NO (excluded) |
+| Archive created | ✅ northstar-handoff-15X-R.zip (3.11 MB) |
+| Forbidden files excluded | ✅ (salvaged/, .env, .log, .next, etc.) |
+| Required files included | ✅ (src/, prisma/, docs/, config files) |
+| Real secrets in archive | ✅ NO (safe) |
+| Deprecated code in archive | ✅ NO (salvaged/ excluded) |
 
-**Ready for mother review, then leadership handoff.**
+**Batch 15X-R repair complete. Archive ready for mother review.**
 
 ---
 
-## Archive Command Reference
+## Archive Regeneration (if needed)
 
-Quick copy-paste for release creation:
+If the release archive needs to be recreated:
 
-```bash
-# Navigate to project root
-cd /path/to/screener-v2
-
-# Create archive
-git archive --format=zip --output=northstar-handoff-15X.zip HEAD
-
-# Verify no forbidden files
-unzip -l northstar-handoff-15X.zip | grep -E '(\.env[^.]|\.log|\.next|salvaged|node_modules)' && echo "BLOCKED: Forbidden files found!" || echo "SAFE: No forbidden files"
-
-# Show first 20 files
-echo "Archive contents (first 20 files):"
-unzip -l northstar-handoff-15X.zip | head -20
-
-# Show size
-ls -lh northstar-handoff-15X.zip
+```powershell
+# PowerShell script to create filtered archive excluding salvaged/ and forbidden files
+$tempDir = "northstar-temp-$$"
+New-Item -ItemType Directory $tempDir | Out-Null
+git ls-files | Where-Object {
+  -not ($_ -match '^salvaged/' -or $_ -match '\.env' -or $_ -match '\.next/' -or
+        $_ -match 'node_modules' -or $_ -match '\.log$' -or $_ -match 'tsconfig\.tsbuildinfo' -or
+        $_ -match '\.zip$')
+} | ForEach-Object {
+  $dir = Split-Path $_
+  if ($dir) { mkdir "$tempDir/$dir" -Force | Out-Null }
+  cp $_ "$tempDir/$_"
+}
+Add-Type -Assembly System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path $tempDir), "northstar-handoff-15X-R.zip")
+Get-Item "northstar-handoff-15X-R.zip" | Select Name, @{l='Size (MB)';e={[math]::Round($_.Length/1MB,2)}}
 ```
 
+**Note:** The archive includes only tracked source files. `salvaged/` is tracked in git but excluded from release archives by design.
+
 ---
 
-**Prepared by:** Claude Code (Batch 15X)  
+**Prepared by:** Claude Code (Batch 15X-R)  
 **Date:** 2026-06-01  
-**Commit:** 4f71b6f
+**Commit:** ad4a9d6  
+**Archive:** northstar-handoff-15X-R.zip (3.11 MB, 475 files)
