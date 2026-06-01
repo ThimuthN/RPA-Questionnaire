@@ -72,6 +72,8 @@ model User {
   interviewPanels         InterviewPanelMember[]
   interviewFeedbacks      InterviewFeedback[]
   permissionOverrides     UserPermissionOverride[]
+  hiringAssignments       HiringAssignment[]    @relation("HiringAssignments")
+  assignedHiringAssignments HiringAssignment[]  @relation("HiringAssignmentsCreatedBy")
 
   @@index([departmentId])
   @@index([roleId])
@@ -534,10 +536,43 @@ model CandidateApplication {
   updatedAt    DateTime @updatedAt
   candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  assignments  HiringAssignment[]
 
   @@unique([candidateId, jobPostingId])
   @@index([candidateId, createdAt])
   @@index([jobPostingId, status, createdAt])
+}
+
+enum HiringAssignmentRole {
+  recruiter
+  hiring_manager
+  interviewer
+  reviewer
+  coordinator
+  approver
+}
+
+model HiringAssignment {
+  id              String                  @id @default(cuid())
+  applicationId   String
+  userId          String
+  assignmentRole  HiringAssignmentRole
+  isPrimary       Boolean                 @default(false)
+  active          Boolean                 @default(true)
+  assignedAt      DateTime                @default(now())
+  assignedById    String?
+  dueAt           DateTime?
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  application     CandidateApplication   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user            User                    @relation("HiringAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy      User?                   @relation("HiringAssignmentsCreatedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([applicationId, userId, assignmentRole, active])
+  @@index([applicationId, active])
+  @@index([applicationId, assignmentRole, active])
+  @@index([userId, active])
+  @@index([active])
 }
 
 model Employee {
