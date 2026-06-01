@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { prisma } from "@/lib/db/prisma";
+import { cuidLike } from "@/lib/tokens/token-service";
 
 const createMilestoneSchema = z.object({
   type: z.enum(["advanced_review", "interview"]),
@@ -69,6 +70,7 @@ export async function POST(
 
     const newMilestone = await prisma.candidateMilestone.create({
       data: {
+        id: cuidLike(),
         candidateId,
         type: body.type,
         title: body.title || getDefaultMilestoneTitle(body.type),
