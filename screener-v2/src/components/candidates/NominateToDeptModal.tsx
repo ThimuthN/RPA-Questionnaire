@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
@@ -41,23 +41,7 @@ export function NominateToDeptModal({
     nominationNote: ""
   });
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchDepartments();
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (formData.departmentId) {
-      const deptRoles = roles.filter((r) => r.departmentId === formData.departmentId);
-      setFormData((prev) => ({
-        ...prev,
-        roleId: deptRoles.length > 0 ? deptRoles[0].id : ""
-      }));
-    }
-  }, [formData.departmentId, roles]);
-
-  const fetchDepartments = async () => {
+  const fetchDepartments = useCallback(async () => {
     setIsLoadingDepts(true);
     try {
       const response = await fetch("/api/departments");
@@ -76,7 +60,23 @@ export function NominateToDeptModal({
     } finally {
       setIsLoadingDepts(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDepartments();
+    }
+  }, [isOpen, fetchDepartments]);
+
+  useEffect(() => {
+    if (formData.departmentId) {
+      const deptRoles = roles.filter((r) => r.departmentId === formData.departmentId);
+      setFormData((prev) => ({
+        ...prev,
+        roleId: deptRoles.length > 0 ? deptRoles[0].id : ""
+      }));
+    }
+  }, [formData.departmentId, roles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
