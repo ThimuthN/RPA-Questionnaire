@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { getResult } from "@/lib/db/repositories";
 
 export async function GET(
@@ -9,6 +9,11 @@ export async function GET(
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const perm = requirePermission(auth.session, "view_results");
+  if (!perm.ok) {
+    return perm.response;
   }
 
   const { attemptId } = await context.params;

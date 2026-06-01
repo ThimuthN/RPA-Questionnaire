@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -10,6 +10,7 @@ import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
+import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { getApplicantReviewDetail } from "@/lib/db/jobs";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
 
@@ -51,6 +52,15 @@ export default async function ApplicantReviewPage({
     notFound();
   }
 
+  if (!session.permissions.includes("view_candidates")) {
+    redirect("/people/candidates/applicants");
+  }
+
+  const canViewApplication = await canUsePermissionForDepartment(session, "view_candidates", detail.candidate.departmentId);
+  if (!canViewApplication) {
+    redirect("/people/candidates/applicants");
+  }
+
   const previewUrl = detail.latestResume
     ? `/api/candidates/${detail.candidate.id}/resume/file?storageKey=${encodeURIComponent(detail.latestResume.storageKey)}`
     : null;
@@ -58,8 +68,8 @@ export default async function ApplicantReviewPage({
     ? `/api/candidates/${detail.candidate.id}/resume/file?storageKey=${encodeURIComponent(detail.latestResume.storageKey)}&download=1`
     : null;
   const returnTo = `/people/candidates/applicants/${detail.id}` as Route;
-  const canManageApplications = session.permissions.includes("manage_candidates");
-  const canMoveToPipeline = session.permissions.includes("promote_candidate");
+  const canManageApplications = await canUsePermissionForDepartment(session, "manage_candidates", detail.candidate.departmentId);
+  const canMoveToPipeline = await canUsePermissionForDepartment(session, "promote_candidate", detail.candidate.departmentId) || await canUsePermissionForDepartment(session, "manage_candidates", detail.candidate.departmentId);
 
   return (
     <SceneShell

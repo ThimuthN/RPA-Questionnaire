@@ -20,6 +20,11 @@ type JobPostingRow = {
   screenerPresetId: string | null;
   summary: string;
   description: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  teamSize: number | null;
+  techStack: string | null;
+  remotePolicy: string | null;
   isPublished: boolean;
   isOpen: boolean;
   createdAt: Date;
@@ -54,6 +59,11 @@ function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     screenerPresetLabel: row.screenerPreset?.label ?? undefined,
     summary: row.summary,
     description: row.description,
+    salaryMin: row.salaryMin ?? undefined,
+    salaryMax: row.salaryMax ?? undefined,
+    teamSize: row.teamSize ?? undefined,
+    techStack: row.techStack ?? undefined,
+    remotePolicy: row.remotePolicy ?? undefined,
     isPublished: row.isPublished,
     isOpen: row.isOpen,
     createdAt: row.createdAt.toISOString(),
@@ -436,6 +446,7 @@ export async function listApplicantWorkspacePage(filters: {
   q?: string;
   jobId?: string;
   status?: CandidateApplicationStatus;
+  departmentId?: string | null;
   page?: number;
   pageSize?: number;
 } = {}) {
@@ -446,6 +457,7 @@ export async function listApplicantWorkspacePage(filters: {
   const rows = await prisma.candidateApplication.findMany({
     where: {
       ...(filters.jobId ? { jobPostingId: filters.jobId } : {}),
+      ...(filters.departmentId ? { candidate: { departmentId: filters.departmentId } } : {}),
       ...(filters.status
         ? { status: filters.status }
         : {

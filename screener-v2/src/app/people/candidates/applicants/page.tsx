@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -7,6 +8,7 @@ import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { listApplicantWorkspacePage } from "@/lib/db/jobs";
 import { candidateApplicationStatusLabels, type CandidateApplicationStatus } from "@/lib/jobs/types";
 
@@ -61,7 +63,14 @@ export default async function CandidateApplicantsPage({
       .map(([key, value]) => [key, value as string])
   );
   const nextPath = `/people/candidates/applicants${query.toString() ? `?${query.toString()}` : ""}`;
-  await requirePageSession(nextPath);
+  const session = await requirePageSession(nextPath);
+
+  if (!session.permissions.includes("view_candidates")) {
+    redirect("/people");
+  }
+
+  const isGlobalViewCandidates = await hasGlobalPermission(session.userId!, "view_candidates");
+  const effectiveDeptId = isGlobalViewCandidates ? undefined : session.departmentId;
 
   const page = await listApplicantWorkspacePage({
     q: params.q?.trim() || undefined,
@@ -70,6 +79,7 @@ export default async function CandidateApplicantsPage({
       params.status === "submitted" || params.status === "under_review" || params.status === "closed"
         ? (params.status as CandidateApplicationStatus)
         : undefined,
+    departmentId: effectiveDeptId,
     page: Number(params.page ?? 1),
     pageSize: Number(params.pageSize ?? 12)
   });

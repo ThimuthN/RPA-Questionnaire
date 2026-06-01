@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import {
   getDetailedResult,
@@ -67,7 +68,12 @@ export default async function ResultDetailPage({
   searchParams: Promise<{ linked?: string; updated?: string; error?: string }>;
 }) {
   const { attemptId } = await params;
-  await requirePageSession(`/results/${attemptId}`);
+  const session = await requirePageSession(`/results/${attemptId}`);
+
+  if (!session.permissions.includes("view_results")) {
+    redirect("/");
+  }
+
   const pageState = await searchParams;
   const result = await getDetailedResult(attemptId);
   if (!result) {

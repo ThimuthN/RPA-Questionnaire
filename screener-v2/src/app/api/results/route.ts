@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import { parseResultsWorkspaceQuery } from "@/lib/results/query";
 
@@ -7,6 +7,11 @@ export async function GET(request: Request) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const perm = requirePermission(auth.session, "view_results");
+  if (!perm.ok) {
+    return perm.response;
   }
 
   const { searchParams } = new URL(request.url);

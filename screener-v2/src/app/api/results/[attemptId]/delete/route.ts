@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { deleteResultAttempt } from "@/lib/db/repositories";
 
 export async function POST(
@@ -11,6 +11,11 @@ export async function POST(
     return auth.response;
   }
 
+  const perm = requirePermission(auth.session, "view_results");
+  if (!perm.ok) {
+    return perm.response;
+  }
+
   try {
     const { attemptId } = await context.params;
     await deleteResultAttempt(attemptId);
@@ -20,7 +25,7 @@ export async function POST(
     return NextResponse.redirect(url, 303);
   } catch (error) {
     const url = new URL("/results", request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not delete result.");
+    url.searchParams.set("error", "Could not delete result.");
     return NextResponse.redirect(url, 303);
   }
 }

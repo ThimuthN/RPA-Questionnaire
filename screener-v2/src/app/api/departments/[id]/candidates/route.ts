@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { listCandidaciesForDepartment } from "@/lib/db/candidacies";
 
 export async function GET(
@@ -14,14 +14,9 @@ export async function GET(
 
   const { id: departmentId } = await params;
 
-  // Check permission: users with view_candidates permission can view
-  const canView = session.permissions.includes("view_candidates");
-
-  if (!canView) {
-    return NextResponse.json(
-      { error: "Not authorized to view this department's candidates" },
-      { status: 403 }
-    );
+  const permCheck = await requirePermissionForDepartment(session, "view_candidates", departmentId);
+  if (!permCheck.ok) {
+    return permCheck.response;
   }
 
   try {
@@ -42,7 +37,7 @@ export async function GET(
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch candidacies" },
+      { error: "Failed to fetch candidacies" },
       { status: 500 }
     );
   }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -13,6 +14,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { requirePageSession } from "@/lib/auth/guards";
+import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import {
   candidateAssessmentStatusLabels,
   candidateAssessmentStatusValues,
@@ -94,6 +96,13 @@ export default async function PeopleCandidatesPage({
   const nextPath = `/people/candidates${query.toString() ? `?${query.toString()}` : ""}`;
   const session = await requirePageSession(nextPath);
 
+  if (!session.permissions.includes("view_candidates")) {
+    redirect("/people");
+  }
+
+  const isGlobalViewCandidates = await hasGlobalPermission(session.userId!, "view_candidates");
+  const effectiveDeptId = isGlobalViewCandidates ? params.departmentId : session.departmentId;
+
   const isFinalizedView = params.stage === "finalized";
   const selectedStage = !isFinalizedView && candidateStageValues.includes(params.stage as CandidateStage)
     ? (params.stage as CandidateStage)
@@ -106,7 +115,7 @@ export default async function PeopleCandidatesPage({
     listCandidateWorkspacePage({
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
-      departmentId: params.departmentId?.trim() || undefined,
+      departmentId: effectiveDeptId?.trim() || undefined,
       stage: isFinalizedView || selectedStageValues ? undefined : selectedStage,
       stageValues: selectedStageValues,
       orgStage: isFinalizedView ? "finalized" : "active",
@@ -214,18 +223,20 @@ export default async function PeopleCandidatesPage({
                     </option>
                   ))}
                 </select>
-                <select
-                  name="departmentId"
-                  defaultValue={params.departmentId ?? ""}
-                  className={filterFieldClassName()}
-                >
-                  <option value="">All departments</option>
-                  {departments.map((department) => (
-                    <option key={department.id} value={department.id}>
-                      {department.name}
-                    </option>
-                  ))}
-                </select>
+                {isGlobalViewCandidates && (
+                  <select
+                    name="departmentId"
+                    defaultValue={params.departmentId ?? ""}
+                    className={filterFieldClassName()}
+                  >
+                    <option value="">All departments</option>
+                    {departments.map((department) => (
+                      <option key={department.id} value={department.id}>
+                        {department.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <select
                   name="owner"
                   defaultValue={params.owner ?? ""}

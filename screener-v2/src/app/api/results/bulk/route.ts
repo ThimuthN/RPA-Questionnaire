@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { resultReviewStateValues } from "@/lib/assessment-engine/types";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { candidateNoteTypeValues } from "@/lib/candidates/types";
 import { bulkUpdateResults } from "@/lib/db/repositories";
 import {
@@ -33,6 +33,11 @@ export async function POST(request: Request) {
     return auth.response;
   }
   const { session } = auth;
+
+  const perm = requirePermission(session, "view_results");
+  if (!perm.ok) {
+    return perm.response;
+  }
 
   const formData = await request.formData();
   try {

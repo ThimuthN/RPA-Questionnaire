@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
 import { assessmentContextTypeValues, type AssessmentContextType, resultReviewStateValues, type ResultReviewState } from "@/lib/assessment-engine/types";
@@ -193,7 +194,12 @@ export default async function ResultsPage({
   ) as Record<string, string>;
   const query = toResultsWorkspaceSearchParams(persistentState);
   const nextPath = `/results${query.toString() ? `?${query.toString()}` : ""}`;
-  await requirePageSession(nextPath);
+  const session = await requirePageSession(nextPath);
+
+  if (!session.permissions.includes("view_results")) {
+    redirect("/");
+  }
+
   const page = await listResultWorkspacePage(parseResultsWorkspaceQuery(pageState));
   const currentPathAndQuery = nextPath;
   const compareIds = compareIdsFromRaw(pageState.compare);
