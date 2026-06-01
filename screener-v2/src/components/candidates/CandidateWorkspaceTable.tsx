@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { MoreHorizontal, User } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
@@ -23,11 +25,8 @@ const tableHeadClassName =
 const tableCellClassName =
   "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
 
-const actionPillPrimaryClassName =
-  "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-2.5 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_28%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
-
-const actionPillSecondaryClassName =
-  "inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2.5 py-2 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
+const iconButtonClassName =
+  "inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
 
 const stageActionSelectClassName =
   "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] outline-none transition hover:border-[color:var(--app-border-strong)] focus:border-brand-300/50 disabled:opacity-50";
@@ -95,11 +94,37 @@ export function CandidateWorkspaceTable({
   const [rejectConfirming, setRejectConfirming] = useState<string | null>(null);
   const [promoteError, setPromoteError] = useState<Record<string, string>>({});
   const [promoting, setPromoting] = useState<Record<string, boolean>>({});
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const validIds = new Set(rows.map((candidate) => candidate.id));
     setSelectedCandidateIds((current) => current.filter((candidateId) => validIds.has(candidateId)));
   }, [rows]);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (menuBtnRef.current && !menuBtnRef.current.contains(target)) {
+        setOpenMenuId(null);
+      }
+    };
+
+    const handleScroll = () => {
+      setOpenMenuId(null);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [openMenuId]);
 
   function toggleCandidate(candidateId: string) {
     setSelectedCandidateIds((current) =>
@@ -160,15 +185,15 @@ export function CandidateWorkspaceTable({
           <table className="w-full table-fixed text-left">
             <thead className={tableHeadClassName}>
               <tr>
-                <th scope="col" className="w-12 px-4 py-3 font-medium">
+                <th scope="col" className="w-10 px-4 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
-                <th scope="col" className="w-[13%] px-4 py-3 font-medium">Owner</th>
-                <th scope="col" className="w-[19%] px-4 py-3 font-medium">Pipeline</th>
+                <th scope="col" className="w-[26%] px-4 py-3 font-medium">Candidate</th>
+                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Owner</th>
+                <th scope="col" className="w-[21%] px-4 py-3 font-medium">Pipeline</th>
                 <th scope="col" className="w-[16%] px-4 py-3 font-medium">Role / department</th>
-                <th scope="col" className="w-[8%] px-4 py-3 font-medium">Updated</th>
-                <th scope="col" className="w-[15%] px-4 py-3 font-medium text-right">Quick access</th>
+                <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
+                <th scope="col" className="w-20 px-4 py-3 font-medium text-right">Quick access</th>
               </tr>
             </thead>
             <tbody>
@@ -231,116 +256,31 @@ export function CandidateWorkspaceTable({
                       <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
                     </td>
                     <td className={tableCellClassName}>
-                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-                        <Link href={profileHref} className={actionPillPrimaryClassName}>
-                          Open profile
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={profileHref} className={iconButtonClassName} title="Open profile">
+                          <User size={16} />
                         </Link>
-                        <details className="group relative">
-                          <summary
-                            className={`${actionPillSecondaryClassName} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
-                            aria-label={`Open quick actions for ${candidate.fullName}`}
-                          >
-                            Quick actions
-                          </summary>
-                          <div className="absolute right-0 z-30 mt-2 w-64 space-y-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-2 text-left shadow-[var(--app-shadow-soft)]">
-                            <Link href={profileHref} className={quickActionItemClassName}>
-                              Open profile
-                            </Link>
-
-                            {candidateResumeHref ? (
-                              <a
-                                href={candidateResumeHref}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={quickActionItemClassName}
-                              >
-                                View resume
-                              </a>
-                            ) : null}
-
-                            {action ? (
-                              <Link href={action.href} className={quickActionItemClassName}>
-                                {action.label}
-                              </Link>
-                            ) : null}
-
-                            {permissions.includes("promote_candidate") && forwardStages.length > 0 ? (
-                              <label className="block space-y-1 rounded-[14px] px-3 py-2">
-                                <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                                  Move stage
-                                </span>
-                                <select
-                                  aria-label={`Move ${candidate.fullName} to stage`}
-                                  value=""
-                                  disabled={promoting[candidate.id]}
-                                  onChange={(event) => {
-                                    const nextStage = event.target.value as CandidateStage;
-                                    if (nextStage) {
-                                      void moveCandidate(candidate.id, nextStage);
-                                    }
-                                  }}
-                                  className={stageActionSelectClassName}
-                                >
-                                  <option value="">Choose stage...</option>
-                                  {forwardStages.map((targetStage) => (
-                                    <option key={targetStage} value={targetStage}>
-                                      {displayStageActionLabel(targetStage)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            ) : null}
-
-                            {canManageCandidates ? (
-                              rejectConfirming === candidate.id ? (
-                                <div className="space-y-1 border-t border-[color:var(--app-border)] pt-2">
-                                  <p className="px-3 text-xs text-[color:var(--app-muted)]">
-                                    Confirm rejecting this candidate?
-                                  </p>
-                                  <button
-                                    type="button"
-                                    onClick={async () => {
-                                      try {
-                                        const res = await fetch(`/api/candidates/${candidate.id}/reject`, {
-                                          method: "POST",
-                                          headers: { "Content-Type": "application/json" },
-                                          body: JSON.stringify({})
-                                        });
-                                        if (res.ok) {
-                                          router.refresh();
-                                        } else {
-                                          setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to reject candidate" }));
-                                        }
-                                      } catch (err) {
-                                        setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unexpected error" }));
-                                      } finally {
-                                        setRejectConfirming(null);
-                                      }
-                                    }}
-                                    className={quickActionDangerClassName}
-                                  >
-                                    Confirm reject
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setRejectConfirming(null)}
-                                    className={quickActionItemClassName}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setRejectConfirming(candidate.id)}
-                                  className={quickActionDangerClassName}
-                                >
-                                  Reject candidate
-                                </button>
-                              )
-                            ) : null}
-                          </div>
-                        </details>
+                        <button
+                          type="button"
+                          className={iconButtonClassName}
+                          onClick={(e) => {
+                            if (openMenuId === candidate.id) {
+                              setOpenMenuId(null);
+                            } else {
+                              const btn = e.currentTarget;
+                              const rect = btn.getBoundingClientRect();
+                              menuBtnRef.current = btn;
+                              setMenuPos({
+                                top: rect.bottom + 8,
+                                left: rect.right - 256,
+                              });
+                              setOpenMenuId(candidate.id);
+                            }
+                          }}
+                          title="Quick actions"
+                        >
+                          <MoreHorizontal size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -350,6 +290,135 @@ export function CandidateWorkspaceTable({
           </table>
         </div>
       </div>
+
+      {openMenuId && createPortal(
+        <div
+          className="fixed inset-0 z-[9999]"
+          onClick={() => setOpenMenuId(null)}
+        >
+          <div
+            className="absolute w-64 space-y-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-2 shadow-[var(--app-shadow-soft)]"
+            style={{
+              top: `${menuPos.top}px`,
+              left: `${menuPos.left}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {rows.find((c) => c.id === openMenuId) && (() => {
+              const candidate = rows.find((c) => c.id === openMenuId)!;
+              const profileHref = `/people/candidates/${candidate.id}` as Route;
+              const candidateResumeHref = resumeHref(candidate);
+              const action = contextualAction(candidate);
+              const stage = normalizeCandidateStage(candidate.stage);
+              const forwardStages = getForwardCandidateStages(stage);
+
+              return (
+                <>
+                  <Link href={profileHref} className={quickActionItemClassName}>
+                    Open profile
+                  </Link>
+
+                  {candidateResumeHref ? (
+                    <a
+                      href={candidateResumeHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={quickActionItemClassName}
+                    >
+                      View resume
+                    </a>
+                  ) : null}
+
+                  {action ? (
+                    <Link href={action.href} className={quickActionItemClassName}>
+                      {action.label}
+                    </Link>
+                  ) : null}
+
+                  {permissions.includes("promote_candidate") && forwardStages.length > 0 ? (
+                    <label className="block space-y-1 rounded-[14px] px-3 py-2">
+                      <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
+                        Move stage
+                      </span>
+                      <select
+                        aria-label={`Move ${candidate.fullName} to stage`}
+                        value=""
+                        disabled={promoting[candidate.id]}
+                        onChange={(event) => {
+                          const nextStage = event.target.value as CandidateStage;
+                          if (nextStage) {
+                            void moveCandidate(candidate.id, nextStage);
+                          }
+                          setOpenMenuId(null);
+                        }}
+                        className={stageActionSelectClassName}
+                      >
+                        <option value="">Choose stage...</option>
+                        {forwardStages.map((targetStage) => (
+                          <option key={targetStage} value={targetStage}>
+                            {displayStageActionLabel(targetStage)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+
+                  {canManageCandidates ? (
+                    rejectConfirming === candidate.id ? (
+                      <div className="space-y-1 border-t border-[color:var(--app-border)] pt-2">
+                        <p className="px-3 text-xs text-[color:var(--app-muted)]">
+                          Confirm rejecting this candidate?
+                        </p>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/candidates/${candidate.id}/reject`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({})
+                              });
+                              if (res.ok) {
+                                router.refresh();
+                              } else {
+                                setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to reject candidate" }));
+                              }
+                            } catch (err) {
+                              setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unexpected error" }));
+                            } finally {
+                              setRejectConfirming(null);
+                              setOpenMenuId(null);
+                            }
+                          }}
+                          className={quickActionDangerClassName}
+                        >
+                          Confirm reject
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRejectConfirming(null)}
+                          className={quickActionItemClassName}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setRejectConfirming(candidate.id)}
+                        className={quickActionDangerClassName}
+                      >
+                        Reject candidate
+                      </button>
+                    )
+                  ) : null}
+                </>
+              );
+            })()}
+          </div>
+        </div>,
+        document.body
+      )}
     </form>
   );
 }
