@@ -9,6 +9,7 @@ import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
 import { TransferCandidateAction } from "@/components/candidates/TransferCandidateAction";
+import { ResponsibleTeamCard } from "@/components/candidates/ResponsibleTeamCard";
 import { Button } from "@/components/primitives/Button";
 import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -20,6 +21,8 @@ import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { getCandidateDetail } from "@/lib/db/candidates";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
+import { prisma } from "@/lib/db/prisma";
+import { getApplicationAssignments } from "@/lib/db/hiring-assignments";
 
 export const dynamic = "force-dynamic";
 
@@ -148,6 +151,18 @@ export default async function CandidateDetailPage({
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}&download=1`
     : null;
   const activityFeed = buildCandidateActivityFeed(candidate);
+
+  // Fetch assignments and users for the active application
+  const [assignments, users] = activeApplication
+    ? await Promise.all([
+        getApplicationAssignments(activeApplication.id),
+        prisma.user.findMany({
+          where: { isActive: true },
+          select: { id: true, name: true, email: true },
+          orderBy: { name: "asc" }
+        })
+      ])
+    : [[], []];
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
       {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
@@ -339,6 +354,15 @@ export default async function CandidateDetailPage({
                 )}
               </div>
             </section>
+
+            {activeApplication && (
+              <ResponsibleTeamCard
+                applicationId={activeApplication.id}
+                assignments={assignments}
+                users={users}
+                canEdit={session.permissions.includes("manage_candidates")}
+              />
+            )}
 
             <section id="resume" className="space-y-4">
               <div className="space-y-1">
