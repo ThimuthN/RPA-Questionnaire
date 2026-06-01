@@ -195,12 +195,12 @@ export function RoleCatalogSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg text-[color:var(--app-heading)]">Hiring roles</h3>
+          <h3 className="text-lg text-[color:var(--app-heading)]">Job designations</h3>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Create hiring roles to organize candidates by position and department.
+            Use designations to classify jobs and candidates within this department.
           </p>
         </div>
-        <Button onClick={beginCreate}>New hiring role</Button>
+        <Button onClick={beginCreate}>New designation</Button>
       </div>
 
       {error && <p className="text-sm text-[color:var(--app-danger)]">{error}</p>}
@@ -229,16 +229,11 @@ export function RoleCatalogSection({
             },
             {
               header: "In use",
-              width: "w-[15%]",
+              width: "w-[30%]",
               render: (role) =>
                 (role.openJobCount ?? 0) > 0 || (role.pipelineCandidateCount ?? 0) > 0
                   ? `${role.openJobCount ?? 0} job(s) · ${role.pipelineCandidateCount ?? 0} candidate(s)`
                   : "—"
-            },
-            {
-              header: "Permissions",
-              width: "w-[15%]",
-              render: (role) => `${role.permissions?.length ?? 0} permission${role.permissions?.length === 1 ? "" : "s"}`
             },
             {
               header: "Actions",
