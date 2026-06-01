@@ -182,33 +182,26 @@ If leadership has questions about:
 
 ---
 
-## Archive Regeneration (if needed)
+## Archive Regeneration
 
-If the release archive needs to be recreated:
+To recreate the release archive:
 
-```powershell
-# PowerShell script to create filtered archive excluding salvaged/ and forbidden files
-$tempDir = "northstar-temp-$$"
-New-Item -ItemType Directory $tempDir | Out-Null
-git ls-files | Where-Object {
-  -not ($_ -match '^salvaged/' -or $_ -match '\.env' -or $_ -match '\.next/' -or
-        $_ -match 'node_modules' -or $_ -match '\.log$' -or $_ -match 'tsconfig\.tsbuildinfo' -or
-        $_ -match '\.zip$')
-} | ForEach-Object {
-  $dir = Split-Path $_
-  if ($dir) { mkdir "$tempDir/$dir" -Force | Out-Null }
-  cp $_ "$tempDir/$_"
-}
-Add-Type -Assembly System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory((Resolve-Path $tempDir), "northstar-handoff-15X-R.zip")
-Get-Item "northstar-handoff-15X-R.zip" | Select Name, @{l='Size (MB)';e={[math]::Round($_.Length/1MB,2)}}
+```bash
+node scripts/create-release-archive.mjs
 ```
+
+This script:
+- Reads all tracked files from git
+- Filters out forbidden files/directories (salvaged/, .env, .next/, etc.)
+- Preserves dynamic route paths exactly (e.g., `src/app/api/candidates/[id]/hire/route.ts`)
+- Includes safe templates (`.env.example`, `.env.test.example`)
+- Outputs `northstar-handoff-15X-R2.zip` (untracked, not committed)
 
 **Note:** The archive includes only tracked source files. `salvaged/` is tracked in git but excluded from release archives by design.
 
 ---
 
-**Prepared by:** Claude Code (Batch 15X-R)  
+**Prepared by:** Claude Code (Batch 15X-R2)  
 **Date:** 2026-06-01  
-**Commit:** ad4a9d6  
-**Archive:** northstar-handoff-15X-R.zip (3.11 MB, 475 files)
+**Commit:** (after repairs)  
+**Archive:** northstar-handoff-15X-R2.zip (3.17 MB, 499 files)
