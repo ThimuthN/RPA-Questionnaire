@@ -212,9 +212,9 @@ export default async function ResultsPage({
       <SceneShell
         variant="results"
         tone="page"
-        eyebrow="Assessment review"
-        title="Results"
-        subtitle="Review assessment outcomes."
+        eyebrow="Assessments"
+        title="Assessment results"
+        subtitle="Review completed assessment evidence and outcomes."
         utility={
           <div className="flex flex-wrap items-center gap-2">
             <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />

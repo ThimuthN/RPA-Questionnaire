@@ -29,12 +29,12 @@ export default async function AddonsPage() {
       <SceneShell
         variant="create"
         tone="page"
-        eyebrow="Add-ons"
-        title="Add-on library"
-        subtitle="Manage add-ons and presets."
+        eyebrow="Assessments"
+        title="Assessment templates"
+        subtitle="Manage reusable assessment templates and question sets."
         utility={
           <div className="flex flex-wrap gap-2">
-            <StatusPill label={`${addons.length} add-ons`} tone="blue" />
+            <StatusPill label={`${addons.length} templates`} tone="blue" />
             <StatusPill label={`${presets.length} presets`} tone="purple" />
           </div>
         }
