@@ -178,7 +178,7 @@ export function CandidateWorkspaceTable({
                 const stage = normalizeCandidateStage(candidate.stage);
                 const forwardStages = getForwardCandidateStages(stage);
                 const decision = finalDecisionLabel(candidate);
-                const profileHref = `/candidates/${candidate.id}` as Route;
+                const profileHref = `/people/candidates/${candidate.id}` as Route;
                 const candidateResumeHref = resumeHref(candidate);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">

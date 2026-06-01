@@ -317,7 +317,7 @@ export default async function MarketingHomePage() {
                         <h2 className="text-2xl text-[color:var(--app-heading)]">Open work</h2>
                         <p className="text-sm text-[color:var(--app-muted)]">What needs attention first.</p>
                       </div>
-                      <Link href="/candidates?sort=inbox">
+                      <Link href="/people/candidates?sort=inbox">
                         <Button variant="secondary">Open inbox</Button>
                       </Link>
                     </div>
@@ -326,7 +326,7 @@ export default async function MarketingHomePage() {
                         {candidateWorkspace.rows.map((candidate) => (
                           <StaggerItem key={candidate.id} hover>
                             <Link
-                              href={`/candidates/${candidate.id}`}
+                              href={`/people/candidates/${candidate.id}`}
                               className="block border-t border-[color:var(--app-border)] pt-4 transition hover:translate-x-[2px]"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-3">

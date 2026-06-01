@@ -93,7 +93,7 @@ export function NewCandidateForm({
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit">Save candidate</Button>
-        <Link href={"/candidates" as Route}>
+        <Link href={"/people/candidates" as Route}>
           <Button type="button" variant="secondary">Cancel</Button>
         </Link>
       </div>

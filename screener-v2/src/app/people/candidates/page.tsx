@@ -140,7 +140,7 @@ export default async function PeopleCandidatesPage({
             {canManageCandidates ? (
               <>
                 <CandidateCsvImportModal returnTo={currentPathAndQuery} />
-                <Link href="/candidates/new">
+                <Link href="/people/candidates/new">
                   <Button>Add candidate</Button>
                 </Link>
               </>
@@ -299,7 +299,7 @@ export default async function PeopleCandidatesPage({
                 <p className="text-sm text-[color:var(--app-muted)]">Candidates appear here after applications are reviewed or records are created.</p>
                 <div className="flex flex-wrap gap-3">
                   {canManageCandidates ? (
-                    <Link href="/candidates/new">
+                    <Link href="/people/candidates/new">
                       <Button>Add candidate</Button>
                     </Link>
                   ) : null}
