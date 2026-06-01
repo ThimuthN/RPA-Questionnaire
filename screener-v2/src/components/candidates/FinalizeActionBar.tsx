@@ -48,12 +48,16 @@ export function FinalizeActionBar({
   }
 
   const isFinalized = orgStage === "finalized";
+  const finalDecisionLabel =
+    finalizedAs === "hired" ? "hired" :
+    finalizedAs === "rejected" ? "rejected" :
+    "recorded";
 
   return (
     <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-[color:var(--app-heading)]">
-          {isFinalized ? `Final decision: ${finalizedAs || "unknown"}` : "Final decision"}
+          {isFinalized ? `Final decision: ${finalDecisionLabel}` : "Final decision"}
         </p>
         {!isFinalized ? (
           <p className="text-xs text-[color:var(--app-muted)]">
@@ -77,7 +81,7 @@ export function FinalizeActionBar({
           ((finalizedAs !== "hired" || !finalizedAs) && permissions.includes("manage_candidates"))
         ) ? (
           <Button type="button" variant="secondary" disabled={Boolean(pendingAction)} onClick={() => submit("revert")}>
-            {pendingAction === "revert" ? "Reverting..." : `Revert ${finalizedAs || "finalized"}`}
+            {pendingAction === "revert" ? "Reverting..." : "Revert final decision"}
           </Button>
         ) : null}
       </div>

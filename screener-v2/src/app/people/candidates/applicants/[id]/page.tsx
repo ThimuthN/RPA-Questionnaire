@@ -43,7 +43,7 @@ export default async function ApplicantReviewPage({
   searchParams: Promise<{ updated?: string; error?: string }>;
 }) {
   const { id } = await params;
-  await requirePageSession(`/people/candidates/applicants/${id}`);
+  const session = await requirePageSession(`/people/candidates/applicants/${id}`);
   const pageState = await searchParams;
   const detail = await getApplicantReviewDetail(id);
 
@@ -58,6 +58,8 @@ export default async function ApplicantReviewPage({
     ? `/api/candidates/${detail.candidate.id}/resume/file?storageKey=${encodeURIComponent(detail.latestResume.storageKey)}&download=1`
     : null;
   const returnTo = `/people/candidates/applicants/${detail.id}` as Route;
+  const canManageApplications = session.permissions.includes("manage_candidates");
+  const canMoveToPipeline = session.permissions.includes("promote_candidate");
 
   return (
     <SceneShell
@@ -153,35 +155,47 @@ export default async function ApplicantReviewPage({
                 <p className="text-sm text-[color:var(--app-muted)]">Set an owner, then keep them in review, move them into the pipeline, or close the application.</p>
               </div>
 
-              <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <input type="hidden" name="action" value="review" />
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <FormInput
-                  name="hrOwner"
-                  label="Owner"
-                  defaultValue={detail.candidate.hrOwner || ""}
-                  placeholder="Assign an owner"
-                />
-                <Button type="submit" variant="secondary">Mark under review</Button>
-              </form>
+              {canManageApplications ? (
+                <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <input type="hidden" name="action" value="review" />
+                  <input type="hidden" name="returnTo" value={returnTo} />
+                  <FormInput
+                    name="hrOwner"
+                    label="Owner"
+                    defaultValue={detail.candidate.hrOwner || ""}
+                    placeholder="Assign an owner"
+                  />
+                  <Button type="submit" variant="secondary">Mark under review</Button>
+                </form>
+              ) : null}
 
-              <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <input type="hidden" name="action" value="promote" />
-                <input type="hidden" name="returnTo" value={`/candidates/${detail.candidate.id}` as Route} />
-                <FormInput
-                  name="hrOwner"
-                  label="Owner"
-                  defaultValue={detail.candidate.hrOwner || ""}
-                  placeholder="Assign an owner"
-                />
-                <Button type="submit">Move to pipeline</Button>
-              </form>
+              {canMoveToPipeline ? (
+                <form action={`/api/candidate-applications/${detail.id}`} method="post" className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <input type="hidden" name="action" value="promote" />
+                  <input type="hidden" name="returnTo" value={`/candidates/${detail.candidate.id}` as Route} />
+                  <FormInput
+                    name="hrOwner"
+                    label="Owner"
+                    defaultValue={detail.candidate.hrOwner || ""}
+                    placeholder="Assign an owner"
+                  />
+                  <Button type="submit">Move to pipeline</Button>
+                </form>
+              ) : null}
 
-              <form action={`/api/candidate-applications/${detail.id}`} method="post" className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <input type="hidden" name="action" value="close" />
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <Button type="submit" variant="secondary">Close application</Button>
-              </form>
+              {canManageApplications ? (
+                <form action={`/api/candidate-applications/${detail.id}`} method="post" className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <input type="hidden" name="action" value="close" />
+                  <input type="hidden" name="returnTo" value={returnTo} />
+                  <Button type="submit" variant="secondary">Close application</Button>
+                </form>
+              ) : null}
+
+              {!canManageApplications && !canMoveToPipeline ? (
+                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 text-sm text-[color:var(--app-muted)]">
+                  You can view this application, but your role cannot change its review state.
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-2">
                 <Link href={`/candidates/${detail.candidate.id}` as Route}>

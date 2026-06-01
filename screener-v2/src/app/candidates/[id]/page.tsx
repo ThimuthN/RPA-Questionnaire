@@ -49,6 +49,10 @@ function applicationTone(status: string): "neutral" | "blue" | "amber" | "emeral
   return "neutral";
 }
 
+function displayStageLabel(stage: CandidateStage) {
+  return stage === "screening" ? "Screening assessment" : candidateStageLabels[stage];
+}
+
 function latestAssessmentSummary(candidate: CandidateData) {
   const latest = latestAssessment(candidate);
   if (!latest) {
@@ -151,7 +155,7 @@ export default async function CandidateDetailPage({
         <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
       ) : null}
       <StatusPill
-        label={candidateStageLabels[candidate.stage as CandidateStage] ?? candidate.stage}
+        label={displayStageLabel(candidate.stage as CandidateStage) ?? candidate.stage}
         tone={candidate.stage === "applicant" ? "amber" : "blue"}
       />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
@@ -192,7 +196,7 @@ export default async function CandidateDetailPage({
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {candidate.stage === "applicant" && activeApplication ? (
+              {candidate.stage === "applicant" && activeApplication && session.permissions.includes("promote_candidate") ? (
                 <form action={`/api/candidate-applications/${activeApplication.id}`} method="post">
                   <input type="hidden" name="action" value="promote" />
                   <input type="hidden" name="returnTo" value={`/candidates/${candidate.id}` as Route} />

@@ -11,6 +11,7 @@ import type { CandidateDetail } from "@/lib/db/candidates";
 interface UserOption {
   id: string;
   name: string | null;
+  email: string;
 }
 
 export function EditCandidateInfoModal({
@@ -191,7 +192,7 @@ export function EditCandidateInfoModal({
                               <option value="">Unassigned</option>
                               {owners.map((owner) => (
                                 <option key={owner.id} value={owner.id}>
-                                  {owner.name || "Unknown"}
+                                  {owner.name || owner.email}
                                 </option>
                               ))}
                             </select>

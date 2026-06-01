@@ -47,7 +47,7 @@ export function JobPostingForm({
             .filter((role) => role.isActive !== false)
             .map((role) => (
               <option key={role.id} value={role.id}>
-                {role.department ? `${role.label} — ${role.department}` : role.label}
+                {`${role.label} - ${role.department || "Archived department"}`}
               </option>
             ))}
         </select>

@@ -142,6 +142,10 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
   return "Feedback";
 }
 
+function displayMilestoneTitle(milestone: CandidateMilestoneRecord) {
+  return milestone.type === "screener" ? "Screening assessment" : milestone.title;
+}
+
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
   if (type === "screener" || type === "advanced_review" || type === "review_round") {
     return mode === "platform" ? "Save step" : "Save notes";
@@ -490,7 +494,7 @@ function ScreenerMilestoneCard({
 
       <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Screener Test</h4>
+          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Screening assessment</h4>
           {screenerTestCheck && <CheckBadge status={screenerTestCheck.status} />}
         </div>
         {screenerTestCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{screenerTestCheck.notes}</p>}
@@ -498,7 +502,7 @@ function ScreenerMilestoneCard({
           {!milestone.assessment ? (
             <Link href={sendHref}>
               <Button type="button" variant="secondary">
-                Send screener
+                Send assessment
               </Button>
             </Link>
           ) : (
@@ -828,7 +832,7 @@ function AdvancedReviewCard({
             className="flex-1"
           >
             <span>
-              {isCreatingTest ? "Creating test..." : "Add test"}
+              {isCreatingTest ? "Creating assessment..." : "Add assessment"}
             </span>
           </Button>
           <Button
@@ -944,7 +948,7 @@ export function CandidateMilestoneTimeline({
                 result = derivedResult(node);
                 isComplete = isMilestoneComplete(node.status);
                 status = node.status;
-                title = node.title;
+                title = displayMilestoneTitle(node);
                 summary = stepSummary(node, hasResume);
               }
 
@@ -1045,7 +1049,7 @@ export function CandidateMilestoneTimeline({
 
                 <div>
                   <h3 className="text-2xl font-semibold text-[color:var(--app-heading)]">
-                    {isAdvancedReviewGroup(activeNode) ? "Advanced Review" : activeNode.title}
+                    {isAdvancedReviewGroup(activeNode) ? "Advanced Review" : displayMilestoneTitle(activeNode)}
                   </h3>
                   <p className="max-w-2xl text-sm text-[color:var(--app-text)] mt-2">
                     {isAdvancedReviewGroup(activeNode)

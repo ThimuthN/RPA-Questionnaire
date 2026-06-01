@@ -20,7 +20,7 @@ const items: Array<{ key: CandidatesView; label: string; countKey: keyof StageCo
   { key: "jobs", label: "Jobs", countKey: null, href: "/people/candidates/jobs" as Route },
   { key: "applicants", label: "Applicants", countKey: "applicant", href: "/people/candidates?stage=applicant" as Route },
   { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: "/people/candidates?stage=pipeline" as Route },
-  { key: "screener", label: "Screener", countKey: "screening", href: "/people/candidates?stage=screening" as Route },
+  { key: "screener", label: "Screening", countKey: "screening", href: "/people/candidates?stage=screening" as Route },
   { key: "interview", label: "Interview", countKey: "interview", href: "/people/candidates?stage=interview" as Route },
   { key: "advanced_review", label: "Advanced Review", countKey: "advanced_review", href: "/people/candidates?stage=advanced_review" as Route },
   { key: "finalized", label: "Finalized", countKey: "finalized", href: "/people/candidates?stage=finalized" as Route }

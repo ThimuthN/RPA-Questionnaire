@@ -9,7 +9,6 @@ import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills"
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
 import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
 import {
-  candidateStageActionLabels,
   getForwardCandidateStages,
   normalizeCandidateStage
 } from "@/lib/candidates/stage-workflow";
@@ -52,6 +51,15 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
   }
 
   return null;
+}
+
+function displayStageLabel(stage: CandidateStage) {
+  return stage === "screening" ? "Screening assessment" : candidateStageLabels[stage];
+}
+
+function displayStageActionLabel(stage: CandidateStage) {
+  if (stage === "screening") return "Move to Screening";
+  return `Move to ${displayStageLabel(stage)}`;
 }
 
 export function CandidateWorkspaceTable({
@@ -180,13 +188,13 @@ export function CandidateWorkspaceTable({
                         {promoteError[candidate.id] && (
                           <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
                         )}
-                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{candidateStageLabels[stage]}</p>
+                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{displayStageLabel(stage)}</p>
                         <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
                       </div>
                     </td>
                     <td className={tableCellClassName}>
                       <span className="text-sm text-[color:var(--app-text)] truncate">
-                        {candidate.departmentName || candidate.roleDepartment || "-"}
+                        {candidate.departmentName || candidate.roleDepartment || "Not assigned"}
                       </span>
                     </td>
                     <td className={tableCellClassName}>
@@ -210,7 +218,7 @@ export function CandidateWorkspaceTable({
                             <option value="">Move...</option>
                             {forwardStages.map((targetStage) => (
                               <option key={targetStage} value={targetStage}>
-                                {candidateStageActionLabels[targetStage]}
+                                {displayStageActionLabel(targetStage)}
                               </option>
                             ))}
                           </select>
@@ -252,7 +260,7 @@ export function CandidateWorkspaceTable({
                                     setPromoteError(prev => ({ ...prev, [candidate.id]: "Failed to reject candidate" }));
                                   }
                                 } catch (err) {
-                                  setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unknown error" }));
+                                  setPromoteError(prev => ({ ...prev, [candidate.id]: err instanceof Error ? err.message : "Unexpected error" }));
                                 } finally {
                                   setRejectConfirming(null);
                                 }

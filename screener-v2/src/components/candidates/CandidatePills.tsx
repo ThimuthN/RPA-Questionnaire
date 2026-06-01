@@ -60,5 +60,6 @@ export function CandidateMilestoneStatusPill({ status }: { status: CandidateMile
 
 
 export function CandidateMilestoneTypePill({ type }: { type: CandidateMilestoneType }) {
-  return <StatusPill label={candidateMilestoneTypeLabels[type]} tone="neutral" />;
+  const label = type === "screener" ? "Screening assessment" : candidateMilestoneTypeLabels[type];
+  return <StatusPill label={label} tone="neutral" />;
 }

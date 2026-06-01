@@ -50,7 +50,7 @@ export function TestSubmissionModal({
     try {
       const form = new FormData();
       form.append("action", "save");
-      form.append("title", "Test");
+      form.append("title", "Assessment");
       form.append("mode", mode);
       if (formData.date) form.append("date", formData.date);
       if (formData.score) form.append("score", formData.score);
@@ -68,10 +68,10 @@ export function TestSubmissionModal({
         onClose();
       } else {
         const data = await response.json();
-        setError(data.message || "Failed to save test");
+        setError(data.message || "Failed to save assessment");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error saving test");
+      setError(err instanceof Error ? err.message : "Error saving assessment");
     } finally {
       setIsPending(false);
     }
@@ -90,11 +90,11 @@ export function TestSubmissionModal({
         onClose();
       } else {
         const data = await response.json();
-        setError(data.error || "Failed to delete test");
+        setError(data.error || "Failed to delete assessment");
         setShowDeleteConfirm(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error deleting test");
+      setError(err instanceof Error ? err.message : "Error deleting assessment");
       setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
@@ -130,7 +130,7 @@ export function TestSubmissionModal({
                     <Zap className="h-5 w-5 text-amber-500" />
                   </div>
                   <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
-                    {milestone ? "Update Test Result" : "Add Test Result"}
+                    {milestone ? "Update assessment result" : "Add assessment result"}
                   </h2>
                 </div>
                 <button
@@ -154,7 +154,7 @@ export function TestSubmissionModal({
                 )}
 
                 <div className="grid gap-2">
-                  <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Test Format</span>
+                  <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Assessment format</span>
                   <div className="flex gap-2 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-1">
                     {[
                       { value: "platform", label: "In Platform", icon: Zap },
@@ -186,9 +186,9 @@ export function TestSubmissionModal({
                     className="rounded-[16px] border-2 border-dashed border-[color:var(--app-brand)]/40 bg-[color:var(--app-brand)]/5 p-4 space-y-3"
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-medium text-[color:var(--app-heading)]">Create Platform Test</p>
+                      <p className="text-sm font-medium text-[color:var(--app-heading)]">Create platform assessment</p>
                       <p className="text-xs text-[color:var(--app-text)]">
-                        Use our assessment builder to create a test. Candidates take it on the platform and results are automatically recorded.
+                        Use the assessment builder to create screening evidence. Candidates complete it on the platform and results are recorded automatically.
                       </p>
                     </div>
                     <Link href={createTestHref}>
@@ -251,7 +251,7 @@ export function TestSubmissionModal({
                         value={formData.notes}
                         onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                         rows={3}
-                        placeholder="Test name, platform used, observations, next steps..."
+                        placeholder="Assessment name, platform used, observations, next steps..."
                         className={`${fieldClassName} min-h-[100px] resize-y`}
                       />
                     </label>
@@ -316,7 +316,7 @@ export function TestSubmissionModal({
                                 Saving...
                               </span>
                             ) : milestone ? (
-                              "Update Result"
+                              "Update result"
                             ) : (
                               "Save Result"
                             )}

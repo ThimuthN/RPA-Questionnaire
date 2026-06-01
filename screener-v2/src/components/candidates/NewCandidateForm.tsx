@@ -89,7 +89,7 @@ export function NewCandidateForm({
 
       {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
 
-      <p className="text-sm text-[color:var(--app-muted)]">You can upload the resume and send the screener after this.</p>
+      <p className="text-sm text-[color:var(--app-muted)]">You can upload the resume and send a screening assessment after this.</p>
 
       <div className="flex flex-wrap gap-3">
         <Button type="submit">Save candidate</Button>

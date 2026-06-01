@@ -24,7 +24,7 @@ export default async function EmployeesPage() {
             Employee management and HRMS features are not included in the v1 hiring platform. This workspace is reserved for future employee lifecycle features.
           </p>
           <p className="text-sm text-[color:var(--app-text)]">
-            When you hire candidates, their employment record is recorded in their candidate profile as part of the final hiring decision. Complete employee onboarding and management through your HRMS.
+            When you hire candidates, Northstar records the final decision on the candidate profile. Employee records, onboarding, and ongoing management stay in your HRMS outside v1.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
