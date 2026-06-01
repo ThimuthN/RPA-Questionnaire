@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth/runtime-session";
 import type { AppAction } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
-import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
+import { canUsePermissionForDepartment, hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 
 type ApiAuthSuccess = { ok: true; session: AppSession };
 type ApiAuthFailure = { ok: false; response: NextResponse };
@@ -74,6 +74,41 @@ export async function requirePermissionForDepartment(
   if (!(await canUsePermissionForDepartment(session, action, departmentId))) {
     return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
   }
+  return { ok: true as const };
+}
+
+export async function canAccessDepartmentWorkspace(
+  session: AppSession,
+  departmentId: string
+): Promise<boolean> {
+  if (!session.userId) return false;
+
+  // User is in the same department - allow access
+  if (session.departmentId === departmentId) {
+    return true;
+  }
+
+  // Check if user has global scope for common workspace permissions
+  // (admin/manager can access any department)
+  const globalPermissions = ["manage_users", "create_job", "edit_job", "view_candidates", "manage_candidates"];
+  for (const permission of globalPermissions) {
+    if (await hasGlobalPermission(session.userId, permission)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export async function requireDepartmentWorkspaceAccess(session: AppSession, departmentId: string) {
+  if (!session.userId) {
+    return { ok: false as const, response: forbiddenApi("Login required.") };
+  }
+
+  if (!(await canAccessDepartmentWorkspace(session, departmentId))) {
+    return { ok: false as const, response: forbiddenApi("Not assigned to this department.") };
+  }
+
   return { ok: true as const };
 }
 

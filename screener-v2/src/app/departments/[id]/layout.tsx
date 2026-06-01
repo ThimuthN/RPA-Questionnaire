@@ -2,8 +2,7 @@ import type { Route } from "next";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { DepartmentWorkspaceTabs } from "@/components/departments/DepartmentWorkspaceTabs";
-import { requirePageSession } from "@/lib/auth/guards";
-import { requirePermissionForDepartment } from "@/lib/auth/guards";
+import { requirePageSession, requireDepartmentWorkspaceAccess } from "@/lib/auth/guards";
 import { getDepartment } from "@/lib/db/departments";
 import { notFound } from "next/navigation";
 
@@ -21,8 +20,8 @@ export default async function DepartmentWorkspaceLayout({ children, params }: La
     notFound();
   }
 
-  const permResult = await requirePermissionForDepartment(session, "view_candidates", id);
-  if (!permResult.ok) {
+  const accessResult = await requireDepartmentWorkspaceAccess(session, id);
+  if (!accessResult.ok) {
     notFound();
   }
 

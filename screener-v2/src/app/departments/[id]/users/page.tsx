@@ -4,6 +4,8 @@ import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
 import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
+import { requirePageSession } from "@/lib/auth/guards";
+import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 
@@ -13,6 +15,12 @@ export default async function DepartmentUsersPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const session = await requirePageSession(`/departments/${id}/users`);
+  const permResult = await requirePermissionForDepartment(session, "manage_users", id);
+  if (!permResult.ok) {
+    notFound();
+  }
 
   const [department, users, roles] = await Promise.all([
     getDepartment(id),

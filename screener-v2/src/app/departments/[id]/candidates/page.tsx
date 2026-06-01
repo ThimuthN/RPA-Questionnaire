@@ -3,6 +3,8 @@ import { DataTable } from "@/components/primitives/DataTable";
 import { getDepartment } from "@/lib/db/departments";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { candidateStageValues, type CandidateStage } from "@/lib/candidates/types";
+import { requirePageSession } from "@/lib/auth/guards";
+import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 
 type PageState = {
@@ -26,6 +28,12 @@ export default async function DepartmentCandidatesPage({
 }) {
   const { id } = await params;
   const pageState = await searchParams;
+
+  const session = await requirePageSession(`/departments/${id}/candidates`);
+  const permResult = await requirePermissionForDepartment(session, "view_candidates", id);
+  if (!permResult.ok) {
+    notFound();
+  }
 
   const department = await getDepartment(id);
   if (!department) {

@@ -1,6 +1,8 @@
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
+import { requirePageSession } from "@/lib/auth/guards";
+import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 
@@ -10,6 +12,12 @@ export default async function DepartmentAccessPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const session = await requirePageSession(`/departments/${id}/access`);
+  const permResult = await requirePermissionForDepartment(session, "manage_users", id);
+  if (!permResult.ok) {
+    notFound();
+  }
 
   const [department, users, roles] = await Promise.all([
     getDepartment(id),

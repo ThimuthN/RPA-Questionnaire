@@ -2,6 +2,8 @@ import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
 import { getDepartment } from "@/lib/db/departments";
 import { listApplicantWorkspacePage } from "@/lib/db/jobs";
 import type { CandidateApplicationStatus } from "@/lib/jobs/types";
+import { requirePageSession } from "@/lib/auth/guards";
+import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 
@@ -26,6 +28,12 @@ export default async function DepartmentApplicantsPage({
 }) {
   const { id } = await params;
   const pageState = await searchParams;
+
+  const session = await requirePageSession(`/departments/${id}/applicants`);
+  const permResult = await requirePermissionForDepartment(session, "view_candidates", id);
+  if (!permResult.ok) {
+    notFound();
+  }
 
   const [department, page, users] = await Promise.all([
     getDepartment(id),
