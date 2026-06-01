@@ -33,7 +33,7 @@ describe("POST /api/candidates/[id]/revert-finalization", () => {
     vi.clearAllMocks();
   });
 
-  it("uses hire_candidate permission for hired candidates", async () => {
+  it("uses manage_candidates permission for hired candidates", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as any);
     vi.mocked(prisma.candidate.findUnique).mockResolvedValue({ id: "cand-1", departmentId: "dept-1", orgStage: "finalized", finalizedAs: "hired" } as any);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as any);
@@ -42,7 +42,7 @@ describe("POST /api/candidates/[id]/revert-finalization", () => {
       params: Promise.resolve({ id: "cand-1" })
     });
 
-    expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(mockSession, "hire_candidate", "dept-1");
+    expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(mockSession, "manage_candidates", "dept-1");
   });
 
   it("uses manage_candidates permission for rejected candidates", async () => {

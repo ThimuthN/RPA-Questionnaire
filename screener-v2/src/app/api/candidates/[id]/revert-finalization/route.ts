@@ -20,8 +20,7 @@ export async function POST(
     return NextResponse.json({ ok: false, message: "Candidate not found" }, { status: 404 });
   }
 
-  const requiredPermission = candidate.finalizedAs === "hired" ? "hire_candidate" : "manage_candidates";
-  const permission = await requirePermissionForDepartment(auth.session, requiredPermission, candidate.departmentId);
+  const permission = await requirePermissionForDepartment(auth.session, "manage_candidates", candidate.departmentId);
   if (!permission.ok) return permission.response;
 
   if (candidate.orgStage !== "finalized") {
