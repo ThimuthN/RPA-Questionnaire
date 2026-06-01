@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
-import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
+import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
 import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { listApplicantWorkspacePage } from "@/lib/db/jobs";
-import { candidateApplicationStatusLabels, type CandidateApplicationStatus } from "@/lib/jobs/types";
+import { type CandidateApplicationStatus } from "@/lib/jobs/types";
+import { prisma } from "@/lib/db/prisma";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +44,6 @@ function NoticeBanner({
   return <div className={messageTone(tone)}>{children}</div>;
 }
 
-function statusTone(status: CandidateApplicationStatus): "neutral" | "blue" | "amber" | "emerald" {
-  if (status === "submitted") return "neutral";
-  if (status === "under_review") return "amber";
-  if (status === "moved_to_pipeline") return "emerald";
-  return "blue";
-}
-
 export default async function CandidateApplicantsPage({
   searchParams
 }: {
@@ -72,17 +65,24 @@ export default async function CandidateApplicantsPage({
   const isGlobalViewCandidates = await hasGlobalPermission(session.userId!, "view_candidates");
   const effectiveDeptId = isGlobalViewCandidates ? undefined : session.departmentId;
 
-  const page = await listApplicantWorkspacePage({
-    q: params.q?.trim() || undefined,
-    jobId: params.jobId?.trim() || undefined,
-    status:
-      params.status === "submitted" || params.status === "under_review" || params.status === "closed"
-        ? (params.status as CandidateApplicationStatus)
-        : undefined,
-    departmentId: effectiveDeptId,
-    page: Number(params.page ?? 1),
-    pageSize: Number(params.pageSize ?? 12)
-  });
+  const [page, users] = await Promise.all([
+    listApplicantWorkspacePage({
+      q: params.q?.trim() || undefined,
+      jobId: params.jobId?.trim() || undefined,
+      status:
+        params.status === "submitted" || params.status === "under_review" || params.status === "closed"
+          ? (params.status as CandidateApplicationStatus)
+          : undefined,
+      departmentId: effectiveDeptId,
+      page: Number(params.page ?? 1),
+      pageSize: Number(params.pageSize ?? 12)
+    }),
+    prisma.user.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, email: true },
+      orderBy: { name: "asc" }
+    })
+  ]);
 
   return (
     <SceneShell
@@ -161,58 +161,7 @@ export default async function CandidateApplicantsPage({
             <p className="text-sm text-[color:var(--app-muted)]">Published jobs will fill this queue when candidates apply.</p>
           </StagePanel>
         ) : (
-          <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
-            <div className="overflow-x-auto">
-              <table className="min-w-[1100px] w-full table-fixed text-left">
-                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                  <tr>
-                    <th scope="col" className="w-[22%] px-4 py-3 font-medium">Person</th>
-                    <th scope="col" className="w-[20%] px-4 py-3 font-medium">Applied job</th>
-                    <th scope="col" className="w-[12%] px-4 py-3 font-medium">Applied</th>
-                    <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
-                    <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
-                    <th scope="col" className="w-[10%] px-4 py-3 font-medium">Owner</th>
-                    <th scope="col" className="w-[14%] px-4 py-3 font-medium text-right">Next step</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {page.rows.map((row) => (
-                    <tr key={row.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-surface-soft)]/70">
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">{row.candidateName}</p>
-                          <p className="text-xs text-[color:var(--app-muted)]">{row.candidateEmail}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="space-y-1">
-                          <p className="text-sm text-[color:var(--app-heading)]">{row.jobTitle}</p>
-                          <p className="text-xs text-[color:var(--app-muted)]">{row.roleLabel || "No role linked"}</p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{new Date(row.appliedAt).toLocaleDateString()}</td>
-                      <td className="px-4 py-4">
-                        <StatusPill label={row.hasResume ? "Attached" : "Missing"} tone={row.hasResume ? "emerald" : "amber"} />
-                      </td>
-                      <td className="px-4 py-4">
-                        <StatusPill label={candidateApplicationStatusLabels[row.status]} tone={statusTone(row.status)} />
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{row.candidateOwner || "Unassigned"}</td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link href={`/people/candidates/applicants/${row.id}` as Route}>
-                            <Button type="button" className="px-3 py-2 text-xs">
-                              Review application
-                            </Button>
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ApplicantsTable rows={page.rows} users={users} />
         )}
       </div>
     </SceneShell>
