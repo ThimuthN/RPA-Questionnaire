@@ -69,7 +69,6 @@ async function importDesignations() {
         await prisma.jobPosting.update({
           where: { id: existing.id },
           data: {
-            jobFunction: "RPA Development",
             salaryMin: designation.salaryMin,
             salaryMax: designation.salaryMax,
             updatedAt: new Date(),
