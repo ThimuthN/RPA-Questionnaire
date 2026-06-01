@@ -88,8 +88,8 @@ export const candidateNoteTypeLabels: Record<CandidateNoteType, string> = {
 };
 
 export const candidateAssessmentStatusLabels: Record<CandidateAssessmentStatus, string> = {
-  none: "Not sent",
-  invited: "Sent",
+  none: "Not assigned",
+  invited: "Assigned",
   in_progress: "In progress",
   passed: "Passed",
   review: "Review",

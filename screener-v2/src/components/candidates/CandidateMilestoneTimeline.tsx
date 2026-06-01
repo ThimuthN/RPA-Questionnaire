@@ -165,7 +165,7 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
         return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} | ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
       }
       if (milestone.assessment.status === "invited") {
-        return "Assessment sent.";
+        return "Assessment assigned.";
       }
       if (milestone.assessment.status === "in_progress") {
         return "Assessment in progress.";
@@ -502,7 +502,7 @@ function ScreenerMilestoneCard({
           {!milestone.assessment ? (
             <Link href={sendHref}>
               <Button type="button" variant="secondary">
-                Send assessment
+                Create assessment
               </Button>
             </Link>
           ) : (
