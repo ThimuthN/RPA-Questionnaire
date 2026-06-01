@@ -1,16 +1,25 @@
 "use client";
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 export function SceneTransition({ children }: PropsWithChildren) {
+  const [mounted, setMounted] = useState(false);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const reducedMotionApplied = mounted && reduceMotion;
+
   return (
     <motion.div
-      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 22, scale: 0.99, filter: "blur(10px)" }}
-      animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -14, scale: 0.992, filter: "blur(8px)" }}
-      transition={{ duration: reduceMotion ? 0.14 : 0.54, ease: [0.22, 1, 0.36, 1] }}
+      initial={reducedMotionApplied ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.995 }}
+      animate={reducedMotionApplied ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+      exit={reducedMotionApplied ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.997 }}
+      transition={{ duration: reducedMotionApplied ? 0.14 : 0.54, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>
