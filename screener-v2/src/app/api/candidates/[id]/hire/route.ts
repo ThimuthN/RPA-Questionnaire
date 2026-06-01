@@ -3,12 +3,9 @@ import { z } from 'zod';
 import { requireApiSession, requirePermissionForDepartment } from '@/lib/auth/guards';
 import { createRequestLogContext, logRouteError } from '@/lib/server/logger';
 import { prisma } from '@/lib/db/prisma';
-import { createEmployee } from '@/lib/employees/queries';
 import { cuidLike } from '@/lib/tokens/token-service';
 
 const HireSchema = z.object({
-  createEmployeeRecord: z.boolean().optional().default(false),
-  startDate: z.string().optional(),
   note: z.string().optional()
 });
 
@@ -44,40 +41,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Candidate not found' }, { status: 404 });
     }
 
-    const scopedPermission = await requirePermissionForDepartment(auth.session, 'hire_candidate', candidate.departmentId);
+    const scopedPermission = await requirePermissionForDepartment(auth.session, 'manage_candidates', candidate.departmentId);
     if (!scopedPermission.ok) return scopedPermission.response;
 
     // Check if already finalized (after permission check to avoid state leak)
     if (candidate.orgStage === 'finalized') {
       return NextResponse.json({ ok: false, message: 'Candidate is already finalized.' }, { status: 400 });
-    }
-
-    // Create employee record if requested
-    let newEmployee = null;
-    if (parsed.data.createEmployeeRecord) {
-      let startDate = new Date();
-      if (parsed.data.startDate) {
-        const parsedDate = new Date(parsed.data.startDate);
-        if (!isNaN(parsedDate.getTime())) {
-          startDate = parsedDate;
-        }
-      }
-      newEmployee = await createEmployee({
-        candidateId: id,
-        fullName: candidate.fullName,
-        email: candidate.email,
-        phone: candidate.phone || null,
-        title: null,
-        roleId: candidate.roleId || null,
-        departmentId: candidate.departmentId || null,
-        managerId: null,
-        employmentType: 'full_time',
-        employmentStatus: 'active',
-        startDate,
-        probationEndDate: null,
-        location: null,
-        level: null,
-      });
     }
 
     // Update candidate record to mark as hired
@@ -109,8 +78,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({
       ok: true,
       message: 'Candidate marked as hired',
-      candidate: updated,
-      employee: newEmployee,
+      candidate: updated
     });
   } catch (error) {
     logRouteError('candidate_hire_failed', context, error);
