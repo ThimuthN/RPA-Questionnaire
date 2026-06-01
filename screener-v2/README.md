@@ -10,14 +10,24 @@ Northstar Hiring OS is a candidate management and hiring workflow platform for m
 - Prisma
 - PostgreSQL (Neon-ready)
 
-## Current runtime scope
-- Register candidates, upload resumes, and track hiring notes
-- Create tests with role + multi-stack setup
-- Generate share links, tokens, passcodes, and Test IDs
-- Run timed assessments with autosave
-- Auto-score and store results
-- Review results and export CSV/JSON
-- Employee HRMS and onboarding flows are outside the v1 hiring workflow.
+## Current Runtime Scope (v1)
+
+### Implemented
+- **Jobs:** Create, publish, manage job postings
+- **Applicants:** Accept public applications with resume uploads
+- **Candidates:** Track candidates through pipeline (applicant → screening → pipeline → advanced review → hired/rejected)
+- **Assessment Evidence:** Assign assessments, view results, export data
+- **Permissions:** Role-based access control (view_candidates, manage_candidates, view_results, etc.)
+- **Notes & Activity:** Track hiring decisions and candidate interactions
+
+### Not Implemented
+- Candidate login portal (candidates apply via public page only)
+- Email automation or notifications
+- Calendar integration or interview scheduling
+- Offer management or acceptance flow
+- Employee HRMS or performance management
+- Interview panels or feedback forms
+- AI ranking or automatic decisions
 
 ## Local setup
 1. Copy `.env.example` to `.env.local`
