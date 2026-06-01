@@ -21,6 +21,7 @@
     "format:scaffold": "node scripts/scaffold-format.mjs",
     "postinstall": "node scripts/postinstall-prisma.mjs",
     "bootstrap:access": "npx tsx scripts/bootstrap-access.ts",
+    "setup:admin-innobot": "npx tsx scripts/setup-admin-innobot.ts",
     "import:designations": "npx tsx scripts/import-designations.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
