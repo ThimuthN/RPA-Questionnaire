@@ -84,8 +84,8 @@ function latestAssessmentSummary(candidate: CandidateData) {
   }
 
   return {
-    title: "Sent",
-    detail: "Assessment sent"
+    title: "Assigned",
+    detail: "Assessment assigned"
   };
 }
 
@@ -222,65 +222,66 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
-            <div className="min-w-0 space-y-4">
-              {outcomeBadges}
+          <div className="space-y-5">
+            {outcomeBadges}
 
-              <FinalizeActionBar
-                candidateId={candidate.id}
-                orgStage={candidate.orgStage}
-                finalizedAs={candidate.finalizedAs}
-                permissions={session.permissions}
-              />
-
-              <div className="grid gap-4 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
-                  <p className="break-all text-sm text-[color:var(--app-text)]">{candidate.email}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
-                  <p className="text-sm text-[color:var(--app-text)]">{candidate.roleLabel || "Role not set"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
-                  <p className="text-sm text-[color:var(--app-text)]">{candidate.hrOwner || "No owner assigned"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Pipeline stage</p>
-                  <p className="text-sm text-[color:var(--app-brand)]">{candidate.currentFocus || "No active stage yet"}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Latest assessment</p>
-                  <p className="text-lg text-[color:var(--app-heading)]">{latestAssessmentState.title}</p>
-                  <p className="text-xs text-[color:var(--app-muted)]">{latestAssessmentState.detail}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
-                  <p className="text-sm text-[color:var(--app-heading)]">{currentResume ? "Attached" : "Missing"}</p>
-                  <p className="break-all text-xs leading-5 text-[color:var(--app-muted)]">
-                    {currentResume ? currentResume.fileName : "Upload to add review context"}
-                  </p>
-                </div>
-                <div className="space-y-1 sm:col-span-2 lg:col-span-3">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next step</p>
-                  <p className="text-sm text-[color:var(--app-text)]">{nextPrompt(candidate)}</p>
-                </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
+                <p className="break-all text-sm text-[color:var(--app-text)] mt-1">{candidate.email}</p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
+                <p className="text-sm text-[color:var(--app-text)] mt-1">{candidate.roleLabel || "Role not set"}</p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
+                <p className="text-sm text-[color:var(--app-text)] mt-1">{candidate.hrOwner || "No owner assigned"}</p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Pipeline stage</p>
+                <p className="text-sm text-[color:var(--app-brand)] mt-1">{candidate.currentFocus || "No active stage yet"}</p>
               </div>
             </div>
 
-            <div className="min-h-0">
-              <CandidateNotesModal
-                candidateId={candidate.id}
-                notes={candidate.notes.map((note) => ({
-                  id: note.id,
-                  type: note.type,
-                  body: note.body,
-                  createdAt: note.createdAt,
-                  author: note.createdByName || note.createdByEmail
-                }))}
-              />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Assessment evidence</p>
+                <p className="text-lg text-[color:var(--app-heading)] mt-1">{latestAssessmentState.title}</p>
+                <p className="text-xs text-[color:var(--app-muted)] mt-1">{latestAssessmentState.detail}</p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
+                <p className="text-sm text-[color:var(--app-heading)] mt-1">{currentResume ? "Attached" : "Missing"}</p>
+                <p className="break-all text-xs leading-5 text-[color:var(--app-muted)] mt-1">
+                  {currentResume ? currentResume.fileName : "Upload to add review context"}
+                </p>
+              </div>
+              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next step</p>
+                <p className="text-sm text-[color:var(--app-text)] mt-1">{nextPrompt(candidate)}</p>
+              </div>
             </div>
+
+            <FinalizeActionBar
+              candidateId={candidate.id}
+              orgStage={candidate.orgStage}
+              finalizedAs={candidate.finalizedAs}
+              permissions={session.permissions}
+            />
+          </div>
+
+          <div className="border-t border-[color:var(--app-border)] pt-5">
+            <CandidateNotesModal
+              candidateId={candidate.id}
+              notes={candidate.notes.map((note) => ({
+                id: note.id,
+                type: note.type,
+                body: note.body,
+                createdAt: note.createdAt,
+                author: note.createdByName || note.createdByEmail
+              }))}
+            />
           </div>
         </StagePanel>
 

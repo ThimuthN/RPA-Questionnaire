@@ -921,10 +921,9 @@ export function CandidateMilestoneTimeline({
 
   return (
     <div className="space-y-5">
-      <div className="overflow-x-auto pb-2">
-        <div className="min-w-[720px] px-1">
-          <div className="flex items-start">
-            {timelineNodes.map((node, index) => {
+      <div className="space-y-3 pb-2">
+        <div className="space-y-3">
+          {timelineNodes.map((node, index) => {
               const isActive =
                 isAdvancedReviewGroup(node)
                   ? activeMilestoneId === "advanced_review_group"
@@ -952,18 +951,18 @@ export function CandidateMilestoneTimeline({
                 summary = stepSummary(node, hasResume);
               }
 
-              const segmentFilled = isComplete;
               const nodeState = isComplete ? "complete" : isActive ? "active" : "pending";
 
               return (
-                <div key={node.id} className="flex min-w-0 flex-1 items-start">
-                  <button
-                    type="button"
-                    onClick={() => setActiveMilestoneId(node.id)}
-                    className="group flex w-40 shrink-0 flex-col items-center text-center"
-                  >
+                <button
+                  key={node.id}
+                  type="button"
+                  onClick={() => setActiveMilestoneId(node.id)}
+                  className={`w-full rounded-[16px] border transition text-left p-4 ${isActive ? "border-[color:var(--app-brand)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_8%,var(--app-surface)),color-mix(in_srgb,var(--app-brand)_4%,var(--app-surface-soft)))]" : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:bg-[color:var(--app-surface)]"}`}
+                >
+                  <div className="flex items-start gap-3">
                     <span
-                      className={`relative flex h-11 w-11 items-center justify-center rounded-full border text-sm font-semibold transition duration-300 ${timelineNodeClassNames[nodeState]}`}
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition duration-300 ${timelineNodeClassNames[nodeState]}`}
                     >
                       {isActive ? (
                         <span className="absolute inset-[-6px] rounded-full border border-[color:var(--app-brand)]/35" />
@@ -984,35 +983,20 @@ export function CandidateMilestoneTimeline({
                         )}
                       </span>
                     </span>
-                    <span className="mt-3 text-sm font-medium text-[color:var(--app-heading)]">{title}</span>
-                    <span className="mt-1 max-w-[10rem] text-xs leading-5 text-[color:var(--app-muted)]">
-                      {summary}
-                    </span>
-                    <span className="mt-2 flex flex-wrap justify-center gap-2">
-                      <CandidateMilestoneStatusPill status={status} />
-                      {result && !isAdvancedReviewGroup(node) ? (
-                        <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
-                      ) : null}
-                    </span>
-                  </button>
-
-                  {index < timelineNodes.length - 1 ? (
-                    <div className="mt-5 flex min-w-[72px] flex-1 items-center px-2">
-                      <div className="relative h-[4px] w-full overflow-hidden rounded-full bg-[color:var(--app-border)]">
-                        <motion.div
-                          className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(135deg,var(--app-brand),color-mix(in_srgb,var(--app-success)_68%,var(--app-brand)))]"
-                          initial={reduceMotion ? false : { scaleX: 0 }}
-                          animate={{ scaleX: segmentFilled ? 1 : 0 }}
-                          transition={{ duration: reduceMotion ? 0 : 0.45, ease: [0.22, 1, 0.36, 1] }}
-                          style={{ width: "100%", transformOrigin: "left center" }}
-                        />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[color:var(--app-heading)]">{title}</p>
+                      <p className="text-xs text-[color:var(--app-muted)] mt-1">{summary}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <CandidateMilestoneStatusPill status={status} />
+                        {result && !isAdvancedReviewGroup(node) ? (
+                          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+                        ) : null}
                       </div>
                     </div>
-                  ) : null}
-                </div>
+                  </div>
+                </button>
               );
             })}
-          </div>
         </div>
       </div>
 
