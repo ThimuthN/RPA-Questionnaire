@@ -71,14 +71,19 @@ describe("permission-evaluator", () => {
       expect(result).toBe(false);
     });
 
-    it("returns false when user has revoke override", async () => {
+    it("returns false when user has revoke override (no grant override)", async () => {
       const userId = "user-123";
       const permission = "view_candidates";
 
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
         id: userId,
         roleId: "role-123",
-        permissionOverrides: [{ id: "override-1", permission, action: "revoke" }]
+        permissionOverrides: []
+      } as any);
+
+      vi.mocked(prisma.rolePermissionTemplate.findUnique).mockResolvedValueOnce({
+        scope: "scoped",
+        permission
       } as any);
 
       const result = await hasGlobalPermission(userId, permission);

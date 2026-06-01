@@ -47,7 +47,7 @@ function activeApplicantCount(rows: Array<{ status: string }>) {
   return rows.filter((row) => candidateApplicationStatusValues.includes(row.status as CandidateApplicationStatus) && isActiveApplicationStatus(row.status as CandidateApplicationStatus)).length;
 }
 
-function mapJobPosting(row: JobPostingRow): JobPostingListItem {
+export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
   return {
     id: row.id,
     slug: row.slug,

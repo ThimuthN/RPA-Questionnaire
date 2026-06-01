@@ -33,7 +33,7 @@ describe("GET /api/departments/[id]/candidates", () => {
   it("returns 403 if user lacks scoped view_candidates permission", async () => {
     vi.mocked(requireApiSession).mockResolvedValueOnce({
       ok: true,
-      session: { userId: "user-1", departmentId: "dept-2", permissions: [] }
+      session: { userId: "user-1", email: "user@example.com", roleId: null, departmentId: "dept-2", permissions: [], exp: 9999999999 }
     });
 
     vi.mocked(requirePermissionForDepartment).mockResolvedValueOnce({
@@ -55,7 +55,7 @@ describe("GET /api/departments/[id]/candidates", () => {
   it("allows access with global view_candidates permission", async () => {
     vi.mocked(requireApiSession).mockResolvedValueOnce({
       ok: true,
-      session: { userId: "user-1", departmentId: "dept-1", permissions: ["view_candidates"] }
+      session: { userId: "user-1", email: "user@example.com", roleId: null, departmentId: "dept-1", permissions: ["view_candidates"], exp: 9999999999 }
     });
 
     vi.mocked(requirePermissionForDepartment).mockResolvedValueOnce({
@@ -83,7 +83,7 @@ describe("GET /api/departments/[id]/candidates", () => {
   it("sanitizes error messages in 500 catch", async () => {
     vi.mocked(requireApiSession).mockResolvedValueOnce({
       ok: true,
-      session: { userId: "user-1", permissions: ["view_candidates"] }
+      session: { userId: "user-1", email: "user@example.com", roleId: null, departmentId: "dept-1", permissions: ["view_candidates"], exp: 9999999999 }
     });
 
     vi.mocked(requirePermissionForDepartment).mockResolvedValueOnce({
