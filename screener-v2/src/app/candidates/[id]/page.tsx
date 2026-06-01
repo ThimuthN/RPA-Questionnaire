@@ -212,10 +212,10 @@ export default async function CandidateDetailPage({
               {session.permissions.includes("delete_candidate") ? (
                 <form action={`/api/candidates/${candidate.id}/delete`} method="post">
                   <ConfirmSubmitButton
-                    variant="danger"
-                    confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data.`}
+                    variant="secondary"
+                    confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data. This is a data cleanup action and cannot be undone.`}
                   >
-                    Delete candidate
+                    Delete record
                   </ConfirmSubmitButton>
                 </form>
               ) : null}
