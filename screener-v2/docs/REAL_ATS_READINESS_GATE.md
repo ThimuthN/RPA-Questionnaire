@@ -215,17 +215,19 @@ Gaps:
 
 ### 11. Production-to-staging candidate import
 
-Status: Red
+Status: Yellow
 
 Facts:
 
 - Public application creation and local CSV candidate import exist.
-- The untracked 15AD copy scripts and reports were cleanup residue, not accepted product work.
+- A committed dry-run candidate import path now exists at `scripts/candidate-import-dry-run.ts`.
+- The dry run is capped, read-only, RPA-only, maps only to `RPA IND` / `RPA SL`, plans `CandidateApplication` creation, does not load resume blobs, and prints only redacted console output.
 
 Gaps:
 
-- There is no accepted committed production-to-staging import or copy pipeline in this repo.
-- If existing candidate data must be moved safely, that work still needs a constrained dry-run design and acceptance.
+- This batch intentionally stops at dry-run planning; no staging write path is accepted or executed yet.
+- Exact job matches can still fall back to department-scoped pool jobs, so the dry run still needs review before any staging-only apply batch.
+- Source and target database isolation still must be proven operationally before any live import.
 
 ### 12. Vercel deployment readiness
 
@@ -246,7 +248,7 @@ Gaps:
 ## Recommended next order
 
 1. Remove tracked env files from Git after credential rotation, then verify staging and Blob isolation explicitly.
-2. Repair the candidate import dry-run path so imported candidates always land with valid `CandidateApplication` records.
+2. Review the candidate import dry-run output, then add a staging-only apply step that uses the same plan and never writes to the source database.
 3. Decide whether `RoleCatalog` will continue to own both designations and access roles; if yes, finish the permission wording cleanup and align `hire_candidate` usage.
 4. Decide whether the department assessments tab becomes a real evidence workspace or should be removed until it is real.
 5. Narrow applicant bulk-assignment user loading if the active user base starts growing materially.
