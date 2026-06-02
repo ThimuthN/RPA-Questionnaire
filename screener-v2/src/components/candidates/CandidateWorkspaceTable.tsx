@@ -9,7 +9,8 @@ import { MoreHorizontal, User } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
-import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
+import type { CandidateStage } from "@/lib/candidates/types";
+import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
 import {
   getForwardCandidateStages,
   normalizeCandidateStage
@@ -55,13 +56,9 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
   return null;
 }
 
-function displayStageLabel(stage: CandidateStage) {
-  return stage === "screening" ? "Screening assessment" : candidateStageLabels[stage];
-}
-
 function displayStageActionLabel(stage: CandidateStage) {
   if (stage === "screening") return "Move to Screening";
-  return `Move to ${displayStageLabel(stage)}`;
+  return `Move to ${getCandidateStageLabel(stage)}`;
 }
 
 function finalDecisionLabel(candidate: CandidateWorkspaceItem) {
@@ -232,7 +229,7 @@ export function CandidateWorkspaceTable({
                         {promoteError[candidate.id] && (
                           <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
                         )}
-                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{displayStageLabel(stage)}</p>
+                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{getCandidateStageLabel(stage)}</p>
                         <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
                         {decision ? (
                           <StatusPill label={decision} tone={candidate.finalizedAs === "hired" ? "emerald" : "red"} />

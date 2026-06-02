@@ -15,7 +15,8 @@ import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { candidateStageLabels, type CandidateStage } from "@/lib/candidates/types";
+import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
+import type { CandidateStage } from "@/lib/candidates/types";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
@@ -50,10 +51,6 @@ function applicationTone(status: string): "neutral" | "blue" | "amber" | "emeral
   if (status === "moved_to_pipeline") return "emerald";
   if (status === "closed") return "blue";
   return "neutral";
-}
-
-function displayStageLabel(stage: CandidateStage) {
-  return stage === "screening" ? "Screening assessment" : candidateStageLabels[stage];
 }
 
 function latestAssessmentSummary(candidate: CandidateData) {
@@ -171,7 +168,7 @@ export default async function CandidateDetailPage({
         <StatusPill label={`Owner ${candidate.hrOwner}`} tone="neutral" className="normal-case tracking-normal" />
       ) : null}
       <StatusPill
-        label={displayStageLabel(candidate.stage as CandidateStage) ?? candidate.stage}
+        label={getCandidateStageLabel(candidate.stage as CandidateStage)}
         tone={candidate.stage === "applicant" ? "amber" : "blue"}
       />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />

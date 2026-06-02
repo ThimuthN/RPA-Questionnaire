@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DataTable } from "@/components/primitives/DataTable";
 import { getDepartment } from "@/lib/db/departments";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
+import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
 import { candidateStageValues, type CandidateStage } from "@/lib/candidates/types";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
@@ -40,7 +41,8 @@ export default async function DepartmentCandidatesPage({
     notFound();
   }
 
-  const selectedStage = candidateStageValues.includes(pageState.stage as CandidateStage)
+  const isFinalizedView = pageState.stage === "finalized";
+  const selectedStage = !isFinalizedView && candidateStageValues.includes(pageState.stage as CandidateStage)
     ? (pageState.stage as CandidateStage)
     : "pipeline";
 
@@ -48,9 +50,9 @@ export default async function DepartmentCandidatesPage({
     q: pageState.q?.trim() || undefined,
     roleId: pageState.roleId?.trim() || undefined,
     departmentId: id,
-    stage: selectedStage,
-    stageValues: selectedStage === "pipeline" ? ["pipeline", "applicant"] : undefined,
-    orgStage: "active",
+    stage: isFinalizedView ? undefined : selectedStage,
+    stageValues: !isFinalizedView && selectedStage === "pipeline" ? ["pipeline", "new"] : undefined,
+    orgStage: isFinalizedView ? "finalized" : "active",
     sort: "inbox",
     page: Number(pageState.page ?? 1),
     pageSize: Number(pageState.pageSize ?? 12)
@@ -131,7 +133,7 @@ export default async function DepartmentCandidatesPage({
             {
               header: "Stage",
               width: "w-[15%]",
-              render: (row) => <p className="text-sm capitalize text-[color:var(--app-text)]">{row.stage}</p>
+              render: (row) => <p className="text-sm text-[color:var(--app-text)]">{getCandidateStageLabel(row.stage)}</p>
             },
             {
               header: "Designation",
