@@ -26,6 +26,15 @@ import type {
   CandidateWorkspacePage
 } from "./types";
 
+export type CandidateStageCounts = {
+  applicant: number;
+  pipeline: number;
+  screening: number;
+  interview: number;
+  advanced_review: number;
+  finalized: number;
+};
+
 function buildCandidateWhere(filters?: {
   roleId?: string;
   stage?: CandidateStage;
@@ -322,6 +331,45 @@ export async function listCandidateWorkspacePage(
     ownerOptions,
     summary: buildCandidateOpenWorkSummary(sorted)
   };
+}
+
+export async function getCandidateStageCounts(departmentId?: string): Promise<CandidateStageCounts> {
+  const activeWhere = {
+    orgStage: "active" as const,
+    ...(departmentId ? { departmentId } : {})
+  };
+  const finalizedWhere = {
+    orgStage: "finalized" as const,
+    ...(departmentId ? { departmentId } : {})
+  };
+
+  const [stageCounts, finalizedCount] = await Promise.all([
+    prisma.candidate.groupBy({
+      by: ["stage"],
+      where: activeWhere,
+      _count: true
+    }),
+    prisma.candidate.count({ where: finalizedWhere })
+  ]);
+
+  const counts: CandidateStageCounts = {
+    applicant: 0,
+    pipeline: 0,
+    screening: 0,
+    interview: 0,
+    advanced_review: 0,
+    finalized: finalizedCount
+  };
+
+  for (const group of stageCounts) {
+    if (group.stage === "new") {
+      counts.pipeline += group._count;
+    } else if (group.stage in counts) {
+      counts[group.stage as keyof CandidateStageCounts] = group._count;
+    }
+  }
+
+  return counts;
 }
 
 export async function getCandidateDetail(candidateId: string): Promise<CandidateDetail | null> {

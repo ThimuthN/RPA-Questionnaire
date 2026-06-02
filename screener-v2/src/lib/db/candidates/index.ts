@@ -18,4 +18,4 @@ export {
   linkCandidateAssessmentToMilestone,
   attachExistingAssessmentToMilestone
 } from "./milestones";
-export { listCandidates, listCandidateWorkspacePage, getCandidateDetail } from "./queries";
+export { listCandidates, listCandidateWorkspacePage, getCandidateStageCounts, getCandidateDetail } from "./queries";

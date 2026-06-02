@@ -1,54 +1,67 @@
-"use client";
-
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { getCandidateStageCounts } from "@/lib/db/candidates";
 
-type CandidatesView = "jobs" | "applicants" | "pipeline" | "screener" | "interview" | "advanced_review" | "finalized";
+export type CandidatesView =
+  | "jobs"
+  | "applicants"
+  | "pipeline"
+  | "screener"
+  | "interview"
+  | "advanced_review"
+  | "finalized";
 
-interface StageCounts {
-  applicant: number;
-  pipeline: number;
-  screening: number;
-  interview: number;
-  advanced_review: number;
-  finalized: number;
+type StageCounts = Awaited<ReturnType<typeof getCandidateStageCounts>>;
+
+function buildItems(scope: "global" | "department", departmentId?: string) {
+  const baseCandidatesPath =
+    scope === "department" && departmentId
+      ? (`/departments/${departmentId}/candidates` as Route)
+      : ("/people/candidates" as Route);
+  const applicantsPath =
+    scope === "department" && departmentId
+      ? (`/departments/${departmentId}/applicants` as Route)
+      : ("/people/candidates/applicants" as Route);
+  const jobsPath =
+    scope === "department" && departmentId
+      ? (`/departments/${departmentId}/jobs` as Route)
+      : ("/people/candidates/jobs" as Route);
+
+  return [
+    { key: "jobs", label: "Jobs", countKey: null, href: jobsPath },
+    { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath },
+    { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: `${baseCandidatesPath}?stage=pipeline` as Route },
+    { key: "screener", label: "Screening", countKey: "screening", href: `${baseCandidatesPath}?stage=screening` as Route },
+    { key: "interview", label: "Interview", countKey: "interview", href: `${baseCandidatesPath}?stage=interview` as Route },
+    {
+      key: "advanced_review",
+      label: "Advanced Review",
+      countKey: "advanced_review",
+      href: `${baseCandidatesPath}?stage=advanced_review` as Route
+    },
+    { key: "finalized", label: "Finalized", countKey: "finalized", href: `${baseCandidatesPath}?stage=finalized` as Route }
+  ] satisfies Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }>;
 }
 
-const items: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
-  { key: "jobs", label: "Jobs", countKey: null, href: "/people/candidates/jobs" as Route },
-  { key: "applicants", label: "Applicants", countKey: "applicant", href: "/people/candidates/applicants" as Route },
-  { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: "/people/candidates?stage=pipeline" as Route },
-  { key: "screener", label: "Screening", countKey: "screening", href: "/people/candidates?stage=screening" as Route },
-  { key: "interview", label: "Interview", countKey: "interview", href: "/people/candidates?stage=interview" as Route },
-  { key: "advanced_review", label: "Advanced Review", countKey: "advanced_review", href: "/people/candidates?stage=advanced_review" as Route },
-  { key: "finalized", label: "Finalized", countKey: "finalized", href: "/people/candidates?stage=finalized" as Route }
-];
-
-export function CandidatesViewSwitch({ current }: { current: CandidatesView }) {
-  const [counts, setCounts] = useState<StageCounts | null>(null);
-
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const res = await fetch("/api/candidates/stage-counts");
-        if (res.ok) {
-          const data = await res.json();
-          setCounts(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch stage counts:", err);
-      }
-    };
-
-    fetchCounts();
-  }, []);
+export async function CandidatesViewSwitch({
+  current,
+  scope = "global",
+  departmentId,
+  countsDepartmentId
+}: {
+  current: CandidatesView;
+  scope?: "global" | "department";
+  departmentId?: string;
+  countsDepartmentId?: string;
+}) {
+  const counts = await getCandidateStageCounts(countsDepartmentId);
+  const items = buildItems(scope, departmentId);
 
   return (
     <div className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-1 text-sm text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)]">
       {items.map((item) => {
-        const count = item.countKey && counts ? counts[item.countKey] : null;
+        const count = item.countKey ? counts[item.countKey] : null;
         const label = count !== null ? `${item.label} (${count})` : item.label;
 
         return (

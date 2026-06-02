@@ -8,18 +8,18 @@ describe("nav-config", () => {
       const viewer = { permissions: ["manage_users"], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer);
       expect(items.map((item) => item.label)).toEqual([
+        "Departments",
         "Jobs",
         "Applicants",
         "Candidates",
-        "Assessments",
-        "Departments"
+        "Assessments"
       ]);
       expect(items.map((item) => item.href)).toEqual([
+        "/departments",
         "/people/candidates/jobs",
         "/people/candidates/applicants",
         "/people/candidates",
-        "/assessments",
-        "/departments"
+        "/assessments"
       ]);
     });
 
@@ -40,10 +40,11 @@ describe("nav-config", () => {
       expect(labels).not.toContain("My Department");
     });
 
-    it("hides Departments without manage_users permission", () => {
+    it("shows a direct Workspace link for department-scoped users without manage_users", () => {
       const viewer = { permissions: [], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const labels = getNavItems(viewer).map((item) => item.label);
-      expect(labels).not.toContain("Departments");
+      expect(labels).toContain("Workspace");
+      expect(getNavItems(viewer)[0]?.href).toBe("/departments/dept-1");
     });
 
     it("shows Departments with manage_users permission", () => {
@@ -112,6 +113,10 @@ describe("nav-config", () => {
 
     it("marks /departments as active for Departments item", () => {
       expect(isNavItemActive("/departments", "/departments")).toBe(true);
+    });
+
+    it("marks department workspace detail routes active for Workspace item", () => {
+      expect(isNavItemActive("/departments/dept-1/users", "/departments/dept-1")).toBe(true);
     });
 
     it("marks /jobs as active for public Careers item", () => {

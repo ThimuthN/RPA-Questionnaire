@@ -1,6 +1,6 @@
 # Unified ATS Workspace Plan
 
-Last audited: 2026-06-02
+Last updated: 2026-06-02
 
 Classification: `Patch`
 
@@ -18,19 +18,28 @@ Baseline:
 - Canonical detail links should stay on `/people/candidates/[id]` and `/people/candidates/applicants/[id]`.
 - Scope belongs in loader inputs and permission checks, not in duplicate UI ownership.
 
+## Implementation status
+
+- Batch `15AH-B` implemented `CandidateWorkspaceView` and `ApplicantWorkspaceView`.
+- `/people/candidates` and `/departments/[id]/candidates` now render the same candidate workspace body with different scope inputs.
+- `/people/candidates/applicants` and `/departments/[id]/applicants` now render the same applicant workspace body with different scope inputs.
+- Department candidate pages no longer own a local simplified `DataTable`.
+- Candidate profile links remain canonical `/people/candidates/[id]`.
+- Remaining duplicated ATS list surfaces are jobs and department assessments.
+
 ## Duplicate-system audit
 
 | Area | Global implementation | Department implementation | Duplication problem | Shared component/loader candidate | Consolidation risk | Recommended action |
 | --- | --- | --- | --- | --- | --- | --- |
-| Candidates route shell | `/people/candidates` uses `SceneShell`, `PeopleViewSwitch`, `CandidatesViewSwitch`, summary pills, notices, filters, empty state, and `PaginationBar`. | `/departments/[id]/candidates` renders a local header and local tabs inside the department layout. | Two different shells exist for the same ATS workflow. The department page is materially thinner and behaves like a second system. | Shared route-level `CandidateWorkspaceView` with scope props. | Medium. Permissions and surrounding layout differ, but the page payload is already compatible. | Next batch: share the route shell while keeping department access checks in the route. |
-| Candidates data loader | Both routes call `listCandidateWorkspacePage`. | Both routes call `listCandidateWorkspacePage`. | Loader is already shared, but stage-query parsing drifted. Department logic mixed applicants into pipeline and previously treated finalized as active. | Keep `listCandidateWorkspacePage`; add one small shared stage-query parser next batch. | Low. The data contract already exists. | Preserve the loader. Consolidate query parsing, not the DB code. |
-| Candidates table | Global route uses `CandidateWorkspaceTable`. | Department route used a custom `DataTable`. | Department candidates loses bulk actions, quick actions, assessment pills, owner visibility, and canonical stage display rules. | `CandidateWorkspaceTable`. | Low. The table already accepts permissions and department options. | Next batch: use `CandidateWorkspaceTable` for department scope instead of maintaining a second table. |
-| Candidate filters | Global filters: `q`, `roleId`, `departmentId` when globally scoped, `owner`, `assessmentStatus`, `finalizedAs`, `sort`, plus reset/quick filters. | Department filters: only `q` and `roleId`. | Same workspace concept, different filter semantics and different empty states. | Shared filter form with scope-aware field toggles. | Medium. Global-only filters must stay hidden for department users. | Next batch: extract one shared filter form configuration. |
-| Candidate stage tabs and buckets | `CandidatesViewSwitch` plus `/api/candidates/stage-counts`; workspace summary comes from `buildCandidateOpenWorkSummary`. | Hard-coded local tabs with no counts and no open-work summary. | Separate tab systems encourage drift. Department candidate tabs were already wrong in query behavior. | Shared stage switch fed by scoped counts or static counts fallback. | Medium. Scoped counts need either a scoped endpoint or route-provided counts. | Next batch: share the stage switch after candidate table unification. |
-| Candidate actions | Global page exposes import, add candidate, bulk actions, move-stage actions, reject, assessment shortcuts, resume shortcut, and profile navigation. | Department page only links to the profile. | Department route is a stripped shadow UI, not the same ATS workspace. | `CandidateWorkspaceTable` action surface. | Low. Action permissions already live in the shared table. | Do not re-implement actions locally. Reuse the shared table next batch. |
-| Candidate pagination | Global page renders `PaginationBar`. | Department page paginates in the loader but exposes no pager. | Same loader, different page semantics. Department view silently truncates after the first page. | `PaginationBar` via shared route shell. | Low. | Fix as part of the shared route shell, not as another local one-off. |
-| Applicants route shell | `/people/candidates/applicants` uses `SceneShell`, `CandidatesViewSwitch`, summary cards, notices, filters, shared table, and pager. | `/departments/[id]/applicants` uses the department layout with a smaller local header and the same table/pager. | This is mostly a shell duplication problem, not a loader/table duplication problem. | Shared route-level `ApplicantWorkspaceView`. | Low. | Next batch: unify the page shell only. Keep the shared table and loader as-is. |
-| Applicants loader, table, bulk assignment, pagination | Global route uses `listApplicantWorkspacePage`, `ApplicantsTable`, assignment modal/API flow, and `PaginationBar`. | Department route uses the same loader, table, modal/API flow, and pager. | This area is mostly already unified. The remaining differences are copy, empty state, and route wrapper only. | Existing `listApplicantWorkspacePage` and `ApplicantsTable`. | Low. | Treat applicant unification as a shell cleanup, not a data-layer rewrite. |
+| Candidates route shell | `/people/candidates` uses `SceneShell`, `PeopleViewSwitch`, and now `CandidateWorkspaceView`. | `/departments/[id]/candidates` uses the department layout and now `CandidateWorkspaceView`. | Resolved for candidate workflow body. Outer shell still differs because global uses the people shell and department uses the department layout. | `CandidateWorkspaceView` | Low | Done in `15AH-B` |
+| Candidates data loader | Both routes call `listCandidateWorkspacePage` through `CandidateWorkspaceView`. | Both routes call `listCandidateWorkspacePage` through `CandidateWorkspaceView`. | Resolved. Query parsing now lives in one shared candidate workspace body. | `listCandidateWorkspacePage` | Low | Done in `15AH-B` |
+| Candidates table | Both routes now use `CandidateWorkspaceTable`. | Both routes now use `CandidateWorkspaceTable`. | Resolved. | `CandidateWorkspaceTable` | Low | Done in `15AH-B` |
+| Candidate filters | Global filters remain richer because only global scope can switch departments, but both scopes now render one shared filter form body. | Same shared filter form body with department filter removed by scope. | Resolved without adding a new abstraction layer. | `CandidateWorkspaceView` | Low | Done in `15AH-B` |
+| Candidate stage tabs and buckets | Both routes now use `CandidatesViewSwitch` with shared scoped counts and shared links. | Both routes now use `CandidatesViewSwitch` with shared scoped counts and shared links. | Resolved for candidates/applicants/jobs switch styling and bucket labels. | `CandidatesViewSwitch` | Low | Done in `15AH-B` |
+| Candidate actions | Both routes now expose the same table actions, bulk actions, pagination, and canonical profile navigation. | Both routes now expose the same table actions, bulk actions, pagination, and canonical profile navigation. | Resolved for the workspace surface. | `CandidateWorkspaceTable` | Low | Done in `15AH-B` |
+| Candidate pagination | Both routes now render `PaginationBar` from the shared view. | Both routes now render `PaginationBar` from the shared view. | Resolved. | `PaginationBar` | Low | Done in `15AH-B` |
+| Applicants route shell | `/people/candidates/applicants` uses `SceneShell` and now `ApplicantWorkspaceView`. | `/departments/[id]/applicants` uses the department layout and now `ApplicantWorkspaceView`. | Resolved for applicant workflow body. | `ApplicantWorkspaceView` | Low | Done in `15AH-B` |
+| Applicants loader, table, bulk assignment, pagination | Both routes now use `listApplicantWorkspacePage`, `ApplicantsTable`, and `PaginationBar` through the shared view. | Both routes now use `listApplicantWorkspacePage`, `ApplicantsTable`, and `PaginationBar` through the shared view. | Resolved. | `ApplicantWorkspaceView` | Low | Done in `15AH-B` |
 | Jobs workspace | `/people/candidates/jobs` and `/departments/[id]/jobs` both call `listJobPostings`, but each defines its own `DataTable` columns and action layout. | Department route is a smaller duplicate of the global jobs table. | Real duplication exists, but it is not the highest-value ATS unification slice. | Possible future `JobsWorkspaceTable`. | Medium. Global jobs has publish/open/edit actions that the department route does not mirror completely. | Defer until after candidate/applicant workspace unification. |
 | Assessments workspace | `/assessments` is a global hub for create/templates/results. | `/departments/[id]/assessments` is a placeholder card that just points back to candidates. | This is not true shared-workspace duplication yet; the department page is not a real assessment workspace. | No extraction target yet. | Low. | Defer. Either remove it from primary navigation later or replace it with real scoped evidence entry points. |
 
@@ -88,41 +97,35 @@ Baseline:
 - Per-application job context on the profile.
 - Any “real ATS” claim that imported candidates are fully equivalent to job applicants.
 
-## Shared implementation contract for the next batch
+## Implemented shared workspace contract
 
 ### Candidate workspace shared view
 
-- One shared route-level component or helper used by:
+- One shared route-level component used by:
   - `/people/candidates`
   - `/departments/[id]/candidates`
-- Required inputs:
+- Implemented inputs:
   - `scope: "global" | "department"`
   - `departmentId?: string`
   - `searchParams`
-  - `permissions`
-  - optional `departmentOptions` only when `scope === "global"`
-- Must preserve:
+- Preserved:
   - DB-side pagination and filtering through `listCandidateWorkspacePage`
   - `CandidateWorkspaceTable`
   - existing candidate stage tabs/buckets
   - existing empty states and notices
   - canonical profile links to `/people/candidates/[id]`
-- Must not do in the next batch:
-  - no new generic workspace framework
-  - no schema changes
-  - no candidate profile rewrite
+- Shared lifecycle labels still come from `getCandidateStageLabel()`.
 
 ### Applicant workspace shared view
 
-- One shared route-level component or helper used by:
+- One shared route-level component used by:
   - `/people/candidates/applicants`
   - `/departments/[id]/applicants`
-- Required inputs:
+- Implemented inputs:
   - `scope: "global" | "department"`
   - `departmentId?: string`
   - `searchParams`
-  - `users`
-- Must preserve:
+- Preserved:
   - DB-side pagination and filtering through `listApplicantWorkspacePage`
   - `ApplicantsTable`
   - current bulk assignment behavior
@@ -167,18 +170,22 @@ Baseline:
 - Department-local assessment placeholder pages.
 - Any admin-only global pages that exist for oversight rather than day-to-day hiring work.
 
-## Tiny safe fixes in this batch
+## Batch 15AH-B changes
 
-- Added `getCandidateStageLabel()` with unit coverage so candidate stage labels stop being duplicated between the shared table and profile.
-- Fixed the department candidates route so the `finalized` tab reads finalized candidates instead of querying `orgStage: "active"`.
-- Fixed the department candidates pipeline filter so it no longer mixes applicant-stage records into the pipeline view.
+- Added `CandidateWorkspaceView` and `ApplicantWorkspaceView`.
+- Rewired global and department candidate/applicant routes to those shared views.
+- Replaced the department candidates local `DataTable` flow with `CandidateWorkspaceTable`.
+- Reused `ApplicantsTable` for both applicant scopes through one shared route body.
+- Converted `CandidatesViewSwitch` to one shared scoped switch with scoped stage counts and scoped links.
+- Kept canonical candidate profile links on `/people/candidates/[id]`.
+- Added focused tests for shared view wiring, route rewiring, canonical candidate links, and nav correction.
 
 ## Exact next recommended implementation batch
 
-`Batch 15AH-B: Extract shared candidate and applicant workspace views`
+`Batch 15AH-C: Resolve remaining ATS surface duplication and import parity blockers`
 
 Scope:
 
-- Replace `/departments/[id]/candidates` with the same mature candidate workspace UI used globally, scoped by department.
-- Replace `/departments/[id]/applicants` with the same mature applicant workspace shell used globally, scoped by department.
-- Keep jobs and assessments out of scope unless a truly trivial extraction falls out naturally after the candidate/applicant work is complete.
+- Decide whether jobs should be extracted into one shared scoped workspace or explicitly deferred again.
+- Make the department assessments tab honest: either turn it into a real scoped evidence entry point or demote/remove it from primary workspace flow.
+- Close import parity gaps by defining how imported/manual candidates gain real `CandidateApplication` records without fake workflow data.

@@ -20,32 +20,33 @@ Status: Yellow
 
 Facts:
 
-- Applicant workspace data ownership is already mostly unified: global and department applicant routes both use `listApplicantWorkspacePage`, `ApplicantsTable`, and `PaginationBar`.
-- Candidate workspace data ownership is only partially unified: both routes use `listCandidateWorkspacePage`, but the department candidates page still renders a different shell and a different table.
+- Candidate and applicant workspace bodies are now shared across global and department scopes through `CandidateWorkspaceView` and `ApplicantWorkspaceView`.
+- Both candidate scopes now use `CandidateWorkspaceTable`, shared lifecycle labels, shared pagination, and shared stage tabs.
+- Both applicant scopes now use `ApplicantsTable`, shared summary cards, shared filters, and shared pagination.
 - Jobs still have duplicate global and department list views.
 - Department assessments is still a placeholder page, not a real scoped assessment workspace.
 
 Gaps:
 
-- The product still presents two competing ATS surfaces in daily use: a mature global candidate workspace and a weaker department candidate workspace.
+- The product no longer has duplicate candidate/applicant workflow UIs, but jobs and department assessments still keep the ATS surface uneven.
 - Responsible-team assignment remains application-scoped, so imported/manual candidates are still second-class workflow citizens until imports create `CandidateApplication` records.
 
 Next implementation slice:
 
-- Extract one shared candidate workspace view for `/people/candidates` and `/departments/[id]/candidates`.
-- Extract one shared applicant workspace view shell for `/people/candidates/applicants` and `/departments/[id]/applicants`.
-- Defer jobs and assessments until that candidate/applicant unification is complete.
+- Decide whether jobs should become one shared scoped workspace or remain intentionally separate for now.
+- Make department assessments honest as a real scoped evidence entry point or remove it from primary workspace flow.
+- Define candidate-import parity so imported/manual candidates can gain real `CandidateApplication` records.
 
 ## Readiness summary
 
 | Area | Status | Why |
 | --- | --- | --- |
-| Department workspace | Yellow | Real routes and access gates exist, but candidate and jobs views still diverge from the global ATS surface and assessments is still placeholder-grade. |
+| Department workspace | Yellow | Candidate and applicant workflow views now share the same scoped UI as global, but jobs still duplicate and assessments is still placeholder-grade. |
 | Users/access | Yellow | Department scoping and permission inheritance exist, but role/designation ownership is still mixed and one permission is misleadingly unused. |
 | Job designations | Yellow | Department-scoped designation records exist, but they still carry access permissions, which keeps business designation and access role concerns coupled. |
 | Jobs | Yellow | Jobs can be created, published, and tied to applications, but global and department job pages still duplicate list UI instead of sharing one scoped ATS view. |
-| Applicants | Yellow | Applicant review now uses DB-side search, pagination, counts, and department/job/status filters, and both scopes already share the same loader/table; the remaining duplication is mostly route shell and copy. |
-| Candidates | Yellow | Candidate list/detail flow is real, but the department candidates page still runs as a separate weaker UI and some filtering/sorting semantics still drift after page fetch. |
+| Applicants | Yellow | Applicant review now uses one shared route-level workspace body across global and department scopes, with DB-side search, pagination, counts, and filters preserved. |
+| Candidates | Yellow | Candidate list/detail flow is real and both scopes now share one workspace body, but assessment-status filtering and sorting still drift after page fetch and jobs duplication is still adjacent. |
 | Responsible team | Yellow | Application-based responsible-team assignment exists, but candidates without applications cannot use it and the profile loads all active users instead of department-limited choices. |
 | Assessments/evidence | Yellow | Assessment creation, invites, results, and milestone evidence exist, but department-level assessment review is still not a real scoped workspace. |
 | Candidate profile | Yellow | The profile is usable and evidence-driven, but permission wording is inconsistent and imported/no-application cases still expose workflow gaps. |
@@ -70,11 +71,11 @@ Facts:
 - Department routes exist for overview, designations, jobs, applicants, candidates, assessments, users, and access.
 - The layout enforces workspace access before rendering the tab set.
 - The overview page provides counts for users, designations, jobs, applicants, active candidates, and finalized candidates.
-- Department applicants already reuse the same DB loader and table as the global applicant queue.
+- Department candidates and applicants now reuse the same route-level workspace bodies as the global ATS views.
 
 Gaps:
 
-- The workspace is uneven. Applicants are close to shared, but candidates and jobs still present department-specific list UIs instead of scoped versions of the mature global ATS views.
+- The workspace is still uneven because jobs remain duplicated and assessments is still not a real operational workspace.
 - The assessments tab is still a redirect-style placeholder.
 - The overview counts are useful, but they do not replace actual operational views.
 
@@ -148,7 +149,7 @@ After:
 - Pagination is DB-side and clamped to a bounded page window.
 - Summary counts are DB-side.
 - Department applicant job options are department-scoped.
-- Both applicant list pages now expose pagination controls and clearer filtered-empty states.
+- Both applicant list pages now expose the same summary, filters, table, and pagination through one shared workspace body.
 
 Remaining risks:
 
@@ -175,12 +176,13 @@ Facts:
 - Candidate workspace has real filters, pagination controls, profile navigation, and finalization states.
 - Candidate detail is evidence-backed with resumes, notes, applications, milestones, and activity.
 - This batch added a shared `getCandidateStageLabel()` helper so stage labels stop diverging between the table and profile.
+- This batch also unified global and department candidate workspace bodies through `CandidateWorkspaceView`.
 
 Gaps:
 
 - Candidate workspace uses DB pagination, but assessment-status filtering happens after the page fetch and sorting also happens in application code.
 - That means totals and visible rows can diverge from what the filter appears to mean.
-- The department candidates route still does not reuse the mature global candidate table and route shell.
+- The remaining duplication problem has shifted to jobs and the placeholder department assessments surface.
 
 ### 7. Responsible team
 
@@ -274,8 +276,8 @@ Gaps:
 
 ## Recommended next order
 
-1. Extract one shared candidate workspace view and one shared applicant workspace view so department scope stops behaving like a second ATS.
-2. Remove tracked env files from Git after credential rotation, then verify staging and Blob isolation explicitly.
-3. Review the candidate import dry-run output, then add a staging-only apply step that uses the same plan and never writes to the source database.
+1. Remove tracked env files from Git after credential rotation, then verify staging and Blob isolation explicitly.
+2. Review the candidate import dry-run output, then add a staging-only apply step that uses the same plan and never writes to the source database.
+3. Decide whether jobs should become one shared scoped workspace or remain intentionally separate for now.
 4. Decide whether `RoleCatalog` will continue to own both designations and access roles; if yes, finish the permission wording cleanup and align `hire_candidate` usage.
 5. Decide whether the department assessments tab becomes a real evidence workspace or should be removed until it is real.

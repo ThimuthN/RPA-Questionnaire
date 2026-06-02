@@ -1,5 +1,5 @@
 import { requireApiSession } from "@/lib/auth/guards";
-import { prisma } from "@/lib/db/prisma";
+import { getCandidateStageCounts } from "@/lib/db/candidates";
 
 export const dynamic = "force-dynamic";
 
@@ -9,32 +9,5 @@ export async function GET() {
     return auth.response;
   }
 
-  const stageCounts = await prisma.candidate.groupBy({
-    by: ["stage"],
-    where: { orgStage: "active" },
-    _count: true
-  });
-
-  const finalizedCount = await prisma.candidate.count({
-    where: { orgStage: "finalized" }
-  });
-
-  const counts: Record<string, number> = {
-    applicant: 0,
-    pipeline: 0,
-    screening: 0,
-    interview: 0,
-    advanced_review: 0,
-    finalized: finalizedCount
-  };
-
-  for (const group of stageCounts) {
-    if (group.stage === "new") {
-      counts.pipeline += group._count;
-    } else if (group.stage in counts) {
-      counts[group.stage] = group._count;
-    }
-  }
-
-  return Response.json(counts);
+  return Response.json(await getCandidateStageCounts());
 }
