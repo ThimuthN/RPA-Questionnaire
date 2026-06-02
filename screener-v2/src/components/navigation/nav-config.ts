@@ -4,7 +4,7 @@ import { BriefcaseBusiness, Building2, ClipboardList, Users2 } from "lucide-reac
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
-export type NavItem = { href: Route; label: string; icon: LucideIcon };
+export type NavItem = { href: Route; label: string; icon: LucideIcon; section?: string };
 
 export function getNavItems(viewer: Pick<AppSession, "permissions" | "departmentId"> | null): NavItem[] {
   if (!viewer) {
@@ -12,14 +12,14 @@ export function getNavItems(viewer: Pick<AppSession, "permissions" | "department
   }
 
   const workspaceItem = viewer.permissions.includes("manage_users")
-    ? [{ href: "/departments" as Route, label: "Departments", icon: Building2 }]
+    ? [{ href: "/departments" as Route, label: "Workspaces", icon: Building2 }]
     : viewer.departmentId
-      ? [{ href: `/departments/${viewer.departmentId}` as Route, label: "Workspace", icon: Building2 }]
+      ? [{ href: `/departments/${viewer.departmentId}` as Route, label: "Workspaces", icon: Building2 }]
       : [];
 
   return [
     ...workspaceItem,
-    { href: "/people/candidates/jobs" as Route, label: "Jobs", icon: BriefcaseBusiness },
+    { href: "/people/candidates/jobs" as Route, label: "Jobs", icon: BriefcaseBusiness, section: "All hiring" },
     { href: "/people/candidates/applicants" as Route, label: "Applicants", icon: ClipboardList },
     { href: "/people/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
     { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList }

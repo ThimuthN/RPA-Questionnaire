@@ -66,29 +66,37 @@ export function WorkspaceRail({
 
           <div className="flex min-h-0 flex-1 flex-col">
             <nav className="mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
-              {items.map((item) => {
+              {items.map((item, index) => {
                 const Icon = item.icon;
                 const active = isNavItemActive(pathname, item.href as string);
+                const prevItem = index > 0 ? items[index - 1] : null;
+                const showSectionLabel = !collapsed && item.section && item.section !== prevItem?.section;
 
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-label={collapsed ? item.label : undefined}
-                    title={collapsed ? item.label : undefined}
-                    className={cn(
-                      "group flex items-center rounded-[20px] border transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
-                      collapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
-                      active
-                        ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
-                        : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/18 hover:bg-white/10 hover:text-white"
+                  <div key={`${item.href}-group`}>
+                    {showSectionLabel && (
+                      <p className="px-4 pt-4 pb-1 text-[11px] uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">
+                        {item.section}
+                      </p>
                     )}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className={cn("text-sm font-medium transition-all duration-300", collapsed ? "hidden" : "block")}>
-                      {item.label}
-                    </span>
-                  </Link>
+                    <Link
+                      href={item.href}
+                      aria-label={collapsed ? item.label : undefined}
+                      title={collapsed ? item.label : undefined}
+                      className={cn(
+                        "group flex items-center rounded-[20px] border transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
+                        collapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
+                        active
+                          ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
+                          : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/18 hover:bg-white/10 hover:text-white"
+                      )}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className={cn("text-sm font-medium transition-all duration-300", collapsed ? "hidden" : "block")}>
+                        {item.label}
+                      </span>
+                    </Link>
+                  </div>
                 );
               })}
             </nav>

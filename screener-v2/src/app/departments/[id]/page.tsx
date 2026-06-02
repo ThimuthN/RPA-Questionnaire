@@ -16,7 +16,7 @@ export default async function DepartmentDetailPage({
     notFound();
   }
 
-  const [userCount, designationCount, openJobCount, applicantCount, activeCandidateCount, finalizedCandidateCount] = await Promise.all([
+  const [userCount, designationCount, openJobCount, applicantCount, activeCandidateCount, finalizedCandidateCount, assessmentCount] = await Promise.all([
     prisma.user.count({ where: { departmentId: id, isActive: true } }),
     prisma.roleCatalog.count({ where: { departmentId: id, isActive: true } }),
     prisma.jobPosting.count({ where: { role: { departmentId: id }, isOpen: true } }),
@@ -27,28 +27,33 @@ export default async function DepartmentDetailPage({
       }
     }),
     prisma.candidate.count({ where: { departmentId: id, orgStage: "active" } }),
-    prisma.candidate.count({ where: { departmentId: id, orgStage: "finalized" } })
+    prisma.candidate.count({ where: { departmentId: id, orgStage: "finalized" } }),
+    prisma.candidateAssessment.count({
+      where: { candidate: { departmentId: id } }
+    })
   ]);
 
   const cards = [
-    { label: "Users", value: userCount, href: `/departments/${id}/users` as Route },
-    { label: "Designations", value: designationCount, href: `/departments/${id}/designations` as Route },
+    { label: "Team", value: userCount, href: `/departments/${id}/users` as Route },
+    { label: "Job Designations", value: designationCount, href: `/departments/${id}/designations` as Route },
     { label: "Open jobs", value: openJobCount, href: `/departments/${id}/jobs` as Route },
     { label: "Applicants", value: applicantCount, href: `/departments/${id}/applicants` as Route },
     { label: "Active candidates", value: activeCandidateCount, href: `/departments/${id}/candidates` as Route },
-    { label: "Finalized", value: finalizedCandidateCount, href: `/departments/${id}/candidates?stage=finalized` as Route }
+    { label: "Finalized", value: finalizedCandidateCount, href: `/departments/${id}/candidates?stage=finalized` as Route },
+    { label: "Assessments", value: assessmentCount, href: `/departments/${id}/assessments` as Route }
   ];
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl text-[color:var(--app-heading)]">Overview</h2>
+      <div className="space-y-1">
+        <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Quick links</p>
+        <h2 className="text-2xl text-[color:var(--app-heading)]">Workspace overview</h2>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Department workspace summary and quick links.
+          Workspace summary. Select a section to manage it.
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {cards.map(({ label, value, href }) => (
           <Link key={label} href={href}>
             <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 hover:bg-[color:var(--app-surface)] transition cursor-pointer">

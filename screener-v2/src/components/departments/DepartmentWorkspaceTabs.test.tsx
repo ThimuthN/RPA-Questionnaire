@@ -1,32 +1,48 @@
 import { describe, it, expect } from "vitest";
 
 describe("DepartmentWorkspaceTabs", () => {
-  it("tab configuration includes required department workspace sections", () => {
-    const expectedTabs = [
+  it("renders workspace navigation with required items", () => {
+    const requiredLabels = [
       "Overview",
-      "Designations",
+      "Job Designations",
       "Jobs",
       "Applicants",
       "Candidates",
       "Assessments",
-      "Users",
+      "Team",
       "Access"
     ];
 
-    expectedTabs.forEach(tab => {
-      expect(expectedTabs).toContain(tab);
+    requiredLabels.forEach(label => {
+      expect(requiredLabels).toContain(label);
     });
   });
 
-  it("verifies tab labels are distinct and non-empty", () => {
+  it("does not use outdated tab labels", () => {
     const tabs = [
       "Overview",
-      "Designations",
+      "Job Designations",
       "Jobs",
       "Applicants",
       "Candidates",
       "Assessments",
-      "Users",
+      "Team",
+      "Access"
+    ];
+
+    expect(tabs).not.toContain("Designations");
+    expect(tabs).not.toContain("Users");
+  });
+
+  it("verifies all tab labels are distinct and non-empty", () => {
+    const tabs = [
+      "Overview",
+      "Job Designations",
+      "Jobs",
+      "Applicants",
+      "Candidates",
+      "Assessments",
+      "Team",
       "Access"
     ];
 

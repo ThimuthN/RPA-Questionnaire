@@ -310,11 +310,22 @@ export default async function CandidateDetailPage({
                   Follow candidate activity from first review to final decision.
                 </p>
               </div>
-              <CandidateMilestoneTimeline
-                candidateId={candidate.id}
-                milestones={candidate.milestones}
-                hasResume={Boolean(currentResume)}
-              />
+              {candidate.milestones.length === 0 ? (
+                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-6 py-8 text-center space-y-2">
+                  <p className="text-sm font-medium text-[color:var(--app-heading)]">No journey milestones yet</p>
+                  <p className="text-sm text-[color:var(--app-muted)] max-w-sm mx-auto">
+                    {candidate.applications.length === 0
+                      ? "Imported candidate with no linked application. Milestones are created when reviewed through the hiring pipeline."
+                      : "Milestones are created when the candidate is reviewed or moved through pipeline stages."}
+                  </p>
+                </div>
+              ) : (
+                <CandidateMilestoneTimeline
+                  candidateId={candidate.id}
+                  milestones={candidate.milestones}
+                  hasResume={Boolean(currentResume)}
+                />
+              )}
             </div>
           </div>
 

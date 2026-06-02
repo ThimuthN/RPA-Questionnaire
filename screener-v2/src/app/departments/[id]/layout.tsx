@@ -27,12 +27,12 @@ export default async function DepartmentWorkspaceLayout({ children, params }: La
 
   const tabs: Array<{ label: string; href: Route }> = [
     { label: "Overview", href: `/departments/${id}` as Route },
-    { label: "Designations", href: `/departments/${id}/designations` as Route },
+    { label: "Job Designations", href: `/departments/${id}/designations` as Route },
     { label: "Jobs", href: `/departments/${id}/jobs` as Route },
     { label: "Applicants", href: `/departments/${id}/applicants` as Route },
     { label: "Candidates", href: `/departments/${id}/candidates` as Route },
     { label: "Assessments", href: `/departments/${id}/assessments` as Route },
-    { label: "Users", href: `/departments/${id}/users` as Route },
+    { label: "Team", href: `/departments/${id}/users` as Route },
     { label: "Access", href: `/departments/${id}/access` as Route }
   ];
 
@@ -42,11 +42,11 @@ export default async function DepartmentWorkspaceLayout({ children, params }: La
       tone="page"
       eyebrow="Hiring"
       title={`${department.name}${!department.isActive ? " (Inactive)" : ""}`}
-      subtitle="Department workspace."
+      subtitle="Hiring workspace"
     >
       <StagePanel className="space-y-5">
         <DepartmentWorkspaceTabs tabs={tabs} departmentId={id} />
-        <div>{children}</div>
+        {children}
       </StagePanel>
     </SceneShell>
   );

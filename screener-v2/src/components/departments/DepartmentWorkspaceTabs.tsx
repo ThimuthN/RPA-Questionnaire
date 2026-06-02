@@ -23,25 +23,23 @@ export function DepartmentWorkspaceTabs({
   };
 
   return (
-    <div className="border-b border-[color:var(--app-border)]">
-      <div className="flex gap-4 overflow-x-auto">
-        {tabs.map((tab) => {
-          const isActive = getIsActive(tab.href);
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition whitespace-nowrap ${
-                isActive
-                  ? "border-brand text-[color:var(--app-heading)]"
-                  : "border-transparent text-[color:var(--app-muted)] hover:text-[color:var(--app-text)]"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
-      </div>
+    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-2 py-1.5 flex gap-1 overflow-x-auto">
+      {tabs.map((tab) => {
+        const isActive = getIsActive(tab.href);
+        return (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            className={`px-3 py-2 text-sm font-medium rounded-[14px] transition whitespace-nowrap ${
+              isActive
+                ? "bg-[color:var(--app-surface)] border border-[color:var(--pill-teal-border)] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
+                : "text-[color:var(--app-muted)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-surface)]"
+            }`}
+          >
+            {tab.label}
+          </Link>
+        );
+      })}
     </div>
   );
 }
