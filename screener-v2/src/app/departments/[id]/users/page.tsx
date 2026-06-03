@@ -22,11 +22,36 @@ export default async function DepartmentUsersPage({
     notFound();
   }
 
-  const [department, users, roles] = await Promise.all([
+  // Load team members via AccessGrant (new model)
+  const [department, accessGrantTeam, roles] = await Promise.all([
     getDepartment(id),
-    listDepartmentUsers(id),
+    prisma.accessGrant.findMany({
+      where: {
+        departmentId: id,
+        scope: "department",
+        status: "active"
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true
+          }
+        },
+        role: {
+          select: {
+            id: true,
+            label: true,
+            permissions: { select: { permission: true } }
+          }
+        }
+      },
+      orderBy: { user: { name: "asc" } }
+    }),
     prisma.roleCatalog.findMany({
-      where: { departmentId: id, isActive: true },
+      where: { departmentId: id, isActive: true, kind: "access_role" },
       select: {
         id: true,
         label: true,
@@ -37,6 +62,18 @@ export default async function DepartmentUsersPage({
       orderBy: { sortOrder: "asc" }
     })
   ]);
+
+  // Transform AccessGrant data into user list format
+  const users = accessGrantTeam.map((grant) => ({
+    id: grant.user.id,
+    name: grant.user.name,
+    email: grant.user.email,
+    isActive: grant.user.isActive,
+    roleId: grant.role.id,
+    role: { id: grant.role.id, label: grant.role.label, permissions: grant.role.permissions },
+    permissionOverrides: [],
+    permissionCount: grant.role.permissions.length
+  }));
 
   if (!department) {
     notFound();
@@ -110,7 +147,7 @@ export default async function DepartmentUsersPage({
                           name: user.name,
                           email: user.email,
                           roleId: user.roleId,
-                          rolePermissions: user.role?.permissions ?? [],
+                          rolePermissions: user.role ? user.role.permissions.map((p) => p.permission) : [],
                           permissionOverrides: user.permissionOverrides
                         }}
                         roles={roles.map((role) => ({
