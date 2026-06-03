@@ -22,13 +22,27 @@ export function WorkspaceRail({
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const items = getNavItems(viewer);
+
+  const isAdmin = viewer?.permissions.includes("manage_users") ?? false;
 
   // Extract department ID from route: /departments/[id]/* pattern
   const routeDepartmentIdMatch = pathname.match(/^\/departments\/([^/]+)/);
   const routeDepartmentId = routeDepartmentIdMatch?.[1];
-  // Use route-extracted ID if available, fall back to session departmentId
-  const currentDepartmentId = routeDepartmentId || viewer?.departmentId;
+
+  // Determine current workspace from route
+  // Routes: /departments = admin, /people/* = admin, /departments/[id]/* = department
+  const isOnAdminRoute = pathname === "/departments" || pathname.startsWith("/people/") || pathname.startsWith("/assessments");
+  const currentWorkspace = isOnAdminRoute && isAdmin ? "admin" : routeDepartmentId;
+
+  // Filter departments: admins see all, department-scoped users see only their department
+  const visibleDepartments = isAdmin
+    ? departments
+    : viewer?.departmentId
+      ? departments.filter((d) => d.id === viewer.departmentId)
+      : [];
+
+  // Get nav items for current workspace
+  const items = getNavItems(viewer, currentWorkspace);
 
   useEffect(() => {
     try {
@@ -76,17 +90,20 @@ export function WorkspaceRail({
 
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Workspace Selector - shows current workspace and switcher */}
-            <WorkspaceSelector
-              currentDepartmentId={currentDepartmentId}
-              departments={departments}
-              collapsed={collapsed}
-            />
+            {currentWorkspace && (
+              <WorkspaceSelector
+                currentWorkspace={currentWorkspace}
+                departments={visibleDepartments}
+                isAdmin={isAdmin}
+                collapsed={collapsed}
+              />
+            )}
 
-            {/* Workspace Subitems - shows navigation for selected workspace */}
-            {currentDepartmentId && (
+            {/* Workspace Subitems - shows navigation for selected department workspace */}
+            {currentWorkspace && currentWorkspace !== "admin" && (
               <div className="mt-4 pt-4 border-t border-[color:var(--app-border)]">
                 <WorkspaceSubnav
-                  departmentId={currentDepartmentId}
+                  departmentId={currentWorkspace}
                   collapsed={collapsed}
                 />
               </div>
