@@ -25,14 +25,14 @@ export default async function DepartmentAssessmentsPage({
       </div>
 
       <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-        {/* Create / Assign Assessment Card */}
+        {/* Create Assessment Card */}
         <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-          <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-2">Create / Assign Assessment</h3>
+          <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-2">Create Assessment</h3>
           <p className="text-sm text-[color:var(--app-muted)] mb-4">
-            Assignments are created from candidate profiles or the candidate database.
+            Create a screening assessment at workspace level. Link to candidates during screening or advanced review.
           </p>
-          <Link href={`/departments/${id}/candidates`}>
-            <Button variant="secondary">Go to candidates</Button>
+          <Link href="/create-test">
+            <Button variant="secondary">Create assessment</Button>
           </Link>
         </div>
 
@@ -53,7 +53,7 @@ export default async function DepartmentAssessmentsPage({
           <p className="text-sm text-[color:var(--app-muted)] mb-4">
             Review completed assessment evidence for candidates in this workspace.
           </p>
-          <Link href={`/departments/${id}/candidates?stage=assessment`}>
+          <Link href="/results">
             <Button variant="secondary">View results</Button>
           </Link>
         </div>
@@ -61,7 +61,7 @@ export default async function DepartmentAssessmentsPage({
 
       <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
         <p className="text-sm text-[color:var(--app-muted)]">
-          Assessment evidence and detailed results are stored on individual candidate profiles. Select a candidate to view their assessment history, scores, and feedback.
+          Assessments can be created at workspace level and linked to candidates during Screening or Advanced Review. Assessment results are linked to candidate profiles where they can be reviewed and used as evidence.
         </p>
       </div>
     </div>

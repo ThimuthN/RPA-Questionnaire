@@ -8,37 +8,37 @@ const defaultStages = [
   {
     id: "registered",
     title: "Registered / Applied",
-    summary: "Start with the candidate record, resume, and application context.",
+    summary: "Intake and application context",
     detail: "Use this stage to confirm intake basics before any workflow progression."
   },
   {
     id: "screening",
     title: "Screening",
-    summary: "Capture intake checks, screener evidence, and first-pass notes.",
+    summary: "Resume review and initial filters",
     detail: "Track resume review and any early filtering criteria here."
   },
   {
     id: "assessment",
     title: "Assessment",
-    summary: "Attach platform or external assessment evidence.",
+    summary: "Platform or external evidence",
     detail: "Only real assessment links, scores, and outcomes should appear here."
   },
   {
     id: "interview",
     title: "Interview",
-    summary: "Store interview scheduling, feedback, and readiness signals.",
+    summary: "Scheduling, feedback, and signals",
     detail: "Interview rounds should remain empty until real notes or outcomes exist."
   },
   {
     id: "advanced-review",
     title: "Advanced Review",
-    summary: "Hold final calibration, panel review, or deep-dive checks.",
+    summary: "Calibration and deep-dive checks",
     detail: "Use this step for the review work between interview and final decision."
   },
   {
     id: "finalized",
     title: "Finalized",
-    summary: "Record the final decision only when the workflow is truly complete.",
+    summary: "Final decision recorded",
     detail: "No completion state is shown here until the persisted result says it is finalized."
   }
 ] as const;
@@ -62,11 +62,8 @@ export function DefaultJourneySkeleton({
       <div className="space-y-2">
         <p className="text-sm text-[color:var(--app-muted)]">
           {hasLinkedApplication
-            ? "No tracked milestones yet. This default review journey stays visible until real milestone data is created."
-            : "No linked application. Link or create an application before this journey can move forward."}
-        </p>
-        <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-          No dates or completion states are shown until milestone records exist.
+            ? "No tracked milestones yet. Progress will appear as this candidate moves through review."
+            : "No linked application yet. Journey progress starts after the candidate is linked to a workspace hiring journey."}
         </p>
       </div>
 

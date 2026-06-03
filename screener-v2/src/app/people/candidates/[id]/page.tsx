@@ -138,21 +138,6 @@ function SummaryCard({
   );
 }
 
-function WarningCard({
-  title,
-  detail
-}: {
-  title: string;
-  detail: string;
-}) {
-  return (
-    <div className="rounded-[18px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      <p className="font-medium">{title}</p>
-      <p className="mt-1 text-xs leading-5 opacity-90">{detail}</p>
-    </div>
-  );
-}
-
 function safeLocalPath(value?: string | null) {
   if (!value || !value.startsWith("/")) {
     return undefined;
@@ -398,19 +383,22 @@ export default async function CandidateDetailPage({
               {outcomeBadges}
 
               {(shouldWarnResponsibleTeam || shouldWarnNoLinkedApplication) ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {shouldWarnResponsibleTeam ? (
-                    <WarningCard
-                      title="Responsible team required"
-                      detail="Assign an owner or hiring team before advancing this candidate."
-                    />
-                  ) : null}
-                  {shouldWarnNoLinkedApplication ? (
-                    <WarningCard
-                      title="No linked application"
-                      detail="This candidate is not yet connected to a job/workspace hiring journey. Link or create an application before advancing."
-                    />
-                  ) : null}
+                <div className="rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-5">
+                  <p className="text-sm font-medium text-amber-100 mb-3">Setup required</p>
+                  <ul className="space-y-2 text-sm text-amber-100/90">
+                    {shouldWarnNoLinkedApplication ? (
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-300 mt-0.5">•</span>
+                        <span>Linked application</span>
+                      </li>
+                    ) : null}
+                    {shouldWarnResponsibleTeam ? (
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-300 mt-0.5">•</span>
+                        <span>Responsible team</span>
+                      </li>
+                    ) : null}
+                  </ul>
                 </div>
               ) : null}
 
@@ -423,35 +411,35 @@ export default async function CandidateDetailPage({
                 />
                 <SummaryCard
                   label="Responsible team"
-                  title={hasResponsibleAssignments ? `${assignments.length} assigned` : "Required"}
+                  title={hasResponsibleAssignments ? `${assignments.length} assigned` : "No owner"}
                   detail={
                     hasResponsibleAssignments
                       ? `${candidate.hrOwner || "Owner not set"} is leading this candidate.`
                       : "No owner or hiring team is assigned yet."
                   }
-                  tone={hasResponsibleAssignments ? "default" : "warning"}
+                  tone="default"
                 />
                 <SummaryCard
                   label="Linked application"
-                  title={activeApplication ? activeApplication.jobTitle : "No linked application"}
+                  title={activeApplication ? activeApplication.jobTitle : "Not linked"}
                   detail={
                     activeApplication
                       ? `${activeApplication.roleLabel || "No role linked"} | ${activeApplication.roleDepartment || workspaceContext.label}`
-                      : "Link or create an application before advancing this candidate."
+                      : "Not yet connected to a hiring journey."
                   }
-                  tone={activeApplication ? "default" : "warning"}
+                  tone="default"
                 />
                 <SummaryCard
                   label="Assessment evidence"
                   title={latestAssessmentState.title}
                   detail={latestAssessmentState.detail}
-                  tone={latestAssessmentRecord ? "default" : "warning"}
+                  tone="default"
                 />
                 <SummaryCard
                   label="Resume"
-                  title={currentResume ? "Attached" : "Missing"}
+                  title={currentResume ? "Attached" : "None yet"}
                   detail={currentResume ? currentResume.fileName : "Upload a resume to add review context."}
-                  tone={currentResume ? "default" : "warning"}
+                  tone="default"
                 />
                 <SummaryCard label="Next step" title={nextPrompt(candidate)} detail={candidate.email} />
               </div>

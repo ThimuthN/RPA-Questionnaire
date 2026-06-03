@@ -217,9 +217,9 @@ describe("Candidate Detail Page", () => {
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("Responsible team required");
-    expect(markup).toContain("No linked application");
-    expect(markup).toContain("Link or create an application before advancing this candidate.");
+    expect(markup).toContain("Setup required");
+    expect(markup).toContain("Linked application");
+    expect(markup).toContain("Responsible team");
   });
 
   it("shows responsible team card when an application exists", async () => {

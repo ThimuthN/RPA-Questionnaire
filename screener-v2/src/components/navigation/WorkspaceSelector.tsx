@@ -166,7 +166,7 @@ export function WorkspaceSelector({
                 <div
                   aria-hidden={!isOpen}
                   className={cn(
-                    "absolute right-0 top-full mt-2 w-72 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[0_22px_48px_rgba(3,8,20,0.34)] ring-1 ring-black/5 transition duration-150",
+                    "absolute left-0 top-full mt-2 w-72 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[0_22px_48px_rgba(3,8,20,0.34)] ring-1 ring-black/5 transition duration-150",
                     isOpen ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0"
                   )}
                 >

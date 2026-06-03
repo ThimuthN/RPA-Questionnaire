@@ -21,8 +21,7 @@ describe("DefaultJourneySkeleton", () => {
   it("shows a no-linked-application warning without faking completion", () => {
     const markup = renderToStaticMarkup(<DefaultJourneySkeleton hasLinkedApplication={false} />);
 
-    expect(markup).toContain("No linked application");
-    expect(markup).toContain("No dates or completion states are shown until milestone records exist.");
+    expect(markup).toContain("No linked application yet");
     expect(markup).toContain("Pending");
   });
 
