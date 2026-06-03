@@ -85,7 +85,7 @@ export default async function DepartmentUsersPage({
         <div>
           <h2 className="text-2xl text-[color:var(--app-heading)]">Team</h2>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Manage workspace team members and assign access roles.
+            Create users, assign access roles, and manage this workspace team.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -97,8 +97,9 @@ export default async function DepartmentUsersPage({
       </div>
 
       {users.length === 0 ? (
-        <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center text-sm text-[color:var(--app-muted)]">
-          No users assigned to this department yet.
+        <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-8 text-center">
+          <p className="text-sm text-[color:var(--app-muted)]">No team members yet.</p>
+          <p className="text-xs text-[color:var(--app-muted)] mt-1">Add users to this workspace and assign access roles.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
