@@ -64,8 +64,8 @@ export default async function DepartmentsPage({
 
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
-              <h2 className="text-2xl text-[color:var(--app-heading)]">Departments</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">Manage your organization&apos;s departments.</p>
+              <h2 className="text-2xl text-[color:var(--app-heading)]">Workspace directory</h2>
+              <p className="text-sm text-[color:var(--app-muted)]">Create, activate, edit, and deactivate hiring workspaces.</p>
             </div>
             <DepartmentModal />
           </div>
