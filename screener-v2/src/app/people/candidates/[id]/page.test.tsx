@@ -115,6 +115,12 @@ vi.mock("@/lib/db/prisma", () => ({
   prisma: {
     user: {
       findMany: vi.fn()
+    },
+    jobPosting: {
+      findUnique: vi.fn()
+    },
+    accessGrant: {
+      findMany: vi.fn()
     }
   }
 }));
@@ -169,6 +175,8 @@ describe("Candidate Detail Page", () => {
     } as never);
     vi.mocked(getApplicationAssignments).mockResolvedValue([] as never);
     vi.mocked(prisma.user.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.accessGrant.findMany).mockResolvedValue([] as never);
   });
 
   it("renders workspace-aware breadcrumb and back link when workspaceId is present", async () => {
@@ -232,10 +240,15 @@ describe("Candidate Detail Page", () => {
           jobTitle: "RPA Engineer",
           roleLabel: "RPA Engineer",
           roleDepartment: "RPA SL",
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          jobPostingId: "job-1"
         }
       ]
     } as never);
+    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue({
+      departmentId: "dept-1"
+    } as never);
+    vi.mocked(prisma.accessGrant.findMany).mockResolvedValue([] as never);
 
     const result = await CandidateDetailPage({
       params: Promise.resolve({ id: "cand-1" }),

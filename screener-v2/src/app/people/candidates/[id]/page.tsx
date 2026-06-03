@@ -256,11 +256,36 @@ export default async function CandidateDetailPage({
   const [assignments, users] = targetApplication
     ? await Promise.all([
         getApplicationAssignments(targetApplication.id),
-        prisma.user.findMany({
-          where: { isActive: true },
-          select: { id: true, name: true, email: true },
-          orderBy: { name: "asc" }
-        })
+        (async () => {
+          // Load workspace team users via AccessGrant if job has a department
+          const jobPosting = await prisma.jobPosting.findUnique({
+            where: { id: targetApplication.jobPostingId },
+            select: { departmentId: true }
+          });
+
+          if (jobPosting?.departmentId) {
+            // Department workspace: load team members from AccessGrant
+            const grants = await prisma.accessGrant.findMany({
+              where: {
+                departmentId: jobPosting.departmentId,
+                scope: "department",
+                status: "active"
+              },
+              select: {
+                user: { select: { id: true, name: true, email: true } }
+              },
+              orderBy: { user: { name: "asc" } }
+            });
+            return grants.map(g => g.user);
+          } else {
+            // Admin workspace: load all active users
+            return prisma.user.findMany({
+              where: { isActive: true },
+              select: { id: true, name: true, email: true },
+              orderBy: { name: "asc" }
+            });
+          }
+        })()
       ])
     : [[], []];
   const hasResponsibleAssignments = assignments.length > 0;
