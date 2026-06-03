@@ -127,8 +127,10 @@ describe("nav-config", () => {
       expect(isNavItemActive("/departments", "/departments")).toBe(true);
     });
 
-    it("marks department workspace detail routes active for Manage Workspaces item", () => {
-      expect(isNavItemActive("/departments/dept-1/users", "/departments")).toBe(true);
+    it("does not mark department workspace detail routes active for Manage Workspaces item", () => {
+      expect(isNavItemActive("/departments/dept-1/users", "/departments")).toBe(false);
+      expect(isNavItemActive("/departments/dept-1/jobs", "/departments")).toBe(false);
+      expect(isNavItemActive("/departments/dept-1", "/departments")).toBe(false);
     });
 
     it("marks /jobs as active for public Careers item", () => {

@@ -24,6 +24,12 @@ export function WorkspaceRail({
   const [collapsed, setCollapsed] = useState(false);
   const items = getNavItems(viewer);
 
+  // Extract department ID from route: /departments/[id]/* pattern
+  const routeDepartmentIdMatch = pathname.match(/^\/departments\/([^/]+)/);
+  const routeDepartmentId = routeDepartmentIdMatch?.[1];
+  // Use route-extracted ID if available, fall back to session departmentId
+  const currentDepartmentId = routeDepartmentId || viewer?.departmentId;
+
   useEffect(() => {
     try {
       setCollapsed(localStorage.getItem(STORAGE_KEY) === "true");
@@ -71,16 +77,16 @@ export function WorkspaceRail({
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Workspace Selector - shows current workspace and switcher */}
             <WorkspaceSelector
-              currentDepartmentId={viewer?.departmentId}
+              currentDepartmentId={currentDepartmentId}
               departments={departments}
               collapsed={collapsed}
             />
 
             {/* Workspace Subitems - shows navigation for selected workspace */}
-            {viewer?.departmentId && (
+            {currentDepartmentId && (
               <div className="mt-4 pt-4 border-t border-[color:var(--app-border)]">
                 <WorkspaceSubnav
-                  departmentId={viewer.departmentId}
+                  departmentId={currentDepartmentId}
                   collapsed={collapsed}
                 />
               </div>
