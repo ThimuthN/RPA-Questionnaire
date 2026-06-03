@@ -1,295 +1,381 @@
 import { PrismaClient } from "@prisma/client";
+import crypto from "node:crypto";
 
-const ALLOW_STAGING_RESET = process.env.ALLOW_STAGING_RESET === "true";
-
-// Simple password hash (using Crypto.SubtleCrypto for now)
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password + "salt");
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-  return hashHex;
+interface ResetStats {
+  before: Record<string, number>;
+  after: Record<string, number>;
 }
 
-async function main() {
-  if (!ALLOW_STAGING_RESET) {
-    console.error("❌ ALLOW_STAGING_RESET environment variable must be set to 'true'");
+const stats: ResetStats = {
+  before: {},
+  after: {}
+};
+
+const prisma = new PrismaClient();
+
+function hashPassword(password: string): string {
+  const HASH_KEY_LENGTH = 64;
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.scryptSync(password, salt, HASH_KEY_LENGTH).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+async function verifyBootstrapEnvironment(): Promise<{ email: string; password: string }> {
+  const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
+  const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+
+  if (!email) {
+    console.error("\n❌ BOOTSTRAP CONFIG FAILED: BOOTSTRAP_ADMIN_EMAIL not set");
+    console.error("   Required: BOOTSTRAP_ADMIN_EMAIL=<email>");
     process.exit(1);
   }
 
-  const prisma = new PrismaClient();
+  if (!password) {
+    console.error("\n❌ BOOTSTRAP CONFIG FAILED: BOOTSTRAP_ADMIN_PASSWORD not set");
+    console.error("   Required: BOOTSTRAP_ADMIN_PASSWORD=<password>");
+    process.exit(1);
+  }
 
-  try {
-    console.log("=== Staging Database Clean Slate Reset ===\n");
+  console.log("✓ Bootstrap configuration verified\n");
+  return { email, password };
+}
 
-    // Verify staging database identity
-    const dbInfo = await prisma.$queryRaw<
-      Array<{ database_name: string; user_name: string }>
-    >`SELECT current_database() as database_name, current_user as user_name`;
+async function verifyStagingEnvironment(): Promise<void> {
+  if (process.env.ALLOW_STAGING_RESET !== "true") {
+    console.error("\n❌ SAFETY GATE FAILED: ALLOW_STAGING_RESET not set to 'true'");
+    console.error("   Required: ALLOW_STAGING_RESET=true npx tsx scripts/reset-staging-clean-slate.ts");
+    process.exit(1);
+  }
 
-    const db = dbInfo[0];
-    console.log(`Database: ${db.database_name}`);
-    console.log(`User: ${db.user_name}`);
+  const result = await prisma.$queryRaw`
+    SELECT current_database() as db, current_user as user_account, now() as server_time;
+  ` as any;
 
-    const isStaging =
-      db.database_name === "neondb" && db.user_name.includes("neondb_owner");
+  const dbInfo = result[0];
+  const database = dbInfo.db;
+  const userAccount = dbInfo.user_account;
 
-    if (!isStaging) {
-      console.error(
-        "\n❌ ERROR: This does not appear to be a staging database!"
-      );
-      console.error("Refusing to reset non-staging database.");
-      process.exit(1);
+  console.log("=== DATABASE IDENTITY VERIFICATION ===\n");
+  console.log(`Database: ${database}`);
+  console.log(`User: ${userAccount}`);
+  console.log(`Timestamp: ${dbInfo.server_time}`);
+
+  if (database !== "neondb") {
+    console.error("\n❌ SAFETY GATE FAILED: Not staging database!");
+    console.error(`   Expected: neondb, Got: ${database}`);
+    process.exit(1);
+  }
+
+  if (!userAccount.includes("neondb")) {
+    console.error("\n❌ SAFETY GATE FAILED: Not staging database user!");
+    console.error(`   Expected neondb user, Got: ${userAccount}`);
+    process.exit(1);
+  }
+
+  console.log("✓ Verified: This is staging database. Safe to proceed.\n");
+}
+
+async function captureBeforeState(): Promise<void> {
+  console.log("=== BEFORE STATE ===\n");
+
+  const tables = {
+    "Department": () => prisma.department.count(),
+    "RoleCatalog": () => prisma.roleCatalog.count(),
+    "User": () => prisma.user.count(),
+    "Candidate": () => prisma.candidate.count(),
+    "CandidateApplication": () => prisma.candidateApplication.count(),
+    "CandidateNote": () => prisma.candidateNote.count(),
+    "CandidateAssessment": () => prisma.candidateAssessment.count(),
+    "CandidateMilestone": () => prisma.candidateMilestone.count(),
+    "HiringAssignment": () => prisma.hiringAssignment.count(),
+    "CandidateActivityEvent": () => prisma.candidateActivityEvent.count(),
+    "Attempt": () => prisma.attempt.count(),
+    "Invite": () => prisma.invite.count(),
+    "InterviewPanel": () => prisma.interviewPanel.count(),
+    "DepartmentCandidacy": () => prisma.departmentCandidacy.count(),
+    "AccessGrant": () => prisma.accessGrant.count(),
+  };
+
+  for (const [table, counter] of Object.entries(tables)) {
+    const count = await counter();
+    stats.before[table] = count;
+    console.log(`${table}: ${count}`);
+  }
+
+  console.log();
+}
+
+async function wipeNonPreservedData(): Promise<void> {
+  console.log("=== WIPING NON-PRESERVED DATA ===\n");
+
+  const wipeTables = [
+    { name: "CandidateActivityEvent", action: () => prisma.candidateActivityEvent.deleteMany() },
+    { name: "CandidateMilestoneCheck", action: () => prisma.candidateMilestoneCheck.deleteMany() },
+    { name: "CandidateMilestone", action: () => prisma.candidateMilestone.deleteMany() },
+    { name: "InterviewFeedback", action: () => prisma.interviewFeedback.deleteMany() },
+    { name: "InterviewPanelMember", action: () => prisma.interviewPanelMember.deleteMany() },
+    { name: "InterviewPanel", action: () => prisma.interviewPanel.deleteMany() },
+    { name: "CandidateNote", action: () => prisma.candidateNote.deleteMany() },
+    { name: "CandidateResume", action: () => prisma.candidateResume.deleteMany() },
+    { name: "CandidateAssessmentAttempt", action: () => prisma.candidateAssessmentAttempt.deleteMany() },
+    { name: "CandidateAssessment", action: () => prisma.candidateAssessment.deleteMany() },
+    { name: "CandidateOffer", action: () => prisma.candidateOffer.deleteMany() },
+    { name: "HiringAssignment", action: () => prisma.hiringAssignment.deleteMany() },
+    { name: "CandidateApplication", action: () => prisma.candidateApplication.deleteMany() },
+    { name: "DepartmentCandidacy", action: () => prisma.departmentCandidacy.deleteMany() },
+    { name: "Candidate", action: () => prisma.candidate.deleteMany() },
+    { name: "AccessGrant", action: () => prisma.accessGrant.deleteMany() },
+    { name: "UserPermissionOverride", action: () => prisma.userPermissionOverride.deleteMany() },
+    { name: "User", action: () => prisma.user.deleteMany() },
+    { name: "Attempt", action: () => prisma.attempt.deleteMany() },
+    { name: "Result", action: () => prisma.result.deleteMany() },
+    { name: "MagicToken", action: () => prisma.magicToken.deleteMany() },
+    { name: "Participant", action: () => prisma.participant.deleteMany() },
+    { name: "EmployeeGoal", action: () => prisma.employeeGoal.deleteMany() },
+    { name: "PerformanceReview", action: () => prisma.performanceReview.deleteMany() },
+    { name: "EmployeeActivityEvent", action: () => prisma.employeeActivityEvent.deleteMany() },
+    { name: "Employee", action: () => prisma.employee.deleteMany() }
+  ];
+
+  for (const table of wipeTables) {
+    try {
+      const result = await table.action();
+      const count = (result as any).count || result;
+      if (count > 0) {
+        console.log(`✓ Wiped ${table.name}: ${count} records`);
+      }
+    } catch {
+      // Table already empty or doesn't have records
     }
+  }
 
-    // Get before counts
-    console.log("\n=== Before Reset ===");
-    const beforeDept = await prisma.department.count();
-    const beforeRoles = await prisma.roleCatalog.count();
-    const beforePerms = await prisma.rolePermissionTemplate.count();
-    const beforeUsers = await prisma.user.count();
-    const beforeCandidates = await prisma.candidate.count();
-    const beforeNotes = await prisma.candidateNote.count();
-    const beforeActivity = await prisma.candidateActivityEvent.count();
-    const beforeOffers = await prisma.candidateOffer.count();
+  console.log();
+}
 
-    console.log(`Department: ${beforeDept}`);
-    console.log(`RoleCatalog: ${beforeRoles}`);
-    console.log(`RolePermissionTemplate: ${beforePerms}`);
-    console.log(`User: ${beforeUsers}`);
-    console.log(`Candidate: ${beforeCandidates}`);
-    console.log(`CandidateNote: ${beforeNotes}`);
-    console.log(`CandidateActivityEvent: ${beforeActivity}`);
-    console.log(`CandidateOffer: ${beforeOffers}`);
+async function seedDefaultAccessRoles(): Promise<void> {
+  console.log("=== SEEDING DEFAULT ACCESS ROLES ===\n");
 
-    // Step 1: Delete candidates and related records (cascade handles most)
-    console.log("\nDeleting candidates and related records...");
-    await prisma.candidate.deleteMany({});
+  let systemDept = await prisma.department.findFirst({
+    where: { slug: "system" }
+  });
 
-    // Step 2: Delete users (except what we'll bootstrap)
-    console.log("Deleting users...");
-    await prisma.user.deleteMany({});
+  if (!systemDept) {
+    systemDept = await prisma.department.create({
+      data: {
+        slug: "system",
+        name: "System",
+        sortOrder: -999,
+        isActive: true
+      }
+    });
+    console.log("✓ Created system department");
+  }
 
-    // Step 3: Delete other session-related tables
-    console.log("Cleaning session/auth tables...");
-    await prisma.magicToken.deleteMany({});
-    await prisma.participant.deleteMany({});
+  const accessRoles = [
+    { slug: "system-admin", label: "System Admin", description: "Full system access" },
+    { slug: "department-admin", label: "Department Admin", description: "Department-level access" },
+    { slug: "hiring-manager", label: "Hiring Manager", description: "Hiring management access" },
+    { slug: "recruiter", label: "Recruiter", description: "Recruiter access" },
+    { slug: "interviewer", label: "Interviewer", description: "Interview access" },
+    { slug: "reviewer", label: "Reviewer", description: "Review access" },
+    { slug: "viewer", label: "Viewer", description: "View-only access" }
+  ];
 
-    // Step 4: Get all roles and mark kind appropriately
-    console.log("Updating RoleCatalog kind field...");
-    const allRoles = await prisma.roleCatalog.findMany({
-      include: { permissions: true }
+  for (const role of accessRoles) {
+    const existing = await prisma.roleCatalog.findFirst({
+      where: { slug: role.slug }
     });
 
-    for (const role of allRoles) {
-      const isAccessRole = role.permissions.length > 0;
+    if (!existing) {
+      await prisma.roleCatalog.create({
+        data: {
+          slug: role.slug,
+          label: role.label,
+          kind: "access_role",
+          description: role.description,
+          departmentId: systemDept.id,
+          isActive: true,
+          sortOrder: 0
+        }
+      });
+      console.log(`✓ Created access role: ${role.label}`);
+    } else {
       await prisma.roleCatalog.update({
-        where: { id: role.id },
-        data: { kind: isAccessRole ? "access_role" : "job_designation" }
+        where: { id: existing.id },
+        data: { kind: "access_role" }
       });
+      console.log(`✓ Verified access role: ${role.label}`);
     }
+  }
 
-    // Step 5: Seed default access roles if they don't exist
-    console.log("Seeding default access roles...");
-    const defaultRoles = [
-      {
-        slug: "system-admin",
-        label: "System Admin",
-        departmentId: "system", // Will be replaced with system dept
-        description: "Full system access",
-        permissions: [
-          "manage_users",
-          "manage_departments",
-          "manage_roles",
-          "manage_candidates",
-          "view_candidates",
-          "promote_candidate",
-          "delete_candidate"
-        ]
-      },
-      {
-        slug: "department-admin",
-        label: "Department Admin",
-        departmentId: "system",
-        description: "Manage department team and access",
-        permissions: [
-          "manage_users",
-          "manage_candidates",
-          "view_candidates",
-          "promote_candidate"
-        ]
-      },
-      {
-        slug: "hiring-manager",
-        label: "Hiring Manager",
-        departmentId: "system",
-        description: "Manage hiring workflow",
-        permissions: [
-          "manage_candidates",
-          "view_candidates",
-          "promote_candidate"
-        ]
-      },
-      {
-        slug: "recruiter",
-        label: "Recruiter",
-        departmentId: "system",
-        description: "Source and manage candidates",
-        permissions: ["manage_candidates", "view_candidates"]
-      },
-      {
-        slug: "interviewer",
-        label: "Interviewer",
-        departmentId: "system",
-        description: "Conduct interviews and provide feedback",
-        permissions: ["view_candidates"]
-      },
-      {
-        slug: "reviewer",
-        label: "Reviewer",
-        departmentId: "system",
-        description: "Review candidate assessments",
-        permissions: ["view_candidates"]
-      },
-      {
-        slug: "viewer",
-        label: "Viewer",
-        departmentId: "system",
-        description: "Read-only access to candidates",
-        permissions: ["view_candidates"]
+  console.log();
+}
+
+async function createBootstrapAdmin(email: string, password: string): Promise<void> {
+  console.log("=== BOOTSTRAPPING SYSTEM ADMIN USER ===\n");
+
+  const adminRole = await prisma.roleCatalog.findFirst({
+    where: { slug: "system-admin" }
+  });
+
+  if (!adminRole) {
+    console.error("✗ System admin role not found!");
+    process.exit(1);
+  }
+
+  // Hash the password
+  const passwordHash = hashPassword(password);
+
+  let admin = await prisma.user.findFirst({
+    where: { email }
+  });
+
+  if (admin) {
+    // Update existing user with new password
+    admin = await prisma.user.update({
+      where: { id: admin.id },
+      data: {
+        passwordHash,
+        isActive: true,
+        name: "System Admin"
       }
-    ];
-
-    // Get system department
-    const systemDept = await prisma.department.findUnique({
-      where: { slug: "system" }
     });
-
-    if (!systemDept) {
-      console.error(
-        "ERROR: System department not found. Create it before running reset."
-      );
-      process.exit(1);
-    }
-
-    // Create default roles
-    for (const roleTemplate of defaultRoles) {
-      const existing = await prisma.roleCatalog.findUnique({
-        where: { slug: roleTemplate.slug }
-      });
-
-      if (!existing) {
-        const role = await prisma.roleCatalog.create({
-          data: {
-            slug: roleTemplate.slug,
-            label: roleTemplate.label,
-            departmentId: systemDept.id,
-            description: roleTemplate.description,
-            kind: "access_role",
-            isActive: true,
-            sortOrder: 0
-          }
-        });
-
-        // Add permissions
-        for (const permission of roleTemplate.permissions) {
-          await prisma.rolePermissionTemplate.create({
-            data: {
-              roleId: role.id,
-              permission,
-              scope: "all"
-            }
-          });
-        }
+    console.log(`✓ Updated bootstrap admin user: ${email}`);
+  } else {
+    // Create new user
+    admin = await prisma.user.create({
+      data: {
+        email,
+        name: "System Admin",
+        passwordHash,
+        isActive: true,
+        departmentId: null,
+        roleId: null
       }
-    }
-
-    // Step 6: Create bootstrap system admin user
-    console.log("Creating bootstrap system admin...");
-    const adminPassword = "TempAdmin@123"; // Temporary, should be changed
-    const adminPasswordHash = await hashPassword(adminPassword);
-
-    let adminUser = await prisma.user.findUnique({
-      where: { email: "admin@northstar.local" }
     });
+    console.log(`✓ Created bootstrap admin user: ${email}`);
+  }
 
-    if (!adminUser) {
-      adminUser = await prisma.user.create({
-        data: {
-          email: "admin@northstar.local",
-          name: "System Administrator",
-          passwordHash: adminPasswordHash,
-          isActive: true
-        }
-      });
+  // Remove any existing grant and create fresh one
+  await prisma.accessGrant.deleteMany({
+    where: {
+      userId: admin.id,
+      scope: "system"
     }
+  });
 
-    // Step 7: Grant system admin role to bootstrap admin user
-    console.log("Granting system admin access to bootstrap user...");
-    const systemAdminRole = await prisma.roleCatalog.findUnique({
-      where: { slug: "system-admin" }
-    });
-
-    if (systemAdminRole) {
-      // Remove any existing grant first
-      await prisma.accessGrant.deleteMany({
-        where: {
-          userId: adminUser.id,
-          roleId: systemAdminRole.id,
-          scope: "system"
-        }
-      });
-
-      // Create system admin grant
-      await prisma.accessGrant.create({
-        data: {
-          userId: adminUser.id,
-          roleId: systemAdminRole.id,
-          scope: "system",
-          status: "active"
-        }
-      });
+  await prisma.accessGrant.create({
+    data: {
+      userId: admin.id,
+      roleId: adminRole.id,
+      scope: "system",
+      departmentId: null,
+      status: "active"
     }
+  });
 
-    // Get after counts
-    console.log("\n=== After Reset ===");
-    const afterDept = await prisma.department.count();
-    const afterRoles = await prisma.roleCatalog.count();
-    const afterPerms = await prisma.rolePermissionTemplate.count();
-    const afterUsers = await prisma.user.count();
-    const afterCandidates = await prisma.candidate.count();
-    const afterAccessGrants = await prisma.accessGrant.count();
+  console.log("✓ Created system-level access grant for admin");
+  console.log("✓ Password hash set (not printed for security)\n");
+}
 
-    console.log(`Department: ${afterDept} (preserved: ${beforeDept === afterDept ? "✓" : "✗"})`);
-    console.log(`RoleCatalog: ${afterRoles}`);
-    console.log(`RolePermissionTemplate: ${afterPerms}`);
-    console.log(`User: ${afterUsers}`);
-    console.log(`Candidate: ${afterCandidates} (wiped: ${beforeCandidates > 0 && afterCandidates === 0 ? "✓" : "✗"})`);
-    console.log(`AccessGrant: ${afterAccessGrants}`);
+async function captureAfterState(): Promise<void> {
+  console.log("=== AFTER STATE ===\n");
 
-    console.log("\n=== Summary ===");
-    console.log(`✓ Departments preserved: ${afterDept}/${beforeDept}`);
-    console.log(`✓ Candidates wiped: ${beforeCandidates} → ${afterCandidates}`);
-    console.log(`✓ Users reset: ${beforeUsers} → ${afterUsers}`);
-    console.log(`✓ Default access roles seeded: 7`);
-    console.log(`✓ Bootstrap admin created: admin@northstar.local`);
-    console.log(`✓ System admin access grant created: ${afterAccessGrants > 0 ? "✓" : "✗"}`);
+  const tables = {
+    "Department": () => prisma.department.count(),
+    "RoleCatalog": () => prisma.roleCatalog.count(),
+    "User": () => prisma.user.count(),
+    "Candidate": () => prisma.candidate.count(),
+    "CandidateApplication": () => prisma.candidateApplication.count(),
+    "CandidateNote": () => prisma.candidateNote.count(),
+    "CandidateAssessment": () => prisma.candidateAssessment.count(),
+    "CandidateMilestone": () => prisma.candidateMilestone.count(),
+    "HiringAssignment": () => prisma.hiringAssignment.count(),
+    "CandidateActivityEvent": () => prisma.candidateActivityEvent.count(),
+    "Attempt": () => prisma.attempt.count(),
+    "Invite": () => prisma.invite.count(),
+    "InterviewPanel": () => prisma.interviewPanel.count(),
+    "DepartmentCandidacy": () => prisma.departmentCandidacy.count(),
+    "AccessGrant": () => prisma.accessGrant.count(),
+  };
 
-    console.log(
-      "\n✅ Clean slate reset complete. Staging database is ready."
-    );
-    console.log("\nIMPORTANT:");
-    console.log("- Bootstrap admin: admin@northstar.local");
-    console.log(
-      "- Bootstrap password: TempAdmin@123 (CHANGE IMMEDIATELY IN PRODUCTION)"
-    );
-    console.log("- Departments and job designations preserved");
-    console.log("- All candidates and test data removed");
+  for (const [table, counter] of Object.entries(tables)) {
+    const count = await counter();
+    stats.after[table] = count;
+    console.log(`${table}: ${count}`);
+  }
+
+  console.log();
+}
+
+async function printResetSummary(): Promise<void> {
+  console.log("=== RESET SUMMARY ===\n");
+
+  console.log("PRESERVED:");
+  console.log(`  Department: ${stats.before["Department"]} → ${stats.after["Department"]}`);
+  console.log(`  RoleCatalog: ${stats.before["RoleCatalog"]} → ${stats.after["RoleCatalog"]} (includes new access roles)`);
+
+  console.log("\nWIPED:");
+  const wipedTables = [
+    "User", "Candidate", "CandidateApplication", "CandidateNote", "CandidateAssessment",
+    "CandidateMilestone", "HiringAssignment", "CandidateActivityEvent", "Attempt",
+    "Invite", "InterviewPanel", "DepartmentCandidacy", "AccessGrant"
+  ];
+
+  let totalWiped = 0;
+  for (const table of wipedTables) {
+    const before = stats.before[table] || 0;
+    const after = stats.after[table] || 0;
+    const wiped = before - after;
+    totalWiped += wiped;
+    if (before > 0) {
+      console.log(`  ${table}: ${before} → ${after} (wiped ${wiped})`);
+    }
+  }
+
+  console.log(`\nTotal records wiped: ${totalWiped}`);
+  console.log("Bootstrap: System admin user created with system-level access grant");
+  console.log("\n✓ Staging database reset complete!");
+}
+
+async function main(): Promise<void> {
+  try {
+    console.log("\n╔════════════════════════════════════════════════════════════╗");
+    console.log("║         STAGING DATABASE CLEAN SLATE RESET                 ║");
+    console.log("║                                                            ║");
+    console.log("║  This operation will:                                      ║");
+    console.log("║  - Wipe all candidates, users, assignments, assessments  ║");
+    console.log("║  - Preserve departments and job designations              ║");
+    console.log("║  - Seed default access roles                              ║");
+    console.log("║  - Bootstrap system admin user                            ║");
+    console.log("║                                                            ║");
+    console.log("║  Caution: This is irreversible (staging only)             ║");
+    console.log("╚════════════════════════════════════════════════════════════╝\n");
+
+    // Verify bootstrap configuration
+    const { email, password } = await verifyBootstrapEnvironment();
+
+    // Verify staging database
+    await verifyStagingEnvironment();
+    await captureBeforeState();
+    await wipeNonPreservedData();
+    await seedDefaultAccessRoles();
+    await createBootstrapAdmin(email, password);
+    await captureAfterState();
+    await printResetSummary();
+
+    console.log("\n╔════════════════════════════════════════════════════════════╗");
+    console.log("║                     RESET SUCCEEDED                        ║");
+    console.log("╚════════════════════════════════════════════════════════════╝\n");
+
+    console.log("✓ Bootstrap admin email: " + email);
+    console.log("✓ System admin access granted");
+    console.log("✓ Ready to test at: https://screener-v2-staging.vercel.app/login\n");
 
     process.exit(0);
   } catch (error) {
-    console.error("Error during reset:", error);
+    console.error("\n✗ Reset failed!");
+    console.error(error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
