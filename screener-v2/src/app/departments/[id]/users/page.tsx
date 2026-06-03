@@ -3,7 +3,7 @@ import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
-import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
+import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";

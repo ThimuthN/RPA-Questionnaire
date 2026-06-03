@@ -70,20 +70,22 @@ async function checkRoutes() {
   };
 
   console.log("\nAdmin permissions:");
-  admin.accessGrants[0] &&
-    (await prisma.roleCatalog.findFirst({
+  if (admin.accessGrants[0]) {
+    const role = await prisma.roleCatalog.findFirst({
       where: { slug: "system-admin" },
       select: {
         permissions: { select: { permission: true } }
       }
-    }))
-      ?.permissions.forEach(p => {
-        const routesNeed = Object.entries(permissions)
-          .filter(([_, perm]) => perm === p.permission || perm.includes(p.permission))
-          .map(([route]) => route);
+    });
 
-        console.log(`  ${p.permission}: ${routesNeed.length > 0 ? routesNeed.join(", ") : "—"}`);
-      });
+    role?.permissions.forEach(p => {
+      const routesNeed = Object.entries(permissions)
+        .filter(([_, perm]) => perm === p.permission || perm.includes(p.permission))
+        .map(([route]) => route);
+
+      console.log(`  ${p.permission}: ${routesNeed.length > 0 ? routesNeed.join(", ") : "—"}`);
+    });
+  }
 
   console.log("\nRoute requirements:");
   Object.entries(permissions).forEach(([route, perm]) => {
