@@ -1,6 +1,6 @@
 # Unified ATS Workspace Plan
 
-Last updated: 2026-06-02
+Last updated: 2026-06-04 (Batch 15AL-C: Team access integration)
 
 Classification: `Patch`
 

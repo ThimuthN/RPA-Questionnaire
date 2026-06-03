@@ -1,6 +1,6 @@
 # Real ATS Readiness Gate
 
-Last checked: 2026-06-02
+Last checked: 2026-06-04 (15AL-C: Responsible team AccessGrant integration)
 
 Scope: committed repo state after removing untracked 15AD copy/archive residue.
 
@@ -42,12 +42,12 @@ Next implementation slice:
 | Area | Status | Why |
 | --- | --- | --- |
 | Department workspace | Yellow | Candidate and applicant workflow views now share the same scoped UI as global, but jobs still duplicate and assessments is still placeholder-grade. |
-| Users/access | Yellow | Department scoping and permission inheritance exist, but role/designation ownership is still mixed and one permission is misleadingly unused. |
+| Users/access | Green | Department scoping via AccessGrant exists with working UI. Admin /users page allows creating users and granting system or department access. Team member discovery is now real and scoped. AccessGrant model replaces legacy departmentId defaults. |
 | Job designations | Yellow | Department-scoped designation records exist, but they still carry access permissions, which keeps business designation and access role concerns coupled. |
 | Jobs | Yellow | Jobs can be created, published, and tied to applications, but global and department job pages still duplicate list UI instead of sharing one scoped ATS view. |
 | Applicants | Yellow | Applicant review now uses one shared route-level workspace body across global and department scopes, with DB-side search, pagination, counts, and filters preserved. |
 | Candidates | Yellow | Candidate list/detail flow is real and both scopes now share one workspace body, but assessment-status filtering and sorting still drift after page fetch and jobs duplication is still adjacent. |
-| Responsible team | Yellow | Application-based responsible-team assignment exists, but candidates without applications cannot use it and the profile loads all active users instead of department-limited choices. |
+| Responsible team | Green | Application-based responsible-team assignment exists. Modal now loads AccessGrant-scoped team members for department job postings, and falls back to all active users for system-scoped applications. Candidates without applications show clear warning blocker. |
 | Assessments/evidence | Yellow | Assessment creation, invites, results, and milestone evidence exist, but department-level assessment review is still not a real scoped workspace. |
 | Candidate profile | Yellow | The profile is usable and evidence-driven, but permission wording is inconsistent and imported/no-application cases still expose workflow gaps. |
 | Candidate table | Yellow | Primary action and pagination exist, but responsible-team visibility and some bulk/owner UX remain weak. |
