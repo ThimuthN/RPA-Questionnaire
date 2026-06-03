@@ -3,51 +3,33 @@ import { describe, expect, it } from "vitest";
 import { DefaultJourneySkeleton } from "./DefaultJourneySkeleton";
 
 describe("DefaultJourneySkeleton", () => {
-  it("renders all default journey stages", () => {
-    const markup = renderToStaticMarkup(
-      <DefaultJourneySkeleton hasLinkedApplication={true} />
-    );
+  it("renders all default review journey stages", () => {
+    const markup = renderToStaticMarkup(<DefaultJourneySkeleton hasLinkedApplication={true} />);
 
-    const stages = [
+    [
       "Registered / Applied",
       "Screening",
       "Assessment",
       "Interview",
       "Advanced Review",
       "Finalized"
-    ];
-
-    stages.forEach((stage) => {
+    ].forEach((stage) => {
       expect(markup).toContain(stage);
     });
   });
 
-  it("shows imported-only message when no linked application", () => {
-    const markup = renderToStaticMarkup(
-      <DefaultJourneySkeleton hasLinkedApplication={false} />
-    );
+  it("shows a no-linked-application warning without faking completion", () => {
+    const markup = renderToStaticMarkup(<DefaultJourneySkeleton hasLinkedApplication={false} />);
 
-    expect(markup).toContain("Imported/manual candidate");
-    expect(markup).toContain("no linked application journey yet");
+    expect(markup).toContain("No linked application");
+    expect(markup).toContain("No dates or completion states are shown until milestone records exist.");
+    expect(markup).toContain("Pending");
   });
 
-  it("shows pending milestones message when application exists", () => {
-    const markup = renderToStaticMarkup(
-      <DefaultJourneySkeleton hasLinkedApplication={true} />
-    );
+  it("renders the active review card copy for the default stage", () => {
+    const markup = renderToStaticMarkup(<DefaultJourneySkeleton hasLinkedApplication={true} />);
 
-    expect(markup).toContain("No tracked milestones yet");
-    expect(markup).toContain("Milestones will appear");
-  });
-
-  it("renders numbered stages in order", () => {
-    const markup = renderToStaticMarkup(
-      <DefaultJourneySkeleton hasLinkedApplication={true} />
-    );
-
-    // Check that stage numbers are rendered
-    for (let i = 1; i <= 6; i++) {
-      expect(markup).toContain(i.toString());
-    }
+    expect(markup).toContain("Pending setup");
+    expect(markup).toContain("Use this stage to confirm intake basics before any workflow progression.");
   });
 });

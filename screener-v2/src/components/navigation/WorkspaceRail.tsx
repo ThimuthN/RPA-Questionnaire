@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
@@ -13,6 +13,51 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "northstar-rail-collapsed";
 
+type SearchParamReader = {
+  get(name: string): string | null;
+};
+
+function routeWorkspaceDepartmentId(pathname: string) {
+  return pathname.match(/^\/departments\/([^/]+)/)?.[1];
+}
+
+function isCandidateProfilePath(pathname: string) {
+  return /^\/people\/candidates\/[^/]+$/.test(pathname);
+}
+
+export function resolveCurrentWorkspace({
+  pathname,
+  searchParams,
+  isAdmin,
+  visibleDepartments
+}: {
+  pathname: string;
+  searchParams?: SearchParamReader | null;
+  isAdmin: boolean;
+  visibleDepartments: Department[];
+}) {
+  const routedDepartmentId = routeWorkspaceDepartmentId(pathname);
+  if (routedDepartmentId) {
+    return routedDepartmentId;
+  }
+
+  const workspaceId =
+    isCandidateProfilePath(pathname)
+      ? searchParams?.get("workspaceId")?.trim() || undefined
+      : undefined;
+  if (workspaceId && visibleDepartments.some((department) => department.isActive && department.id === workspaceId)) {
+    return workspaceId;
+  }
+
+  const isAdminRoute =
+    pathname === "/departments" || pathname.startsWith("/people/") || pathname.startsWith("/assessments");
+  if (isAdminRoute && isAdmin) {
+    return "admin";
+  }
+
+  return undefined;
+}
+
 export function WorkspaceRail({
   viewer,
   departments = []
@@ -21,18 +66,10 @@ export function WorkspaceRail({
   departments?: Department[];
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
 
   const isAdmin = viewer?.permissions.includes("manage_users") ?? false;
-
-  // Extract department ID from route: /departments/[id]/* pattern
-  const routeDepartmentIdMatch = pathname.match(/^\/departments\/([^/]+)/);
-  const routeDepartmentId = routeDepartmentIdMatch?.[1];
-
-  // Determine current workspace from route
-  // Routes: /departments = admin, /people/* = admin, /departments/[id]/* = department
-  const isOnAdminRoute = pathname === "/departments" || pathname.startsWith("/people/") || pathname.startsWith("/assessments");
-  const currentWorkspace = isOnAdminRoute && isAdmin ? "admin" : routeDepartmentId;
 
   // Filter departments: admins see all, department-scoped users see only their department
   const visibleDepartments = isAdmin
@@ -40,6 +77,12 @@ export function WorkspaceRail({
     : viewer?.departmentId
       ? departments.filter((d) => d.id === viewer.departmentId)
       : [];
+  const currentWorkspace = resolveCurrentWorkspace({
+    pathname,
+    searchParams,
+    isAdmin,
+    visibleDepartments
+  });
 
   // Get nav items for current workspace
   const items = getNavItems(viewer, currentWorkspace);

@@ -22,6 +22,7 @@ import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { getCandidateDetail } from "@/lib/db/candidates";
+import { getDepartment } from "@/lib/db/departments";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
 import { prisma } from "@/lib/db/prisma";
 import { getApplicationAssignments } from "@/lib/db/hiring-assignments";
@@ -110,6 +111,109 @@ function NoticeBanner({
   return <div className={className}>{children}</div>;
 }
 
+function SummaryCard({
+  label,
+  title,
+  detail,
+  tone = "default"
+}: {
+  label: string;
+  title: React.ReactNode;
+  detail: React.ReactNode;
+  tone?: "default" | "accent" | "warning";
+}) {
+  const toneClassName =
+    tone === "accent"
+      ? "border-[color:var(--app-brand)]/20 bg-[color:var(--app-brand)]/10"
+      : tone === "warning"
+        ? "border-amber-400/30 bg-amber-500/10"
+        : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)]";
+
+  return (
+    <div className={`rounded-[18px] border p-4 ${toneClassName}`}>
+      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">{label}</p>
+      <p className="mt-2 text-lg text-[color:var(--app-heading)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[color:var(--app-muted)]">{detail}</p>
+    </div>
+  );
+}
+
+function WarningCard({
+  title,
+  detail
+}: {
+  title: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-[18px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+      <p className="font-medium">{title}</p>
+      <p className="mt-1 text-xs leading-5 opacity-90">{detail}</p>
+    </div>
+  );
+}
+
+function safeLocalPath(value?: string | null) {
+  if (!value || !value.startsWith("/")) {
+    return undefined;
+  }
+  return value;
+}
+
+function fallbackWorkspaceDepartmentId(candidate: CandidateData) {
+  return (
+    candidate.departmentCandidacies?.find((candidacy) => candidacy.status === "active")?.departmentId ??
+    candidate.departmentId
+  );
+}
+
+async function resolveWorkspaceContext({
+  candidate,
+  workspaceId,
+  returnTo
+}: {
+  candidate: CandidateData;
+  workspaceId?: string;
+  returnTo?: string;
+}) {
+  const requestedDepartmentId = workspaceId?.trim() || fallbackWorkspaceDepartmentId(candidate);
+  if (requestedDepartmentId) {
+    const department = await getDepartment(requestedDepartmentId);
+    if (department) {
+      const candidateListHref = `/departments/${department.id}/candidates` as Route;
+      return {
+        kind: "department" as const,
+        label: department.name,
+        workspaceHref: `/departments/${department.id}` as Route,
+        candidateListHref,
+        backHref: (returnTo ?? candidateListHref) as Route
+      };
+    }
+  }
+
+  const defaultCandidatesHref =
+    (candidate.stage === "applicant" ? "/people/candidates/applicants" : "/people/candidates") as Route;
+  return {
+    kind: "admin" as const,
+    label: "Admin Workspace",
+    workspaceHref: undefined,
+    candidateListHref: defaultCandidatesHref,
+    backHref: (returnTo ?? defaultCandidatesHref) as Route
+  };
+}
+
+function buildDetailPath(candidateId: string, workspaceId?: string, returnTo?: string) {
+  const params = new URLSearchParams();
+  if (workspaceId) {
+    params.set("workspaceId", workspaceId);
+  }
+  if (returnTo) {
+    params.set("returnTo", returnTo);
+  }
+  const query = params.toString();
+  return `/people/candidates/${candidateId}${query ? `?${query}` : ""}`;
+}
+
 export default async function CandidateDetailPage({
   params,
   searchParams
@@ -121,10 +225,17 @@ export default async function CandidateDetailPage({
     noteAdded?: string;
     resumeUploaded?: string;
     error?: string;
+    workspaceId?: string;
+    returnTo?: string;
+    fromDepartment?: string;
   }>;
 }) {
   const { id } = await params;
-  const session = await requirePageSession(`/people/candidates/${id}`);
+  const pageState = await searchParams;
+  const requestedWorkspaceId = pageState.workspaceId?.trim() || pageState.fromDepartment?.trim() || undefined;
+  const returnTo = safeLocalPath(pageState.returnTo?.trim());
+  const requestPath = buildDetailPath(id, requestedWorkspaceId, returnTo);
+  const session = await requirePageSession(requestPath);
   const permission = await requireCandidatePermission(session, id, "view_candidates");
   if (!permission.ok) {
     if (permission.response.status === 404) {
@@ -138,7 +249,6 @@ export default async function CandidateDetailPage({
     notFound();
   }
 
-  const pageState = await searchParams;
   const activeApplication = primaryApplication(candidate);
   const currentResume = candidate.resumes[0] ?? null;
   const latestAssessmentState = latestAssessmentSummary(candidate);
@@ -149,6 +259,12 @@ export default async function CandidateDetailPage({
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}&download=1`
     : null;
   const activityFeed = buildCandidateActivityFeed(candidate);
+  const workspaceContext = await resolveWorkspaceContext({
+    candidate,
+    workspaceId: requestedWorkspaceId,
+    returnTo
+  });
+  const currentDetailPath = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo);
 
   // Fetch assignments and users for the active application (or first if none active)
   const targetApplication = activeApplication || candidate.applications[0] || null;
@@ -162,6 +278,21 @@ export default async function CandidateDetailPage({
         })
       ])
     : [[], []];
+  const hasResponsibleAssignments = assignments.length > 0;
+  const shouldWarnNoLinkedApplication = candidate.applications.length === 0;
+  const shouldWarnResponsibleTeam = !targetApplication || !hasResponsibleAssignments;
+  const latestAssessmentRecord = latestAssessment(candidate);
+  const assessmentAction = latestAssessmentRecord?.attemptId
+    ? {
+        href: `/results/${latestAssessmentRecord.attemptId}` as Route,
+        label: "Open evidence"
+      }
+    : session.permissions.includes("manage_candidates") && candidate.stage !== "applicant"
+      ? {
+          href: `/create-test?candidateId=${candidate.id}` as Route,
+          label: "Assign assessment"
+        }
+      : null;
   const outcomeBadges = (
     <div className="flex flex-wrap gap-2">
       {candidate.currentFocus ? <StatusPill label={candidate.currentFocus} tone="neutral" /> : null}
@@ -173,6 +304,16 @@ export default async function CandidateDetailPage({
         tone={candidate.stage === "applicant" ? "amber" : "blue"}
       />
       <StatusPill label={currentResume ? "Resume attached" : "Resume missing"} tone={currentResume ? "emerald" : "amber"} />
+      {activeApplication ? (
+        <StatusPill
+          label={candidateApplicationStatusLabels[activeApplication.status]}
+          tone={applicationTone(activeApplication.status)}
+        />
+      ) : null}
+      <StatusPill
+        label={hasResponsibleAssignments ? `${assignments.length} team assigned` : "Responsible team required"}
+        tone={hasResponsibleAssignments ? "emerald" : "amber"}
+      />
     </div>
   );
 
@@ -180,12 +321,29 @@ export default async function CandidateDetailPage({
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow="Candidate"
-      title={candidate.fullName}
-      subtitle={candidate.roleLabel || candidate.email}
+      eyebrow={workspaceContext.kind === "department" ? "Department workspace" : "Admin workspace"}
+      title={
+        <>
+          <span className="mb-3 block text-sm font-medium text-[color:var(--app-muted)]">
+            <span>Workspaces</span>
+            <span className="mx-2 text-[color:var(--app-border-strong)]">/</span>
+            {workspaceContext.workspaceHref ? (
+              <Link href={workspaceContext.workspaceHref}>{workspaceContext.label}</Link>
+            ) : (
+              <span>{workspaceContext.label}</span>
+            )}
+            <span className="mx-2 text-[color:var(--app-border-strong)]">/</span>
+            <Link href={workspaceContext.candidateListHref}>Candidates</Link>
+          </span>
+          <span>{candidate.fullName}</span>
+        </>
+      }
+      subtitle={candidate.roleLabel ? `${candidate.roleLabel} | ${candidate.email}` : candidate.email}
       utility={
-        <Link href={(candidate.stage === "applicant" ? "/people/candidates/applicants" : "/people/candidates") as Route}>
-          <Button variant="secondary">Back to candidates</Button>
+        <Link href={workspaceContext.backHref}>
+          <Button variant="secondary">
+            {workspaceContext.kind === "department" ? `Back to ${workspaceContext.label} candidates` : "Back to candidates"}
+          </Button>
         </Link>
       }
     >
@@ -199,13 +357,13 @@ export default async function CandidateDetailPage({
           </div>
         ) : null}
 
-        <StagePanel className="space-y-5 overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_16%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))]">
+        <StagePanel className="space-y-6 overflow-hidden bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_16%,var(--app-surface)),color-mix(in_srgb,var(--app-surface-soft)_96%,white))]">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Candidate lifecycle</p>
-              <h2 className="text-3xl text-[color:var(--app-heading)]">Current status</h2>
+              <h2 className="text-3xl text-[color:var(--app-heading)]">Current decision</h2>
               <p className="max-w-2xl text-sm text-[color:var(--app-text)]">
-                Track where things stand and what should happen next.
+                Keep the candidate, team ownership, evidence, and next move visible in one review cockpit.
               </p>
             </div>
 
@@ -213,18 +371,17 @@ export default async function CandidateDetailPage({
               {candidate.stage === "applicant" && activeApplication && session.permissions.includes("promote_candidate") ? (
                 <form action={`/api/candidate-applications/${activeApplication.id}`} method="post">
                   <input type="hidden" name="action" value="promote" />
-                  <input type="hidden" name="returnTo" value={`/people/candidates/${candidate.id}` as Route} />
+                  <input type="hidden" name="returnTo" value={currentDetailPath} />
                   <Button type="submit">Move to pipeline</Button>
                 </form>
               ) : null}
-              {session.permissions.includes("manage_candidates") ? (
-                <EditCandidateInfoModal candidate={candidate} />
-              ) : null}
+              {session.permissions.includes("manage_candidates") ? <EditCandidateInfoModal candidate={candidate} /> : null}
               {session.permissions.includes("manage_candidates") && candidate.orgStage !== "finalized" ? (
                 <TransferCandidateAction candidateId={candidate.id} />
               ) : null}
               {session.permissions.includes("delete_candidate") ? (
                 <form action={`/api/candidates/${candidate.id}/delete`} method="post">
+                  <input type="hidden" name="returnTo" value={workspaceContext.backHref} />
                   <ConfirmSubmitButton
                     variant="secondary"
                     confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and any linked lifecycle data. This is a data cleanup action and cannot be undone.`}
@@ -236,69 +393,103 @@ export default async function CandidateDetailPage({
             </div>
           </div>
 
-          <div className="space-y-5">
-            {outcomeBadges}
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+            <div className="space-y-5">
+              {outcomeBadges}
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Email</p>
-                <p className="break-all text-sm text-[color:var(--app-text)] mt-1">{candidate.email}</p>
-              </div>
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role</p>
-                <p className="text-sm text-[color:var(--app-text)] mt-1">{candidate.roleLabel || "Role not set"}</p>
-              </div>
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Owner</p>
-                <p className="text-sm text-[color:var(--app-text)] mt-1">{candidate.hrOwner || "No owner assigned"}</p>
-              </div>
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Pipeline stage</p>
-                <p className="text-sm text-[color:var(--app-brand)] mt-1">{candidate.currentFocus || (candidate.stage === "applicant" ? "In applicant review" : "Awaiting next action")}</p>
+              {(shouldWarnResponsibleTeam || shouldWarnNoLinkedApplication) ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {shouldWarnResponsibleTeam ? (
+                    <WarningCard
+                      title="Responsible team required"
+                      detail="Assign an owner or hiring team before advancing this candidate."
+                    />
+                  ) : null}
+                  {shouldWarnNoLinkedApplication ? (
+                    <WarningCard
+                      title="No linked application"
+                      detail="This candidate is not yet connected to a job/workspace hiring journey. Link or create an application before advancing."
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <SummaryCard
+                  label="Current stage"
+                  title={getCandidateStageLabel(candidate.stage as CandidateStage)}
+                  detail={candidate.currentFocus || (candidate.stage === "applicant" ? "In applicant review" : "Awaiting next action")}
+                  tone="accent"
+                />
+                <SummaryCard
+                  label="Responsible team"
+                  title={hasResponsibleAssignments ? `${assignments.length} assigned` : "Required"}
+                  detail={
+                    hasResponsibleAssignments
+                      ? `${candidate.hrOwner || "Owner not set"} is leading this candidate.`
+                      : "No owner or hiring team is assigned yet."
+                  }
+                  tone={hasResponsibleAssignments ? "default" : "warning"}
+                />
+                <SummaryCard
+                  label="Linked application"
+                  title={activeApplication ? activeApplication.jobTitle : "No linked application"}
+                  detail={
+                    activeApplication
+                      ? `${activeApplication.roleLabel || "No role linked"} | ${activeApplication.roleDepartment || workspaceContext.label}`
+                      : "Link or create an application before advancing this candidate."
+                  }
+                  tone={activeApplication ? "default" : "warning"}
+                />
+                <SummaryCard
+                  label="Assessment evidence"
+                  title={latestAssessmentState.title}
+                  detail={latestAssessmentState.detail}
+                  tone={latestAssessmentRecord ? "default" : "warning"}
+                />
+                <SummaryCard
+                  label="Resume"
+                  title={currentResume ? "Attached" : "Missing"}
+                  detail={currentResume ? currentResume.fileName : "Upload a resume to add review context."}
+                  tone={currentResume ? "default" : "warning"}
+                />
+                <SummaryCard label="Next step" title={nextPrompt(candidate)} detail={candidate.email} />
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Assessment</p>
-                <p className="text-lg text-[color:var(--app-heading)] mt-1">{latestAssessmentState.title}</p>
-                <p className="text-xs text-[color:var(--app-muted)] mt-1">{latestAssessmentState.detail}</p>
-                {!latestAssessment(candidate) && candidate.stage !== "applicant" && (
-                  <p className="text-xs text-amber-400 mt-2">Assign when ready</p>
-                )}
-              </div>
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume</p>
-                <p className="text-sm text-[color:var(--app-heading)] mt-1">{currentResume ? "Attached" : "Missing"}</p>
-                <p className="break-all text-xs leading-5 text-[color:var(--app-muted)] mt-1">
-                  {currentResume ? currentResume.fileName : "Upload to add review context"}
+            <div className="space-y-4">
+              <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]/85 p-4">
+                <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Decision cockpit</p>
+                <h3 className="mt-2 text-2xl text-[color:var(--app-heading)]">Set the candidate decision</h3>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--app-muted)]">
+                  Finalize only when the workflow evidence, owner, and workspace context are clear.
                 </p>
               </div>
-              <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Next step</p>
-                <p className="text-sm text-[color:var(--app-text)] mt-1">{nextPrompt(candidate)}</p>
+
+              <FinalizeActionBar
+                candidateId={candidate.id}
+                orgStage={candidate.orgStage}
+                finalizedAs={candidate.finalizedAs}
+                permissions={session.permissions}
+              />
+
+              <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]/85 p-4">
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Assessment evidence</p>
+                  <p className="text-lg text-[color:var(--app-heading)]">{latestAssessmentState.title}</p>
+                  <p className="text-sm leading-6 text-[color:var(--app-muted)]">{latestAssessmentState.detail}</p>
+                </div>
+                {assessmentAction ? (
+                  <div className="mt-4">
+                    <Link href={assessmentAction.href}>
+                      <Button type="button" variant={latestAssessmentRecord?.attemptId ? "secondary" : "primary"}>
+                        {assessmentAction.label}
+                      </Button>
+                    </Link>
+                  </div>
+                ) : null}
               </div>
             </div>
-
-            <FinalizeActionBar
-              candidateId={candidate.id}
-              orgStage={candidate.orgStage}
-              finalizedAs={candidate.finalizedAs}
-              permissions={session.permissions}
-            />
-          </div>
-
-          <div className="border-t border-[color:var(--app-border)] pt-5">
-            <CandidateNotesModal
-              candidateId={candidate.id}
-              notes={candidate.notes.map((note) => ({
-                id: note.id,
-                type: note.type,
-                body: note.body,
-                createdAt: note.createdAt,
-                author: note.createdByName || note.createdByEmail
-              }))}
-            />
           </div>
         </StagePanel>
 
@@ -306,9 +497,9 @@ export default async function CandidateDetailPage({
           <div className="space-y-5">
             <div className="space-y-4">
               <div className="space-y-1">
-                <h2 className="text-2xl text-[color:var(--app-heading)]">Pipeline activity</h2>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate journey</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Follow candidate activity from first review to final decision.
+                  Follow the review path from intake through the final decision.
                 </p>
               </div>
               {candidate.milestones.length === 0 ? (
@@ -328,39 +519,44 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="space-y-6">
-            <section className="space-y-4">
-              <div className="space-y-1">
-                <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Hiring team members assigned to this candidate.</p>
-              </div>
-              {targetApplication ? (
-                <ResponsibleTeamCard
-                  applicationId={targetApplication.id}
-                  assignments={assignments}
-                  users={users}
-                  canEdit={session.permissions.includes("manage_candidates")}
-                />
-              ) : (
+            {targetApplication ? (
+              <ResponsibleTeamCard
+                applicationId={targetApplication.id}
+                assignments={assignments}
+                users={users}
+                canEdit={session.permissions.includes("manage_candidates")}
+              />
+            ) : (
+              <section className="space-y-4">
+                <div className="space-y-1">
+                  <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">Hiring team members assigned to this candidate.</p>
+                </div>
                 <div className="rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
                   <p className="font-medium">Responsible team required</p>
-                  {candidate.applications.length === 0 ? (
-                    <p className="text-xs opacity-90 mt-1">Create or link an application first to assign a responsible team.</p>
-                  ) : (
-                    <p className="text-xs opacity-90 mt-1">Assign an owner or hiring team before advancing this candidate.</p>
-                  )}
+                  <p className="mt-1 text-xs leading-5 opacity-90">
+                    {candidate.applications.length === 0
+                      ? "Create or link an application first so a responsible team can own this candidate."
+                      : "Assign an owner or hiring team before advancing this candidate."}
+                  </p>
                 </div>
-              )}
-            </section>
+              </section>
+            )}
 
             <section className="space-y-4">
               <div className="space-y-1">
                 <h2 className="text-xl text-[color:var(--app-heading)]">Applications</h2>
-                <p className="text-sm text-[color:var(--app-muted)]">Linked job applications.</p>
+                <p className="text-sm text-[color:var(--app-muted)]">Keep the linked job and workspace history visible here.</p>
               </div>
 
               <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 {candidate.applications.length === 0 ? (
-                  <p className="text-sm text-[color:var(--app-muted)]">No applications recorded. Imported candidate — no linked application yet.</p>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">No linked application</p>
+                    <p className="text-sm leading-6 text-[color:var(--app-muted)]">
+                      This candidate is not yet connected to a job/workspace hiring journey. Link or create an application before advancing.
+                    </p>
+                  </div>
                 ) : (
                   candidate.applications.map((application) => (
                     <div
@@ -381,6 +577,7 @@ export default async function CandidateDetailPage({
                         <p className="text-sm text-[color:var(--app-heading)]">{application.jobTitle}</p>
                         <p className="text-xs text-[color:var(--app-muted)]">
                           {application.roleLabel || "No role linked"}
+                          {application.roleDepartment ? ` | ${application.roleDepartment}` : ""}
                         </p>
                       </div>
                     </div>
@@ -442,7 +639,18 @@ export default async function CandidateDetailPage({
               </div>
             </section>
 
-            <section className="border-t border-[color:var(--app-border)] pt-5">
+            <CandidateNotesModal
+              candidateId={candidate.id}
+              notes={candidate.notes.map((note) => ({
+                id: note.id,
+                type: note.type,
+                body: note.body,
+                createdAt: note.createdAt,
+                author: note.createdByName || note.createdByEmail
+              }))}
+            />
+
+            <section>
               <CandidateActivityModal items={activityFeed} />
             </section>
           </div>

@@ -358,6 +358,7 @@ export async function CandidateWorkspaceView({
           <CandidateWorkspaceTable
             rows={page.rows}
             currentPathAndQuery={currentPathAndQuery}
+            workspaceId={scope === "department" ? departmentId : undefined}
             roleOptions={page.roleOptions}
             departmentOptions={departments.map((department) => ({ id: department.id, name: department.name }))}
             permissions={session.permissions}

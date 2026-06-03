@@ -5,7 +5,7 @@ import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { MoreHorizontal, User } from "lucide-react";
+import { FileText, MoreHorizontal } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
@@ -29,6 +29,12 @@ const tableCellClassName =
 const iconButtonClassName =
   "inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
 
+const quickAccessLinkClassName =
+  "inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:-translate-y-[1px] hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]";
+
+const quickAccessPrimaryLinkClassName =
+  "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-3 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_24%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
+
 const stageActionSelectClassName =
   "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] outline-none transition hover:border-[color:var(--app-border-strong)] focus:border-brand-300/50 disabled:opacity-50";
 
@@ -42,14 +48,16 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
   if (candidate.latestAssessment?.attemptId) {
     return {
       href: `/results/${candidate.latestAssessment.attemptId}` as Route,
-      label: "Open assessment evidence"
+      label: "Open assessment evidence",
+      shortLabel: "Evidence"
     };
   }
 
   if (candidate.latestAssessmentStatus === "none") {
     return {
       href: `/create-test?candidateId=${candidate.id}` as Route,
-      label: "Assign assessment"
+      label: "Assign assessment",
+      shortLabel: "Assign"
     };
   }
 
@@ -72,15 +80,30 @@ function resumeHref(candidate: CandidateWorkspaceItem) {
   return `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`;
 }
 
+function buildCandidateProfileHref(candidateId: string, workspaceId?: string, returnTo?: string): Route {
+  const params = new URLSearchParams();
+  if (workspaceId) {
+    params.set("workspaceId", workspaceId);
+  }
+  if (returnTo) {
+    params.set("returnTo", returnTo);
+  }
+
+  const query = params.toString();
+  return `/people/candidates/${candidateId}${query ? `?${query}` : ""}` as Route;
+}
+
 export function CandidateWorkspaceTable({
   rows,
   currentPathAndQuery,
+  workspaceId,
   roleOptions,
   departmentOptions,
   permissions = []
 }: {
   rows: CandidateWorkspaceItem[];
   currentPathAndQuery: string;
+  workspaceId?: string;
   roleOptions?: Array<{ id: string; label: string; departmentId?: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
   permissions?: string[];
@@ -185,12 +208,12 @@ export function CandidateWorkspaceTable({
                 <th scope="col" className="w-10 px-4 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="w-[26%] px-4 py-3 font-medium">Candidate</th>
+                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Owner</th>
-                <th scope="col" className="w-[21%] px-4 py-3 font-medium">Pipeline</th>
-                <th scope="col" className="w-[16%] px-4 py-3 font-medium">Role / department</th>
+                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Pipeline</th>
+                <th scope="col" className="w-[15%] px-4 py-3 font-medium">Role / department</th>
                 <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
-                <th scope="col" className="w-20 px-4 py-3 font-medium text-right">Quick access</th>
+                <th scope="col" className="w-[22%] px-4 py-3 font-medium text-right">Quick access</th>
               </tr>
             </thead>
             <tbody>
@@ -198,7 +221,9 @@ export function CandidateWorkspaceTable({
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 const stage = normalizeCandidateStage(candidate.stage);
                 const decision = finalDecisionLabel(candidate);
-                const profileHref = `/people/candidates/${candidate.id}` as Route;
+                const action = contextualAction(candidate);
+                const candidateResumeHref = resumeHref(candidate);
+                const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
@@ -250,10 +275,26 @@ export function CandidateWorkspaceTable({
                       <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
                     </td>
                     <td className={tableCellClassName}>
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={profileHref} className={iconButtonClassName} title="Open profile">
-                          <User size={16} />
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {action ? (
+                          <Link href={action.href} className={quickAccessPrimaryLinkClassName} title={action.label}>
+                            {action.shortLabel}
+                          </Link>
+                        ) : null}
+                        <Link href={profileHref} className={quickAccessLinkClassName} title="Open candidate profile">
+                          Profile
                         </Link>
+                        {candidateResumeHref ? (
+                          <a
+                            href={candidateResumeHref}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={iconButtonClassName}
+                            title="View resume"
+                          >
+                            <FileText size={16} />
+                          </a>
+                        ) : null}
                         <button
                           type="button"
                           className={iconButtonClassName}
@@ -300,7 +341,7 @@ export function CandidateWorkspaceTable({
           >
             {rows.find((c) => c.id === openMenuId) && (() => {
               const candidate = rows.find((c) => c.id === openMenuId)!;
-              const profileHref = `/people/candidates/${candidate.id}` as Route;
+              const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
               const candidateResumeHref = resumeHref(candidate);
               const action = contextualAction(candidate);
               const stage = normalizeCandidateStage(candidate.stage);

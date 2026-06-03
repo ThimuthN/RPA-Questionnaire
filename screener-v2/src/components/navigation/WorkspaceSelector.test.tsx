@@ -3,103 +3,62 @@ import { describe, expect, it, vi } from "vitest";
 import { WorkspaceSelector } from "./WorkspaceSelector";
 
 vi.mock("next/link", () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) =>
-    <a href={href} {...props}>{children}</a>
+  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+    <a href={href} {...props}>
+      {children}
+    </a>
+  )
 }));
 
 describe("WorkspaceSelector", () => {
-  it("renders admin and department workspace section labels", () => {
+  const departments = [
+    { id: "dept-1", name: "RPA SL", isActive: true },
+    { id: "dept-2", name: "RPA IND", isActive: true }
+  ];
+
+  it("renders admin and department workspace groups for admins", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace="admin"
-        departments={[
-          { id: "dept-1", name: "RPA SL", isActive: true },
-          { id: "dept-2", name: "RPA IND", isActive: true }
-        ]}
-        isAdmin={true}
-        collapsed={false}
-      />
+      <WorkspaceSelector currentWorkspace="admin" departments={departments} isAdmin={true} collapsed={false} />
     );
 
-    // When markup is rendered statically, the dropdown won't be open
-    // so we can only verify the component renders
+    expect(markup).toContain("Admin");
+    expect(markup).toContain("Department Workspaces");
     expect(markup).toContain("Admin Workspace");
   });
 
-  it("marks selected workspace as active", () => {
+  it("marks the active workspace clearly", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace="dept-1"
-        departments={[
-          { id: "dept-1", name: "RPA SL", isActive: true },
-          { id: "dept-2", name: "RPA IND", isActive: true }
-        ]}
-        isAdmin={true}
-        collapsed={false}
-      />
+      <WorkspaceSelector currentWorkspace="dept-1" departments={departments} isAdmin={true} collapsed={false} />
     );
 
     expect(markup).toContain("RPA SL");
+    expect(markup).toContain("Current");
+    expect(markup).toContain('aria-current="page"');
   });
 
-  it("only shows active departments in dropdown", () => {
+  it("does not render an admin option for department-scoped users", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace="dept-1"
-        departments={[
-          { id: "dept-1", name: "RPA SL", isActive: true },
-          { id: "dept-2", name: "RPA IND", isActive: false }
-        ]}
-        isAdmin={true}
-        collapsed={false}
-      />
+      <WorkspaceSelector currentWorkspace="dept-1" departments={departments} isAdmin={false} collapsed={false} />
     );
 
-    expect(markup).toContain("RPA SL");
-    // Inactive departments shouldn't appear in the list
+    expect(markup).not.toContain("Admin Workspace");
+    expect(markup).toContain("Department workspace");
   });
 
-  it("renders without admin option when not admin", () => {
+  it("keeps the workspace links pointed at department routes", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace="dept-1"
-        departments={[
-          { id: "dept-1", name: "RPA SL", isActive: true }
-        ]}
-        isAdmin={false}
-        collapsed={false}
-      />
+      <WorkspaceSelector currentWorkspace="dept-1" departments={departments} isAdmin={true} collapsed={false} />
     );
 
-    expect(markup).toContain("RPA SL");
+    expect(markup).toContain('href="/departments/dept-1"');
+    expect(markup).toContain('href="/departments/dept-2"');
   });
 
-  it("does not render when no workspace is selected", () => {
+  it("shows an ASCII admin abbreviation when collapsed", () => {
     const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace={null}
-        departments={[
-          { id: "dept-1", name: "RPA SL", isActive: true }
-        ]}
-        isAdmin={true}
-        collapsed={false}
-      />
+      <WorkspaceSelector currentWorkspace="admin" departments={[]} isAdmin={true} collapsed={true} />
     );
 
-    // Component should render as null
-    expect(markup).toBe("");
-  });
-
-  it("shows abbreviation when collapsed", () => {
-    const markup = renderToStaticMarkup(
-      <WorkspaceSelector
-        currentWorkspace="admin"
-        departments={[]}
-        isAdmin={true}
-        collapsed={true}
-      />
-    );
-
-    expect(markup).toContain("⚙");
+    expect(markup).toContain(">AD<");
   });
 });
