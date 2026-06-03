@@ -21,14 +21,8 @@ function hashPassword(password: string): string {
 }
 
 async function verifyBootstrapEnvironment(): Promise<{ email: string; password: string }> {
-  const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
+  const email = (process.env.BOOTSTRAP_ADMIN_EMAIL || "tnayanapriya@innobothealth.com").trim();
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
-
-  if (!email) {
-    console.error("\n❌ BOOTSTRAP CONFIG FAILED: BOOTSTRAP_ADMIN_EMAIL not set");
-    console.error("   Required: BOOTSTRAP_ADMIN_EMAIL=<email>");
-    process.exit(1);
-  }
 
   if (!password) {
     console.error("\n❌ BOOTSTRAP CONFIG FAILED: BOOTSTRAP_ADMIN_PASSWORD not set");
@@ -36,7 +30,8 @@ async function verifyBootstrapEnvironment(): Promise<{ email: string; password: 
     process.exit(1);
   }
 
-  console.log("✓ Bootstrap configuration verified\n");
+  console.log("✓ Bootstrap configuration verified");
+  console.log(`   Email: ${email} (default or env)\n`);
   return { email, password };
 }
 

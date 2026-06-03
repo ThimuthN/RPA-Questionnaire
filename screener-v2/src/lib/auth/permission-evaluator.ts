@@ -92,12 +92,35 @@ export async function hasGlobalPermission(userId: string, permission: string): P
       permissionOverrides: {
         where: { permission, action: "grant" },
         select: { id: true }
+      },
+      accessGrants: {
+        where: { status: "active", scope: "system" },
+        select: {
+          role: {
+            select: {
+              permissions: {
+                where: { permission },
+                select: { scope: true }
+              }
+            }
+          }
+        }
       }
     }
   });
 
   if (!user) return false;
   if (user.permissionOverrides.length > 0) return true;
+
+  // Check system-scoped AccessGrant roles (e.g., system admin)
+  if (user.accessGrants && user.accessGrants.length > 0) {
+    for (const grant of user.accessGrants) {
+      if (grant.role.permissions.length > 0 && grant.role.permissions[0]?.scope === "global") {
+        return true;
+      }
+    }
+  }
+
   if (!user.roleId) return false;
 
   const rolePermission = await prisma.rolePermissionTemplate.findUnique({
@@ -113,6 +136,25 @@ export async function hasGlobalPermission(userId: string, permission: string): P
   return rolePermission?.scope === "global";
 }
 
+export async function isSystemAdmin(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      accessGrants: {
+        where: { status: "active", scope: "system" },
+        select: {
+          role: {
+            select: { slug: true }
+          }
+        }
+      }
+    }
+  });
+
+  if (!user) return false;
+  return user.accessGrants.some((g) => g.role.slug === "system-admin");
+}
+
 export async function canUsePermissionForDepartment(
   session: AppSession,
   permission: string,
@@ -122,5 +164,6 @@ export async function canUsePermissionForDepartment(
   if (!resourceDepartmentId) return true;
   if (!session.userId) return false;
   if (await hasGlobalPermission(session.userId, permission)) return true;
+  if (await isSystemAdmin(session.userId)) return true;
   return Boolean(session.departmentId && session.departmentId === resourceDepartmentId);
 }
