@@ -51,6 +51,7 @@ model Department {
   employees Employee[]
   jobPostings JobPosting[]
   departmentCandidacies DepartmentCandidacy[]
+  accessGrants AccessGrant[]
 
   @@index([isActive, sortOrder])
 }
@@ -74,6 +75,7 @@ model User {
   permissionOverrides     UserPermissionOverride[]
   hiringAssignments       HiringAssignment[]    @relation("HiringAssignments")
   assignedHiringAssignments HiringAssignment[]  @relation("HiringAssignmentsCreatedBy")
+  accessGrants            AccessGrant[]
 
   @@index([departmentId])
   @@index([roleId])
@@ -179,6 +181,7 @@ model RoleCatalog {
   id                      String                      @id @default(cuid())
   slug                    String                      @unique
   label                   String
+  kind                    String                      @default("job_designation")
   department              String?
   departmentId            String
   description             String?
@@ -195,6 +198,7 @@ model RoleCatalog {
   departmentCandidacies   DepartmentCandidacy[]
   users                   User[]
   permissions             RolePermissionTemplate[]
+  accessGrants            AccessGrant[]
 
   @@index([isActive, sortOrder])
   @@index([label, department])
@@ -211,6 +215,27 @@ model RolePermissionTemplate {
 
   @@unique([roleId, permission])
   @@index([roleId])
+}
+
+model AccessGrant {
+  id            String   @id @default(cuid())
+  userId        String
+  roleId        String
+  scope         String
+  departmentId  String?
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role          RoleCatalog @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([roleId])
+  @@index([departmentId])
+  @@index([scope, status])
+  @@index([userId, scope, status])
+  @@index([userId, departmentId])
 }
 
 model UserPermissionOverride {
