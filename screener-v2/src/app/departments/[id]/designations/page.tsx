@@ -13,7 +13,7 @@ export default async function DepartmentDesignationsPage({
   const [department, roles] = await Promise.all([
     getDepartment(id),
     prisma.roleCatalog.findMany({
-      where: { departmentId: id, isActive: true },
+      where: { departmentId: id, isActive: true, kind: "job_designation" },
       include: {
         permissions: {
           select: { permission: true }
@@ -27,8 +27,8 @@ export default async function DepartmentDesignationsPage({
     notFound();
   }
 
-  // Filter to only job designations (roles without permissions)
-  const jobDesignations = roles.filter((role) => role.permissions.length === 0);
+  // Designations page shows only job_designation kind
+  const jobDesignations = roles;
 
   return (
     <RoleCatalogSection

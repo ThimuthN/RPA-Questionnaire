@@ -20,10 +20,11 @@ export default async function DepartmentAccessPage({
   const [department, roles] = await Promise.all([
     getDepartment(id),
     prisma.roleCatalog.findMany({
-      where: { departmentId: id, isActive: true },
+      where: { departmentId: id, isActive: true, kind: "access_role" },
       select: {
         id: true,
         label: true,
+        kind: true,
         permissions: {
           select: { permission: true }
         }
@@ -36,8 +37,8 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  // Separate access roles (with permissions) from job designations
-  const accessRoles = roles.filter((role) => role.permissions.length > 0);
+  // Access page shows only access_role kind
+  const accessRoles = roles;
 
   return (
     <div className="space-y-6">
