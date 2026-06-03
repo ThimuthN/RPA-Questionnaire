@@ -8,7 +8,7 @@ import {
 } from "@/lib/auth/runtime-session";
 import type { AppAction } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
-import { canUsePermissionForDepartment, hasGlobalPermission } from "@/lib/auth/permission-evaluator";
+import { canUsePermissionForDepartment, hasGlobalPermission, isSystemAdmin } from "@/lib/auth/permission-evaluator";
 
 type ApiAuthSuccess = { ok: true; session: AppSession };
 type ApiAuthFailure = { ok: false; response: NextResponse };
@@ -85,6 +85,11 @@ export async function canAccessDepartmentWorkspace(
 
   // User is in the same department - allow access
   if (session.departmentId === departmentId) {
+    return true;
+  }
+
+  // System admins can access any department
+  if (await isSystemAdmin(session.userId)) {
     return true;
   }
 
