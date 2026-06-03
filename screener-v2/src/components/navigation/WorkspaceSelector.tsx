@@ -2,6 +2,7 @@
 
 import type { Route } from "next";
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,22 @@ export function WorkspaceSelector({
   isAdmin: boolean;
   collapsed: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
   const activeDept = departments.find((d) => d.id === currentWorkspace);
   const activeDepts = departments.filter((d) => d.isActive);
   const showAdminOption = isAdmin;
@@ -76,40 +93,61 @@ export function WorkspaceSelector({
               {displayName}
             </Link>
             {hasMultipleOptions && (
-              <details className="group relative z-[100]">
-                <summary className="list-none cursor-pointer p-1 hover:bg-[color:var(--app-surface)] rounded transition">
-                  <ChevronDown className="h-4 w-4 text-[color:var(--app-muted)] group-open:rotate-180 transition" />
-                </summary>
-                <div className="absolute right-0 top-full mt-2 z-[100] w-56 rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-lg max-h-72 overflow-y-auto">
-                  {showAdminOption && (
-                    <Link
-                      href="/departments"
-                      className={cn(
-                        "block px-3 py-2 text-sm transition border-b border-[color:var(--app-border)]",
-                        currentWorkspace === "admin"
-                          ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)] font-medium"
-                          : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
-                      )}
-                    >
-                      Admin Workspace
-                    </Link>
-                  )}
-                  {activeDepts.map((dept) => (
-                    <Link
-                      key={dept.id}
-                      href={`/departments/${dept.id}`}
-                      className={cn(
-                        "block px-3 py-2 text-sm transition",
-                        currentWorkspace === dept.id
-                          ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)] font-medium"
-                          : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
-                      )}
-                    >
-                      {dept.name}
-                    </Link>
-                  ))}
-                </div>
-              </details>
+              <div ref={dropdownRef} className="relative z-[100]">
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="list-none cursor-pointer p-1 hover:bg-[color:var(--app-surface)] rounded transition"
+                  aria-label="Toggle workspace menu"
+                  aria-expanded={isOpen}
+                >
+                  <ChevronDown className={cn("h-4 w-4 text-[color:var(--app-muted)] transition", isOpen && "rotate-180")} />
+                </button>
+                {isOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-lg max-h-72 overflow-y-auto">
+                    {showAdminOption && (
+                      <>
+                        <div className="px-3 py-2 text-xs uppercase tracking-[0.1em] font-semibold text-[color:var(--app-muted)] bg-[color:var(--app-surface-soft)]">
+                          Admin
+                        </div>
+                        <Link
+                          href="/departments"
+                          onClick={() => setIsOpen(false)}
+                          className={cn(
+                            "block px-3 py-2 text-sm transition border-b border-[color:var(--app-border)]",
+                            currentWorkspace === "admin"
+                              ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)] font-medium"
+                              : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
+                          )}
+                        >
+                          Admin Workspace
+                        </Link>
+                      </>
+                    )}
+                    {activeDepts.length > 0 && (
+                      <>
+                        <div className="px-3 py-2 text-xs uppercase tracking-[0.1em] font-semibold text-[color:var(--app-muted)] bg-[color:var(--app-surface-soft)]">
+                          Department Workspaces
+                        </div>
+                        {activeDepts.map((dept) => (
+                          <Link
+                            key={dept.id}
+                            href={`/departments/${dept.id}`}
+                            onClick={() => setIsOpen(false)}
+                            className={cn(
+                              "block px-3 py-2 text-sm transition",
+                              currentWorkspace === dept.id
+                                ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)] font-medium"
+                                : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
+                            )}
+                          >
+                            {dept.name}
+                          </Link>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

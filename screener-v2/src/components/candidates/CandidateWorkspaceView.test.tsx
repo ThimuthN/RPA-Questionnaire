@@ -157,4 +157,37 @@ describe("CandidateWorkspaceView", () => {
       })
     );
   });
+
+  it("separates status pills from action buttons", async () => {
+    const markup = renderToStaticMarkup(
+      await CandidateWorkspaceView({
+        scope: "global",
+        searchParams: {}
+      })
+    );
+
+    // Check for status pills
+    expect(markup).toContain("candidates");
+    expect(markup).toContain("ready for review");
+    expect(markup).toContain("stalled");
+
+    // Check for action buttons
+    expect(markup).toContain("Add candidate");
+    expect(markup).toContain('data-testid="candidate-csv-import"');
+  });
+
+  it("renders correct department empty state copy", async () => {
+    vi.mocked(listCandidateWorkspacePage).mockResolvedValue({ ...mockPage, rows: [] } as any);
+
+    const markup = renderToStaticMarkup(
+      await CandidateWorkspaceView({
+        scope: "department",
+        departmentId: "dept-1",
+        searchParams: {}
+      })
+    );
+
+    expect(markup).toContain("No candidates in this workspace yet");
+    expect(markup).toContain("Add or import candidates");
+  });
 });

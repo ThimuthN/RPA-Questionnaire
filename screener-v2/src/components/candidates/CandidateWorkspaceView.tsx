@@ -213,7 +213,7 @@ export async function CandidateWorkspaceView({
         {params.error ? <NoticeBanner tone="error">{params.error}</NoticeBanner> : null}
 
         <div className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
             <div className="space-y-1">
               <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate database</h2>
               <p className="text-sm text-[color:var(--app-muted)]">
@@ -224,15 +224,15 @@ export async function CandidateWorkspaceView({
               <StatusPill label={`${page.total} candidates`} tone="neutral" />
               <StatusPill label={`${page.summary.readyForReview} ready for review`} tone="amber" />
               <StatusPill label={`${page.summary.stalled} stalled`} tone={page.summary.stalled > 0 ? "red" : "neutral"} />
-              {canManageCandidates ? (
-                <>
-                  <CandidateCsvImportModal returnTo={currentPathAndQuery} />
-                  <Link href="/people/candidates/new">
-                    <Button>Add candidate</Button>
-                  </Link>
-                </>
-              ) : null}
             </div>
+            {canManageCandidates ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <Link href="/people/candidates/new">
+                  <Button>Add candidate</Button>
+                </Link>
+                <CandidateCsvImportModal returnTo={currentPathAndQuery} />
+              </div>
+            ) : null}
           </div>
 
           <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">

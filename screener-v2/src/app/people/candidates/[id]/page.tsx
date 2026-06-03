@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
+import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySkeleton";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
@@ -311,13 +312,10 @@ export default async function CandidateDetailPage({
                 </p>
               </div>
               {candidate.milestones.length === 0 ? (
-                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-6 py-8 text-center space-y-2">
-                  <p className="text-sm font-medium text-[color:var(--app-heading)]">No journey milestones yet</p>
-                  <p className="text-sm text-[color:var(--app-muted)] max-w-sm mx-auto">
-                    {candidate.applications.length === 0
-                      ? "Imported candidate with no linked application. Milestones are created when reviewed through the hiring pipeline."
-                      : "Milestones are created when the candidate is reviewed or moved through pipeline stages."}
-                  </p>
+                <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
+                  <DefaultJourneySkeleton
+                    hasLinkedApplication={candidate.applications.length > 0}
+                  />
                 </div>
               ) : (
                 <CandidateMilestoneTimeline
@@ -330,27 +328,29 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="space-y-6">
-            {targetApplication && (
-              <ResponsibleTeamCard
-                applicationId={targetApplication.id}
-                assignments={assignments}
-                users={users}
-                canEdit={session.permissions.includes("manage_candidates")}
-              />
-            )}
-
-            {!targetApplication && candidate.applications.length === 0 && (
-              <section className="space-y-4">
-                <div className="space-y-1">
-                  <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
-                  <p className="text-sm text-[color:var(--app-muted)]">Team members assigned to this candidate.</p>
-                </div>
+            <section className="space-y-4">
+              <div className="space-y-1">
+                <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">Hiring team members assigned to this candidate.</p>
+              </div>
+              {targetApplication ? (
+                <ResponsibleTeamCard
+                  applicationId={targetApplication.id}
+                  assignments={assignments}
+                  users={users}
+                  canEdit={session.permissions.includes("manage_candidates")}
+                />
+              ) : (
                 <div className="rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-                  <p className="font-medium">No active application</p>
-                  <p className="text-xs opacity-90 mt-1">This is an imported candidate record with no linked job application yet.</p>
+                  <p className="font-medium">Responsible team required</p>
+                  {candidate.applications.length === 0 ? (
+                    <p className="text-xs opacity-90 mt-1">Create or link an application first to assign a responsible team.</p>
+                  ) : (
+                    <p className="text-xs opacity-90 mt-1">Assign an owner or hiring team before advancing this candidate.</p>
+                  )}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
 
             <section className="space-y-4">
               <div className="space-y-1">

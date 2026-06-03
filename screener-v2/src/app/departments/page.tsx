@@ -62,10 +62,22 @@ export default async function DepartmentsPage({
             </NotificationBanner>
           )}
 
+          <div className="space-y-5 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium text-[color:var(--app-heading)]">Workspace management</h3>
+              <p className="text-sm text-[color:var(--app-text)]">
+                Workspaces represent hiring departments or operating units. Use them to separate jobs, candidates, assessments, teams, and access.
+              </p>
+              <p className="text-xs text-[color:var(--app-muted)] mt-2">
+                Countries/markets are currently represented in workspace names. A dedicated country model can be added later.
+              </p>
+            </div>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl text-[color:var(--app-heading)]">Workspace directory</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">Create, activate, edit, and deactivate hiring workspaces.</p>
+              <p className="text-sm text-[color:var(--app-muted)]">Manage hiring workspaces, access, and settings.</p>
             </div>
             <DepartmentModal />
           </div>
@@ -105,6 +117,11 @@ export default async function DepartmentsPage({
                         </td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Link href={`/departments/${department.id}`}>
+                              <Button variant="secondary" className="px-3 py-2 text-xs">
+                                Open workspace
+                              </Button>
+                            </Link>
                             <DepartmentModal mode="edit" department={department} />
                             {department.isActive ? (
                               <form action={`/api/departments/${department.id}`} method="post" className="inline">
