@@ -6,6 +6,7 @@ import { MainNav } from "@/components/navigation/MainNav";
 import { WorkspaceRail } from "@/components/navigation/WorkspaceRail";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { getAppSession } from "@/lib/auth/app-session";
+import { listDepartments } from "@/lib/db/departments";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -57,6 +58,11 @@ export default async function RootLayout({
 }>) {
   const session = await getAppSession();
 
+  // Fetch departments for workspace selector (only active departments)
+  const departments = session
+    ? await listDepartments(false)
+    : [];
+
   return (
     <html lang="en" data-theme="light" suppressHydrationWarning>
       <body className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable} bg-[color:var(--app-bg)] text-[color:var(--app-text)]`}>
@@ -67,6 +73,7 @@ export default async function RootLayout({
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
           <WorkspaceRail
             viewer={session ? { email: session.email, name: session.name, roleId: session.roleId, permissions: session.permissions, departmentId: session.departmentId } : null}
+            departments={departments}
           />
           <div className="min-w-0 flex-1">
             <header className="northstar-ribbon-shell sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">

@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
+import { WorkspaceSelector, type Department } from "@/components/navigation/WorkspaceSelector";
+import { WorkspaceSubnav } from "@/components/navigation/WorkspaceSubnav";
 import { getNavItems, isNavItemActive } from "@/components/navigation/nav-config";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
@@ -12,9 +14,11 @@ import { cn } from "@/lib/utils";
 const STORAGE_KEY = "northstar-rail-collapsed";
 
 export function WorkspaceRail({
-  viewer
+  viewer,
+  departments = []
 }: {
   viewer: Pick<AppSession, "email" | "name" | "roleId" | "permissions" | "departmentId"> | null;
+  departments?: Department[];
 }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -65,7 +69,28 @@ export function WorkspaceRail({
           <div className="h-2" />
 
           <div className="flex min-h-0 flex-1 flex-col">
-            <nav className="mt-2 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
+            {/* Workspace Selector - shows current workspace and switcher */}
+            <WorkspaceSelector
+              currentDepartmentId={viewer?.departmentId}
+              departments={departments}
+              collapsed={collapsed}
+            />
+
+            {/* Workspace Subitems - shows navigation for selected workspace */}
+            {viewer?.departmentId && (
+              <div className="mt-4 pt-4 border-t border-[color:var(--app-border)]">
+                <WorkspaceSubnav
+                  departmentId={viewer.departmentId}
+                  collapsed={collapsed}
+                />
+              </div>
+            )}
+
+            {/* Main Navigation - global items */}
+            <nav className={cn(
+              "flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1",
+              viewer?.departmentId ? "mt-4 pt-4 border-t border-[color:var(--app-border)]" : "mt-2"
+            )}>
               {items.map((item, index) => {
                 const Icon = item.icon;
                 const active = isNavItemActive(pathname, item.href as string);

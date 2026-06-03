@@ -27,8 +27,8 @@ export default async function DepartmentsPage({
       variant="create"
       tone="page"
       eyebrow="Admin"
-      title="Departments"
-      subtitle="Manage hiring departments and their assignments."
+      title="Manage Workspaces"
+      subtitle="Create, activate, and manage hiring workspaces and their configuration."
     >
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">

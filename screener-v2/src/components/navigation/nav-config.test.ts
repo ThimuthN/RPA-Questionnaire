@@ -4,23 +4,19 @@ import type { AppSession } from "@/lib/auth/session";
 
 describe("nav-config", () => {
   describe("getNavItems", () => {
-    it("orders authenticated workflow nav items with Workspaces when permitted", () => {
+    it("shows admin Manage Workspaces item when permitted", () => {
       const viewer = { permissions: ["manage_users"], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer);
       expect(items.map((item) => item.label)).toEqual([
-        "Workspaces",
+        "Manage Workspaces",
         "Jobs",
         "Applicants",
         "Candidates",
         "Assessments"
       ]);
-      expect(items.map((item) => item.href)).toEqual([
-        "/departments",
-        "/people/candidates/jobs",
-        "/people/candidates/applicants",
-        "/people/candidates",
-        "/assessments"
-      ]);
+      const manageItem = items.find((item) => item.label === "Manage Workspaces");
+      expect(manageItem?.href).toBe("/departments");
+      expect(manageItem?.section).toBe("Admin");
     });
 
     it("includes Jobs for authenticated users at /people/candidates/jobs", () => {
@@ -40,26 +36,28 @@ describe("nav-config", () => {
       expect(labels).not.toContain("My Department");
     });
 
-    it("shows a direct Workspaces link for department-scoped users without manage_users", () => {
+    it("department-scoped users see only global items in sidebar (workspace selector handles switching)", () => {
       const viewer = { permissions: [], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const labels = getNavItems(viewer).map((item) => item.label);
-      expect(labels).toContain("Workspaces");
-      expect(getNavItems(viewer)[0]?.href).toBe("/departments/dept-1");
+      expect(labels).toContain("Jobs");
+      expect(labels).toContain("Applicants");
+      expect(labels).toContain("Candidates");
+      expect(labels).not.toContain("Workspaces");
+      expect(labels).not.toContain("Manage Workspaces");
     });
 
-    it("shows Workspaces with manage_users permission", () => {
+    it("admin users see Manage Workspaces in Admin section", () => {
       const viewer = { permissions: ["manage_users"], departmentId: null } as Pick<AppSession, "permissions" | "departmentId">;
-      const workspacesItem = getNavItems(viewer).find((item) => item.label === "Workspaces");
-      expect(workspacesItem).toBeDefined();
-      expect(workspacesItem?.href).toBe("/departments");
+      const items = getNavItems(viewer);
+      const manageWorkspacesItem = items.find((item) => item.label === "Manage Workspaces");
+      expect(manageWorkspacesItem).toBeDefined();
+      expect(manageWorkspacesItem?.href).toBe("/departments");
+      expect(manageWorkspacesItem?.section).toBe("Admin");
     });
 
-    it("Workspaces is the first nav item", () => {
-      const viewerManage = { permissions: ["manage_users"], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
-      expect(getNavItems(viewerManage)[0]?.label).toBe("Workspaces");
-
-      const viewerDept = { permissions: [], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
-      expect(getNavItems(viewerDept)[0]?.label).toBe("Workspaces");
+    it("Manage Workspaces is the first nav item for admins", () => {
+      const viewer = { permissions: ["manage_users"], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
+      expect(getNavItems(viewer)[0]?.label).toBe("Manage Workspaces");
     });
 
     it("Jobs item has 'All hiring' section label", () => {
@@ -125,12 +123,12 @@ describe("nav-config", () => {
       expect(isNavItemActive("/assessments", "/assessments")).toBe(true);
     });
 
-    it("marks /departments as active for Departments item", () => {
+    it("marks /departments as active for Manage Workspaces item", () => {
       expect(isNavItemActive("/departments", "/departments")).toBe(true);
     });
 
-    it("marks department workspace detail routes active for Workspace item", () => {
-      expect(isNavItemActive("/departments/dept-1/users", "/departments/dept-1")).toBe(true);
+    it("marks department workspace detail routes active for Manage Workspaces item", () => {
+      expect(isNavItemActive("/departments/dept-1/users", "/departments")).toBe(true);
     });
 
     it("marks /jobs as active for public Careers item", () => {

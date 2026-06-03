@@ -11,14 +11,15 @@ export function getNavItems(viewer: Pick<AppSession, "permissions" | "department
     return [{ href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness }];
   }
 
-  const workspaceItem = viewer.permissions.includes("manage_users")
-    ? [{ href: "/departments" as Route, label: "Workspaces", icon: Building2 }]
-    : viewer.departmentId
-      ? [{ href: `/departments/${viewer.departmentId}` as Route, label: "Workspaces", icon: Building2 }]
-      : [];
+  // Admin users get "Manage Workspaces" in an admin section
+  const adminItems = viewer.permissions.includes("manage_users")
+    ? [
+        { href: "/departments" as Route, label: "Manage Workspaces", icon: Building2, section: "Admin" }
+      ]
+    : [];
 
   return [
-    ...workspaceItem,
+    ...adminItems,
     { href: "/people/candidates/jobs" as Route, label: "Jobs", icon: BriefcaseBusiness, section: "All hiring" },
     { href: "/people/candidates/applicants" as Route, label: "Applicants", icon: ClipboardList },
     { href: "/people/candidates" as Route, label: copy.nav.candidates, icon: Users2 },
