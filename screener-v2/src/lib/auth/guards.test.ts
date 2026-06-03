@@ -4,7 +4,8 @@ import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import type { AppSession } from "@/lib/auth/session";
 
 vi.mock("@/lib/auth/permission-evaluator", () => ({
-  hasGlobalPermission: vi.fn()
+  hasGlobalPermission: vi.fn(),
+  isSystemAdmin: vi.fn()
 }));
 
 describe("Department Workspace Authorization", () => {

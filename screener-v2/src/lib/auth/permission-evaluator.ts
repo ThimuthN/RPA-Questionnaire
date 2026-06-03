@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import type { AppSession } from "@/lib/auth/session";
 import { APP_ACTIONS } from "@/lib/auth/permissions";
+import { getViewerAccessContext } from "@/lib/auth/viewer-access-context";
 
 function isKnownPermission(permission: string) {
   return APP_ACTIONS.includes(permission as (typeof APP_ACTIONS)[number]);
@@ -137,22 +138,8 @@ export async function hasGlobalPermission(userId: string, permission: string): P
 }
 
 export async function isSystemAdmin(userId: string): Promise<boolean> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      accessGrants: {
-        where: { status: "active", scope: "system" },
-        select: {
-          role: {
-            select: { slug: true }
-          }
-        }
-      }
-    }
-  });
-
-  if (!user) return false;
-  return user.accessGrants.some((g) => g.role.slug === "system-admin");
+  const context = await getViewerAccessContext(userId);
+  return context.isSystemAdmin;
 }
 
 export async function canUsePermissionForDepartment(
