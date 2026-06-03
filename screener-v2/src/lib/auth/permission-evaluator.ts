@@ -160,10 +160,13 @@ export async function canUsePermissionForDepartment(
   permission: string,
   resourceDepartmentId?: string | null
 ): Promise<boolean> {
+  if (!session.userId) return false;
+
+  // System admins can use any permission on any department
+  if (await isSystemAdmin(session.userId)) return true;
+
   if (!session.permissions.includes(permission)) return false;
   if (!resourceDepartmentId) return true;
-  if (!session.userId) return false;
   if (await hasGlobalPermission(session.userId, permission)) return true;
-  if (await isSystemAdmin(session.userId)) return true;
   return Boolean(session.departmentId && session.departmentId === resourceDepartmentId);
 }
