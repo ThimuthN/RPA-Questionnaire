@@ -54,8 +54,7 @@ export const listDepartments = unstable_cache(
 );
 
 export async function getDepartment(id: string): Promise<DepartmentRecord | null> {
-  // Try to find by ID first
-  let dept = await prisma.department.findUnique({
+  return prisma.department.findUnique({
     where: { id },
     select: {
       id: true,
@@ -65,22 +64,6 @@ export async function getDepartment(id: string): Promise<DepartmentRecord | null
       sortOrder: true
     }
   });
-
-  // If not found by ID, try by slug (for robustness with URL segments)
-  if (!dept) {
-    dept = await prisma.department.findUnique({
-      where: { slug: id },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        isActive: true,
-        sortOrder: true
-      }
-    });
-  }
-
-  return dept;
 }
 
 export async function listDepartmentUsers(departmentId: string): Promise<DepartmentUserRecord[]> {
