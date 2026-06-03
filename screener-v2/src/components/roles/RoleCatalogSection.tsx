@@ -195,9 +195,9 @@ export function RoleCatalogSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg text-[color:var(--app-heading)]">Job designations</h3>
+          <h3 className="text-lg text-[color:var(--app-heading)]">Job Designations</h3>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Use designations to classify jobs and candidates within this department.
+            Job designations classify jobs and candidates. Access is managed from Team and Access.
           </p>
         </div>
         <Button onClick={beginCreate}>New designation</Button>

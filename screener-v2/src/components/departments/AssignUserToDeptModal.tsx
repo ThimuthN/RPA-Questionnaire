@@ -141,25 +141,28 @@ export function AssignUserToDeptModal({
             <label className="text-sm text-[color:var(--app-text)]" htmlFor="role-select">
               Access role
             </label>
-            {roles.length > 0 && roles.every(r => !r.permissions || r.permissions.length === 0) && (
-              <p className="text-xs text-[color:var(--app-muted)]">Only roles with permissions configured can be assigned as access roles.</p>
-            )}
-            <select
-              id="role-select"
-              name="roleId"
-              disabled={saving || loading || roles.filter(r => r.permissions && r.permissions.length > 0).length === 0}
-              required
-              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
-            >
-              <option value="">
-                {loading ? "Loading roles..." : roles.filter(r => r.permissions && r.permissions.length > 0).length === 0 ? "No available roles" : "Select a role..."}
-              </option>
-              {roles.filter(r => r.permissions && r.permissions.length > 0).map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.label}
+            {roles.length > 0 && roles.every(r => !r.permissions || r.permissions.length === 0) ? (
+              <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
+                <p className="mb-2">No access roles configured yet. Visit the Access page to set up access roles before assigning team members.</p>
+              </div>
+            ) : (
+              <select
+                id="role-select"
+                name="roleId"
+                disabled={saving || loading || roles.filter(r => r.permissions && r.permissions.length > 0).length === 0}
+                required
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+              >
+                <option value="">
+                  {loading ? "Loading roles..." : roles.filter(r => r.permissions && r.permissions.length > 0).length === 0 ? "No available roles" : "Select a role..."}
                 </option>
-              ))}
-            </select>
+                {roles.filter(r => r.permissions && r.permissions.length > 0).map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex gap-2 justify-end pt-4">

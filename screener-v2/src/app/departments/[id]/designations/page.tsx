@@ -27,10 +27,13 @@ export default async function DepartmentDesignationsPage({
     notFound();
   }
 
+  // Filter to only job designations (roles without permissions)
+  const jobDesignations = roles.filter((role) => role.permissions.length === 0);
+
   return (
     <RoleCatalogSection
       departmentId={id}
-      initialRoles={roles.map((role) => ({
+      initialRoles={jobDesignations.map((role) => ({
         id: role.id,
         label: role.label,
         departmentId: role.departmentId,

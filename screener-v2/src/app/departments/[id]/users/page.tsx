@@ -46,9 +46,9 @@ export default async function DepartmentUsersPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl text-[color:var(--app-heading)]">Team Members</h2>
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Team</h2>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Manage users and their department access roles.
+            Manage workspace team members and assign access roles.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

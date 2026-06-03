@@ -1,6 +1,4 @@
-import { StatusPill } from "@/components/primitives/StatusPill";
-import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
-import { getDepartment, listDepartmentUsers } from "@/lib/db/departments";
+import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
@@ -19,9 +17,8 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  const [department, users, roles] = await Promise.all([
+  const [department, roles] = await Promise.all([
     getDepartment(id),
-    listDepartmentUsers(id),
     prisma.roleCatalog.findMany({
       where: { departmentId: id, isActive: true },
       select: {
@@ -39,80 +36,35 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
+  // Separate access roles (with permissions) from job designations
+  const accessRoles = roles.filter((role) => role.permissions.length > 0);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl text-[color:var(--app-heading)]">Access Control</h2>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Manage department-scoped user access roles and permissions.
+          Manage department access roles and permissions.
         </p>
       </div>
 
       <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-        <h3 className="font-medium text-[color:var(--app-heading)] mb-2">Department-Scoped Access</h3>
+        <h3 className="font-medium text-[color:var(--app-heading)] mb-2">Department Access Roles</h3>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Users assigned to this department can access department-specific jobs, candidates, applicants, and assessments based on their assigned access role. Access roles grant permissions; job designations classify candidates and jobs.
+          Access roles control what department users can do. Team members in this department are assigned an access role to grant them specific permissions.
         </p>
       </div>
 
       <div>
-        <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-4">Team Members</h3>
-        {users.length === 0 ? (
-          <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center text-sm text-[color:var(--app-muted)]">
-            No users assigned to this department yet.
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                  <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">Member</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Email</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Access Role</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Permissions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <UserAvatarInitials name={user.name} email={user.email} size="md" />
-                          <div>
-                            <p className="text-sm font-medium text-[color:var(--app-heading)]">
-                              {user.name || "Unnamed"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
-                        <span className="truncate" title={user.email}>{user.email}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {user.role ? (
-                          <StatusPill label={user.role.label} tone="blue" />
-                        ) : (
-                          <span className="text-sm text-[color:var(--app-muted)]">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
-                        {user.permissionCount} permission{user.permissionCount !== 1 ? "s" : ""}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div>
         <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-4">Access Roles</h3>
-        {roles.length === 0 ? (
-          <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center text-sm text-[color:var(--app-muted)]">
-            No access roles defined for this department.
+        {accessRoles.length === 0 ? (
+          <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center space-y-3">
+            <p className="text-sm text-[color:var(--app-muted)]">
+              No access roles configured for this workspace yet.
+            </p>
+            <p className="text-xs text-[color:var(--app-muted)]">
+              Create default access roles or add custom roles from the Admin section.
+            </p>
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
@@ -125,7 +77,7 @@ export default async function DepartmentAccessPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {roles.map((role) => (
+                  {accessRoles.map((role) => (
                     <tr key={role.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
                       <td className="px-4 py-3 text-sm font-medium text-[color:var(--app-heading)]">
                         {role.label}
