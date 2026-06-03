@@ -56,7 +56,7 @@ export function WorkspaceSelector({
         Workspace
       </p>
       <div className={cn(
-        "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] transition-all",
+        "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] transition-all relative",
         collapsed ? "p-2 flex items-center justify-center" : "px-3 py-2"
       )}>
         {collapsed ? (
@@ -76,16 +76,16 @@ export function WorkspaceSelector({
               {displayName}
             </Link>
             {hasMultipleOptions && (
-              <details className="group">
+              <details className="group relative z-[100]">
                 <summary className="list-none cursor-pointer p-1 hover:bg-[color:var(--app-surface)] rounded transition">
                   <ChevronDown className="h-4 w-4 text-[color:var(--app-muted)] group-open:rotate-180 transition" />
                 </summary>
-                <div className="absolute left-2 right-2 mt-1 z-50 rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute right-0 top-full mt-2 z-[100] w-56 rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-lg max-h-72 overflow-y-auto">
                   {showAdminOption && (
                     <Link
                       href="/departments"
                       className={cn(
-                        "block px-3 py-2 text-sm transition",
+                        "block px-3 py-2 text-sm transition border-b border-[color:var(--app-border)]",
                         currentWorkspace === "admin"
                           ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)] font-medium"
                           : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"

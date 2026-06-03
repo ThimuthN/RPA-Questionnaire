@@ -14,16 +14,10 @@ describe("nav-config", () => {
       expect(labels).toContain("All Candidates");
     });
 
-    it("department workspace shows only department items", () => {
+    it("department workspace returns empty items (WorkspaceSubnav is sole source)", () => {
       const viewer = { permissions: [], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer, "dept-1");
-      const labels = items.map((item) => item.label);
-      expect(labels).toContain("Overview");
-      expect(labels).toContain("Jobs");
-      expect(labels).toContain("Applicants");
-      expect(labels).toContain("Candidates");
-      expect(labels).not.toContain("Manage Workspaces");
-      expect(labels).not.toContain("All Jobs");
+      expect(items).toEqual([]);
     });
 
     it("hides non-workflow authenticated nav items", () => {

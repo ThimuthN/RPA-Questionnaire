@@ -9,9 +9,12 @@ export type NavItem = { href: Route; label: string; icon: LucideIcon; section?: 
 /**
  * Get navigation items for the sidebar.
  *
+ * WorkspaceSubnav is the sole source of truth for department workspace items.
+ * This function only returns items for admin workspace context.
+ *
  * @param viewer - The current user session
  * @param workspace - The currently selected workspace ('admin' or a department ID)
- * @returns Navigation items appropriate for the selected workspace
+ * @returns Navigation items for the selected workspace (admin workspace only)
  */
 export function getNavItems(
   viewer: Pick<AppSession, "permissions" | "departmentId"> | null,
@@ -24,15 +27,10 @@ export function getNavItems(
   const isAdmin = viewer.permissions.includes("manage_users");
   const isAdminWorkspace = workspace === "admin";
 
-  // Department workspace: show only department-scoped items
+  // Department workspace: WorkspaceSubnav handles all navigation
+  // This function returns nothing for department workspaces to avoid duplication
   if (!isAdminWorkspace && workspace && workspace !== "admin") {
-    return [
-      { href: `/departments/${workspace}` as Route, label: "Overview", icon: Building2 },
-      { href: `/departments/${workspace}/jobs` as Route, label: "Jobs", icon: BriefcaseBusiness },
-      { href: `/departments/${workspace}/applicants` as Route, label: "Applicants", icon: ClipboardList },
-      { href: `/departments/${workspace}/candidates` as Route, label: copy.nav.candidates, icon: Users2 },
-      { href: `/departments/${workspace}/assessments` as Route, label: copy.nav.create, icon: ClipboardList }
-    ];
+    return [];
   }
 
   // Admin workspace: show admin/global items
