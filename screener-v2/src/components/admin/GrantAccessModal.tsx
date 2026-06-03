@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { Modal } from "@/components/primitives/Modal";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
+import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
 
 interface Department {
   id: string;
@@ -16,6 +17,7 @@ interface Role {
   id: string;
   label: string;
   slug: string;
+  permissions?: string[];
 }
 
 export function GrantAccessModal({
@@ -37,16 +39,27 @@ export function GrantAccessModal({
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
 
+  // Filter roles by applicability
+  const systemApplicableRoles = filterRolesByApplicability(systemRoles, "system");
+  const departmentApplicableRoles = filterRolesByApplicability(systemRoles, "department");
+
   async function handleGrant() {
     setError("");
 
     if (grantType === "system") {
-      if (!systemRoles.length) {
-        setError("No system roles available");
+      if (!systemApplicableRoles.length) {
+        setError("No system roles available. Please configure system roles first.");
         return;
       }
-      // For now, grant first system role (system-admin)
-      const role = systemRoles[0];
+      if (!selectedRole) {
+        setError("Please select a role");
+        return;
+      }
+      const role = systemApplicableRoles.find(r => r.id === selectedRole);
+      if (!role) {
+        setError("Invalid role selected");
+        return;
+      }
 
       setIsSubmitting(true);
       try {
@@ -76,6 +89,12 @@ export function GrantAccessModal({
     } else {
       if (!selectedDepartment || !selectedRole) {
         setError("Please select both department and role");
+        return;
+      }
+
+      const role = departmentApplicableRoles.find(r => r.id === selectedRole);
+      if (!role) {
+        setError("Invalid role selected");
         return;
       }
 
@@ -161,13 +180,25 @@ export function GrantAccessModal({
               </p>
               <div className="grid gap-1">
                 <label className="text-sm font-medium text-[color:var(--app-text)]">Role</label>
-                <select className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50">
-                  {systemRoles.map((role) => (
-                    <option key={role.id} value={role.id}>
-                      {role.label}
-                    </option>
-                  ))}
-                </select>
+                {systemApplicableRoles.length === 0 ? (
+                  <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
+                    No system roles configured. Please set up system roles first.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    disabled={isSubmitting}
+                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50"
+                  >
+                    <option value="">Select a system role...</option>
+                    {systemApplicableRoles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           ) : (
@@ -182,7 +213,8 @@ export function GrantAccessModal({
                 <select
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)]"
+                  disabled={isSubmitting}
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50"
                 >
                   <option value="">Select department...</option>
                   {departments.map((dept) => (
@@ -196,15 +228,25 @@ export function GrantAccessModal({
                 <label className="text-sm font-medium text-[color:var(--app-text)]">
                   Access role
                 </label>
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)]"
-                  disabled={!selectedDepartment}
-                >
-                  <option value="">Select role...</option>
-                  {/* Roles will be loaded based on selected department */}
-                </select>
+                {departmentApplicableRoles.length === 0 ? (
+                  <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
+                    No department roles configured.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    disabled={isSubmitting || !selectedDepartment}
+                    className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50"
+                  >
+                    <option value="">Select role...</option>
+                    {departmentApplicableRoles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
           )}

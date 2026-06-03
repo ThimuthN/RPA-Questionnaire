@@ -34,7 +34,6 @@ export default async function UserManagementPage() {
     }),
     prisma.roleCatalog.findMany({
       where: {
-        departmentId: (await prisma.department.findFirst({ where: { slug: "system" } }))?.id,
         kind: "access_role",
         isActive: true
       },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { Modal } from "@/components/primitives/Modal";
 import { FormError } from "@/components/primitives/FormError";
+import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
 
 type Tab = "add" | "create";
 
@@ -19,6 +20,7 @@ interface User {
 interface Role {
   id: string;
   label: string;
+  slug: string;
   permissions?: string[];
 }
 
@@ -174,7 +176,12 @@ export function AssignUserToDeptModal({
   }
 
   const getAccessRoles = () => {
-    return roles.filter(r => r.permissions && r.permissions.length > 0);
+    // Filter: only access roles with permissions, department-applicable only
+    return roles.filter(r =>
+      r.permissions &&
+      r.permissions.length > 0 &&
+      filterRolesByApplicability([r], "department").length > 0
+    );
   };
 
   const accessRoles = getAccessRoles();

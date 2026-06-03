@@ -3,6 +3,7 @@ import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
+import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
 
 export default async function DepartmentAccessPage({
   params
@@ -17,13 +18,14 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  const [department, roles] = await Promise.all([
+  const [department, allAccessRoles] = await Promise.all([
     getDepartment(id),
     prisma.roleCatalog.findMany({
-      where: { departmentId: id, isActive: true, kind: "access_role" },
+      where: { isActive: true, kind: "access_role" },
       select: {
         id: true,
         label: true,
+        slug: true,
         kind: true,
         permissions: {
           select: { permission: true }
@@ -37,8 +39,8 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  // Access page shows only access_role kind
-  const accessRoles = roles;
+  // Filter to department-applicable roles only
+  const accessRoles = filterRolesByApplicability(allAccessRoles, "department");
 
   return (
     <div className="space-y-6">
