@@ -28,9 +28,7 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
       ? (`/departments/${departmentId}/jobs` as Route)
       : ("/people/candidates/jobs" as Route);
 
-  return [
-    { key: "jobs", label: "Jobs", countKey: null, href: jobsPath },
-    { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath },
+  const lifecycleItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
     { key: "pipeline", label: "Pipeline", countKey: "pipeline", href: `${baseCandidatesPath}?stage=pipeline` as Route },
     { key: "screener", label: "Screening", countKey: "screening", href: `${baseCandidatesPath}?stage=screening` as Route },
     { key: "interview", label: "Interview", countKey: "interview", href: `${baseCandidatesPath}?stage=interview` as Route },
@@ -41,7 +39,18 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
       href: `${baseCandidatesPath}?stage=advanced_review` as Route
     },
     { key: "finalized", label: "Finalized", countKey: "finalized", href: `${baseCandidatesPath}?stage=finalized` as Route }
-  ] satisfies Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }>;
+  ];
+
+  const hiringSwitchItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
+    { key: "jobs", label: "Jobs", countKey: null, href: jobsPath },
+    { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath }
+  ];
+
+  // Department scope: only show candidate lifecycle tabs
+  // Global scope: show both hiring switch (Jobs, Applicants) and lifecycle tabs
+  return scope === "department"
+    ? lifecycleItems
+    : [...hiringSwitchItems, ...lifecycleItems];
 }
 
 export async function CandidatesViewSwitch({

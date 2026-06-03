@@ -335,9 +335,13 @@ export async function CandidateWorkspaceView({
 
         {page.rows.length === 0 ? (
           <StagePanel className="space-y-3">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">No candidates in this view</h2>
+            <h2 className="text-2xl text-[color:var(--app-heading)]">
+              {scope === "department" ? "No candidates in this workspace yet" : "No candidates in this view"}
+            </h2>
             <p className="text-sm text-[color:var(--app-muted)]">
-              Candidates appear here after applications are reviewed or records are created.
+              {scope === "department"
+                ? "Add or import candidates for this workspace to start tracking the hiring journey."
+                : "Candidates appear here after applications are reviewed or records are created."}
             </p>
             <div className="flex flex-wrap gap-3">
               {canManageCandidates ? (
