@@ -22,7 +22,23 @@ export async function getAppSession(): Promise<AppSession | null> {
       email: true,
       name: true,
       roleId: true,
-      departmentId: true
+      departmentId: true,
+      accessGrants: {
+        where: { status: "active" },
+        select: {
+          id: true,
+          scope: true,
+          departmentId: true,
+          role: {
+            select: {
+              id: true,
+              slug: true,
+              label: true,
+              kind: true
+            }
+          }
+        }
+      }
     }
   });
 
@@ -33,13 +49,32 @@ export async function getAppSession(): Promise<AppSession | null> {
   // Load fresh permissions for this session
   const permissions = await getEffectivePermissions(user.id);
 
+  // Determine effective department context from AccessGrant or legacy field
+  let effectiveDepartmentId = user.departmentId;
+
+  // Check for system admin AccessGrant
+  const systemAdminGrant = user.accessGrants.find(
+    (g) => g.scope === "system" && g.role.slug === "system-admin"
+  );
+
+  // If no legacy departmentId but has system admin grant, they can access all departments
+  if (!effectiveDepartmentId && systemAdminGrant) {
+    effectiveDepartmentId = null; // null means system-wide access
+  } else if (!effectiveDepartmentId && user.accessGrants.length > 0) {
+    // If they have department-scoped grants, prefer the first department
+    const deptGrant = user.accessGrants.find((g) => g.scope === "department");
+    if (deptGrant?.departmentId) {
+      effectiveDepartmentId = deptGrant.departmentId;
+    }
+  }
+
   return {
     ...session,
     userId: user.id,
     email: user.email,
     name: user.name,
     roleId: user.roleId,
-    departmentId: user.departmentId,
+    departmentId: effectiveDepartmentId,
     permissions
   };
 }

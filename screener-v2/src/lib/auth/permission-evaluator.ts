@@ -11,6 +11,14 @@ export async function getEffectivePermissions(userId: string): Promise<string[]>
     where: { id: userId },
     select: {
       roleId: true,
+      accessGrants: {
+        where: { status: "active" },
+        select: {
+          role: {
+            select: { id: true }
+          }
+        }
+      },
       permissionOverrides: {
         select: {
           permission: true,
@@ -27,6 +35,7 @@ export async function getEffectivePermissions(userId: string): Promise<string[]>
   // Start with role permissions
   const permissions = new Set<string>();
 
+  // Load permissions from legacy roleId if present
   if (user.roleId) {
     const rolePermissions = await prisma.rolePermissionTemplate.findMany({
       where: { roleId: user.roleId },
@@ -34,6 +43,21 @@ export async function getEffectivePermissions(userId: string): Promise<string[]>
     });
 
     rolePermissions.forEach((rp) => {
+      if (isKnownPermission(rp.permission)) {
+        permissions.add(rp.permission);
+      }
+    });
+  }
+
+  // Load permissions from AccessGrant roles (new model)
+  if (user.accessGrants.length > 0) {
+    const accessGrantRoleIds = user.accessGrants.map((g) => g.role.id);
+    const accessGrantPermissions = await prisma.rolePermissionTemplate.findMany({
+      where: { roleId: { in: accessGrantRoleIds } },
+      select: { permission: true }
+    });
+
+    accessGrantPermissions.forEach((rp) => {
       if (isKnownPermission(rp.permission)) {
         permissions.add(rp.permission);
       }
