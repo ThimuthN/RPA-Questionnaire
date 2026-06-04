@@ -14,6 +14,8 @@ type Assignment = {
   };
   assignmentRole: string;
   isPrimary: boolean;
+  role?: string;
+  source?: "template" | "manual" | "job_default";
 };
 
 type User = {
@@ -30,10 +32,12 @@ type Props = {
 };
 
 const roleLabels: Record<string, string> = {
+  owner: "Owner",
   recruiter: "Recruiter",
   hiring_manager: "Hiring Manager",
   interviewer: "Interviewer",
   reviewer: "Reviewer",
+  final_approver: "Final Approver",
   coordinator: "Coordinator",
   approver: "Approver"
 };
@@ -41,10 +45,11 @@ const roleLabels: Record<string, string> = {
 function groupAssignmentsByRole(assignments: Assignment[]) {
   const grouped: Record<string, Assignment[]> = {};
   for (const assignment of assignments) {
-    if (!grouped[assignment.assignmentRole]) {
-      grouped[assignment.assignmentRole] = [];
+    const role = assignment.assignmentRole;
+    if (!grouped[role]) {
+      grouped[role] = [];
     }
-    grouped[assignment.assignmentRole].push(assignment);
+    grouped[role].push(assignment);
   }
   return grouped;
 }

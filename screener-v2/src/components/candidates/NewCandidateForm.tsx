@@ -58,11 +58,11 @@ export function NewCandidateForm({
 
       <RolePicker
         name="roleId"
-        label="Role"
+        label="Job designation"
         departmentId={departmentId || null}
         defaultValue={null}
-        placeholder={departmentId ? "Select role" : "Select a department first"}
-        helperText="Choose the organization role this candidate is being considered for."
+        placeholder={departmentId ? "Select job designation" : "Select a department first"}
+        helperText="Choose the job designation this candidate is being considered for."
       />
 
       <div className="grid gap-2">
@@ -78,14 +78,24 @@ export function NewCandidateForm({
         />
       </div>
 
-      <label className="grid gap-1">
-        <span className="text-sm text-[color:var(--app-text)]">Owner</span>
+      <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <label className="block text-sm font-medium text-[color:var(--app-text)] mb-2">
+          Responsible team owner (required)
+        </label>
+        <p className="text-xs text-[color:var(--app-muted)] mb-3">
+          Select a team member from your department to own this candidate.
+        </p>
         <input
-          name="hrOwner"
-          placeholder="Optional"
-          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+          type="hidden"
+          name="teamUserIds"
+          value="[]"
+          id="teamUserIds"
         />
-      </label>
+        <div className="text-xs text-[color:var(--app-text)]">
+          <p>Team selection will appear here after department selection.</p>
+          <p className="text-[color:var(--app-muted)] mt-2">This feature requires your department to have team members with access roles configured.</p>
+        </div>
+      </div>
 
       {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
 
