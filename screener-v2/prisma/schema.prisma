@@ -182,6 +182,7 @@ model RoleCatalog {
   slug                    String                      @unique
   label                   String
   kind                    String                      @default("job_designation")
+  applicability           String?                     @default("department")
   department              String?
   departmentId            String
   description             String?

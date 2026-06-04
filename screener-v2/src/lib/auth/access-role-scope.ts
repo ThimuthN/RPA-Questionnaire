@@ -1,26 +1,31 @@
 /**
  * Determine if an access role is applicable at system or department level.
  *
- * Applicability is determined by role slug patterns:
+ * Uses the real `applicability` field when available (preferred).
+ * Falls back to role slug patterns for backward compatibility:
  * - System-applicable: system-admin, system-*, admin (if system context)
  * - Department-applicable: department-admin, hiring-manager, recruiter, interviewer, reviewer, viewer
- *
- * This allows for accurate role filtering even though the schema requires departmentId.
  */
 
-export type RoleApplicability = 'system' | 'department';
+export type RoleApplicability = 'system' | 'department' | 'both';
 
 const SYSTEM_ROLE_SLUGS = new Set([
+  'system_admin',
   'system-admin',
-  'system_admin',  // Handle variant spelling
+  'system_viewer',
   'system-viewer',
   'org-admin',
+  'org_admin',
   'global-hiring-admin',
-  'global-viewer'
+  'global_hiring_admin',
+  'global-viewer',
+  'global_viewer'
 ]);
 
 const DEPARTMENT_ROLE_SLUGS = new Set([
+  'department_admin',
   'department-admin',
+  'hiring_manager',
   'hiring-manager',
   'recruiter',
   'interviewer',
@@ -28,20 +33,25 @@ const DEPARTMENT_ROLE_SLUGS = new Set([
   'viewer'
 ]);
 
-export function getRoleApplicability(slug: string): RoleApplicability {
-  const normalizedSlug = slug.toLowerCase().trim();
+export function getRoleApplicability(role: { applicability?: string | null; slug?: string }): RoleApplicability {
+  // Use explicit applicability field if available
+  if (role.applicability === 'system' || role.applicability === 'department' || role.applicability === 'both') {
+    return role.applicability;
+  }
 
-  // Check explicit system roles
+  // Fall back to slug inference for backward compatibility
+  if (!role.slug) return 'department';
+
+  const normalizedSlug = role.slug.toLowerCase().trim();
+
   if (SYSTEM_ROLE_SLUGS.has(normalizedSlug)) {
     return 'system';
   }
 
-  // Check explicit department roles
   if (DEPARTMENT_ROLE_SLUGS.has(normalizedSlug)) {
     return 'department';
   }
 
-  // Default: if slug contains 'system', it's system; otherwise department
   if (normalizedSlug.includes('system') || normalizedSlug.includes('admin')) {
     return 'system';
   }
@@ -50,11 +60,22 @@ export function getRoleApplicability(slug: string): RoleApplicability {
 }
 
 /**
- * Filter roles by applicability
+ * Filter roles by applicability based on grant scope.
+ * A role is visible in a scope if its applicability matches or is 'both'.
  */
 export function filterRolesByApplicability(
-  roles: Array<{ slug: string; [key: string]: any }>,
-  applicability: RoleApplicability
-) {
-  return roles.filter(role => getRoleApplicability(role.slug) === applicability);
+  roles: Array<{ applicability?: string | null; slug?: string; [key: string]: any }>,
+  grantScope: 'system' | 'department'
+): Array<any> {
+  return roles.filter(role => {
+    const applicability = getRoleApplicability(role);
+
+    if (grantScope === 'system') {
+      // System grants can use system or both roles
+      return applicability === 'system' || applicability === 'both';
+    } else {
+      // Department grants can use department or both roles
+      return applicability === 'department' || applicability === 'both';
+    }
+  });
 }
