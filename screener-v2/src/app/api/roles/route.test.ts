@@ -204,3 +204,58 @@ describe("/api/roles POST System Admin bypass", () => {
     expect(data.message).toContain("Permission denied");
   });
 });
+
+describe("/api/roles POST Zod validation errors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(isSystemAdmin).mockResolvedValue(false);
+    vi.mocked(requireApiSession).mockResolvedValue({
+      ok: true,
+      session: { userId: "user-1", permissions: ["create_role"] }
+    } as never);
+    vi.mocked(requireRoleManagePermission).mockResolvedValue({ ok: true } as never);
+  });
+
+  it("returns human-readable message for invalid slug", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "access_role",
+          label: "Test Role",
+          slug: "INVALID SLUG WITH SPACES",
+          applicability: "department"
+        })
+      })
+    );
+
+    const data = await response.json();
+    expect(response.status).toBe(400);
+    expect(data.ok).toBe(false);
+    expect(data.message).toContain("slug");
+    expect(data.message).not.toContain('"validation"');
+    expect(data.message).not.toContain('"code"');
+  });
+
+  it("returns human-readable message for missing label", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "access_role",
+          label: "x",
+          slug: "test-role",
+          applicability: "department"
+        })
+      })
+    );
+
+    const data = await response.json();
+    expect(response.status).toBe(400);
+    expect(data.ok).toBe(false);
+    expect(typeof data.message).toBe("string");
+    expect(data.message).not.toContain('"validation"');
+  });
+});

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { createJobPosting } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
 
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "create_job");
+  const permission = await requirePermissionForDepartment(auth.session, "create_job");
   if (!permission.ok) {
     return permission.response;
   }

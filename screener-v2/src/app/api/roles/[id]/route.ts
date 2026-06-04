@@ -2,6 +2,13 @@ import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
+
+function zodErrorMessage(error: z.ZodError): string {
+  const first = error.issues[0];
+  if (!first) return "Invalid request.";
+  const field = first.path.length > 0 ? first.path.join(".") : undefined;
+  return field ? `${field}: ${first.message}` : first.message;
+}
 import { APP_ACTIONS } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -106,6 +113,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     return jsonOk({ role: { ...role, permissions: [] } });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return jsonError(zodErrorMessage(error));
+    }
     return jsonError(error instanceof Error ? error.message : "Could not update role.");
   }
 }

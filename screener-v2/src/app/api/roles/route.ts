@@ -24,8 +24,8 @@ const jobDesignationSchema = z.object({
 
 const accessRoleSchema = z.object({
   kind: z.literal("access_role").optional(),
-  label: z.string().min(2),
-  slug: z.string().regex(/^[a-z0-9_-]+$/),
+  label: z.string().min(2, "Role name must be at least 2 characters."),
+  slug: z.string().regex(/^[a-z0-9_-]+$/, "Slug must use only lowercase letters, numbers, hyphens, and underscores."),
   departmentId: z.string().optional().or(z.literal("")),
   description: z.string().optional(),
   applicability: z.enum(["system", "department", "both"]),
@@ -40,6 +40,13 @@ function jsonOk<T>(body: T, status = 200) {
 
 function jsonError(message: string, status = 400) {
   return NextResponse.json({ ok: false, message }, { status });
+}
+
+function zodErrorMessage(error: z.ZodError): string {
+  const first = error.issues[0];
+  if (!first) return "Invalid request.";
+  const field = first.path.length > 0 ? first.path.join(".") : undefined;
+  return field ? `${field}: ${first.message}` : first.message;
 }
 
 async function resolveSystemDepartmentId() {
@@ -202,6 +209,9 @@ export async function POST(request: Request) {
 
     return jsonOk({ role: { ...role, permissions: [] } }, 201);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return jsonError(zodErrorMessage(error));
+    }
     return jsonError(error instanceof Error ? error.message : "Invalid request.");
   }
 }

@@ -14,7 +14,8 @@ export function JobPostingForm({
   job,
   roleOptions = [],
   presetOptions = [],
-  returnTo
+  returnTo,
+  departmentId
 }: {
   action: string;
   submitLabel: string;
@@ -23,10 +24,14 @@ export function JobPostingForm({
   roleOptions?: RolePickerOption[];
   presetOptions?: { id: string; label: string }[];
   returnTo?: string;
+  departmentId?: string;
 }) {
+  const roleFieldLabel = departmentId ? "Job designation" : "Role";
+
   return (
     <form action={action} method="post" className="space-y-4">
       {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
+      {departmentId ? <input type="hidden" name="departmentId" value={departmentId} /> : null}
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Job title</span>
         <input
@@ -38,24 +43,24 @@ export function JobPostingForm({
       </label>
 
       <label className="grid gap-1">
-        <span className="text-sm text-[color:var(--app-text)]">Role</span>
+        <span className="text-sm text-[color:var(--app-text)]">{roleFieldLabel}</span>
         <select
           name="roleId"
           required
           defaultValue={job?.roleId ?? ""}
           className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
         >
-          <option value="">Select a role</option>
+          <option value="">Select a {roleFieldLabel.toLowerCase()}</option>
           {roleOptions
             .filter((role) => role.isActive !== false)
             .map((role) => (
               <option key={role.id} value={role.id}>
-                {`${role.label} - ${role.department || "Archived department"}`}
+                {departmentId ? role.label : `${role.label} - ${role.department || "Archived department"}`}
               </option>
             ))}
         </select>
         <p className="text-xs text-[color:var(--app-muted)]">
-          Required. Every job posting must be linked to a role.
+          Required. Every job posting must be linked to a {roleFieldLabel.toLowerCase()}.
         </p>
       </label>
 

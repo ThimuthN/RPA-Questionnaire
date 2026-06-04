@@ -6,6 +6,7 @@ import { JobPostingForm } from "@/components/jobs/JobPostingForm";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
+import { isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { getDepartment } from "@/lib/db/departments";
 import { listRoleCatalog } from "@/lib/roles/catalog";
 import { listAssessmentPresets } from "@/lib/addons/catalog";
@@ -21,7 +22,8 @@ export default async function DepartmentNewJobPage({
   const pageState = await searchParams;
 
   const session = await requirePageSession(`/departments/${id}/jobs/new`);
-  if (!session.permissions.includes("create_job")) {
+  const sysAdmin = session.userId ? await isSystemAdmin(session.userId) : false;
+  if (!sysAdmin && !session.permissions.includes("create_job")) {
     redirect(`/departments/${id}/jobs`);
   }
 
@@ -30,7 +32,8 @@ export default async function DepartmentNewJobPage({
     notFound();
   }
 
-  const [roles, presets] = await Promise.all([listRoleCatalog(true), listAssessmentPresets(false)]);
+  // Load job designations scoped to this department only
+  const [roles, presets] = await Promise.all([listRoleCatalog(true, id, "job_designation"), listAssessmentPresets(false)]);
   const returnTo = `/departments/${id}/jobs`;
 
   return (
@@ -60,6 +63,7 @@ export default async function DepartmentNewJobPage({
             submitLabel="Create job"
             cancelHref={`/departments/${id}/jobs` as Route}
             returnTo={returnTo}
+            departmentId={id}
             roleOptions={roles.map((role) => ({
               id: role.id,
               label: role.label,
