@@ -37,6 +37,21 @@ enum CandidateOfferStatus {
   expired
 }
 
+enum HiringTeamRole {
+  owner
+  recruiter
+  hiring_manager
+  interviewer
+  reviewer
+  final_approver
+}
+
+enum DepartmentCandidacyTeamAssignmentSource {
+  template
+  job_default
+  manual
+}
+
 model Department {
   id        String   @id @default(cuid())
   slug      String   @unique
@@ -52,6 +67,7 @@ model Department {
   jobPostings JobPosting[]
   departmentCandidacies DepartmentCandidacy[]
   accessGrants AccessGrant[]
+  hiringTeamTemplates HiringTeamTemplate[]
 
   @@index([isActive, sortOrder])
 }
@@ -76,6 +92,9 @@ model User {
   hiringAssignments       HiringAssignment[]    @relation("HiringAssignments")
   assignedHiringAssignments HiringAssignment[]  @relation("HiringAssignmentsCreatedBy")
   accessGrants            AccessGrant[]
+  hiringTeamTemplateMemberships HiringTeamTemplateMember[]
+  candidacyTeamAssignments      DepartmentCandidacyTeamAssignment[]
+  addedCandidacyTeamAssignments DepartmentCandidacyTeamAssignment[] @relation("AddedByTeam")
 
   @@index([departmentId])
   @@index([roleId])
@@ -397,9 +416,10 @@ model DepartmentCandidacy {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  candidate  Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  department Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  role       RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  candidate         Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  department        Department   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  role              RoleCatalog? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  teamAssignments   DepartmentCandidacyTeamAssignment[]
 
   @@unique([candidateId, departmentId])
   @@index([departmentId, status, updatedAt])
@@ -791,4 +811,57 @@ model AuditLog {
   @@index([targetId, targetType])
   @@index([actorId])
   @@index([createdAt])
+}
+
+model HiringTeamTemplate {
+  id              String   @id @default(cuid())
+  departmentId    String
+  name            String
+  description     String?
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  department      Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  members         HiringTeamTemplateMember[]
+
+  @@index([departmentId, isActive, sortOrder])
+}
+
+model HiringTeamTemplateMember {
+  id                String   @id @default(cuid())
+  templateId        String
+  userId            String
+  role              HiringTeamRole
+
+  template          HiringTeamTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, userId, role])
+  @@index([templateId])
+  @@index([userId])
+}
+
+model DepartmentCandidacyTeamAssignment {
+  id              String   @id @default(cuid())
+  candidacyId     String
+  userId          String
+  role            HiringTeamRole
+  source          DepartmentCandidacyTeamAssignmentSource @default(manual)
+  templateId      String?
+  isPrimary       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  addedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  addedById       String?
+
+  candidacy       DepartmentCandidacy @relation(fields: [candidacyId], references: [id], onDelete: Cascade)
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedBy         User?               @relation("AddedByTeam", fields: [addedById], references: [id], onDelete: SetNull)
+
+  @@unique([candidacyId, userId, role])
+  @@index([candidacyId])
+  @@index([userId])
+  @@index([isActive])
 }

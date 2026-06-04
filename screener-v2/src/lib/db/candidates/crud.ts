@@ -46,6 +46,8 @@ export async function createCandidate(input: {
   screeningStatus?: CandidateScreeningStatus;
   candidateFolderUrl?: string;
   notesSummary?: string;
+  teamUserIds?: Array<{ userId: string; role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" }>;
+  createMilestones?: boolean;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
   const existingByEmail = await findCandidateByEmail(normalizedEmail);
@@ -95,20 +97,23 @@ export async function createCandidate(input: {
       }
     });
 
-    await tx.candidateMilestone.createMany({
-      data: defaultCandidateMilestones().map((milestone) => ({
-        id: cuidLike(),
-        candidateId: candidate.id,
-        type: milestone.type,
-        title: milestone.title,
-        status: milestone.status,
-        sortOrder: milestone.sortOrder,
-        mode: milestone.mode
-      }))
-    });
+    if (input.createMilestones !== false) {
+      await tx.candidateMilestone.createMany({
+        data: defaultCandidateMilestones().map((milestone) => ({
+          id: cuidLike(),
+          candidateId: candidate.id,
+          type: milestone.type,
+          title: milestone.title,
+          status: milestone.status,
+          sortOrder: milestone.sortOrder,
+          mode: milestone.mode
+        }))
+      });
+    }
 
+    let candidacy = null;
     if (candidate.departmentId) {
-      await tx.departmentCandidacy.upsert({
+      candidacy = await tx.departmentCandidacy.upsert({
         where: {
           candidateId_departmentId: {
             candidateId: candidate.id,
@@ -129,6 +134,23 @@ export async function createCandidate(input: {
           source: "manual"
         }
       });
+
+      if (candidacy && input.teamUserIds && input.teamUserIds.length > 0) {
+        for (const teamUser of input.teamUserIds) {
+          await tx.departmentCandidacyTeamAssignment.create({
+            data: {
+              id: cuidLike(),
+              candidacyId: candidacy.id,
+              userId: teamUser.userId,
+              role: teamUser.role,
+              source: "manual",
+              isPrimary: teamUser.role === "owner",
+              isActive: true,
+              addedAt: new Date()
+            }
+          });
+        }
+      }
     }
 
     return candidate;

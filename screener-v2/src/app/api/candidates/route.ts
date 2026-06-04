@@ -30,7 +30,11 @@ const candidateSchema = z.object({
   nextAction: z.enum(candidateNextActionValues).default("none"),
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
-  notesSummary: z.string().optional()
+  notesSummary: z.string().optional(),
+  teamUserIds: z.array(z.object({
+    userId: z.string(),
+    role: z.enum(["owner", "recruiter", "hiring_manager", "interviewer", "reviewer", "final_approver"])
+  })).optional()
 });
 
 export async function POST(request: Request) {
@@ -84,6 +88,42 @@ export async function POST(request: Request) {
         throw new Error("Invalid hrOwnerId: user not found");
       }
     }
+
+    let teamUserIds: Array<{ userId: string; role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" }> | undefined;
+
+    if (body.teamUserIds && body.teamUserIds.length > 0) {
+      const hasOwner = body.teamUserIds.some((t) => t.role === "owner");
+      if (!hasOwner) {
+        throw new Error("Team must have at least one owner.");
+      }
+
+      for (const teamUser of body.teamUserIds) {
+        const user = await prisma.user.findUnique({
+          where: { id: teamUser.userId },
+          select: { id: true, isActive: true }
+        });
+        if (!user || !user.isActive) {
+          throw new Error(`Invalid team member: user ${teamUser.userId} not found or inactive.`);
+        }
+      }
+      teamUserIds = body.teamUserIds;
+    } else if (dept) {
+      const teamMembers = await prisma.accessGrant.findMany({
+        where: {
+          departmentId: body.departmentId,
+          scope: "department",
+          status: "active"
+        },
+        select: { userId: true }
+      });
+
+      if (teamMembers.length === 0) {
+        throw new Error(
+          `No team members found in this department. Please add team members before registering candidates.`
+        );
+      }
+    }
+
     const candidate = await createCandidate({
       fullName: body.fullName,
       email: body.email,
@@ -99,7 +139,9 @@ export async function POST(request: Request) {
       notesSummary: body.notesSummary,
       stage: body.stage,
       nextAction: body.nextAction,
-      screeningStatus: body.screeningStatus || undefined
+      screeningStatus: body.screeningStatus || undefined,
+      teamUserIds,
+      createMilestones: false
     });
 
     if (formRequest) {
