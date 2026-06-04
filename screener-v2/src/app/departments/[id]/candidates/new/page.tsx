@@ -90,6 +90,7 @@ export default async function DepartmentNewCandidatePage({
             departments={departments.map((dept) => ({ id: dept.id, name: dept.name }))}
             error={!pageState.existingId ? pageState.error : undefined}
             defaultDepartmentId={id}
+            returnTo={`/departments/${id}/candidates`}
           />
         </StagePanel>
       </div>

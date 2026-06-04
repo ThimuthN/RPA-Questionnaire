@@ -105,4 +105,48 @@ describe("resolveCurrentWorkspace", () => {
 
     expect(workspace).toBe("dept-2");
   });
+
+  it("resolves /access-roles to admin workspace for admin users", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/access-roles",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("resolves /users to admin workspace for admin users", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/users",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("resolves /create-test to admin workspace for admin users", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/create-test",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("returns undefined for /access-roles when user is not admin", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/access-roles",
+      searchParams: new URLSearchParams(),
+      isAdmin: false,
+      visibleDepartments
+    });
+
+    expect(workspace).toBeUndefined();
+  });
 });

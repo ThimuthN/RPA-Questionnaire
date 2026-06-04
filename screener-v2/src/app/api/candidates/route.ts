@@ -64,6 +64,11 @@ export async function POST(request: Request) {
     ? Object.fromEntries((await request.formData()).entries())
     : ((await request.json()) as Record<string, unknown>);
 
+  // Optional department return context (department-scoped new-candidate pages only).
+  // Must start with /departments/ to be used.
+  const rawReturnTo = String((rawBody as Record<string, unknown>)._returnTo ?? "").trim();
+  const safeReturnTo = rawReturnTo.startsWith("/departments/") ? rawReturnTo : undefined;
+
   try {
     const body = normalizeCandidateBody(rawBody);
 
@@ -208,6 +213,10 @@ export async function POST(request: Request) {
     if (formRequest) {
       const url = new URL(`/people/candidates/${candidate.id}`, request.url);
       url.searchParams.set("created", "1");
+      if (safeReturnTo && body.departmentId) {
+        url.searchParams.set("workspaceId", body.departmentId);
+        url.searchParams.set("returnTo", safeReturnTo);
+      }
       return NextResponse.redirect(url, 303);
     }
 
@@ -220,7 +229,8 @@ export async function POST(request: Request) {
     const message = messageFromError(error, "Could not create candidate.");
 
     if (formRequest) {
-      const url = new URL("/people/candidates/new", request.url);
+      const errorBase = safeReturnTo ? `${safeReturnTo}/new` : "/people/candidates/new";
+      const url = new URL(errorBase, request.url);
       url.searchParams.set("error", message);
       url.searchParams.set("requestId", logContext.requestId);
       const email = String((rawBody as Record<string, unknown>)?.email || "").trim().toLowerCase();

@@ -38,11 +38,13 @@ const roleLabels: Record<HiringTeamRole, string> = {
 export function NewCandidateForm({
   departments,
   error,
-  defaultDepartmentId
+  defaultDepartmentId,
+  returnTo
 }: {
   departments: Array<{ id: string; name: string }>;
   error?: string;
   defaultDepartmentId?: string;
+  returnTo?: string;
 }) {
   const [departmentId, setDepartmentId] = useState(defaultDepartmentId || "");
   const [templates, setTemplates] = useState<HiringTeamTemplate[]>([]);
@@ -152,6 +154,7 @@ export function NewCandidateForm({
         alert("Please select a hiring team with at least one owner.");
       }
     }}>
+      {returnTo ? <input type="hidden" name="_returnTo" value={returnTo} /> : null}
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Full name</span>
         <input

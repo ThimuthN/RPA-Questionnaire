@@ -61,7 +61,13 @@ export function resolveCurrentWorkspace({
 
   // 4. Admin routes (only when no explicit department context present)
   const isAdminRoute =
-    pathname === "/departments" || pathname.startsWith("/people/") || pathname.startsWith("/assessments");
+    pathname === "/departments" ||
+    pathname.startsWith("/people/") ||
+    pathname.startsWith("/assessments") ||
+    pathname.startsWith("/access-roles") ||
+    pathname.startsWith("/users") ||
+    pathname.startsWith("/create-test") ||
+    pathname.startsWith("/addons");
   if (isAdminRoute && isAdmin) {
     return "admin";
   }
