@@ -11,7 +11,8 @@ const userSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   departmentId: z.string().optional(),
-  roleId: z.string().optional()
+  roleId: z.string().optional(),
+  permissionDepartmentId: z.string().optional()
 });
 
 export async function GET() {
@@ -61,7 +62,8 @@ export async function POST(request: Request) {
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
     const body = userSchema.parse(rawBody);
-    const permission = await requirePermissionForDepartment(auth.session, "manage_users", body.departmentId || null);
+    const permissionDepartmentId = body.permissionDepartmentId || body.departmentId || null;
+    const permission = await requirePermissionForDepartment(auth.session, "manage_users", permissionDepartmentId);
     if (!permission.ok) return permission.response;
 
     if (body.roleId) {

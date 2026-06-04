@@ -52,7 +52,7 @@ export function NominateToDeptModal({
         const rolesResponse = await fetch("/api/roles");
         if (rolesResponse.ok) {
           const rolesData = await rolesResponse.json();
-          setRoles(Array.isArray(rolesData) ? rolesData : rolesData.roles || []);
+          setRoles(rolesData.roles || []);
         }
       }
     } catch (err) {

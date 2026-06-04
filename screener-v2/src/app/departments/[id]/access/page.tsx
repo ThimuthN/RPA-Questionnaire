@@ -1,10 +1,9 @@
 import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
-import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
-import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
 import DepartmentAccessClient from "@/components/departments/DepartmentAccessClient";
+import { listAccessRoles } from "@/lib/roles/catalog";
 
 export default async function DepartmentAccessPage({
   params
@@ -19,26 +18,17 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  const [department, allAccessRoles] = await Promise.all([
+  const [department, accessRoles] = await Promise.all([
     getDepartment(id),
-    prisma.roleCatalog.findMany({
-      where: { isActive: true, kind: "access_role" },
-      include: {
-        permissions: { select: { permission: true } },
-        _count: { select: { accessGrants: { where: { status: "active" } } } }
-      },
-      orderBy: [{ applicability: "desc" }, { label: "asc" }]
+    listAccessRoles({
+      departmentId: id,
+      scope: "department"
     })
   ]);
 
   if (!department) {
     notFound();
   }
-
-  // Filter to department-applicable or both-applicable roles (exclude system-only)
-  const accessRoles = allAccessRoles.filter(
-    r => r.applicability === "department" || r.applicability === "both"
-  );
 
   return (
     <div className="space-y-6">

@@ -2,14 +2,35 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/db/prisma";
 import { APP_ACTIONS } from "@/lib/auth/permissions";
 
+export type RoleCatalogKind = "job_designation" | "access_role";
+export type RoleApplicability = "system" | "department" | "both";
+
 function isKnownPermission(permission: string) {
   return APP_ACTIONS.includes(permission as (typeof APP_ACTIONS)[number]);
+}
+
+function normalizeRoleKind(value: string | null | undefined): RoleCatalogKind | undefined {
+  if (value === "job_designation" || value === "access_role") {
+    return value;
+  }
+
+  return undefined;
+}
+
+function normalizeApplicability(value: string | null | undefined): RoleApplicability | undefined {
+  if (value === "system" || value === "department" || value === "both") {
+    return value;
+  }
+
+  return undefined;
 }
 
 export interface RoleCatalogEntry {
   id: string;
   slug: string;
   label: string;
+  kind?: RoleCatalogKind;
+  applicability?: RoleApplicability;
   departmentId?: string;
   department?: string; // deprecated: kept for backward compatibility during migration
   departmentName?: string;
@@ -19,6 +40,7 @@ export interface RoleCatalogEntry {
   sortOrder: number;
   isActive: boolean;
   permissions?: string[];
+  accessGrantCount?: number;
 }
 
 function slugifyRoleLabel(value: string) {
@@ -34,9 +56,11 @@ function mapRole(row: {
   id: string;
   slug: string;
   label: string;
+  kind?: string | null;
+  applicability?: string | null;
   departmentId?: string | null;
   department?: string | null;
-  dept?: { name: string } | null;
+  dept?: { name: string; slug?: string } | null;
   departmentName?: string | null;
   description?: string | null;
   experienceLevel?: string | null;
@@ -44,11 +68,19 @@ function mapRole(row: {
   sortOrder: number;
   isActive: boolean;
   permissions?: Array<{ permission: string }>;
+  _count?: { accessGrants?: number };
 }): RoleCatalogEntry {
+  const permissions =
+    row.kind === "access_role"
+      ? row.permissions?.map((item) => item.permission).filter(isKnownPermission) ?? []
+      : [];
+
   return {
     id: row.id,
     slug: row.slug,
     label: row.label,
+    kind: normalizeRoleKind(row.kind),
+    applicability: normalizeApplicability(row.applicability),
     departmentId: row.departmentId ?? undefined,
     department: row.dept?.name ?? row.department ?? row.departmentName ?? undefined,
     departmentName: row.dept?.name ?? row.department ?? row.departmentName ?? undefined,
@@ -57,13 +89,19 @@ function mapRole(row: {
     requirements: row.requirements ?? undefined,
     sortOrder: row.sortOrder,
     isActive: row.isActive,
-    permissions: row.permissions?.map((item) => item.permission).filter(isKnownPermission) ?? []
+    permissions,
+    accessGrantCount: row._count?.accessGrants ?? undefined
   };
 }
 
-const listRoleCatalogUncached = async (includeInactive = false, departmentId?: string): Promise<RoleCatalogEntry[]> => {
+const listRoleCatalogUncached = async (
+  includeInactive = false,
+  departmentId?: string,
+  kind: RoleCatalogKind = "job_designation"
+): Promise<RoleCatalogEntry[]> => {
   const rows = await prisma.roleCatalog.findMany({
     where: {
+      kind,
       ...(includeInactive ? {} : { isActive: true }),
       ...(departmentId ? { departmentId } : {})
     },
@@ -71,6 +109,8 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
       id: true,
       slug: true,
       label: true,
+      kind: true,
+      applicability: true,
       departmentId: true,
       department: true,
       description: true,
@@ -103,10 +143,82 @@ const listRoleCatalogUncached = async (includeInactive = false, departmentId?: s
 };
 
 export const listRoleCatalog = unstable_cache(
-  (includeInactive = false, departmentId?: string) => listRoleCatalogUncached(includeInactive, departmentId),
+  (includeInactive = false, departmentId?: string, kind: RoleCatalogKind = "job_designation") =>
+    listRoleCatalogUncached(includeInactive, departmentId, kind),
   ["role-catalog"],
   { revalidate: 300, tags: ["role-catalog"] }
 );
+
+export async function listAccessRoles(input?: {
+  includeInactive?: boolean;
+  departmentId?: string;
+  scope?: "system" | "department";
+}) {
+  const rows = await prisma.roleCatalog.findMany({
+    where: {
+      kind: "access_role",
+      ...(input?.includeInactive ? {} : { isActive: true })
+    },
+    select: {
+      id: true,
+      slug: true,
+      label: true,
+      kind: true,
+      applicability: true,
+      departmentId: true,
+      description: true,
+      experienceLevel: true,
+      requirements: true,
+      sortOrder: true,
+      isActive: true,
+      permissions: {
+        select: { permission: true },
+        orderBy: { permission: "asc" }
+      },
+      dept: {
+        select: {
+          name: true,
+          slug: true
+        }
+      },
+      _count: {
+        select: {
+          accessGrants: {
+            where: { status: "active" }
+          }
+        }
+      }
+    },
+    orderBy: [{ applicability: "desc" }, { label: "asc" }]
+  });
+
+  return rows
+    .filter((row) => {
+      if (!input?.scope) {
+        return true;
+      }
+
+      const applicability = row.applicability ?? "department";
+      if (input.scope === "system") {
+        return applicability === "system" || applicability === "both";
+      }
+
+      if (applicability === "system") {
+        return false;
+      }
+
+      if (!input.departmentId) {
+        return applicability === "department" || applicability === "both";
+      }
+
+      if (row.departmentId === input.departmentId) {
+        return applicability === "department" || applicability === "both";
+      }
+
+      return row.dept?.slug === "system" && applicability === "both";
+    })
+    .map(mapRole);
+}
 
 export async function getRoleCatalogEntry(roleId: string) {
   const row = await prisma.roleCatalog.findUnique({
@@ -115,6 +227,8 @@ export async function getRoleCatalogEntry(roleId: string) {
       id: true,
       slug: true,
       label: true,
+      kind: true,
+      applicability: true,
       departmentId: true,
       department: true,
       description: true,
@@ -147,19 +261,26 @@ export async function getRoleCatalogEntry(roleId: string) {
   });
 }
 
-export async function findRoleCatalogEntryByLabel(label: string, departmentId?: string) {
+export async function findRoleCatalogEntryByLabel(
+  label: string,
+  departmentId?: string,
+  kind: RoleCatalogKind = "job_designation"
+) {
   const trimmed = label.trim();
   if (!trimmed) return null;
 
   const slug = slugifyRoleLabel(trimmed);
   const rows = await prisma.roleCatalog.findMany({
     where: {
+      kind,
       OR: [{ label: trimmed }, { slug }]
     },
     select: {
       id: true,
       slug: true,
       label: true,
+      kind: true,
+      applicability: true,
       departmentId: true,
       department: true,
       description: true,
@@ -205,7 +326,6 @@ export async function createRoleCatalogEntry(input: {
   description?: string;
   experienceLevel?: string;
   requirements?: string;
-  permissions?: string[];
 }) {
   const label = input.label.trim();
   if (!label) {
@@ -226,7 +346,7 @@ export async function createRoleCatalogEntry(input: {
   }
 
   // Check for duplicate in same department
-  const existing = await findRoleCatalogEntryByLabel(label, deptId);
+  const existing = await findRoleCatalogEntryByLabel(label, deptId, "job_designation");
   if (existing && existing.departmentId === deptId) {
     return existing;
   }
@@ -241,6 +361,7 @@ export async function createRoleCatalogEntry(input: {
       data: {
         slug: slugifyRoleLabel(label),
         label,
+        kind: "job_designation",
         departmentId: deptId,
         description: input.description?.trim() || null,
         experienceLevel: input.experienceLevel?.trim() || null,
@@ -250,23 +371,14 @@ export async function createRoleCatalogEntry(input: {
       }
     });
 
-    if (input.permissions) {
-      await tx.rolePermissionTemplate.createMany({
-        data: input.permissions.map((permission) => ({
-          roleId: role.id,
-          permission,
-          scope: "own_dept"
-        })),
-        skipDuplicates: true
-      });
-    }
-
     return tx.roleCatalog.findUniqueOrThrow({
       where: { id: role.id },
       select: {
         id: true,
         slug: true,
         label: true,
+        kind: true,
+        applicability: true,
         departmentId: true,
         department: true,
         description: true,
@@ -308,7 +420,6 @@ export async function updateRoleCatalogEntry(
     experienceLevel?: string;
     requirements?: string;
     isActive?: boolean;
-    permissions?: string[];
   }
 ) {
   const label = input.label.trim();
@@ -331,6 +442,7 @@ export async function updateRoleCatalogEntry(
   const duplicate = await prisma.roleCatalog.findFirst({
     where: {
       id: { not: roleId },
+      kind: "job_designation",
       label,
       departmentId: deptId
     }
@@ -354,24 +466,14 @@ export async function updateRoleCatalogEntry(
       }
     });
 
-    if (input.permissions) {
-      await tx.rolePermissionTemplate.deleteMany({ where: { roleId } });
-      await tx.rolePermissionTemplate.createMany({
-        data: input.permissions.map((permission) => ({
-          roleId,
-          permission,
-          scope: "own_dept"
-        })),
-        skipDuplicates: true
-      });
-    }
-
     return tx.roleCatalog.findUniqueOrThrow({
       where: { id: roleId },
       select: {
         id: true,
         slug: true,
         label: true,
+        kind: true,
+        applicability: true,
         departmentId: true,
         department: true,
         description: true,
@@ -418,7 +520,7 @@ export async function resolveOrCreateRoleCatalogEntry(input: {
   const label = input.roleLabel?.trim() || input.legacyRoleLabel?.trim();
   if (!label) return null;
 
-  const existingByLabel = await findRoleCatalogEntryByLabel(label);
+  const existingByLabel = await findRoleCatalogEntryByLabel(label, undefined, "job_designation");
   if (existingByLabel) return existingByLabel;
 
   if (!input.createIfMissing) return null;

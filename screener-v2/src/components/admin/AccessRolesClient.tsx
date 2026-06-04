@@ -1,56 +1,58 @@
 'use client';
 
 import { useState } from 'react';
-import { RoleCatalog } from '@prisma/client';
 import CreateRoleModal from '@/components/admin/CreateRoleModal';
-import EditRoleModal from '@/components/admin/EditRoleModal';
-import DuplicateRoleModal from '@/components/admin/DuplicateRoleModal';
 import DeleteRoleModal from '@/components/admin/DeleteRoleModal';
+import DuplicateRoleModal from '@/components/admin/DuplicateRoleModal';
+import EditRoleModal from '@/components/admin/EditRoleModal';
 
-type RoleWithPermissions = RoleCatalog & {
-  permissions: { permission: string }[];
-  _count?: { accessGrants: number };
+type AccessRoleRecord = {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  applicability?: "system" | "department" | "both";
+  permissions?: string[];
+  accessGrantCount?: number;
 };
 
 export default function AccessRolesClient({
   initialRoles
 }: {
-  initialRoles: RoleWithPermissions[];
+  initialRoles: AccessRoleRecord[];
 }) {
-  const [roles, setRoles] = useState<RoleWithPermissions[]>(initialRoles);
+  const [roles, setRoles] = useState<AccessRoleRecord[]>(initialRoles);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<RoleWithPermissions | null>(null);
-  const [duplicatingRole, setDuplicatingRole] = useState<RoleWithPermissions | null>(null);
-  const [deletingRole, setDeletingRole] = useState<RoleWithPermissions | null>(null);
+  const [editingRole, setEditingRole] = useState<AccessRoleRecord | null>(null);
+  const [duplicatingRole, setDuplicatingRole] = useState<AccessRoleRecord | null>(null);
+  const [deletingRole, setDeletingRole] = useState<AccessRoleRecord | null>(null);
 
   const loadRoles = async () => {
     try {
-      const res = await fetch('/api/roles?kind=access_role');
-      if (res.ok) {
-        const data = await res.json();
-        setRoles(data);
+      const response = await fetch('/api/roles?kind=access_role');
+      const data = (await response.json().catch(() => ({}))) as { ok?: boolean; roles?: AccessRoleRecord[] };
+      if (response.ok && data.ok && Array.isArray(data.roles)) {
+        setRoles(data.roles);
       }
-    } catch (err) {
-      console.error('Failed to reload roles:', err);
+    } catch (error) {
+      console.error('Failed to reload roles:', error);
     }
   };
 
-  const systemRoles = roles.filter(r => r.applicability === 'system');
-  const departmentRoles = roles.filter(r => r.applicability === 'department');
-  const bothRoles = roles.filter(r => r.applicability === 'both');
+  const systemRoles = roles.filter((role) => role.applicability === 'system');
+  const departmentRoles = roles.filter((role) => role.applicability === 'department');
+  const bothRoles = roles.filter((role) => role.applicability === 'both');
 
-  const isStronglyProtected = (role: RoleWithPermissions) => {
-    return ['system_admin', 'system-admin'].includes(role.slug);
-  };
+  const isStronglyProtected = (role: AccessRoleRecord) => ['system_admin', 'system-admin'].includes(role.slug);
 
-  const RoleSection = ({ title, items }: { title: string; items: RoleWithPermissions[] }) => {
+  const RoleSection = ({ title, items }: { title: string; items: AccessRoleRecord[] }) => {
     if (items.length === 0) return null;
 
     return (
       <div className="space-y-3">
         <h3 className="font-medium text-[color:var(--app-heading)]">{title}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map(role => (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {items.map((role) => (
             <RoleCard key={role.id} role={role} />
           ))}
         </div>
@@ -58,49 +60,51 @@ export default function AccessRolesClient({
     );
   };
 
-  const RoleCard = ({ role }: { role: RoleWithPermissions }) => {
+  const RoleCard = ({ role }: { role: AccessRoleRecord }) => {
     const isProtected = isStronglyProtected(role);
-    const grantCount = role._count?.accessGrants || 0;
+    const grantCount = role.accessGrantCount || 0;
+    const permissionCount = role.permissions?.length ?? 0;
 
     return (
-      <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 space-y-3 hover:border-[color:var(--app-border-hover)] transition">
+      <div className="space-y-3 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 transition hover:border-[color:var(--app-border-hover)]">
         <div className="flex items-start justify-between">
           <div>
             <h4 className="font-medium text-[color:var(--app-heading)]">{role.label}</h4>
             <p className="text-xs text-[color:var(--app-muted)]">{role.slug}</p>
           </div>
-          {isProtected && (
-            <span className="text-xs bg-red-500/10 text-red-600 px-2 py-1 rounded">
-              System Protected
-            </span>
-          )}
+          {isProtected ? (
+            <span className="rounded bg-red-500/10 px-2 py-1 text-xs text-red-600">System Protected</span>
+          ) : null}
         </div>
-        {role.description && (
-          <p className="text-sm text-[color:var(--app-text)]">{role.description}</p>
-        )}
-        <div className="flex items-center justify-between pt-2 border-t border-[color:var(--app-border)]">
+
+        {role.description ? <p className="text-sm text-[color:var(--app-text)]">{role.description}</p> : null}
+
+        <div className="flex items-center justify-between border-t border-[color:var(--app-border)] pt-2">
           <div className="text-xs text-[color:var(--app-muted)]">
-            {role.permissions.length} permission{role.permissions.length !== 1 ? 's' : ''}
-            {grantCount > 0 && ` • ${grantCount} active grant${grantCount !== 1 ? 's' : ''}`}
+            {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
+            {grantCount > 0 ? ` · ${grantCount} active grant${grantCount !== 1 ? 's' : ''}` : ''}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setEditingRole(role)}
               disabled={isProtected}
-              className="text-xs px-3 py-1 rounded bg-[color:var(--app-button-bg)] hover:bg-[color:var(--app-button-hover)] text-[color:var(--app-button-text)] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="rounded bg-[color:var(--app-button-bg)] px-3 py-1 text-xs text-[color:var(--app-button-text)] transition hover:bg-[color:var(--app-button-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
             >
               Edit
             </button>
             <button
               onClick={() => setDuplicatingRole(role)}
-              className="text-xs px-3 py-1 rounded bg-[color:var(--app-button-bg)] hover:bg-[color:var(--app-button-hover)] text-[color:var(--app-button-text)] transition"
+              className="rounded bg-[color:var(--app-button-bg)] px-3 py-1 text-xs text-[color:var(--app-button-text)] transition hover:bg-[color:var(--app-button-hover)]"
+              type="button"
             >
               Duplicate
             </button>
             <button
               onClick={() => setDeletingRole(role)}
               disabled={isProtected}
-              className="text-xs px-3 py-1 rounded bg-red-500/10 hover:bg-red-500/20 text-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="rounded bg-red-500/10 px-3 py-1 text-xs text-red-600 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              type="button"
             >
               Delete
             </button>
@@ -115,24 +119,21 @@ export default function AccessRolesClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-medium text-[color:var(--app-heading)]">Access Roles</h1>
-          <p className="text-sm text-[color:var(--app-muted)] mt-1">
-            Manage system and custom access roles for your workspace.
-          </p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">Manage system and custom access roles for your workspace.</p>
         </div>
         <button
           onClick={() => setCreateModalOpen(true)}
-          className="px-4 py-2 rounded-lg bg-[color:var(--app-primary)] text-white hover:bg-[color:var(--app-primary-hover)] transition"
+          className="rounded-lg bg-[color:var(--app-primary)] px-4 py-2 text-white transition hover:bg-[color:var(--app-primary-hover)]"
+          type="button"
         >
           + New Role
         </button>
       </div>
 
       {roles.length === 0 ? (
-        <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-8 text-center space-y-3">
+        <div className="space-y-3 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-8 text-center">
           <p className="text-sm text-[color:var(--app-text)]">No access roles configured</p>
-          <p className="text-xs text-[color:var(--app-muted)]">
-            Create custom roles to get started.
-          </p>
+          <p className="text-xs text-[color:var(--app-muted)]">Create custom access roles to get started.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -142,52 +143,53 @@ export default function AccessRolesClient({
         </div>
       )}
 
-      {createModalOpen && (
+      {createModalOpen ? (
         <CreateRoleModal
           isOpen={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
           onSuccess={() => {
             setCreateModalOpen(false);
-            loadRoles();
+            void loadRoles();
           }}
+          defaultApplicability="department"
         />
-      )}
+      ) : null}
 
-      {editingRole && (
+      {editingRole ? (
         <EditRoleModal
-          isOpen={!!editingRole}
+          isOpen={Boolean(editingRole)}
           role={editingRole}
           onClose={() => setEditingRole(null)}
           onSuccess={() => {
             setEditingRole(null);
-            loadRoles();
+            void loadRoles();
           }}
         />
-      )}
+      ) : null}
 
-      {duplicatingRole && (
+      {duplicatingRole ? (
         <DuplicateRoleModal
-          isOpen={!!duplicatingRole}
+          isOpen={Boolean(duplicatingRole)}
           sourceRole={duplicatingRole}
           onClose={() => setDuplicatingRole(null)}
           onSuccess={() => {
             setDuplicatingRole(null);
-            loadRoles();
+            void loadRoles();
           }}
         />
-      )}
+      ) : null}
 
-      {deletingRole && (
+      {deletingRole ? (
         <DeleteRoleModal
-          isOpen={!!deletingRole}
+          isOpen={Boolean(deletingRole)}
           role={deletingRole}
           onClose={() => setDeletingRole(null)}
           onSuccess={() => {
             setDeletingRole(null);
-            loadRoles();
+            void loadRoles();
           }}
         />
-      )}
+      ) : null}
     </div>
   );
 }

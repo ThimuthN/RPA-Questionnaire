@@ -182,7 +182,7 @@ describe("role catalog safe access for orphaned departments", () => {
       expect(result[0].description).toBe("Specialized role");
       expect(result[0].experienceLevel).toBe("senior");
       expect(result[0].requirements).toBe("8+ years");
-      expect(result[0].permissions).toEqual(["manage_candidates", "view_candidates"]);
+      expect(result[0].permissions).toEqual([]);
       expect(result[0].departmentName).toBeUndefined();
     });
 

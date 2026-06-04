@@ -1,18 +1,11 @@
 import { requireAdminPageSession } from "@/lib/auth/guards";
-import { prisma } from "@/lib/db/prisma";
 import AccessRolesClient from "@/components/admin/AccessRolesClient";
+import { listAccessRoles } from "@/lib/roles/catalog";
 
 export default async function AccessRolesPage() {
   await requireAdminPageSession("/access-roles");
 
-  const roles = await prisma.roleCatalog.findMany({
-    where: { kind: "access_role", isActive: true },
-    include: {
-      permissions: { select: { permission: true } },
-      _count: { select: { accessGrants: { where: { status: "active" } } } }
-    },
-    orderBy: [{ applicability: "desc" }, { label: "asc" }]
-  });
+  const roles = await listAccessRoles();
 
   return <AccessRolesClient initialRoles={roles} />;
 }

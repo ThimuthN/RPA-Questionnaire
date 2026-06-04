@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { RolePicker } from "@/components/roles/RolePicker";
@@ -55,6 +55,43 @@ export function NewCandidateForm({
 
   const allRoles: HiringTeamRole[] = ["owner", "recruiter", "hiring_manager", "interviewer", "reviewer", "final_approver"];
 
+  useEffect(() => {
+    const loadDepartmentTeamData = async () => {
+      if (!departmentId) {
+        setTemplates([]);
+        setTeamUsers([]);
+        return;
+      }
+
+      setLoadingTeams(true);
+      try {
+        const [templateResponse, userResponse] = await Promise.all([
+          fetch(`/api/departments/${departmentId}/hiring-teams`),
+          fetch(`/api/departments/${departmentId}/team-users`)
+        ]);
+
+        if (!templateResponse.ok || !userResponse.ok) {
+          setTemplates([]);
+          setTeamUsers([]);
+          return;
+        }
+
+        const templateData = await templateResponse.json();
+        const userData = await userResponse.json();
+        setTemplates(templateData.templates || []);
+        setTeamUsers(userData.users || []);
+      } catch (error) {
+        console.error("Error loading teams:", error);
+        setTemplates([]);
+        setTeamUsers([]);
+      } finally {
+        setLoadingTeams(false);
+      }
+    };
+
+    void loadDepartmentTeamData();
+  }, [departmentId]);
+
   const templateMembers = useMemo(() => {
     if (!selectedTemplate) return [];
     const template = templates.find((t) => t.id === selectedTemplate);
@@ -71,45 +108,13 @@ export function NewCandidateForm({
   const hasOwner = effectiveTeamMembers.some((m) => m.role === "owner");
   const availableTeamUsers = teamUsers.filter((u) => !effectiveTeamMembers.some((m) => m.userId === u.id));
 
-  const handleDepartmentChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newDeptId = e.target.value;
     setDepartmentId(newDeptId);
     setSelectedTemplate("");
     setManualTeamMembers([]);
-
-    if (!newDeptId) {
-      setTemplates([]);
-      setTeamUsers([]);
-      return;
-    }
-
-    setLoadingTeams(true);
-    try {
-      const res = await fetch(`/api/departments/${newDeptId}/hiring-teams`);
-      if (!res.ok) {
-        console.error("Failed to load hiring teams");
-        setTemplates([]);
-        setTeamUsers([]);
-        return;
-      }
-      const data = await res.json();
-      setTemplates(data.templates || []);
-
-      const userRes = await fetch(`/api/departments/${newDeptId}/team-users`);
-      if (!userRes.ok) {
-        console.error("Failed to load department users");
-        setTeamUsers([]);
-        return;
-      }
-      const userData = await userRes.json();
-      setTeamUsers(userData.users || []);
-    } catch (error) {
-      console.error("Error loading teams:", error);
-      setTemplates([]);
-      setTeamUsers([]);
-    } finally {
-      setLoadingTeams(false);
-    }
+    setSelectedUserId("");
+    setSelectedRole("owner");
   };
 
   const handleAddManualMember = () => {
@@ -298,7 +303,7 @@ export function NewCandidateForm({
 
                 <div>
                   <label className="block text-xs font-medium text-[color:var(--app-text)] mb-2">
-                    Job designation role
+                    Hiring responsibility
                   </label>
                   <select
                     value={selectedRole}
@@ -359,6 +364,11 @@ export function NewCandidateForm({
           </div>
         )}
 
+        <input
+          type="hidden"
+          name="teamTemplateId"
+          value={selectedTemplate}
+        />
         <input
           type="hidden"
           name="teamUserIds"

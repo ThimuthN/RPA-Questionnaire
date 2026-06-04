@@ -134,6 +134,9 @@ export interface CandidateListItem extends CandidateRecord {
   latestResumeStorageKey?: string;
   currentFocus?: string;
   latestAssessment: CandidateAssessmentRecord | null;
+  teamOwnerSummary?: string;
+  teamOwnerId?: string;
+  teamMemberCount?: number;
 }
 
 export interface CandidateActivityEventRecord {

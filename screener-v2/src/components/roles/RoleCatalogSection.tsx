@@ -7,7 +7,6 @@ import { FormInput } from "@/components/primitives/FormInput";
 import { FormError } from "@/components/primitives/FormError";
 import { DataTable } from "@/components/primitives/DataTable";
 import type { RolePickerOption } from "@/components/roles/RolePicker";
-import { APP_ACTIONS, APP_ACTION_LABELS, type AppAction } from "@/lib/auth/permissions";
 
 interface DepartmentOption {
   id: string;
@@ -79,14 +78,17 @@ export function RoleCatalogSection({
   async function loadRoles() {
     setLoading(true);
     try {
-      const params = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : "";
-      const response = await fetch(`/api/roles${params}`, { cache: "no-store" });
+      const query = new URLSearchParams({ kind: "job_designation" });
+      if (departmentId) {
+        query.set("departmentId", departmentId);
+      }
+      const response = await fetch(`/api/roles?${query.toString()}`, { cache: "no-store" });
       const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[] };
       if (data.ok && Array.isArray(data.roles)) {
         setRoles(data.roles);
       }
     } catch {
-      setError("Could not load roles.");
+      setError("Could not load job designations.");
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export function RoleCatalogSection({
 
   async function saveRole() {
     if (!editor.label.trim()) {
-      setError("Role name is required.");
+      setError("Job designation name is required.");
       return;
     }
 
@@ -132,15 +134,14 @@ export function RoleCatalogSection({
           description: editor.description.trim(),
           experienceLevel: editor.experienceLevel || undefined,
           requirements: editor.requirements.trim(),
-          permissions: editor.permissions,
-          isActive: editor.isActive
-        })
+        isActive: editor.isActive
+      })
       });
 
       const data = (await response.json()) as { ok: boolean; role?: RolePickerOption; message?: string };
 
       if (!data.ok || !data.role) {
-        setError(data.message || "Could not save role.");
+        setError(data.message || "Could not save job designation.");
         return;
       }
 
@@ -149,7 +150,7 @@ export function RoleCatalogSection({
       setEditor(emptyEditor);
       setError("");
     } catch {
-      setError("Could not save role. Check your connection and try again.");
+      setError("Could not save job designation. Check your connection and try again.");
     } finally {
       setSaving(false);
     }
@@ -167,7 +168,7 @@ export function RoleCatalogSection({
       const data = (await response.json()) as { ok: boolean; message?: string };
 
       if (!data.ok) {
-        setError(data.message || "Could not delete role.");
+        setError(data.message || "Could not delete job designation.");
         return;
       }
 
@@ -176,19 +177,10 @@ export function RoleCatalogSection({
       setEditor(emptyEditor);
       setError("");
     } catch {
-      setError("Could not delete role. Check your connection and try again.");
+      setError("Could not delete job designation. Check your connection and try again.");
     } finally {
       setDeleting(false);
     }
-  }
-
-  function togglePermission(permission: AppAction) {
-    setEditor((current) => ({
-      ...current,
-      permissions: current.permissions.includes(permission)
-        ? current.permissions.filter((value) => value !== permission)
-        : [...current.permissions, permission]
-    }));
   }
 
   return (
@@ -206,12 +198,12 @@ export function RoleCatalogSection({
       {error && <p className="text-sm text-[color:var(--app-danger)]">{error}</p>}
 
       {loading ? (
-        <p className="text-sm text-[color:var(--app-muted)]">Loading roles...</p>
+        <p className="text-sm text-[color:var(--app-muted)]">Loading job designations...</p>
       ) : (
         <DataTable
           columns={[
             {
-              header: "Role",
+              header: "Job designation",
               width: "w-[30%]",
               render: (role) => (
                 <div className="space-y-1">
@@ -248,13 +240,13 @@ export function RoleCatalogSection({
             }
           ]}
           data={roles}
-          emptyMessage="No roles yet. Create your first role to get started."
+          emptyMessage="No job designations yet. Create your first designation to get started."
         />
       )}
 
       <Modal
         isOpen={modalOpen}
-        title={editor.id ? "Edit role" : "Create role"}
+        title={editor.id ? "Edit job designation" : "Create job designation"}
         onClose={() => {
           setModalOpen(false);
           setEditor(emptyEditor);
@@ -269,7 +261,7 @@ export function RoleCatalogSection({
                 onClick={deleteRole}
                 disabled={deleting || saving || (editor.openJobCount ?? 0) > 0 || (editor.pipelineCandidateCount ?? 0) > 0}
               >
-                {deleting ? "Deleting..." : "Delete role"}
+                {deleting ? "Deleting..." : "Delete job designation"}
               </Button>
             )}
             <div className="flex flex-wrap gap-2">
@@ -285,14 +277,14 @@ export function RoleCatalogSection({
                 Cancel
               </Button>
               <Button type="button" onClick={saveRole} disabled={saving}>
-                {saving ? "Saving..." : editor.id ? "Save changes" : "Create role"}
+                {saving ? "Saving..." : editor.id ? "Save changes" : "Create job designation"}
               </Button>
             </div>
           </>
         }
       >
         <FormInput
-          label="Role name"
+          label="Job designation name"
           value={editor.label}
           onChange={(e) => setEditor((current) => ({ ...current, label: e.target.value }))}
           placeholder="e.g. Senior Backend Engineer"
@@ -350,28 +342,6 @@ export function RoleCatalogSection({
             className="min-h-[110px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--app-brand)]"
           />
         </label>
-
-        <div className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-          <div>
-            <p className="text-sm font-medium text-[color:var(--app-heading)]">Role permissions</p>
-            <p className="text-xs text-[color:var(--app-muted)]">
-              Defaults for users assigned to this organization role.
-            </p>
-          </div>
-          <div className="grid gap-2 md:grid-cols-2">
-            {APP_ACTIONS.map((permission) => (
-              <label key={permission} className="flex items-center gap-2 text-sm text-[color:var(--app-text)]">
-                <input
-                  type="checkbox"
-                  checked={editor.permissions.includes(permission)}
-                  onChange={() => togglePermission(permission)}
-                  className="h-4 w-4 rounded border-[color:var(--app-border-strong)] bg-[color:var(--app-control-bg)] text-brand-400"
-                />
-                {APP_ACTION_LABELS[permission]}
-              </label>
-            ))}
-          </div>
-        </div>
 
         {editor.id && (
           <label className="flex items-center gap-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">

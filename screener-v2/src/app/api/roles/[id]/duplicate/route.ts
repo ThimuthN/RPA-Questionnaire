@@ -1,12 +1,42 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
-import { randomUUID } from 'crypto';
+import { getRoleCatalogEntry } from "@/lib/roles/catalog";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+const duplicateSchema = z.object({
+  label: z.string().min(2),
+  slug: z.string().regex(/^[a-z0-9_-]+$/)
+});
+
+function jsonOk<T>(body: T, status = 200) {
+  return NextResponse.json({ ok: true, ...body }, { status });
+}
+
+function jsonError(message: string, status = 400, extra?: Record<string, unknown>) {
+  return NextResponse.json({ ok: false, message, ...extra }, { status });
+}
+
+async function suggestDuplicateSlug(baseSlug: string) {
+  let nextIndex = 2;
+
+  while (true) {
+    const suggestedSlug = `${baseSlug}-copy-${nextIndex}`;
+    const existing = await prisma.roleCatalog.findUnique({
+      where: { slug: suggestedSlug },
+      select: { id: true }
+    });
+
+    if (!existing) {
+      return suggestedSlug;
+    }
+
+    nextIndex += 1;
+  }
+}
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
@@ -19,70 +49,67 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { label, slug } = body;
-
-    if (!label || !slug) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    const body = duplicateSchema.parse(await request.json());
 
     const sourceRole = await prisma.roleCatalog.findUnique({
       where: { id },
-      include: { permissions: { select: { permission: true } } }
+      include: {
+        permissions: {
+          select: { permission: true }
+        }
+      }
     });
 
     if (!sourceRole) {
-      return NextResponse.json({ error: 'Source role not found' }, { status: 404 });
+      return jsonError("Source role not found.", 404);
     }
 
-    // Check slug uniqueness
     const existing = await prisma.roleCatalog.findUnique({
-      where: { slug }
+      where: { slug: body.slug },
+      select: { id: true }
     });
 
     if (existing) {
-      return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
+      const suggestedSlug = await suggestDuplicateSlug(sourceRole.slug);
+      return jsonError(`Slug already exists. Try ${suggestedSlug}.`, 409, { suggestedSlug });
     }
 
-    // Create duplicated role
-    const newRoleId = randomUUID();
-    await prisma.roleCatalog.create({
-      data: {
-        id: newRoleId,
-        slug,
-        label,
-        description: sourceRole.description,
-        kind: sourceRole.kind,
-        applicability: sourceRole.applicability,
-        departmentId: sourceRole.departmentId,
-        isActive: true
-      }
-    });
-
-    // Copy permissions
-    if (sourceRole.permissions.length > 0) {
-      await prisma.rolePermissionTemplate.createMany({
-        data: sourceRole.permissions.map(p => ({
+    const duplicatedRoleId = await prisma.$transaction(async (tx) => {
+      const role = await tx.roleCatalog.create({
+        data: {
           id: randomUUID(),
-          roleId: newRoleId,
-          permission: p.permission
-        }))
+          slug: body.slug,
+          label: body.label.trim(),
+          description: sourceRole.description,
+          kind: sourceRole.kind,
+          applicability: sourceRole.applicability,
+          departmentId: sourceRole.departmentId,
+          experienceLevel: sourceRole.experienceLevel,
+          requirements: sourceRole.requirements,
+          isActive: true
+        }
       });
-    }
 
-    const duplicatedRole = await prisma.roleCatalog.findUnique({
-      where: { id: newRoleId },
-      include: {
-        permissions: { select: { permission: true } },
-        _count: { select: { accessGrants: { where: { status: 'active' } } } }
+      if (sourceRole.kind === "access_role" && sourceRole.permissions.length > 0) {
+        await tx.rolePermissionTemplate.createMany({
+          data: sourceRole.permissions.map((permissionValue) => ({
+            id: randomUUID(),
+            roleId: role.id,
+            permission: permissionValue.permission
+          }))
+        });
       }
+
+      return role.id;
     });
 
-    return NextResponse.json(duplicatedRole, { status: 201 });
+    const role = await getRoleCatalogEntry(duplicatedRoleId);
+    if (!role) {
+      throw new Error("Duplicated role could not be loaded.");
+    }
+
+    return jsonOk({ role, message: "Role duplicated." }, 201);
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to duplicate role' },
-      { status: 500 }
-    );
+    return jsonError(error instanceof Error ? error.message : "Failed to duplicate role.", 500);
   }
 }

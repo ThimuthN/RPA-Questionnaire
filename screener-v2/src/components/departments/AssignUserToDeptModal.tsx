@@ -1,11 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { Modal } from "@/components/primitives/Modal";
 import { FormError } from "@/components/primitives/FormError";
-import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
 
 type Tab = "add" | "create";
 
@@ -21,6 +21,9 @@ interface Role {
   id: string;
   label: string;
   slug: string;
+  kind?: string;
+  applicability?: string;
+  isActive?: boolean;
   permissions?: string[];
 }
 
@@ -48,7 +51,7 @@ export function AssignUserToDeptModal({
       try {
         const [usersRes, rolesRes] = await Promise.all([
           fetch("/api/users"),
-          fetch(`/api/roles?departmentId=${departmentId}`)
+          fetch(`/api/roles?kind=access_role&scope=department&departmentId=${departmentId}`)
         ]);
 
         if (usersRes.ok) {
@@ -131,23 +134,27 @@ export function AssignUserToDeptModal({
         return;
       }
 
-      const createUserForm = new FormData();
-      createUserForm.append("name", name || "");
-      createUserForm.append("email", email);
-      createUserForm.append("password", password);
-
       const userRes = await fetch("/api/users", {
         method: "POST",
-        body: createUserForm
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name || "",
+          email,
+          password,
+          permissionDepartmentId: departmentId
+        })
       });
 
       if (!userRes.ok) {
-        const errorText = await userRes.text();
-        throw new Error(errorText || "Failed to create user");
+        const userError = await userRes.json().catch(() => ({}));
+        throw new Error(userError.message || "Failed to create user");
       }
 
       const userData = await userRes.json();
-      const newUserId = userData.id;
+      const newUserId = userData.user?.id;
+      if (!newUserId) {
+        throw new Error("Created user response was missing the user ID.");
+      }
 
       const grantRes = await fetch("/api/access-grants", {
         method: "POST",
@@ -176,12 +183,15 @@ export function AssignUserToDeptModal({
   }
 
   const getAccessRoles = () => {
-    // Filter: only access roles with permissions, department-applicable only
-    return roles.filter(r =>
-      r.permissions &&
-      r.permissions.length > 0 &&
-      filterRolesByApplicability([r], "department").length > 0
-    );
+    return roles.filter((role) => {
+      if (role.kind !== "access_role") {
+        return false;
+      }
+      if (role.isActive === false) {
+        return false;
+      }
+      return role.applicability === "department" || role.applicability === "both";
+    });
   };
 
   const accessRoles = getAccessRoles();
@@ -271,7 +281,11 @@ export function AssignUserToDeptModal({
               </label>
               {!hasRoles ? (
                 <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
-                  No access roles configured. Visit the Access page to create roles first.
+                  No access roles configured. Create one on the{" "}
+                  <Link href={`/departments/${departmentId}/access`} className="text-brand-500 hover:text-brand-600">
+                    Access page
+                  </Link>
+                  .
                 </div>
               ) : (
                 <select
@@ -349,7 +363,11 @@ export function AssignUserToDeptModal({
               </label>
               {!hasRoles ? (
                 <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
-                  No access roles configured. Visit the Access page to create roles first.
+                  No access roles configured. Create one on the{" "}
+                  <Link href={`/departments/${departmentId}/access`} className="text-brand-500 hover:text-brand-600">
+                    Access page
+                  </Link>
+                  .
                 </div>
               ) : (
                 <select

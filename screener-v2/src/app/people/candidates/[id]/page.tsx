@@ -322,6 +322,12 @@ export default async function CandidateDetailPage({
         const activeCandidacy = await prisma.departmentCandidacy.findFirst({
           where: { candidateId: candidate.id, status: "active" },
           include: {
+            department: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
             teamAssignments: {
               where: { isActive: true },
               include: {
@@ -339,8 +345,9 @@ export default async function CandidateDetailPage({
     })()
   ]);
   const hasResponsibleAssignments = assignments.length > 0;
-  const hasCandidacyTeamAssignments = departmentCandidacy?.teamAssignments.length ?? 0 > 0;
-  const shouldWarnNoLinkedApplication = candidate.applications.length === 0;
+  const hasCandidacyTeamAssignments = (departmentCandidacy?.teamAssignments.length ?? 0) > 0;
+  const hasActiveDepartmentCandidacy = Boolean(departmentCandidacy);
+  const shouldWarnNoLinkedApplication = candidate.applications.length === 0 && !hasActiveDepartmentCandidacy;
   const shouldWarnResponsibleTeam = !hasResponsibleAssignments && !hasCandidacyTeamAssignments;
   const latestAssessmentRecord = latestAssessment(candidate);
   const assessmentAction = latestAssessmentRecord?.attemptId
@@ -507,11 +514,19 @@ export default async function CandidateDetailPage({
                 />
                 <SummaryCard
                   label="Linked application"
-                  title={activeApplication ? activeApplication.jobTitle : "Not linked"}
+                  title={
+                    activeApplication
+                      ? activeApplication.jobTitle
+                      : hasActiveDepartmentCandidacy
+                        ? "Manual workspace candidacy"
+                        : "Not linked"
+                  }
                   detail={
                     activeApplication
                       ? `${activeApplication.roleLabel || "No role linked"} | ${activeApplication.roleDepartment || workspaceContext.label}`
-                      : "Not yet connected to a hiring journey."
+                      : hasActiveDepartmentCandidacy
+                        ? `Active in ${departmentCandidacy?.department.name || workspaceContext.label} without a linked job application.`
+                        : "Not yet connected to a hiring journey."
                   }
                   tone="default"
                 />
@@ -595,7 +610,8 @@ export default async function CandidateDetailPage({
           <div className="space-y-6">
             {targetApplication || departmentCandidacy?.teamAssignments.length ? (
               <ResponsibleTeamCard
-                applicationId={targetApplication?.id || departmentCandidacy?.id || ""}
+                mode={targetApplication ? "application" : "candidacy"}
+                entityId={targetApplication?.id || departmentCandidacy?.id || ""}
                 assignments={
                   targetApplication
                     ? assignments
@@ -609,7 +625,7 @@ export default async function CandidateDetailPage({
                       })) || []
                 }
                 users={users}
-                canEdit={session.permissions.includes("manage_candidates")}
+                canEdit={session.permissions.includes("manage_candidates") && Boolean(targetApplication)}
               />
             ) : (
               <section className="space-y-4">
@@ -620,7 +636,7 @@ export default async function CandidateDetailPage({
                 <div className="rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100">
                   <p className="font-medium">Responsible team required</p>
                   <p className="mt-1 text-xs leading-5 opacity-90">
-                    {candidate.applications.length === 0
+                    {!hasActiveDepartmentCandidacy && candidate.applications.length === 0
                       ? "Create or link an application first so a responsible team can own this candidate."
                       : "Assign an owner or hiring team before advancing this candidate."}
                   </p>
@@ -637,9 +653,13 @@ export default async function CandidateDetailPage({
               <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 {candidate.applications.length === 0 ? (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">No linked application</p>
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">
+                      {hasActiveDepartmentCandidacy ? "Manual workspace candidacy" : "No linked application"}
+                    </p>
                     <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                      This candidate is not yet connected to a job/workspace hiring journey. Link or create an application before advancing.
+                      {hasActiveDepartmentCandidacy
+                        ? `This candidate is active in ${departmentCandidacy?.department.name || workspaceContext.label} through a manual workspace candidacy.`
+                        : "This candidate is not yet connected to a job/workspace hiring journey. Link or create an application before advancing."}
                     </p>
                   </div>
                 ) : (

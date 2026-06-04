@@ -50,6 +50,20 @@ export async function POST(
       throw new Error("User not found or inactive");
     }
 
+    const accessGrant = await prisma.accessGrant.findFirst({
+      where: {
+        userId: body.userId,
+        departmentId,
+        scope: "department",
+        status: "active"
+      },
+      select: { id: true }
+    });
+
+    if (!accessGrant) {
+      throw new Error("User must have an active department access grant before being added to a hiring team template");
+    }
+
     const existing = await prisma.hiringTeamTemplateMember.findUnique({
       where: {
         templateId_userId_role: {

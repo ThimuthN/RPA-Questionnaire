@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
@@ -29,7 +30,13 @@ export function AddUserModal({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [departments, setDepartments] = useState<DepartmentOption[]>([]);
-  const [roles, setRoles] = useState<Array<{ id: string; label: string; permissions?: string[] }>>([]);
+  const [roles, setRoles] = useState<Array<{
+    id: string;
+    label: string;
+    kind?: string;
+    applicability?: string;
+    isActive?: boolean;
+  }>>([]);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -67,7 +74,9 @@ export function AddUserModal({
     const loadRoles = async () => {
       setLoadingRoles(true);
       try {
-        const response = await fetch(`/api/roles?departmentId=${selectedDepartmentId}`);
+        const response = await fetch(
+          `/api/roles?kind=access_role&scope=department&departmentId=${selectedDepartmentId}`
+        );
         if (response.ok) {
           const data = await response.json();
           setRoles(data.roles || []);
@@ -91,14 +100,19 @@ export function AddUserModal({
 
     try {
       const formData = new FormData(formRef.current);
+      const payload = Object.fromEntries(formData.entries());
       const response = await fetch(action, {
         method: "post",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...payload,
+          isActive: formData.get("isActive") === "on"
+        }),
       });
 
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const error = await response.text();
-        setSubmitError(error || "Failed to save user");
+        setSubmitError(data.message || "Failed to save user");
         return;
       }
 
@@ -116,6 +130,12 @@ export function AddUserModal({
   const subtitle = mode === "create" ? "Create internal access for a team member." : "Update user profile and permissions.";
   const action = mode === "create" ? "/api/users" : `/api/users/${user?.id}`;
   const submitLabel = mode === "create" ? "Create user" : "Save user";
+  const accessRoles = roles.filter(
+    (role) =>
+      role.kind === "access_role" &&
+      role.isActive !== false &&
+      (role.applicability === "department" || role.applicability === "both")
+  );
 
   return (
     <>
@@ -195,31 +215,42 @@ export function AddUserModal({
               Access role
             </label>
             <p className="text-xs text-[color:var(--app-muted)]">Controls what this user can do in the hiring system.</p>
-            {roles.length > 0 && roles.every(r => !r.permissions || r.permissions.length === 0) && (
-              <p className="text-xs text-[color:var(--app-muted)]">Only roles with permissions configured can be assigned as access roles.</p>
-            )}
-            <select
-              id="user-role"
-              name="roleId"
-              defaultValue={user?.roleId || ""}
-              disabled={isSubmitting || !selectedDepartmentId || loadingRoles || roles.filter(r => r.permissions && r.permissions.length > 0).length === 0}
-              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
-            >
-              <option value="">
-                {!selectedDepartmentId
-                  ? "Select a department first"
-                  : loadingRoles
-                  ? "Loading roles..."
-                  : roles.filter(r => r.permissions && r.permissions.length > 0).length === 0
-                  ? "No roles available"
-                  : "Select a role"}
-              </option>
-              {roles.filter(r => r.permissions && r.permissions.length > 0).map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.label}
+            {!selectedDepartmentId ? (
+              <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
+                Select a department first.
+              </div>
+            ) : accessRoles.length === 0 ? (
+              <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
+                No access roles configured. Create one on the{" "}
+                <Link href={`/departments/${selectedDepartmentId}/access`} className="text-brand-500 hover:text-brand-600">
+                  Access page
+                </Link>
+                .
+              </div>
+            ) : (
+              <select
+                id="user-role"
+                name="roleId"
+                defaultValue={user?.roleId || ""}
+                disabled={isSubmitting || !selectedDepartmentId || loadingRoles || accessRoles.length === 0}
+                className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+              >
+                <option value="">
+                  {!selectedDepartmentId
+                    ? "Select a department first"
+                    : loadingRoles
+                    ? "Loading roles..."
+                    : accessRoles.length === 0
+                    ? "No access roles available"
+                    : "Select an access role"}
                 </option>
-              ))}
-            </select>
+                {accessRoles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {mode === "edit" && (

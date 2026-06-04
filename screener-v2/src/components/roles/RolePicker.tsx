@@ -100,8 +100,11 @@ export function RolePicker({
       setLoading(true);
     }
     try {
-      const params = departmentId ? `?departmentId=${encodeURIComponent(departmentId)}` : "";
-      const response = await fetch(`/api/roles${params}`, { cache: "no-store" });
+      const query = new URLSearchParams({ kind: "job_designation" });
+      if (departmentId) {
+        query.set("departmentId", departmentId);
+      }
+      const response = await fetch(`/api/roles?${query.toString()}`, { cache: "no-store" });
       const data = (await response.json()) as { ok: boolean; roles?: RolePickerOption[]; message?: string };
       if (data.ok && Array.isArray(data.roles)) {
         setOptions(data.roles);
@@ -224,9 +227,9 @@ export function RolePicker({
             <div className="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-[30px] border border-[color:var(--app-border)] shadow-[var(--app-modal-shadow)]" style={{ background: "var(--app-modal-surface)" }}>
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[color:var(--app-border)] px-5 py-4 md:px-6" style={{ background: "var(--app-modal-header)" }}>
                 <div>
-                  <h3 className="text-xl text-[color:var(--app-heading)]">Manage roles</h3>
+                  <h3 className="text-xl text-[color:var(--app-heading)]">Manage job designations</h3>
                   <p className="text-sm text-[color:var(--app-muted)]">
-                    Add the role names and departments you want to use when registering candidates.
+                    Add the job designations and departments you want to use when registering candidates.
                   </p>
                 </div>
                 <Button type="button" variant="ghost" onClick={() => setManagerOpen(false)}>
@@ -237,9 +240,9 @@ export function RolePicker({
               <div className="grid min-h-0 flex-1 gap-5 overflow-hidden p-5 md:p-6 lg:grid-cols-[0.95fr_1.05fr]" style={{ background: "var(--app-modal-body)" }}>
                 <div className="flex min-h-0 flex-col space-y-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-[color:var(--app-text)]">Role catalog</p>
+                    <p className="text-sm text-[color:var(--app-text)]">Job designation catalog</p>
                     <Button type="button" variant="secondary" onClick={beginCreate}>
-                      New role
+                      New designation
                     </Button>
                   </div>
 
@@ -273,15 +276,15 @@ export function RolePicker({
                   <div className="space-y-4">
                     <div className="space-y-1">
                       <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                        {editor.id ? "Edit role" : "Create role"}
+                        {editor.id ? "Edit job designation" : "Create job designation"}
                       </p>
                       <h4 className="text-lg text-[color:var(--app-heading)]">
-                        {editor.id ? "Update role details" : "Add a role to the catalog"}
+                        {editor.id ? "Update job designation details" : "Add a job designation to the catalog"}
                       </h4>
                     </div>
 
                     <label className="grid gap-1">
-                      <span className="text-sm text-[color:var(--app-text)]">Role name</span>
+                      <span className="text-sm text-[color:var(--app-text)]">Job designation name</span>
                       <input
                         value={editor.label}
                         onChange={(event) => setEditor((current) => ({ ...current, label: event.target.value }))}
@@ -405,7 +408,7 @@ export function RolePicker({
               beginCreate();
             }}
           >
-            Manage roles
+            Manage job designations
           </Button>
         </div>
 

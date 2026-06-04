@@ -17,6 +17,14 @@ import { logError } from "@/lib/server/logger";
 import { mapCandidate } from "./mappers";
 import { logActivityEvent } from "./activity";
 
+type CandidateTeamAssignmentInput = {
+  userId: string;
+  role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver";
+  source?: "template" | "manual" | "job_default";
+  templateId?: string;
+  isPrimary?: boolean;
+};
+
 async function findCandidateByEmail(email: string) {
   return prisma.candidate.findFirst({
     where: {
@@ -46,7 +54,8 @@ export async function createCandidate(input: {
   screeningStatus?: CandidateScreeningStatus;
   candidateFolderUrl?: string;
   notesSummary?: string;
-  teamUserIds?: Array<{ userId: string; role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" }>;
+  teamAssignments?: CandidateTeamAssignmentInput[];
+  teamUserIds?: Array<Pick<CandidateTeamAssignmentInput, "userId" | "role">>;
   createMilestones?: boolean;
 }) {
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -60,6 +69,17 @@ export async function createCandidate(input: {
     legacyRoleLabel: input.positionAppliedFor,
     createIfMissing: Boolean(input.positionAppliedFor?.trim())
   });
+  const normalizedTeamAssignments: CandidateTeamAssignmentInput[] =
+    input.teamAssignments ??
+    input.teamUserIds?.map((teamUser) => ({
+      userId: teamUser.userId,
+      role: teamUser.role,
+      source: "manual" as const
+    })) ??
+    [];
+  const primaryOwnerAssignment =
+    normalizedTeamAssignments.find((assignment) => assignment.role === "owner" && assignment.isPrimary !== false) ??
+    normalizedTeamAssignments.find((assignment) => assignment.role === "owner");
 
   const created = await prisma.$transaction(async (tx) => {
     const candidate = await tx.candidate.create({
@@ -70,7 +90,7 @@ export async function createCandidate(input: {
         phone: input.phone?.trim() || null,
         roleId: resolvedRole?.id ?? null,
         departmentId: input.departmentId || null,
-        hrOwnerId: input.hrOwnerId || null,
+        hrOwnerId: input.hrOwnerId || primaryOwnerAssignment?.userId || null,
         positionAppliedFor: input.roleId ? null : (resolvedRole?.label ?? (input.positionAppliedFor?.trim() || null)),
         batchId: input.batchId?.trim() || null,
         resumeSource: input.resumeSource?.trim() || null,
@@ -122,6 +142,7 @@ export async function createCandidate(input: {
         },
         update: {
           roleId: candidate.roleId,
+          hrOwnerId: input.hrOwnerId || primaryOwnerAssignment?.userId || null,
           status: "active",
           updatedAt: new Date()
         },
@@ -130,21 +151,25 @@ export async function createCandidate(input: {
           candidateId: candidate.id,
           departmentId: candidate.departmentId,
           roleId: candidate.roleId,
+          hrOwnerId: input.hrOwnerId || primaryOwnerAssignment?.userId || null,
           status: "active",
           source: "manual"
         }
       });
 
-      if (candidacy && input.teamUserIds && input.teamUserIds.length > 0) {
-        for (const teamUser of input.teamUserIds) {
+      if (candidacy && normalizedTeamAssignments.length > 0) {
+        for (const teamAssignment of normalizedTeamAssignments) {
           await tx.departmentCandidacyTeamAssignment.create({
             data: {
               id: cuidLike(),
               candidacyId: candidacy.id,
-              userId: teamUser.userId,
-              role: teamUser.role,
-              source: "manual",
-              isPrimary: teamUser.role === "owner",
+              userId: teamAssignment.userId,
+              role: teamAssignment.role,
+              source: teamAssignment.source ?? "manual",
+              templateId: teamAssignment.templateId ?? null,
+              isPrimary:
+                teamAssignment.isPrimary ??
+                (teamAssignment.role === "owner" && teamAssignment.userId === primaryOwnerAssignment?.userId),
               isActive: true,
               addedAt: new Date()
             }

@@ -1,30 +1,47 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermission } from "@/lib/auth/guards";
-import { updateRoleCatalogEntry, getRoleUsageCounts, deleteRoleCatalogEntry } from "@/lib/roles/catalog";
 import { APP_ACTIONS } from "@/lib/auth/permissions";
-import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { prisma } from "@/lib/db/prisma";
-import { randomUUID } from 'crypto';
+import {
+  deleteRoleCatalogEntry,
+  getRoleCatalogEntry,
+  getRoleUsageCounts,
+  updateRoleCatalogEntry
+} from "@/lib/roles/catalog";
 
-const updateRoleSchema = z.object({
+const jobDesignationSchema = z.object({
   label: z.string().min(2),
   departmentId: z.string().optional().or(z.literal("")),
   description: z.string().optional(),
   experienceLevel: z.string().optional().or(z.literal("")),
   requirements: z.string().optional(),
-  isActive: z.boolean().default(true),
-  permissions: z.array(z.string().refine((value) => APP_ACTIONS.includes(value as (typeof APP_ACTIONS)[number]))).optional()
+  isActive: z.boolean().default(true)
 });
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+const accessRoleSchema = z.object({
+  label: z.string().min(2).optional(),
+  description: z.string().optional(),
+  permissions: z
+    .array(z.string().refine((value) => APP_ACTIONS.includes(value as (typeof APP_ACTIONS)[number])))
+    .optional()
+});
+
+function jsonOk<T>(body: T, status = 200) {
+  return NextResponse.json({ ok: true, ...body }, { status });
+}
+
+function jsonError(message: string, status = 400) {
+  return NextResponse.json({ ok: false, message }, { status });
+}
+
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
+
   const permission = await requirePermission(auth.session, "edit_role");
   if (!permission.ok) {
     return permission.response;
@@ -34,96 +51,71 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    // Check if this is an access role
-    const role = await prisma.roleCatalog.findUnique({ where: { id } });
-    if (!role) {
-      return NextResponse.json({ error: 'Role not found' }, { status: 404 });
+    const currentRole = await prisma.roleCatalog.findUnique({
+      where: { id },
+      select: { id: true, kind: true, label: true }
+    });
+
+    if (!currentRole) {
+      return jsonError("Role not found.", 404);
     }
 
-    if (role.kind === 'access_role') {
-      // Handle access role update
-      const { label, description, permissions } = body;
+    if (currentRole.kind === "access_role") {
+      const validated = accessRoleSchema.parse(body);
 
-      await prisma.roleCatalog.update({
-        where: { id },
-        data: {
-          label: label || role.label,
-          description: description !== undefined ? description : role.description
-        }
-      });
-
-      // Update permissions if provided
-      if (permissions && Array.isArray(permissions)) {
-        await prisma.rolePermissionTemplate.deleteMany({ where: { roleId: id } });
-        await prisma.rolePermissionTemplate.createMany({
-          data: permissions.map((permission: string) => ({
-            id: randomUUID(),
-            roleId: id,
-            permission
-          }))
+      await prisma.$transaction(async (tx) => {
+        await tx.roleCatalog.update({
+          where: { id },
+          data: {
+            label: validated.label?.trim() || currentRole.label,
+            description: validated.description !== undefined ? validated.description.trim() || null : undefined
+          }
         });
-      }
 
-      const updatedRole = await prisma.roleCatalog.findUnique({
-        where: { id },
-        include: {
-          permissions: { select: { permission: true } },
-          _count: { select: { accessGrants: { where: { status: 'active' } } } }
+        if (validated.permissions) {
+          await tx.rolePermissionTemplate.deleteMany({ where: { roleId: id } });
+          if (validated.permissions.length > 0) {
+            await tx.rolePermissionTemplate.createMany({
+              data: validated.permissions.map((permissionValue) => ({
+                id: randomUUID(),
+                roleId: id,
+                permission: permissionValue
+              }))
+            });
+          }
         }
       });
 
-      return NextResponse.json(updatedRole);
+      const role = await getRoleCatalogEntry(id);
+      if (!role) {
+        return jsonError("Role not found.", 404);
+      }
+
+      return jsonOk({ role });
     }
 
-    // Handle job designation update (existing logic)
-    const parsedBody = updateRoleSchema.parse(body);
-    if (parsedBody.permissions && auth.session.userId && !(await hasGlobalPermission(auth.session.userId, "edit_role"))) {
-      const outsideActor = parsedBody.permissions.find((permission) => !auth.session.permissions.includes(permission));
-      if (outsideActor) {
-        throw new Error("You can only edit roles within your own permission set.");
-      }
-    }
-
-    const updatedRole = await updateRoleCatalogEntry(id, {
-      label: parsedBody.label,
-      departmentId: parsedBody.departmentId || undefined,
-      description: parsedBody.description,
-      experienceLevel: parsedBody.experienceLevel || undefined,
-      requirements: parsedBody.requirements,
-      isActive: parsedBody.isActive,
-      permissions: parsedBody.permissions
+    const validated = jobDesignationSchema.parse(body);
+    const role = await updateRoleCatalogEntry(id, {
+      label: validated.label,
+      departmentId: validated.departmentId || undefined,
+      description: validated.description,
+      experienceLevel: validated.experienceLevel || undefined,
+      requirements: validated.requirements,
+      isActive: validated.isActive
     });
 
-    return NextResponse.json({
-      ok: true,
-      role: {
-        id: updatedRole.id,
-        label: updatedRole.label,
-        departmentId: updatedRole.departmentId ?? "",
-        departmentName: updatedRole.departmentName ?? "",
-        description: updatedRole.description ?? "",
-        experienceLevel: updatedRole.experienceLevel ?? "",
-        requirements: updatedRole.requirements ?? "",
-        permissions: updatedRole.permissions ?? [],
-        isActive: updatedRole.isActive
-      }
-    });
+    return jsonOk({ role: { ...role, permissions: [] } });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not update role." },
-      { status: 400 }
-    );
+    return jsonError(error instanceof Error ? error.message : "Could not update role.");
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
   }
+
   const permission = await requirePermission(auth.session, "delete_role");
   if (!permission.ok) {
     return permission.response;
@@ -131,80 +123,64 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const deleteMode = body.mode || 'deactivate';
+    const body = await request.json().catch(() => ({}));
+    const deleteMode = body.mode === "delete" ? "delete" : "deactivate";
 
-    const role = await prisma.roleCatalog.findUnique({ where: { id } });
+    const role = await prisma.roleCatalog.findUnique({
+      where: { id },
+      select: { id: true, kind: true }
+    });
+
     if (!role) {
-      return NextResponse.json({ error: 'Role not found' }, { status: 404 });
+      return jsonError("Role not found.", 404);
     }
 
-    if (role.kind === 'access_role') {
-      // Handle access role deletion/deactivation
-      const activeGrants = await prisma.accessGrant.count({
-        where: { roleId: id, status: 'active' }
+    if (role.kind === "access_role") {
+      const activeGrantCount = await prisma.accessGrant.count({
+        where: { roleId: id, status: "active" }
       });
 
-      if (deleteMode === 'deactivate') {
-        // Deactivate the role
-        await prisma.roleCatalog.update({
-          where: { id },
-          data: { isActive: false }
-        });
+      if (deleteMode === "deactivate") {
+        await prisma.$transaction([
+          prisma.roleCatalog.update({
+            where: { id },
+            data: { isActive: false }
+          }),
+          prisma.accessGrant.updateMany({
+            where: { roleId: id, status: "active" },
+            data: { status: "inactive" }
+          })
+        ]);
 
-        // Deactivate all active grants
-        await prisma.accessGrant.updateMany({
-          where: { roleId: id, status: 'active' },
-          data: { status: 'inactive' }
-        });
-
-        return NextResponse.json({ message: 'Role deactivated' });
-      } else if (deleteMode === 'delete') {
-        // Hard delete (only if no active grants)
-        if (activeGrants > 0) {
-          return NextResponse.json(
-            { error: `Cannot delete role with ${activeGrants} active grant(s). Deactivate first.` },
-            { status: 409 }
-          );
-        }
-
-        await prisma.roleCatalog.delete({ where: { id } });
-        return NextResponse.json({ message: 'Role deleted' });
+        return jsonOk({ message: "Role deactivated." });
       }
 
-      return NextResponse.json({ error: 'Invalid deletion mode' }, { status: 400 });
+      if (activeGrantCount > 0) {
+        return jsonError(`Cannot delete role with ${activeGrantCount} active grant(s). Deactivate it first.`, 409);
+      }
+
+      await prisma.roleCatalog.delete({ where: { id } });
+      return jsonOk({ message: "Role deleted." });
     }
 
-    // Handle job designation deletion (existing logic)
     const { openJobCount, pipelineCandidateCount } = await getRoleUsageCounts(id);
-
     if (openJobCount > 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: `This role is linked to ${openJobCount} open job posting(s). Close or reassign them first.`
-        },
-        { status: 409 }
+      return jsonError(
+        `This job designation is linked to ${openJobCount} open job posting(s). Close or reassign them first.`,
+        409
       );
     }
 
     if (pipelineCandidateCount > 0) {
-      return NextResponse.json(
-        {
-          ok: false,
-          message: `This role is assigned to ${pipelineCandidateCount} active pipeline candidate(s). Reassign them first.`
-        },
-        { status: 409 }
+      return jsonError(
+        `This job designation is assigned to ${pipelineCandidateCount} active pipeline candidate(s). Reassign them first.`,
+        409
       );
     }
 
     await deleteRoleCatalogEntry(id);
-
-    return NextResponse.json({ ok: true });
+    return jsonOk({ message: "Job designation deleted." });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, message: error instanceof Error ? error.message : "Could not delete role." },
-      { status: 400 }
-    );
+    return jsonError(error instanceof Error ? error.message : "Could not delete role.");
   }
 }

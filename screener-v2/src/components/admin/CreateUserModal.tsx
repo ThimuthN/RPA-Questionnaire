@@ -24,12 +24,13 @@ export function CreateUserModal() {
       const formData = new FormData(formRef.current);
       const response = await fetch("/api/users", {
         method: "POST",
-        body: formData
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Object.fromEntries(formData.entries()))
       });
 
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        const errorText = await response.text();
-        setError(errorText || "Failed to create user");
+        setError(data.message || "Failed to create user");
         return;
       }
 

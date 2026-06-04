@@ -68,4 +68,23 @@ describe("CandidateWorkspaceTable", () => {
     expect(markup).toContain('href="/people/candidates/cand-1?returnTo=%2Fpeople%2Fcandidates%3Fstage%3Dpipeline"');
     expect(markup).not.toContain("workspaceId=");
   });
+
+  it("renders the primary team owner summary instead of the legacy free-text owner", () => {
+    const markup = renderToStaticMarkup(
+      <CandidateWorkspaceTable
+        rows={[
+          {
+            ...rows[0],
+            hrOwner: "Legacy Owner",
+            teamOwnerSummary: "Jordan + 3"
+          }
+        ] as never}
+        currentPathAndQuery="/people/candidates?stage=pipeline"
+        permissions={[]}
+      />
+    );
+
+    expect(markup).toContain("Jordan + 3");
+    expect(markup).not.toContain("Legacy Owner");
+  });
 });

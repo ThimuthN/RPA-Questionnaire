@@ -22,13 +22,18 @@ export async function grantSystemAccess(input: {
     where: {
       slug: input.roleSlug,
       departmentId: systemDept.id,
-      kind: "access_role"
+      kind: "access_role",
+      isActive: true
     },
-    select: { id: true }
+    select: { id: true, applicability: true }
   });
 
   if (!role) {
     throw new Error(`System role "${input.roleSlug}" not found`);
+  }
+
+  if (role.applicability !== "system" && role.applicability !== "both") {
+    throw new Error(`Role "${input.roleSlug}" cannot be granted at system scope`);
   }
 
   const existingGrant = await prisma.accessGrant.findFirst({
@@ -73,7 +78,19 @@ export async function grantDepartmentAccess(input: {
   // Verify role exists and is an access_role
   const role = await prisma.roleCatalog.findUnique({
     where: { id: input.roleId },
-    select: { id: true, kind: true, label: true }
+    select: {
+      id: true,
+      kind: true,
+      label: true,
+      isActive: true,
+      applicability: true,
+      departmentId: true,
+      dept: {
+        select: {
+          slug: true
+        }
+      }
+    }
   });
 
   if (!role) {
@@ -84,6 +101,10 @@ export async function grantDepartmentAccess(input: {
     throw new Error("Only access roles can be assigned");
   }
 
+  if (!role.isActive) {
+    throw new Error("Selected access role is inactive");
+  }
+
   // Verify department exists
   const dept = await prisma.department.findUnique({
     where: { id: input.departmentId },
@@ -92,6 +113,16 @@ export async function grantDepartmentAccess(input: {
 
   if (!dept) {
     throw new Error("Department not found");
+  }
+
+  if (role.applicability === "system") {
+    throw new Error("System-only access roles cannot be assigned to a department");
+  }
+
+  const ownedByDepartment = role.departmentId === input.departmentId;
+  const sharedSystemRole = role.applicability === "both" && role.dept?.slug === "system";
+  if (!ownedByDepartment && !sharedSystemRole) {
+    throw new Error("Selected access role is not available for this department");
   }
 
   // Check for duplicate active grant

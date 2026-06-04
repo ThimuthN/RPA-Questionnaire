@@ -35,6 +35,72 @@ export type CandidateStageCounts = {
   finalized: number;
 };
 
+type TeamAssignmentRow = {
+  role: string;
+  isPrimary: boolean;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+};
+
+type DepartmentCandidacyTeamRow = {
+  departmentId: string;
+  teamAssignments: TeamAssignmentRow[];
+};
+
+function summarizeCandidacyTeam(
+  candidacies: DepartmentCandidacyTeamRow[] | undefined,
+  preferredDepartmentId?: string
+) {
+  if (!candidacies?.length) {
+    return {
+      teamOwnerSummary: undefined,
+      teamOwnerId: undefined,
+      teamMemberCount: 0
+    };
+  }
+
+  const candidacy =
+    (preferredDepartmentId && candidacies.find((item) => item.departmentId === preferredDepartmentId)) ??
+    candidacies[0];
+
+  if (!candidacy) {
+    return {
+      teamOwnerSummary: undefined,
+      teamOwnerId: undefined,
+      teamMemberCount: 0
+    };
+  }
+
+  const uniqueUsers = new Map<string, { id: string; name: string | null; email: string }>();
+  candidacy.teamAssignments.forEach((assignment) => {
+    uniqueUsers.set(assignment.user.id, assignment.user);
+  });
+
+  const primaryOwner =
+    candidacy.teamAssignments.find((assignment) => assignment.role === "owner" && assignment.isPrimary) ??
+    candidacy.teamAssignments.find((assignment) => assignment.role === "owner");
+
+  if (!primaryOwner) {
+    return {
+      teamOwnerSummary: "No owner assigned.",
+      teamOwnerId: undefined,
+      teamMemberCount: uniqueUsers.size
+    };
+  }
+
+  const ownerLabel = primaryOwner.user.name || primaryOwner.user.email;
+  const extraMembers = Math.max(0, uniqueUsers.size - 1);
+
+  return {
+    teamOwnerSummary: extraMembers > 0 ? `${ownerLabel} + ${extraMembers}` : ownerLabel,
+    teamOwnerId: primaryOwner.user.id,
+    teamMemberCount: uniqueUsers.size
+  };
+}
+
 function buildCandidateWhere(filters?: {
   roleId?: string;
   stage?: CandidateStage;
@@ -148,6 +214,28 @@ export async function listCandidates(filters?: {
           label: true,
           department: true
         }
+      },
+      departmentCandidacies: {
+        where: { status: "active" },
+        orderBy: { updatedAt: "desc" },
+        take: 3,
+        select: {
+          departmentId: true,
+          teamAssignments: {
+            where: { isActive: true },
+            select: {
+              role: true,
+              isPrimary: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        }
       }
     }
   });
@@ -161,6 +249,7 @@ export async function listCandidates(filters?: {
 
   const mapped = rows.map((row) => {
     const base = mapCandidate(row);
+    const teamSummary = summarizeCandidacyTeam(row.departmentCandidacies);
     const assessments = sortCandidateAssessmentsByLatestActivity(
       row.assessments.map((assessment) =>
         mapAssessment(
@@ -176,7 +265,8 @@ export async function listCandidates(filters?: {
       hasResume: row._count.resumes > 0,
       latestResumeStorageKey: row.resumes[0]?.storageKey ?? undefined,
       currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
-      latestAssessment: latest
+      latestAssessment: latest,
+      ...teamSummary
     } satisfies CandidateListItem;
   });
 
@@ -263,6 +353,31 @@ export async function listCandidateWorkspacePage(
         },
         department: {
           select: { id: true, name: true }
+        },
+        departmentCandidacies: {
+          where: {
+            status: "active",
+            ...(filters.departmentId ? { departmentId: filters.departmentId } : {})
+          },
+          orderBy: { updatedAt: "desc" },
+          take: filters.departmentId ? 1 : 3,
+          select: {
+            departmentId: true,
+            teamAssignments: {
+              where: { isActive: true },
+              select: {
+                role: true,
+                isPrimary: true,
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }),
@@ -278,6 +393,7 @@ export async function listCandidateWorkspacePage(
 
   const candidates = dbCandidates.map((row) => {
     const base = mapCandidate(row);
+    const teamSummary = summarizeCandidacyTeam(row.departmentCandidacies, filters.departmentId);
     const assessments = sortCandidateAssessmentsByLatestActivity(
       row.assessments.map((assessment) =>
         mapAssessment(
@@ -293,7 +409,8 @@ export async function listCandidateWorkspacePage(
       hasResume: row._count.resumes > 0,
       latestResumeStorageKey: row.resumes[0]?.storageKey ?? undefined,
       currentFocus: currentFocusFromMilestones(row.milestones.map((milestone) => mapMilestone(milestone))),
-      latestAssessment: latest
+      latestAssessment: latest,
+      ...teamSummary
     } satisfies CandidateListItem;
   });
 

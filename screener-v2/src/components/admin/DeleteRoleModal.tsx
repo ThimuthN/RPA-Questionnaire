@@ -1,11 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { RoleCatalog } from '@prisma/client';
+import { useEffect, useState } from 'react';
+
+type AccessRoleRecord = {
+  id: string;
+  label: string;
+  accessGrantCount?: number;
+};
 
 interface DeleteRoleModalProps {
   isOpen: boolean;
-  role: RoleCatalog & { _count?: { accessGrants: number } };
+  role: AccessRoleRecord;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -17,29 +22,30 @@ export default function DeleteRoleModal({ isOpen, role, onClose, onSuccess }: De
   const [deleteMode, setDeleteMode] = useState<'delete' | 'deactivate'>('deactivate');
 
   useEffect(() => {
-    if (isOpen && role) {
-      setError('');
-      setDeleteMode('deactivate');
-      // Use the count if available, otherwise load it
-      setGrantCount(role._count?.accessGrants || 0);
+    if (!isOpen) {
+      return;
     }
+
+    setError('');
+    setDeleteMode('deactivate');
+    setGrantCount(role.accessGrantCount ?? 0);
   }, [isOpen, role]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/roles/${role.id}`, {
+      const response = await fetch(`/api/roles/${role.id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: deleteMode })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to delete role');
+      const data = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.message || 'Failed to delete role');
       }
 
       onSuccess();
@@ -50,95 +56,86 @@ export default function DeleteRoleModal({ isOpen, role, onClose, onSuccess }: De
     }
   };
 
-  if (!isOpen || !role) return null;
+  if (!isOpen) return null;
 
   const hasActiveGrants = grantCount > 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[color:var(--app-surface)] rounded-xl max-w-md w-full">
-        <div className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Delete Role</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl bg-[color:var(--app-surface)]">
+        <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
+          <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Delete access role</h2>
           <button
             onClick={onClose}
-            className="text-[color:var(--app-muted)] hover:text-[color:var(--app-heading)] transition"
+            className="text-[color:var(--app-muted)] transition hover:text-[color:var(--app-heading)]"
+            type="button"
           >
-            ✕
+            ×
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-600">
+        <form onSubmit={handleSubmit} className="space-y-4 p-6">
+          {error ? (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
               {error}
             </div>
-          )}
+          ) : null}
 
-          <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-4">
-            <p className="text-sm font-medium text-red-700 mb-2">
-              Delete Role: {role.label}
-            </p>
-            <p className="text-xs text-red-600">
-              This action cannot be undone.
-            </p>
+          <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+            <p className="mb-2 text-sm font-medium text-red-700">Delete access role: {role.label}</p>
+            <p className="text-xs text-red-600">This action cannot be undone.</p>
           </div>
 
-          {hasActiveGrants && (
-            <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/30 p-4 space-y-3">
+          {hasActiveGrants ? (
+            <div className="space-y-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-4">
               <p className="text-sm font-medium text-yellow-700">
-                ⚠️ This role has {grantCount} active user assignment{grantCount !== 1 ? 's' : ''}
+                This access role has {grantCount} active grant{grantCount !== 1 ? 's' : ''}.
               </p>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-[color:var(--app-surface)] rounded transition">
+                <label className="flex cursor-pointer items-center gap-2 rounded p-2 transition hover:bg-[color:var(--app-surface)]">
                   <input
                     type="radio"
                     name="mode"
                     value="deactivate"
                     checked={deleteMode === 'deactivate'}
-                    onChange={(e) => setDeleteMode(e.target.value as any)}
-                    className="w-4 h-4 cursor-pointer"
+                    onChange={(event) => setDeleteMode(event.target.value as 'delete' | 'deactivate')}
+                    className="h-4 w-4"
                   />
                   <span className="text-sm text-yellow-700">
-                    Deactivate role (keeps grants inactive, allows reactivation)
+                    Deactivate the role and inactivate existing grants.
                   </span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-[color:var(--app-surface)] rounded transition">
+                <label className="flex cursor-pointer items-center gap-2 rounded p-2 transition hover:bg-[color:var(--app-surface)]">
                   <input
                     type="radio"
                     name="mode"
                     value="delete"
                     checked={deleteMode === 'delete'}
-                    onChange={(e) => setDeleteMode(e.target.value as any)}
-                    className="w-4 h-4 cursor-pointer"
+                    onChange={(event) => setDeleteMode(event.target.value as 'delete' | 'deactivate')}
+                    className="h-4 w-4"
                   />
-                  <span className="text-sm text-red-600 font-medium">
-                    Permanently delete (removes grants, cannot undo)
-                  </span>
+                  <span className="text-sm font-medium text-red-600">Permanently delete the role.</span>
                 </label>
               </div>
             </div>
+          ) : (
+            <p className="text-sm text-[color:var(--app-text)]">This access role has no active grants and can be deleted.</p>
           )}
 
-          {!hasActiveGrants && (
-            <p className="text-sm text-[color:var(--app-text)]">
-              This role has no active assignments and can be safely deleted.
-            </p>
-          )}
-
-          <div className="flex gap-3 justify-end border-t border-[color:var(--app-border)] pt-6">
+          <div className="flex justify-end gap-3 border-t border-[color:var(--app-border)] pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[color:var(--app-border)] text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)] transition"
+              className="rounded-lg border border-[color:var(--app-border)] px-4 py-2 text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="rounded-lg bg-red-600 px-4 py-2 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Processing...' : deleteMode === 'delete' ? 'Delete Permanently' : 'Deactivate Role'}
+              {loading ? 'Processing...' : deleteMode === 'delete' ? 'Delete permanently' : 'Deactivate role'}
             </button>
           </div>
         </form>

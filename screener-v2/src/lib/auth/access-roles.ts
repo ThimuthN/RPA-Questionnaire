@@ -12,8 +12,8 @@ export type ValidateAccessRoleResult =
  * Rules:
  * - If no roleId: ok true with role null
  * - Role must exist
- * - Role must belong to target department if specified
- * - Role must have at least one permission template
+ * - Role must be an active access role
+ * - Role must be valid for the target department or system scope
  * - Non-global managers can only assign roles within their own permission set
  */
 export async function validateAssignableAccessRole(
@@ -32,6 +32,14 @@ export async function validateAssignableAccessRole(
         id: true,
         label: true,
         departmentId: true,
+        kind: true,
+        applicability: true,
+        isActive: true,
+        dept: {
+          select: {
+            slug: true
+          }
+        },
         permissions: {
           select: {
             permission: true
@@ -48,24 +56,49 @@ export async function validateAssignableAccessRole(
       };
     }
 
-    if (targetDepartmentId && role.departmentId !== targetDepartmentId) {
+    if (role.kind !== "access_role") {
       return {
         ok: false,
         status: 400,
-        message: "Access role must belong to the selected department."
+        message: "Only access roles can be assigned."
+      };
+    }
+
+    if (!role.isActive) {
+      return {
+        ok: false,
+        status: 400,
+        message: "Selected access role is inactive."
+      };
+    }
+
+    if (targetDepartmentId) {
+      if (role.applicability === "system") {
+        return {
+          ok: false,
+          status: 400,
+          message: "System-only access roles cannot be assigned to a department."
+        };
+      }
+
+      const ownedByTargetDepartment = role.departmentId === targetDepartmentId;
+      const sharedSystemRole = role.applicability === "both" && role.dept?.slug === "system";
+      if (!ownedByTargetDepartment && !sharedSystemRole) {
+        return {
+          ok: false,
+          status: 400,
+          message: "Access role is not available for the selected department."
+        };
+      }
+    } else if (role.applicability === "department") {
+      return {
+        ok: false,
+        status: 400,
+        message: "Department-scoped access roles require a department."
       };
     }
 
     const rolePermissions = role.permissions.map((p: { permission: string }) => p.permission);
-
-    if (rolePermissions.length === 0) {
-      return {
-        ok: false,
-        status: 400,
-        message: "Selected access role has no permissions configured."
-      };
-    }
-
     const isGlobalManager = assignerSession.userId ? await hasGlobalPermission(assignerSession.userId, "manage_users") : false;
     if (!isGlobalManager) {
       const outsidePermission = rolePermissions.find((perm) => !assignerSession.permissions.includes(perm));

@@ -15,6 +15,11 @@ import {
 } from "@/lib/server/logger";
 import { prisma } from "@/lib/db/prisma";
 
+const teamAssignmentSchema = z.object({
+  userId: z.string(),
+  role: z.enum(["owner", "recruiter", "hiring_manager", "interviewer", "reviewer", "final_approver"])
+});
+
 const candidateSchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
@@ -24,18 +29,27 @@ const candidateSchema = z.object({
   positionAppliedFor: z.string().optional(),
   batchId: z.string().optional(),
   resumeSource: z.string().optional(),
-  hrOwner: z.string().optional(),
   hrOwnerId: z.string().optional(),
   stage: z.enum(candidateStageValues).default("pipeline"),
   nextAction: z.enum(candidateNextActionValues).default("none"),
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
   notesSummary: z.string().optional(),
-  teamUserIds: z.array(z.object({
-    userId: z.string(),
-    role: z.enum(["owner", "recruiter", "hiring_manager", "interviewer", "reviewer", "final_approver"])
-  })).optional()
+  teamTemplateId: z.string().optional().or(z.literal("")),
+  teamUserIds: z.array(teamAssignmentSchema).optional()
 });
+
+function normalizeCandidateBody(rawBody: Record<string, unknown>) {
+  const nextBody: Record<string, unknown> = { ...rawBody };
+  const rawTeamAssignments = rawBody.teamUserIds;
+
+  if (typeof rawTeamAssignments === "string") {
+    const trimmed = rawTeamAssignments.trim();
+    nextBody.teamUserIds = trimmed ? JSON.parse(trimmed) : [];
+  }
+
+  return candidateSchema.parse(nextBody);
+}
 
 export async function POST(request: Request) {
   const logContext = createRequestLogContext(request, "api.candidates.create");
@@ -46,37 +60,120 @@ export async function POST(request: Request) {
   const { session } = auth;
 
   const formRequest = isFormRequest(request);
-  const rawBody = formRequest ? Object.fromEntries((await request.formData()).entries()) : await request.json();
+  const rawBody = formRequest
+    ? Object.fromEntries((await request.formData()).entries())
+    : ((await request.json()) as Record<string, unknown>);
 
   try {
-    const body = candidateSchema.parse(rawBody);
+    const body = normalizeCandidateBody(rawBody);
 
     if (!body.roleId) {
-      throw new Error("Choose a role for this candidate.");
+      throw new Error("Choose a job designation for this candidate.");
     }
 
     const permissionCheck = await requirePermissionForDepartment(auth.session, "manage_candidates", body.departmentId);
     if (!permissionCheck.ok) return permissionCheck.response;
 
-    const [role, dept] = await Promise.all([
+    const [role, department, teamUsers] = await Promise.all([
       prisma.roleCatalog.findUnique({
         where: { id: body.roleId },
-        select: { id: true, departmentId: true }
+        select: { id: true, departmentId: true, kind: true }
       }),
       prisma.department.findUnique({
         where: { id: body.departmentId },
         select: { id: true }
+      }),
+      prisma.accessGrant.findMany({
+        where: {
+          departmentId: body.departmentId,
+          scope: "department",
+          status: "active",
+          user: {
+            is: {
+              isActive: true
+            }
+          }
+        },
+        select: {
+          userId: true
+        }
       })
     ]);
 
     if (!role) {
       throw new Error("Invalid roleId: role not found");
     }
-    if (!dept) {
+    if (role.kind !== "job_designation") {
+      throw new Error("Candidates must be registered against a job designation.");
+    }
+    if (!department) {
       throw new Error("Invalid departmentId: department not found");
     }
     if (role.departmentId !== body.departmentId) {
-      throw new Error("Role must belong to the selected department.");
+      throw new Error("Job designation must belong to the selected department.");
+    }
+
+    const availableTeamUserIds = new Set(teamUsers.map((grant) => grant.userId));
+    if (availableTeamUserIds.size === 0) {
+      throw new Error(`No team members found in this department. Add team members at /departments/${body.departmentId}/users first.`);
+    }
+
+    let normalizedAssignments: Array<{
+      userId: string;
+      role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver";
+      source: "template" | "manual";
+      templateId?: string;
+    }> = [];
+
+    if (body.teamTemplateId) {
+      const template = await prisma.hiringTeamTemplate.findFirst({
+        where: {
+          id: body.teamTemplateId,
+          departmentId: body.departmentId,
+          isActive: true
+        },
+        include: {
+          members: {
+            select: {
+              userId: true,
+              role: true
+            }
+          }
+        }
+      });
+
+      if (!template) {
+        throw new Error("Selected hiring team template was not found.");
+      }
+
+      if (!template.members.some((member) => member.role === "owner")) {
+        throw new Error("Selected hiring team template must include at least one owner.");
+      }
+
+      normalizedAssignments = template.members.map((member) => ({
+        userId: member.userId,
+        role: member.role,
+        source: "template" as const,
+        templateId: template.id
+      }));
+    } else if (body.teamUserIds?.length) {
+      if (!body.teamUserIds.some((teamUser) => teamUser.role === "owner")) {
+        throw new Error("Team must have at least one owner.");
+      }
+
+      normalizedAssignments = body.teamUserIds.map((teamUser) => ({
+        userId: teamUser.userId,
+        role: teamUser.role,
+        source: "manual" as const
+      }));
+    } else {
+      throw new Error("Select at least one hiring team owner before registering this candidate.");
+    }
+
+    for (const teamAssignment of normalizedAssignments) {
+      if (!availableTeamUserIds.has(teamAssignment.userId)) {
+        throw new Error("Every assigned hiring team member must have an active department access grant.");
+      }
     }
 
     if (body.hrOwnerId) {
@@ -89,41 +186,6 @@ export async function POST(request: Request) {
       }
     }
 
-    let teamUserIds: Array<{ userId: string; role: "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" }> | undefined;
-
-    if (body.teamUserIds && body.teamUserIds.length > 0) {
-      const hasOwner = body.teamUserIds.some((t) => t.role === "owner");
-      if (!hasOwner) {
-        throw new Error("Team must have at least one owner.");
-      }
-
-      for (const teamUser of body.teamUserIds) {
-        const user = await prisma.user.findUnique({
-          where: { id: teamUser.userId },
-          select: { id: true, isActive: true }
-        });
-        if (!user || !user.isActive) {
-          throw new Error(`Invalid team member: user ${teamUser.userId} not found or inactive.`);
-        }
-      }
-      teamUserIds = body.teamUserIds;
-    } else if (dept) {
-      const teamMembers = await prisma.accessGrant.findMany({
-        where: {
-          departmentId: body.departmentId,
-          scope: "department",
-          status: "active"
-        },
-        select: { userId: true }
-      });
-
-      if (teamMembers.length === 0) {
-        throw new Error(
-          `No team members found in this department. Please add team members before registering candidates.`
-        );
-      }
-    }
-
     const candidate = await createCandidate({
       fullName: body.fullName,
       email: body.email,
@@ -133,19 +195,18 @@ export async function POST(request: Request) {
       positionAppliedFor: body.positionAppliedFor,
       batchId: body.batchId,
       resumeSource: body.resumeSource,
-      hrOwner: body.hrOwner,
       hrOwnerId: body.hrOwnerId,
       candidateFolderUrl: body.candidateFolderUrl,
       notesSummary: body.notesSummary,
       stage: body.stage,
       nextAction: body.nextAction,
       screeningStatus: body.screeningStatus || undefined,
-      teamUserIds,
+      teamAssignments: normalizedAssignments,
       createMilestones: false
     });
 
     if (formRequest) {
-      const url = new URL(`/candidates/${candidate.id}`, request.url);
+      const url = new URL(`/people/candidates/${candidate.id}`, request.url);
       url.searchParams.set("created", "1");
       return NextResponse.redirect(url, 303);
     }
@@ -159,7 +220,7 @@ export async function POST(request: Request) {
     const message = messageFromError(error, "Could not create candidate.");
 
     if (formRequest) {
-      const url = new URL("/candidates/new", request.url);
+      const url = new URL("/people/candidates/new", request.url);
       url.searchParams.set("error", message);
       url.searchParams.set("requestId", logContext.requestId);
       const email = String((rawBody as Record<string, unknown>)?.email || "").trim().toLowerCase();

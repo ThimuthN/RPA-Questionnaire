@@ -4,6 +4,7 @@ import { requireAdminPageSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { CreateUserModal } from "@/components/admin/CreateUserModal";
 import { GrantAccessModal } from "@/components/admin/GrantAccessModal";
+import { listAccessRoles } from "@/lib/roles/catalog";
 
 export default async function UserManagementPage() {
   await requireAdminPageSession("/users");
@@ -32,14 +33,7 @@ export default async function UserManagementPage() {
       where: { isActive: true },
       orderBy: { sortOrder: "asc" }
     }),
-    prisma.roleCatalog.findMany({
-      where: {
-        kind: "access_role",
-        isActive: true
-      },
-      select: { id: true, label: true, slug: true },
-      orderBy: { sortOrder: "asc" }
-    })
+    listAccessRoles()
   ]);
 
   return (

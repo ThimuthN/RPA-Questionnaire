@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { Modal } from "@/components/primitives/Modal";
@@ -17,7 +17,12 @@ interface Role {
   id: string;
   label: string;
   slug: string;
-  permissions?: string[];
+  applicability?: string;
+}
+
+interface RolesResponse {
+  ok?: boolean;
+  roles?: Role[];
 }
 
 export function GrantAccessModal({
@@ -38,10 +43,54 @@ export function GrantAccessModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
+  const [departmentRoles, setDepartmentRoles] = useState<Role[]>([]);
+  const [loadingDepartmentRoles, setLoadingDepartmentRoles] = useState(false);
 
-  // Filter roles by applicability
   const systemApplicableRoles = filterRolesByApplicability(systemRoles, "system");
-  const departmentApplicableRoles = filterRolesByApplicability(systemRoles, "department");
+  const departmentApplicableRoles = filterRolesByApplicability(departmentRoles, "department");
+
+  useEffect(() => {
+    if (grantType !== "department" || !selectedDepartment) {
+      setDepartmentRoles([]);
+      return;
+    }
+
+    let ignore = false;
+
+    const loadDepartmentRoles = async () => {
+      setLoadingDepartmentRoles(true);
+      try {
+        const response = await fetch(
+          `/api/roles?kind=access_role&scope=department&departmentId=${encodeURIComponent(selectedDepartment)}`
+        );
+        const data = (await response.json().catch(() => ({}))) as RolesResponse;
+
+        if (ignore) {
+          return;
+        }
+
+        if (response.ok && data.ok && Array.isArray(data.roles)) {
+          setDepartmentRoles(data.roles);
+        } else {
+          setDepartmentRoles([]);
+        }
+      } catch {
+        if (!ignore) {
+          setDepartmentRoles([]);
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingDepartmentRoles(false);
+        }
+      }
+    };
+
+    void loadDepartmentRoles();
+
+    return () => {
+      ignore = true;
+    };
+  }, [grantType, selectedDepartment]);
 
   async function handleGrant() {
     setError("");
@@ -155,7 +204,10 @@ export function GrantAccessModal({
                   type="radio"
                   value="system"
                   checked={grantType === "system"}
-                  onChange={(e) => setGrantType(e.target.value as "system" | "department")}
+                  onChange={(e) => {
+                    setGrantType(e.target.value as "system" | "department");
+                    setSelectedRole("");
+                  }}
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-[color:var(--app-text)]">System access</span>
@@ -165,7 +217,10 @@ export function GrantAccessModal({
                   type="radio"
                   value="department"
                   checked={grantType === "department"}
-                  onChange={(e) => setGrantType(e.target.value as "system" | "department")}
+                  onChange={(e) => {
+                    setGrantType(e.target.value as "system" | "department");
+                    setSelectedRole("");
+                  }}
                   className="h-4 w-4"
                 />
                 <span className="text-sm text-[color:var(--app-text)]">Department access</span>
@@ -212,7 +267,10 @@ export function GrantAccessModal({
                 </label>
                 <select
                   value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedDepartment(e.target.value);
+                    setSelectedRole("");
+                  }}
                   disabled={isSubmitting}
                   className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50"
                 >
@@ -230,13 +288,17 @@ export function GrantAccessModal({
                 </label>
                 {departmentApplicableRoles.length === 0 ? (
                   <div className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-xs text-[color:var(--app-muted)]">
-                    No department roles configured.
+                    {!selectedDepartment
+                      ? "Select a department to load access roles."
+                      : loadingDepartmentRoles
+                        ? "Loading department access roles..."
+                        : "No department access roles configured."}
                   </div>
                 ) : (
                   <select
                     value={selectedRole}
                     onChange={(e) => setSelectedRole(e.target.value)}
-                    disabled={isSubmitting || !selectedDepartment}
+                    disabled={isSubmitting || !selectedDepartment || loadingDepartmentRoles}
                     className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] disabled:opacity-50"
                   >
                     <option value="">Select role...</option>

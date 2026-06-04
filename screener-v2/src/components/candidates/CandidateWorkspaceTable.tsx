@@ -247,7 +247,7 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span className="truncate">{candidate.hrOwner || "Unassigned"}</span>
+                      <span className="truncate">{candidate.teamOwnerSummary || "No owner assigned."}</span>
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">

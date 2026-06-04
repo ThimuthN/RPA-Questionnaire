@@ -8,6 +8,7 @@ import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { listAccessRoles } from "@/lib/roles/catalog";
 import { notFound } from "next/navigation";
 
 export default async function DepartmentUsersPage({
@@ -51,16 +52,9 @@ export default async function DepartmentUsersPage({
       },
       orderBy: { user: { name: "asc" } }
     }),
-    prisma.roleCatalog.findMany({
-      where: { departmentId: id, isActive: true, kind: "access_role" },
-      select: {
-        id: true,
-        label: true,
-        permissions: {
-          select: { permission: true }
-        }
-      },
-      orderBy: { sortOrder: "asc" }
+    listAccessRoles({
+      departmentId: id,
+      scope: "department"
     }),
     prisma.hiringTeamTemplate.findMany({
       where: { departmentId: id, isActive: true },
@@ -169,7 +163,7 @@ export default async function DepartmentUsersPage({
                         roles={roles.map((role) => ({
                           id: role.id,
                           label: role.label,
-                          permissions: role.permissions.map((permission) => permission.permission)
+                          permissions: role.permissions ?? []
                         }))}
                       />
                     </td>

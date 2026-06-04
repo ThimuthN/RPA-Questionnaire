@@ -1,54 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { APP_ACTIONS, APP_ACTION_LABELS } from '@/lib/auth/permissions';
 
 interface CreateRoleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  defaultDepartmentId?: string;
+  defaultApplicability?: 'system' | 'department' | 'both';
+  allowSystemOnly?: boolean;
 }
 
-export default function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRoleModalProps) {
+const emptyForm = {
+  label: '',
+  slug: '',
+  description: '',
+  applicability: 'department' as const,
+  permissions: [] as string[]
+};
+
+export default function CreateRoleModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  defaultDepartmentId,
+  defaultApplicability = 'department',
+  allowSystemOnly = true
+}: CreateRoleModalProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    label: '',
-    slug: '',
-    description: '',
-    applicability: 'department' as const,
-    permissions: [] as string[]
+    ...emptyForm,
+    applicability: defaultApplicability
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setFormData({
+      ...emptyForm,
+      applicability: defaultApplicability
+    });
+    setError('');
+  }, [defaultApplicability, isOpen]);
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
   };
 
   const handlePermissionChange = (permission: string) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter(p => p !== permission)
-        : [...prev.permissions, permission]
+    setFormData((current) => ({
+      ...current,
+      permissions: current.permissions.includes(permission)
+        ? current.permissions.filter((value) => value !== permission)
+        : [...current.permissions, permission]
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const applicabilityOptions = allowSystemOnly
+    ? [
+        { value: 'system', label: 'System Only (system-wide grants)' },
+        { value: 'department', label: 'Department Only (department-scoped grants)' },
+        { value: 'both', label: 'Both (system and department grants)' }
+      ]
+    : [
+        { value: 'department', label: 'Department Only (department-scoped grants)' },
+        { value: 'both', label: 'Both (system and department grants)' }
+      ];
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await fetch('/api/roles', {
+      const response = await fetch('/api/roles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          kind: 'access_role',
+          departmentId: defaultDepartmentId
+        })
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to create role');
+      const data = (await response.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+      if (!response.ok || data.ok === false) {
+        throw new Error(data.message || 'Failed to create role');
       }
 
       onSuccess();
@@ -62,100 +104,95 @@ export default function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRo
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-[color:var(--app-surface)] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Create New Role</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-[color:var(--app-surface)]">
+        <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
+          <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Create access role</h2>
           <button
             onClick={onClose}
-            className="text-[color:var(--app-muted)] hover:text-[color:var(--app-heading)] transition"
+            className="text-[color:var(--app-muted)] transition hover:text-[color:var(--app-heading)]"
+            type="button"
           >
-            ✕
+            ×
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/30 p-3 text-sm text-red-600">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6">
+          {error ? (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
               {error}
             </div>
-          )}
+          ) : null}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[color:var(--app-heading)] mb-2">
-                Role Name *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Role name *</label>
               <input
                 type="text"
                 name="label"
                 value={formData.label}
                 onChange={handleChange}
-                placeholder="e.g., Senior Hiring Lead"
+                placeholder="e.g. Senior Hiring Lead"
                 required
-                className="w-full px-3 py-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
+                className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[color:var(--app-heading)] mb-2">
-                Slug *
-              </label>
+              <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Slug *</label>
               <input
                 type="text"
                 name="slug"
                 value={formData.slug}
                 onChange={handleChange}
                 placeholder="senior-hiring-lead"
-                pattern="^[a-z0-9_-]+$"
                 title="Lowercase, numbers, hyphens, and underscores only"
                 required
-                className="w-full px-3 py-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
+                className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[color:var(--app-heading)] mb-2">
-              Description
-            </label>
+            <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Description</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe this role's purpose and responsibilities"
+              placeholder="Describe what this access role allows."
               rows={3}
-              className="w-full px-3 py-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
+              className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] placeholder-[color:var(--app-muted)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[color:var(--app-heading)] mb-2">
-              Applicability *
-            </label>
+            <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Applicability *</label>
             <select
               name="applicability"
               value={formData.applicability}
               onChange={handleChange}
-              className="w-full px-3 py-2 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
+              className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
             >
-              <option value="system">System Only (system-wide grants)</option>
-              <option value="department">Department Only (department-scoped grants)</option>
-              <option value="both">Both (system and department grants)</option>
+              {applicabilityOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[color:var(--app-heading)] mb-3">
-              Permissions
-            </label>
-            <div className="space-y-2 max-h-64 overflow-y-auto border border-[color:var(--app-border)] rounded-lg p-4 bg-[color:var(--app-surface-soft)]">
-              {APP_ACTIONS.map(action => (
-                <label key={action} className="flex items-center gap-2 cursor-pointer hover:bg-[color:var(--app-surface)] p-2 rounded transition">
+            <label className="mb-3 block text-sm font-medium text-[color:var(--app-heading)]">Permissions</label>
+            <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+              {APP_ACTIONS.map((action) => (
+                <label
+                  key={action}
+                  className="flex cursor-pointer items-center gap-2 rounded p-2 transition hover:bg-[color:var(--app-surface)]"
+                >
                   <input
                     type="checkbox"
                     checked={formData.permissions.includes(action)}
                     onChange={() => handlePermissionChange(action)}
-                    className="w-4 h-4 rounded border-[color:var(--app-border)] cursor-pointer"
+                    className="h-4 w-4 rounded border-[color:var(--app-border)]"
                   />
                   <span className="text-sm text-[color:var(--app-text)]">
                     {APP_ACTION_LABELS[action as keyof typeof APP_ACTION_LABELS]}
@@ -165,20 +202,20 @@ export default function CreateRoleModal({ isOpen, onClose, onSuccess }: CreateRo
             </div>
           </div>
 
-          <div className="flex gap-3 justify-end border-t border-[color:var(--app-border)] pt-6">
+          <div className="flex justify-end gap-3 border-t border-[color:var(--app-border)] pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[color:var(--app-border)] text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)] transition"
+              className="rounded-lg border border-[color:var(--app-border)] px-4 py-2 text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !formData.label || !formData.slug}
-              className="px-4 py-2 rounded-lg bg-[color:var(--app-primary)] text-white hover:bg-[color:var(--app-primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="rounded-lg bg-[color:var(--app-primary)] px-4 py-2 text-white transition hover:bg-[color:var(--app-primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Create Role'}
+              {loading ? 'Creating...' : 'Create access role'}
             </button>
           </div>
         </form>

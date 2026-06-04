@@ -14,11 +14,6 @@ export default async function DepartmentDesignationsPage({
     getDepartment(id),
     prisma.roleCatalog.findMany({
       where: { departmentId: id, isActive: true, kind: "job_designation" },
-      include: {
-        permissions: {
-          select: { permission: true }
-        }
-      },
       orderBy: { sortOrder: "asc" }
     })
   ]);
@@ -41,7 +36,7 @@ export default async function DepartmentDesignationsPage({
         description: role.description ?? undefined,
         experienceLevel: role.experienceLevel ?? undefined,
         requirements: role.requirements ?? undefined,
-        permissions: role.permissions.map((permission) => permission.permission),
+        permissions: [],
         isActive: role.isActive
       }))}
     />
