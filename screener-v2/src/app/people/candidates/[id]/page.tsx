@@ -289,24 +289,28 @@ export default async function CandidateDetailPage({
         }
       } else {
         // No application - try to get users from department candidacy
-        const candidacy = await prisma.departmentCandidacy.findFirst({
-          where: { candidateId: candidate.id, status: "active" },
-          select: { departmentId: true }
-        });
-
-        if (candidacy?.departmentId) {
-          const grants = await prisma.accessGrant.findMany({
-            where: {
-              departmentId: candidacy.departmentId,
-              scope: "department",
-              status: "active"
-            },
-            select: {
-              user: { select: { id: true, name: true, email: true } }
-            },
-            orderBy: { user: { name: "asc" } }
+        try {
+          const candidacy = await prisma.departmentCandidacy.findFirst({
+            where: { candidateId: candidate.id, status: "active" },
+            select: { departmentId: true }
           });
-          return grants.map(g => g.user);
+
+          if (candidacy?.departmentId) {
+            const grants = await prisma.accessGrant.findMany({
+              where: {
+                departmentId: candidacy.departmentId,
+                scope: "department",
+                status: "active"
+              },
+              select: {
+                user: { select: { id: true, name: true, email: true } }
+              },
+              orderBy: { user: { name: "asc" } }
+            });
+            return grants.map(g => g.user);
+          }
+        } catch (error) {
+          return [];
         }
 
         return [];
@@ -314,20 +318,24 @@ export default async function CandidateDetailPage({
     })(),
     (async () => {
       // Load DepartmentCandidacy with team assignments
-      const activeCandidacy = await prisma.departmentCandidacy.findFirst({
-        where: { candidateId: candidate.id, status: "active" },
-        include: {
-          teamAssignments: {
-            where: { isActive: true },
-            include: {
-              user: {
-                select: { id: true, name: true, email: true }
+      try {
+        const activeCandidacy = await prisma.departmentCandidacy.findFirst({
+          where: { candidateId: candidate.id, status: "active" },
+          include: {
+            teamAssignments: {
+              where: { isActive: true },
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true }
+                }
               }
             }
           }
-        }
-      });
-      return activeCandidacy;
+        });
+        return activeCandidacy;
+      } catch (error) {
+        return null;
+      }
     })()
   ]);
   const hasResponsibleAssignments = assignments.length > 0;
