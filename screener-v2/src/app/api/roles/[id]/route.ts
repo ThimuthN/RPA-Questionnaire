@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
 import { APP_ACTIONS } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -42,7 +42,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return auth.response;
   }
 
-  const permission = await requirePermission(auth.session, "edit_role");
+  const permission = await requireRoleManagePermission(auth.session, "edit_role");
   if (!permission.ok) {
     return permission.response;
   }
@@ -116,7 +116,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return auth.response;
   }
 
-  const permission = await requirePermission(auth.session, "delete_role");
+  const permission = await requireRoleManagePermission(auth.session, "delete_role");
   if (!permission.ok) {
     return permission.response;
   }

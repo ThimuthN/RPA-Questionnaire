@@ -2,7 +2,12 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/auth/guards", () => ({
   requireApiSession: vi.fn(),
-  requirePermission: vi.fn()
+  requirePermission: vi.fn(),
+  requireRoleManagePermission: vi.fn()
+}));
+
+vi.mock("@/lib/auth/permission-evaluator", () => ({
+  isSystemAdmin: vi.fn()
 }));
 
 vi.mock("@/lib/roles/catalog", () => ({
@@ -28,8 +33,9 @@ vi.mock("@/lib/db/prisma", () => ({
   }
 }));
 
-import { GET } from "./route";
-import { requireApiSession } from "@/lib/auth/guards";
+import { GET, POST } from "./route";
+import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
+import { isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { getRoleUsageCounts, listAccessRoles, listRoleCatalog } from "@/lib/roles/catalog";
 
 describe("/api/roles GET contract", () => {
@@ -42,6 +48,8 @@ describe("/api/roles GET contract", () => {
         permissions: ["manage_users", "create_role", "edit_role"]
       }
     } as never);
+    vi.mocked(isSystemAdmin).mockResolvedValue(false);
+    vi.mocked(requireRoleManagePermission).mockResolvedValue({ ok: true } as never);
   });
 
   it("returns access roles in the consistent { ok, roles } shape", async () => {
@@ -103,5 +111,96 @@ describe("/api/roles GET contract", () => {
         })
       ]
     });
+  });
+
+  it("allows System Admin to list access roles without explicit role permissions", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({
+      ok: true,
+      session: { userId: "admin-1", permissions: [] }
+    } as never);
+    vi.mocked(isSystemAdmin).mockResolvedValue(true);
+    vi.mocked(listAccessRoles).mockResolvedValueOnce([]);
+
+    const response = await GET(new Request("http://localhost/api/roles?kind=access_role"));
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.ok).toBe(true);
+  });
+
+  it("blocks non-admin without role permissions from listing access roles", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({
+      ok: true,
+      session: { userId: "user-2", permissions: [] }
+    } as never);
+    vi.mocked(isSystemAdmin).mockResolvedValue(false);
+
+    const response = await GET(new Request("http://localhost/api/roles?kind=access_role"));
+    const data = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(data.ok).toBe(false);
+  });
+});
+
+describe("/api/roles POST System Admin bypass", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(isSystemAdmin).mockResolvedValue(false);
+  });
+
+  it("allows System Admin to create a role even with no explicit create_role permission", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({
+      ok: true,
+      session: { userId: "admin-1", permissions: [] }
+    } as never);
+    vi.mocked(requireRoleManagePermission).mockResolvedValue({ ok: true } as never);
+
+    await POST(
+      new Request("http://localhost/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "access_role",
+          label: "Test Role",
+          slug: "test-role",
+          applicability: "department"
+        })
+      })
+    );
+
+    expect(requireRoleManagePermission).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "admin-1" }),
+      "create_role"
+    );
+  });
+
+  it("blocks a non-admin user without create_role permission", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({
+      ok: true,
+      session: { userId: "user-2", permissions: [] }
+    } as never);
+    vi.mocked(requireRoleManagePermission).mockResolvedValue({
+      ok: false,
+      response: new Response(JSON.stringify({ ok: false, message: "Permission denied: create_role" }), { status: 403 })
+    } as never);
+
+    const response = await POST(
+      new Request("http://localhost/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: "access_role",
+          label: "Test Role",
+          slug: "test-role",
+          applicability: "department"
+        })
+      })
+    );
+
+    expect(response.status).toBe(403);
+    const data = await response.json();
+    expect(data.ok).toBe(false);
+    expect(data.message).toContain("Permission denied");
   });
 });

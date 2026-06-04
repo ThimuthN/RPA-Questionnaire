@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { DataTable } from "@/components/primitives/DataTable";
@@ -39,7 +40,7 @@ export default async function DepartmentJobsPage({
             Manage job posts and review applicant queue.
           </p>
         </div>
-        <Link href="/people/candidates/jobs/new">
+        <Link href={`/departments/${id}/jobs/new` as Route}>
           <Button>Create job</Button>
         </Link>
       </div>

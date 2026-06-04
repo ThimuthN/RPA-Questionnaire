@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { APP_ACTIONS, APP_ACTION_LABELS } from '@/lib/auth/permissions';
 
 type AccessRoleRecord = {
@@ -22,6 +23,7 @@ interface EditRoleModalProps {
 }
 
 export default function EditRoleModal({ isOpen, role, onClose, onSuccess }: EditRoleModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [permissionsChanged, setPermissionsChanged] = useState(false);
@@ -31,6 +33,20 @@ export default function EditRoleModal({ isOpen, role, onClose, onSuccess }: Edit
     applicability: 'department' as AccessRoleApplicability,
     permissions: [] as string[]
   });
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -94,12 +110,13 @@ export default function EditRoleModal({ isOpen, role, onClose, onSuccess }: Edit
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-[color:var(--app-surface)]">
-        <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-[color:var(--app-surface)]">
+        {/* Header — always visible */}
+        <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--app-border)] p-6">
           <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Edit access role: {role.label}</h2>
           <button
             onClick={onClose}
@@ -110,86 +127,92 @@ export default function EditRoleModal({ isOpen, role, onClose, onSuccess }: Edit
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 p-6">
-          {error ? (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
-              {error}
-            </div>
-          ) : null}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          {/* Scrollable body */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            <div className="space-y-6">
+              {error ? (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
+                  {error}
+                </div>
+              ) : null}
 
-          {permissionsChanged ? (
-            <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700">
-              Changing permissions updates what users with this access role can do immediately.
-            </div>
-          ) : null}
+              {permissionsChanged ? (
+                <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-700">
+                  Changing permissions updates what users with this access role can do immediately.
+                </div>
+              ) : null}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Role name *</label>
-              <input
-                type="text"
-                name="label"
-                value={formData.label}
-                onChange={handleChange}
-                required
-                className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Slug (read-only)</label>
-              <input
-                type="text"
-                value={role.slug}
-                disabled
-                className="w-full cursor-not-allowed rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-muted)]"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={3}
-              className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Applicability</label>
-            <input
-              type="text"
-              value={`${formData.applicability.charAt(0).toUpperCase()}${formData.applicability.slice(1)}`}
-              disabled
-              className="w-full cursor-not-allowed rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-muted)]"
-            />
-          </div>
-
-          <div>
-            <label className="mb-3 block text-sm font-medium text-[color:var(--app-heading)]">Permissions</label>
-            <div className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-              {APP_ACTIONS.map((action) => (
-                <label
-                  key={action}
-                  className="flex cursor-pointer items-center gap-2 rounded p-2 transition hover:bg-[color:var(--app-surface)]"
-                >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Role name *</label>
                   <input
-                    type="checkbox"
-                    checked={formData.permissions.includes(action)}
-                    onChange={() => handlePermissionChange(action)}
-                    className="h-4 w-4 rounded border-[color:var(--app-border)]"
+                    type="text"
+                    name="label"
+                    value={formData.label}
+                    onChange={handleChange}
+                    required
+                    className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
                   />
-                  <span className="text-sm text-[color:var(--app-text)]">
-                    {APP_ACTION_LABELS[action as keyof typeof APP_ACTION_LABELS]}
-                  </span>
-                </label>
-              ))}
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Slug (read-only)</label>
+                  <input
+                    type="text"
+                    value={role.slug}
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-muted)]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="w-full rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-input-bg)] px-3 py-2 text-[color:var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--app-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[color:var(--app-heading)]">Applicability</label>
+                <input
+                  type="text"
+                  value={`${formData.applicability.charAt(0).toUpperCase()}${formData.applicability.slice(1)}`}
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-[color:var(--app-muted)]"
+                />
+              </div>
+
+              <div>
+                <label className="mb-3 block text-sm font-medium text-[color:var(--app-heading)]">Permissions</label>
+                <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3">
+                  {APP_ACTIONS.map((action) => (
+                    <label
+                      key={action}
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition hover:bg-[color:var(--app-surface)]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.permissions.includes(action)}
+                        onChange={() => handlePermissionChange(action)}
+                        className="h-4 w-4 shrink-0 rounded border-[color:var(--app-border)]"
+                      />
+                      <span className="text-sm text-[color:var(--app-text)]">
+                        {APP_ACTION_LABELS[action as keyof typeof APP_ACTION_LABELS]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-[color:var(--app-border)] pt-6">
+          {/* Footer — always visible */}
+          <div className="flex shrink-0 justify-end gap-3 border-t border-[color:var(--app-border)] p-6">
             <button
               type="button"
               onClick={onClose}
@@ -207,6 +230,7 @@ export default function EditRoleModal({ isOpen, role, onClose, onSuccess }: Edit
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

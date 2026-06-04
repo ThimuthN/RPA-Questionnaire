@@ -36,11 +36,13 @@ export function resolveCurrentWorkspace({
   isAdmin: boolean;
   visibleDepartments: Department[];
 }) {
+  // 1. Route segment always wins: /departments/[id]/...
   const routedDepartmentId = routeWorkspaceDepartmentId(pathname);
   if (routedDepartmentId) {
     return routedDepartmentId;
   }
 
+  // 2. workspaceId param (candidate profile paths)
   const workspaceId =
     isCandidateProfilePath(pathname)
       ? searchParams?.get("workspaceId")?.trim() || undefined
@@ -49,6 +51,15 @@ export function resolveCurrentWorkspace({
     return workspaceId;
   }
 
+  // 3. Explicit departmentId search param (e.g. /people/candidates/new?departmentId=ba-sl)
+  //    Resolves the workspace to that department so the rail stays on the correct workspace
+  //    instead of defaulting to Admin Workspace.
+  const paramDepartmentId = searchParams?.get("departmentId")?.trim() || undefined;
+  if (paramDepartmentId && visibleDepartments.some((department) => department.isActive && department.id === paramDepartmentId)) {
+    return paramDepartmentId;
+  }
+
+  // 4. Admin routes (only when no explicit department context present)
   const isAdminRoute =
     pathname === "/departments" || pathname.startsWith("/people/") || pathname.startsWith("/assessments");
   if (isAdminRoute && isAdmin) {

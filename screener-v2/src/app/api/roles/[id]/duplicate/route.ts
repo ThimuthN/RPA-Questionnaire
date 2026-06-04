@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getRoleCatalogEntry } from "@/lib/roles/catalog";
 
@@ -42,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return auth.response;
   }
 
-  const permission = await requirePermission(auth.session, "create_role");
+  const permission = await requireRoleManagePermission(auth.session, "create_role");
   if (!permission.ok) {
     return permission.response;
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type AccessRoleRecord = {
   id: string;
@@ -16,10 +17,25 @@ interface DeleteRoleModalProps {
 }
 
 export default function DeleteRoleModal({ isOpen, role, onClose, onSuccess }: DeleteRoleModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [grantCount, setGrantCount] = useState(0);
   const [deleteMode, setDeleteMode] = useState<'delete' | 'deactivate'>('deactivate');
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -56,11 +72,11 @@ export default function DeleteRoleModal({ isOpen, role, onClose, onSuccess }: De
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const hasActiveGrants = grantCount > 0;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-md rounded-xl bg-[color:var(--app-surface)]">
         <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
@@ -140,6 +156,7 @@ export default function DeleteRoleModal({ isOpen, role, onClose, onSuccess }: De
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

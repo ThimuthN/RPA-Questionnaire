@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { APP_ACTION_LABELS } from '@/lib/auth/permissions';
 
 const PERMISSION_GROUPS = {
@@ -23,11 +25,27 @@ interface Props {
 }
 
 export default function PermissionsViewModal({ isOpen, role, onClose }: Props) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const permissions = new Set(role.permissions ?? []);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="w-full max-w-2xl rounded-xl bg-[color:var(--app-surface)]">
         <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
@@ -84,6 +102,7 @@ export default function PermissionsViewModal({ isOpen, role, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

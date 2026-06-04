@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
+import { isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { APP_ACTIONS } from "@/lib/auth/permissions";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -91,7 +92,9 @@ export async function GET(request: Request) {
   const normalizedScope = scope === "system" || scope === "department" ? scope : undefined;
 
   if (kind === "access_role") {
+    const sysAdmin = auth.session.userId ? await isSystemAdmin(auth.session.userId) : false;
     const canManageRoles =
+      sysAdmin ||
       auth.session.permissions?.includes("manage_users") ||
       auth.session.permissions?.includes("create_role") ||
       auth.session.permissions?.includes("edit_role");
@@ -133,7 +136,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const isAccessRole = body.kind === "access_role" || body.applicability !== undefined;
-  const permission = await requirePermission(auth.session, "create_role");
+  const permission = await requireRoleManagePermission(auth.session, "create_role");
   if (!permission.ok) {
     return permission.response;
   }

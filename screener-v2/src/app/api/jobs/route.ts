@@ -4,6 +4,15 @@ import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { createJobPosting } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
 
+const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
+
+function sanitizeReturnTo(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (ALLOWED_RETURN_PATHS.some((prefix) => trimmed.startsWith(prefix))) return trimmed;
+  return undefined;
+}
+
 const jobSchema = z.object({
   title: z.string().min(2),
   roleId: z.string().min(1, "A role is required."),
@@ -16,7 +25,8 @@ const jobSchema = z.object({
   techStack: z.string().optional(),
   remotePolicy: z.string().optional(),
   isPublished: z.string().optional(),
-  isOpen: z.string().optional()
+  isOpen: z.string().optional(),
+  returnTo: z.string().optional()
 });
 
 export async function POST(request: Request) {
@@ -29,9 +39,11 @@ export async function POST(request: Request) {
     return permission.response;
   }
   const wantsJson = request.headers.get("accept")?.includes("application/json");
+  const rawForm = Object.fromEntries((await request.formData()).entries());
+  const returnTo = sanitizeReturnTo(rawForm.returnTo);
 
   try {
-    const body = jobSchema.parse(Object.fromEntries((await request.formData()).entries()));
+    const body = jobSchema.parse(rawForm);
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
       throw new Error("Description should be at least 20 characters.");
@@ -51,15 +63,20 @@ export async function POST(request: Request) {
       isOpen: body.isOpen === "on"
     });
 
-    const url = new URL("/people/candidates/jobs", request.url);
+    const successPath = returnTo ?? "/people/candidates/jobs";
+    const url = new URL(successPath, request.url);
     url.searchParams.set("created", "1");
     if (wantsJson) {
       return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
     }
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const url = new URL("/people/candidates/jobs/new", request.url);
+    const errorBase = returnTo
+      ? `/departments/${returnTo.split("/departments/")[1]?.split("/")[0]}/jobs/new`
+      : "/people/candidates/jobs/new";
+    const url = new URL(errorBase, request.url);
     url.searchParams.set("error", error instanceof Error ? error.message : "Could not create job.");
+    if (returnTo) url.searchParams.set("returnTo", returnTo);
     if (wantsJson) {
       return NextResponse.json(
         { ok: false, message: error instanceof Error ? error.message : "Could not create job.", next: `${url.pathname}${url.search}` },

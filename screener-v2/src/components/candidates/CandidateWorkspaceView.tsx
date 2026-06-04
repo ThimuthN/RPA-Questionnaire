@@ -229,7 +229,7 @@ export async function CandidateWorkspaceView({
               <div className="flex flex-wrap items-center gap-3">
                 <Link href={
                   (scope === "department" && departmentId
-                    ? `/people/candidates/new?departmentId=${departmentId}`
+                    ? `/departments/${departmentId}/candidates/new`
                     : "/people/candidates/new") as Route
                 }>
                   <Button>Add candidate</Button>
@@ -349,7 +349,11 @@ export async function CandidateWorkspaceView({
             </p>
             <div className="flex flex-wrap gap-3">
               {canManageCandidates ? (
-                <Link href="/people/candidates/new">
+                <Link href={
+                  (scope === "department" && departmentId
+                    ? `/departments/${departmentId}/candidates/new`
+                    : "/people/candidates/new") as Route
+                }>
                   <Button>Add candidate</Button>
                 </Link>
               ) : null}

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/auth/guards", () => ({
   requireApiSession: vi.fn(),
-  requirePermission: vi.fn()
+  requirePermission: vi.fn(),
+  requireRoleManagePermission: vi.fn()
 }));
 
 vi.mock("@/lib/db/prisma", () => ({
@@ -23,7 +24,7 @@ vi.mock("@/lib/roles/catalog", () => ({
 }));
 
 import { POST } from "./route";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requireRoleManagePermission } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getRoleCatalogEntry } from "@/lib/roles/catalog";
 
@@ -34,7 +35,7 @@ describe("/api/roles/[id]/duplicate", () => {
       ok: true,
       session: { userId: "user-1", permissions: ["create_role"] }
     } as never);
-    vi.mocked(requirePermission).mockResolvedValue({ ok: true } as never);
+    vi.mocked(requireRoleManagePermission).mockResolvedValue({ ok: true } as never);
   });
 
   it("returns a useful slug collision message and suggestion", async () => {

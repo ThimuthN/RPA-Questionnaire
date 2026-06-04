@@ -13,7 +13,8 @@ export function JobPostingForm({
   cancelHref,
   job,
   roleOptions = [],
-  presetOptions = []
+  presetOptions = [],
+  returnTo
 }: {
   action: string;
   submitLabel: string;
@@ -21,9 +22,11 @@ export function JobPostingForm({
   job?: JobPostingListItem | null;
   roleOptions?: RolePickerOption[];
   presetOptions?: { id: string; label: string }[];
+  returnTo?: string;
 }) {
   return (
     <form action={action} method="post" className="space-y-4">
+      {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Job title</span>
         <input

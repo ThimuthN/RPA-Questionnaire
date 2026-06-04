@@ -50,4 +50,59 @@ describe("resolveCurrentWorkspace", () => {
 
     expect(workspace).toBe("dept-2");
   });
+
+  it("resolves departmentId search param on /people routes to that department workspace", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/people/candidates/new",
+      searchParams: new URLSearchParams("departmentId=dept-1"),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("dept-1");
+  });
+
+  it("falls back to admin when departmentId param does not match a visible department", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/people/candidates/new",
+      searchParams: new URLSearchParams("departmentId=dept-missing"),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("falls back to admin when /people route has no departmentId param", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/people/candidates/new",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("resolves /departments/[id]/jobs/new to that department", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/departments/dept-1/jobs/new",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("dept-1");
+  });
+
+  it("resolves /departments/[id]/candidates/new to that department", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/departments/dept-2/candidates/new",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("dept-2");
+  });
 });
