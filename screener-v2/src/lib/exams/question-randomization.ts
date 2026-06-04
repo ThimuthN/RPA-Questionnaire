@@ -131,6 +131,10 @@ export function randomizeExamQuestion(question: ExamQuestion, seedKey: string): 
     return randomizeCompositeQuestion(question, seedKey);
   }
 
+  if (question.format === "questionnaire_form") {
+    return question;
+  }
+
   return randomizeStandardQuestion(question, seedKey);
 }
 

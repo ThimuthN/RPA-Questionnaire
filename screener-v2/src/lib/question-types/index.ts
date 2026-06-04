@@ -8,6 +8,7 @@ import { matchingDef } from "@/lib/question-types/matching";
 import { multiSelectDef } from "@/lib/question-types/multi-select";
 import { orderingDef } from "@/lib/question-types/ordering";
 import { practicalTaskDef } from "@/lib/question-types/practical-task";
+import { questionnaireFormDef } from "@/lib/question-types/questionnaire-form";
 import { singleSelectDef } from "@/lib/question-types/single-select";
 import { traceExecutionDef } from "@/lib/question-types/trace-execution";
 import type { QuestionTypeDef } from "@/lib/question-types/types";
@@ -37,7 +38,8 @@ export const questionRegistry: Record<QuestionFormatId, QuestionTypeDef<any, any
   best_next_step: bestNextStepDef,
   case_triage: caseTriageDef,
   practical_task: practicalTaskDef,
-  logic_reasoning: logicReasoningDef
+  logic_reasoning: logicReasoningDef,
+  questionnaire_form: questionnaireFormDef
 };
 
 export const registeredQuestionFormatIds = Object.keys(questionRegistry).sort() as QuestionFormatId[];

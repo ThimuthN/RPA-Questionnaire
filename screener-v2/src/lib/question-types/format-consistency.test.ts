@@ -17,8 +17,10 @@ describe("question format support consistency", () => {
 
   it("keeps auto-scored formats as a strict subset of registered formats", () => {
     expect(autoScoredQuestionFormatIds.every((format) => registeredQuestionFormatIds.includes(format))).toBe(true);
+    // Formats that use custom scoring via def.score() rather than the auto-scorer registry:
+    const customScoredFormats = ["logic_reasoning", "practical_task", "questionnaire_form"];
     expect(autoScoredQuestionFormatIds).toEqual(
-      registeredQuestionFormatIds.filter((format) => !["logic_reasoning", "practical_task"].includes(format))
+      registeredQuestionFormatIds.filter((format) => !customScoredFormats.includes(format))
     );
   });
 

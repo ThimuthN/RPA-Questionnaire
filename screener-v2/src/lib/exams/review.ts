@@ -2,6 +2,8 @@ import type {
   ExamBlueprint,
   ExamState,
   Question,
+  QuestionnaireField,
+  QuestionnaireFormQuestion,
   ResultReviewItem,
   ResultReviewSection
 } from "@/lib/assessment-engine/types";
@@ -245,6 +247,59 @@ function logicItem(task: LogicReasoningSubtask, answer: unknown): ResultReviewIt
   };
 }
 
+function formatQuestionnaireFieldAnswer(field: QuestionnaireField, value: unknown): string {
+  if (value === null || value === undefined) return "—";
+  switch (field.type) {
+    case "yes_no":
+      if (value === true) return "Yes";
+      if (value === false) return "No";
+      return "—";
+    case "text":
+      return typeof value === "string" && value.trim() ? value.trim() : "—";
+    case "number":
+      return Number.isFinite(Number(value)) ? String(value) : "—";
+    case "single_select": {
+      const opt = field.options?.find((o) => o.value === value);
+      return opt ? opt.label : typeof value === "string" ? value : "—";
+    }
+    case "multi_select": {
+      if (!Array.isArray(value) || value.length === 0) return "—";
+      const labels = (value as string[]).map((v) => {
+        const opt = field.options?.find((o) => o.value === v);
+        return opt ? opt.label : String(v);
+      });
+      return labels.join(", ");
+    }
+    case "currency_amount": {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return "—";
+      const obj = value as Record<string, unknown>;
+      if (!obj.currency || !obj.period || typeof obj.amount !== "number") return "—";
+      return `${obj.currency} ${Number(obj.amount).toLocaleString()} / ${obj.period}`;
+    }
+    default:
+      return String(value);
+  }
+}
+
+function questionnaireItem(
+  field: QuestionnaireField,
+  value: unknown
+): ResultReviewItem {
+  const answered = value !== null && value !== undefined;
+  const answerLine = formatQuestionnaireFieldAnswer(field, value);
+
+  return {
+    id: field.id,
+    title: field.label,
+    formatLabel: "Questionnaire",
+    pointsEarned: 0,
+    pointsPossible: 0,
+    status: answered ? "correct" : field.required ? "unanswered" : "correct",
+    candidateAnswerLines: answerLine !== "—" ? [answerLine] : [],
+    expectedAnswerLines: []
+  };
+}
+
 export function buildReviewSectionsFromBlueprint(
   blueprint: ExamBlueprint,
   examState: Partial<Record<string, Pick<ExamState, "answers">>> = {}
@@ -256,7 +311,9 @@ export function buildReviewSectionsFromBlueprint(
 
     const standardItems = exam.contentSnapshot.items.filter(
       (question): question is Question =>
-        question.format !== "practical_task" && question.format !== "logic_reasoning"
+        question.format !== "practical_task" &&
+        question.format !== "logic_reasoning" &&
+        question.format !== "questionnaire_form"
     );
 
     if (standardItems.length === exam.contentSnapshot.items.length) {
@@ -322,6 +379,23 @@ export function buildReviewSectionsFromBlueprint(
         description: composite.prompt,
         configSummary: exam.configSummary,
         items: composite.subtasks.map((task) => logicItem(task as LogicReasoningSubtask, compositeAnswer[task.id]))
+      });
+      continue;
+    }
+
+    if (composite.format === "questionnaire_form") {
+      const q = composite as QuestionnaireFormQuestion;
+      const compositeAnswer =
+        state.answers?.[q.id] && typeof state.answers?.[q.id] === "object"
+          ? (state.answers[q.id] as Record<string, unknown>)
+          : {};
+
+      sections.push({
+        id: exam.instanceId,
+        label: exam.label,
+        description: q.prompt,
+        configSummary: exam.configSummary,
+        items: q.fields.map((field) => questionnaireItem(field, compositeAnswer[field.id]))
       });
     }
   }

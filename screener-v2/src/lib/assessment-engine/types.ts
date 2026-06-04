@@ -39,7 +39,44 @@ export type QuestionFormatId =
   | "best_next_step"
   | "case_triage"
   | "practical_task"
-  | "logic_reasoning";
+  | "logic_reasoning"
+  | "questionnaire_form";
+
+export type QuestionnaireFieldType =
+  | "yes_no"
+  | "text"
+  | "number"
+  | "single_select"
+  | "multi_select"
+  | "currency_amount";
+
+export interface QuestionnaireFieldOption {
+  value: string;
+  label: string;
+}
+
+export interface QuestionnaireField {
+  id: string;
+  label: string;
+  description?: string;
+  type: QuestionnaireFieldType;
+  required: boolean;
+  placeholder?: string;
+  options?: QuestionnaireFieldOption[];
+  min?: number;
+  max?: number;
+}
+
+export interface QuestionnaireFormQuestion {
+  id: string;
+  format: "questionnaire_form";
+  prompt: string;
+  promptBlocks?: PromptBlock[];
+  points: number;
+  fields: QuestionnaireField[];
+}
+
+export type QuestionnaireAnswer = Record<string, unknown>;
 
 export type PromptBlock =
   | {
@@ -178,7 +215,7 @@ export interface LogicReasoningQuestion {
   subtasks: CompositeSubtask[];
 }
 
-export type ExamQuestion = Question | PracticalTaskQuestion | LogicReasoningQuestion;
+export type ExamQuestion = Question | PracticalTaskQuestion | LogicReasoningQuestion | QuestionnaireFormQuestion;
 
 export interface ExamConfigFieldOption {
   value: string;

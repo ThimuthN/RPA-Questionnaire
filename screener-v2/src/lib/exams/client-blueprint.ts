@@ -70,6 +70,10 @@ function sanitizeExamQuestion(question: ExamQuestion): ExamQuestion {
     return sanitizeCompositeQuestion(question);
   }
 
+  if (question.format === "questionnaire_form") {
+    return question;
+  }
+
   return sanitizeCoreQuestion(question);
 }
 

@@ -12,6 +12,7 @@ import { pythonLeadExamAddonDefinition } from "@/features/python-lead-exam/defin
 import { imageAnalysisAddonDefinition } from "@/features/image-analysis/definition";
 import { rcmAddonDefinition } from "@/features/rcm/definition";
 import { rpaRuntimeAddonDefinition } from "@/features/rpa-runtime/definition";
+import { applicantIntakeQuestionnaireDefinition } from "@/features/applicant-intake-questionnaire/definition";
 
 export interface AddonDefinitionRegistration {
   id: string;
@@ -57,7 +58,8 @@ export const orderedAddonDefinitions = [
   appliedLogicAddonDefinition,
   generalCapabilityAddonDefinition,
   businessAnalysisAddonDefinition,
-  rcmAddonDefinition
+  rcmAddonDefinition,
+  applicantIntakeQuestionnaireDefinition
 ] as const;
 
 export type AddonDefinitionId = (typeof orderedAddonDefinitions)[number]["id"];

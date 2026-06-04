@@ -40,7 +40,8 @@ describe("addon assessment types", () => {
       "applied_logic_exam",
       "general_capability_exam",
       "business_analysis_exam",
-      "rcm_exam"
+      "rcm_exam",
+      "applicant_intake_questionnaire"
     ]);
   });
 
