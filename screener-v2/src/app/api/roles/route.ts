@@ -36,6 +36,15 @@ export async function GET(request: Request) {
 
   // Access roles have special handling
   if (kind === "access_role") {
+    // Check if user has role management permission (manage_users or create_role)
+    const canManageRoles = auth.session.permissions?.includes("manage_users") ||
+                          auth.session.permissions?.includes("create_role") ||
+                          auth.session.permissions?.includes("edit_role");
+
+    if (!canManageRoles) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+    }
+
     const roles = await prisma.roleCatalog.findMany({
       where: { kind: "access_role", isActive: true },
       include: {

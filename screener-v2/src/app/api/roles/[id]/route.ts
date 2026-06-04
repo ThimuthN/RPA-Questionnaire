@@ -44,7 +44,7 @@ export async function PUT(
       // Handle access role update
       const { label, description, permissions } = body;
 
-      const updated = await prisma.roleCatalog.update({
+      await prisma.roleCatalog.update({
         where: { id },
         data: {
           label: label || role.label,

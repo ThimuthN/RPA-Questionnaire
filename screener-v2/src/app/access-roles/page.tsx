@@ -42,12 +42,13 @@ export default function AccessRolesPage() {
   const departmentRoles = roles.filter(r => r.applicability === 'department');
   const bothRoles = roles.filter(r => r.applicability === 'both');
 
-  const isSystemRole = (role: RoleWithPermissions) => {
-    return ['system_admin', 'department_admin', 'hiring_manager', 'recruiter', 'interviewer', 'reviewer', 'viewer'].includes(role.slug);
+  const isStronglyProtected = (role: RoleWithPermissions) => {
+    // Only System Admin is strongly protected and cannot be edited/deleted
+    return ['system_admin', 'system-admin'].includes(role.slug);
   };
 
   const RoleCard = ({ role }: { role: RoleWithPermissions }) => {
-    const isProtected = isSystemRole(role);
+    const isProtected = isStronglyProtected(role);
     const grantCount = role._count?.accessGrants || 0;
 
     return (
@@ -58,8 +59,8 @@ export default function AccessRolesPage() {
             <p className="text-xs text-[color:var(--app-muted)]">{role.slug}</p>
           </div>
           {isProtected && (
-            <span className="text-xs bg-[color:var(--app-success)]/10 text-[color:var(--app-success)] px-2 py-1 rounded">
-              Protected
+            <span className="text-xs bg-red-500/10 text-red-600 px-2 py-1 rounded">
+              System Protected
             </span>
           )}
         </div>

@@ -46,7 +46,7 @@ export async function POST(
 
     // Create duplicated role
     const newRoleId = randomUUID();
-    const newRole = await prisma.roleCatalog.create({
+    await prisma.roleCatalog.create({
       data: {
         id: newRoleId,
         slug,
