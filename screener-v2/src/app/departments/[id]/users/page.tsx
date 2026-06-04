@@ -3,6 +3,7 @@ import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
+import { HiringTeamsManagement } from "@/components/departments/HiringTeamsManagement";
 import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
@@ -23,7 +24,7 @@ export default async function DepartmentUsersPage({
   }
 
   // Load team members via AccessGrant (new model)
-  const [department, accessGrantTeam, roles] = await Promise.all([
+  const [department, accessGrantTeam, roles, hiringTeamTemplates] = await Promise.all([
     getDepartment(id),
     prisma.accessGrant.findMany({
       where: {
@@ -57,6 +58,20 @@ export default async function DepartmentUsersPage({
         label: true,
         permissions: {
           select: { permission: true }
+        }
+      },
+      orderBy: { sortOrder: "asc" }
+    }),
+    prisma.hiringTeamTemplate.findMany({
+      where: { departmentId: id, isActive: true },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true }
+            }
+          },
+          orderBy: { role: "asc" }
         }
       },
       orderBy: { sortOrder: "asc" }
@@ -165,6 +180,33 @@ export default async function DepartmentUsersPage({
           </div>
         </div>
       )}
+
+      <div className="mt-8 border-t border-[color:var(--app-border)] pt-8">
+        <HiringTeamsManagement
+          departmentId={id}
+          departmentName={department.name}
+          templates={hiringTeamTemplates.map((template) => ({
+            id: template.id,
+            name: template.name,
+            description: template.description || undefined,
+            isActive: template.isActive,
+            members: template.members.map((member) => ({
+              id: member.id,
+              user: {
+                id: member.user.id,
+                name: member.user.name,
+                email: member.user.email
+              },
+              role: member.role
+            }))
+          }))}
+          teamUsers={users.map((u) => ({
+            id: u.id,
+            name: u.name,
+            email: u.email
+          }))}
+        />
+      </div>
     </div>
   );
 }

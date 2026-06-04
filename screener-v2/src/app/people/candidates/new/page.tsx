@@ -10,12 +10,21 @@ import { listDepartments } from "@/lib/db/departments";
 export default async function NewCandidatePage({
   searchParams
 }: {
-  searchParams: Promise<{ error?: string; existingId?: string; existingName?: string; existingEmail?: string }>;
+  searchParams: Promise<{ error?: string; existingId?: string; existingName?: string; existingEmail?: string; departmentId?: string }>;
 }) {
   await requirePageSession("/people/candidates/new");
 
   const params = await searchParams;
   const departments = await listDepartments();
+
+  // Validate that departmentId (if provided) is a valid department
+  let defaultDepartmentId: string | undefined;
+  if (params.departmentId) {
+    const dept = departments.find((d) => d.id === params.departmentId);
+    if (dept) {
+      defaultDepartmentId = params.departmentId;
+    }
+  }
 
   return (
     <SceneShell
@@ -70,6 +79,7 @@ export default async function NewCandidatePage({
           <NewCandidateForm
             departments={departments.map((department) => ({ id: department.id, name: department.name }))}
             error={!params.existingId ? params.error : undefined}
+            defaultDepartmentId={defaultDepartmentId}
           />
         </StagePanel>
       </div>

@@ -227,7 +227,11 @@ export async function CandidateWorkspaceView({
             </div>
             {canManageCandidates ? (
               <div className="flex flex-wrap items-center gap-3">
-                <Link href="/people/candidates/new">
+                <Link href={
+                  (scope === "department" && departmentId
+                    ? `/people/candidates/new?departmentId=${departmentId}`
+                    : "/people/candidates/new") as Route
+                }>
                   <Button>Add candidate</Button>
                 </Link>
                 <CandidateCsvImportModal returnTo={currentPathAndQuery} />

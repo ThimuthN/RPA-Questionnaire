@@ -33,10 +33,6 @@ interface Props {
   departmentName: string;
   templates: TemplateWithMembers[];
   teamUsers: User[];
-  onCreateTemplate?: (name: string, description: string) => void;
-  onAddMember?: (templateId: string, userId: string, role: HiringTeamRole) => void;
-  onRemoveMember?: (templateId: string, userId: string, role: HiringTeamRole) => void;
-  onDeleteTemplate?: (templateId: string) => void;
 }
 
 const roleLabels: Record<HiringTeamRole, string> = {
@@ -48,26 +44,135 @@ const roleLabels: Record<HiringTeamRole, string> = {
   final_approver: "Final Approver"
 };
 
+const allRoles: HiringTeamRole[] = ["owner", "recruiter", "hiring_manager", "interviewer", "reviewer", "final_approver"];
+
 export function HiringTeamsManagement({
   departmentId,
-  departmentName,
   templates,
-  teamUsers,
-  onCreateTemplate,
-  onAddMember,
-  onRemoveMember,
-  onDeleteTemplate
+  teamUsers
 }: Props) {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState("");
   const [newTemplateDesc, setNewTemplateDesc] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showAddMemberForm, setShowAddMemberForm] = useState<string | null>(null);
+  const [selectedMemberUserId, setSelectedMemberUserId] = useState<string>("");
+  const [selectedMemberRole, setSelectedMemberRole] = useState<HiringTeamRole>("recruiter");
 
-  const handleCreateTemplate = () => {
-    if (newTemplateName.trim() && onCreateTemplate) {
-      onCreateTemplate(newTemplateName, newTemplateDesc);
+  const handleCreateTemplate = async () => {
+    if (!newTemplateName.trim()) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/departments/${departmentId}/hiring-teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newTemplateName,
+          description: newTemplateDesc
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.message || "Failed to create template");
+        return;
+      }
+
       setNewTemplateName("");
       setNewTemplateDesc("");
       setShowCreateForm(false);
+      window.location.reload();
+    } catch (error) {
+      alert("Error creating template");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm("Delete this hiring team template?")) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/departments/${departmentId}/hiring-teams/${templateId}`, {
+        method: "DELETE"
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.message || "Failed to delete template");
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      alert("Error deleting template");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddMember = async (templateId: string) => {
+    if (!selectedMemberUserId) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/departments/${departmentId}/hiring-teams/${templateId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedMemberUserId,
+          role: selectedMemberRole
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.message || "Failed to add member");
+        return;
+      }
+
+      setSelectedMemberUserId("");
+      setSelectedMemberRole("recruiter");
+      setShowAddMemberForm(null);
+      window.location.reload();
+    } catch (error) {
+      alert("Error adding member");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveMember = async (templateId: string, userId: string, role: HiringTeamRole) => {
+    if (!confirm(`Remove this team member?`)) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/departments/${departmentId}/hiring-teams/${templateId}/members`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          role
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.message || "Failed to remove member");
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      alert("Error removing member");
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,6 +201,7 @@ export function HiringTeamsManagement({
               value={newTemplateName}
               onChange={(e) => setNewTemplateName(e.target.value)}
               placeholder="e.g., Standard Tech Pipeline"
+              disabled={loading}
               className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-[color:var(--app-text)]"
             />
           </label>
@@ -106,19 +212,21 @@ export function HiringTeamsManagement({
               onChange={(e) => setNewTemplateDesc(e.target.value)}
               placeholder="Description..."
               rows={2}
+              disabled={loading}
               className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-[color:var(--app-text)]"
             />
           </label>
           <div className="flex gap-2">
             <Button
               onClick={handleCreateTemplate}
-              disabled={!newTemplateName.trim()}
+              disabled={!newTemplateName.trim() || loading}
             >
               Create
             </Button>
             <Button
               variant="secondary"
               onClick={() => setShowCreateForm(false)}
+              disabled={loading}
             >
               Cancel
             </Button>
@@ -146,8 +254,9 @@ export function HiringTeamsManagement({
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => onDeleteTemplate?.(template.id)}
-                    className="p-1.5 hover:bg-[color:var(--app-surface)] rounded-lg text-[color:var(--app-muted)]"
+                    onClick={() => handleDeleteTemplate(template.id)}
+                    disabled={loading}
+                    className="p-1.5 hover:bg-[color:var(--app-surface)] rounded-lg text-[color:var(--app-muted)] disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -171,9 +280,10 @@ export function HiringTeamsManagement({
                       </div>
                       <button
                         onClick={() =>
-                          onRemoveMember?.(template.id, member.user.id, member.role)
+                          handleRemoveMember(template.id, member.user.id, member.role)
                         }
-                        className="p-1 hover:bg-[color:var(--app-surface-soft)] rounded text-[color:var(--app-muted)]"
+                        disabled={loading}
+                        className="p-1 hover:bg-[color:var(--app-surface-soft)] rounded text-[color:var(--app-muted)] disabled:opacity-50"
                       >
                         <Trash2 className="h-3 w-3" />
                       </button>
@@ -183,25 +293,67 @@ export function HiringTeamsManagement({
               )}
 
               {teamUsers.length > 0 && (
-                <details className="text-sm border-t border-[color:var(--app-border)] pt-2">
-                  <summary className="cursor-pointer text-[color:var(--app-text)] hover:text-[color:var(--app-heading)]">
-                    + Add team member
-                  </summary>
-                  <div className="mt-2 space-y-2">
-                    {teamUsers.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => {
-                          // This would open a role selector dialog
-                          // For now, just show that we can add
-                        }}
-                        className="w-full text-left text-xs p-2 rounded hover:bg-[color:var(--app-surface)] text-[color:var(--app-text)]"
+                <div className="border-t border-[color:var(--app-border)] pt-2">
+                  {showAddMemberForm === template.id ? (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-medium text-[color:var(--app-text)]">
+                        Select team member
+                      </label>
+                      <select
+                        value={selectedMemberUserId}
+                        onChange={(e) => setSelectedMemberUserId(e.target.value)}
+                        disabled={loading}
+                        className="w-full rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2 py-1.5 text-xs text-[color:var(--app-text)]"
                       >
-                        {user.name || user.email}
-                      </button>
-                    ))}
-                  </div>
-                </details>
+                        <option value="">Choose a team member</option>
+                        {teamUsers.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name || user.email}
+                          </option>
+                        ))}
+                      </select>
+                      <label className="block text-xs font-medium text-[color:var(--app-text)] mt-2">
+                        Select role
+                      </label>
+                      <select
+                        value={selectedMemberRole}
+                        onChange={(e) => setSelectedMemberRole(e.target.value as HiringTeamRole)}
+                        disabled={loading}
+                        className="w-full rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-2 py-1.5 text-xs text-[color:var(--app-text)]"
+                      >
+                        {allRoles.map((role) => (
+                          <option key={role} value={role}>
+                            {roleLabels[role]}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          onClick={() => handleAddMember(template.id)}
+                          disabled={!selectedMemberUserId || loading}
+                          className="flex-1 px-2 py-1.5 rounded-[10px] bg-brand-500 text-white text-xs font-medium disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                        <button
+                          onClick={() => setShowAddMemberForm(null)}
+                          disabled={loading}
+                          className="flex-1 px-2 py-1.5 rounded-[10px] border border-[color:var(--app-border)] text-xs font-medium disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowAddMemberForm(template.id)}
+                      disabled={loading}
+                      className="w-full text-left text-xs p-2 rounded hover:bg-[color:var(--app-surface)] text-[color:var(--app-text)] disabled:opacity-50"
+                    >
+                      + Add team member
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ))

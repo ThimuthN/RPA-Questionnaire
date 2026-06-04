@@ -253,44 +253,87 @@ export default async function CandidateDetailPage({
 
   // Fetch assignments and users for the active application (or first if none active)
   const targetApplication = activeApplication || candidate.applications[0] || null;
-  const [assignments, users] = targetApplication
-    ? await Promise.all([
-        getApplicationAssignments(targetApplication.id),
-        (async () => {
-          // Load workspace team users via AccessGrant if job has a department
-          const jobPosting = await prisma.jobPosting.findUnique({
-            where: { id: targetApplication.jobPostingId },
-            select: { departmentId: true }
-          });
 
-          if (jobPosting?.departmentId) {
-            // Department workspace: load team members from AccessGrant
-            const grants = await prisma.accessGrant.findMany({
-              where: {
-                departmentId: jobPosting.departmentId,
-                scope: "department",
-                status: "active"
-              },
-              select: {
-                user: { select: { id: true, name: true, email: true } }
-              },
-              orderBy: { user: { name: "asc" } }
-            });
-            return grants.map(g => g.user);
-          } else {
-            // Admin workspace: load all active users
-            return prisma.user.findMany({
-              where: { isActive: true },
-              select: { id: true, name: true, email: true },
-              orderBy: { name: "asc" }
-            });
+  // Load workspace context and team assignments
+  const [assignments, users, departmentCandidacy] = await Promise.all([
+    targetApplication ? getApplicationAssignments(targetApplication.id) : Promise.resolve([]),
+    (async () => {
+      if (targetApplication) {
+        // Load workspace team users via AccessGrant if job has a department
+        const jobPosting = await prisma.jobPosting.findUnique({
+          where: { id: targetApplication.jobPostingId },
+          select: { departmentId: true }
+        });
+
+        if (jobPosting?.departmentId) {
+          // Department workspace: load team members from AccessGrant
+          const grants = await prisma.accessGrant.findMany({
+            where: {
+              departmentId: jobPosting.departmentId,
+              scope: "department",
+              status: "active"
+            },
+            select: {
+              user: { select: { id: true, name: true, email: true } }
+            },
+            orderBy: { user: { name: "asc" } }
+          });
+          return grants.map(g => g.user);
+        } else {
+          // Admin workspace: load all active users
+          return prisma.user.findMany({
+            where: { isActive: true },
+            select: { id: true, name: true, email: true },
+            orderBy: { name: "asc" }
+          });
+        }
+      } else {
+        // No application - try to get users from department candidacy
+        const candidacy = await prisma.departmentCandidacy.findFirst({
+          where: { candidateId: candidate.id, status: "active" },
+          select: { departmentId: true }
+        });
+
+        if (candidacy?.departmentId) {
+          const grants = await prisma.accessGrant.findMany({
+            where: {
+              departmentId: candidacy.departmentId,
+              scope: "department",
+              status: "active"
+            },
+            select: {
+              user: { select: { id: true, name: true, email: true } }
+            },
+            orderBy: { user: { name: "asc" } }
+          });
+          return grants.map(g => g.user);
+        }
+
+        return [];
+      }
+    })(),
+    (async () => {
+      // Load DepartmentCandidacy with team assignments
+      const activeCandidacy = await prisma.departmentCandidacy.findFirst({
+        where: { candidateId: candidate.id, status: "active" },
+        include: {
+          teamAssignments: {
+            where: { isActive: true },
+            include: {
+              user: {
+                select: { id: true, name: true, email: true }
+              }
+            }
           }
-        })()
-      ])
-    : [[], []];
+        }
+      });
+      return activeCandidacy;
+    })()
+  ]);
   const hasResponsibleAssignments = assignments.length > 0;
+  const hasCandidacyTeamAssignments = departmentCandidacy?.teamAssignments.length ?? 0 > 0;
   const shouldWarnNoLinkedApplication = candidate.applications.length === 0;
-  const shouldWarnResponsibleTeam = !targetApplication || !hasResponsibleAssignments;
+  const shouldWarnResponsibleTeam = !hasResponsibleAssignments && !hasCandidacyTeamAssignments;
   const latestAssessmentRecord = latestAssessment(candidate);
   const assessmentAction = latestAssessmentRecord?.attemptId
     ? {
@@ -321,8 +364,12 @@ export default async function CandidateDetailPage({
         />
       ) : null}
       <StatusPill
-        label={hasResponsibleAssignments ? `${assignments.length} team assigned` : "Responsible team required"}
-        tone={hasResponsibleAssignments ? "emerald" : "amber"}
+        label={
+          hasResponsibleAssignments || departmentCandidacy?.teamAssignments.length
+            ? `Team assigned`
+            : "Responsible team required"
+        }
+        tone={hasResponsibleAssignments || departmentCandidacy?.teamAssignments.length ? "emerald" : "amber"}
       />
     </div>
   );
@@ -436,10 +483,16 @@ export default async function CandidateDetailPage({
                 />
                 <SummaryCard
                   label="Responsible team"
-                  title={hasResponsibleAssignments ? `${assignments.length} assigned` : "No owner"}
-                  detail={
+                  title={
                     hasResponsibleAssignments
-                      ? `${candidate.hrOwner || "Owner not set"} is leading this candidate.`
+                      ? `${assignments.length} assigned`
+                      : departmentCandidacy?.teamAssignments.length
+                        ? `${departmentCandidacy.teamAssignments.length} assigned`
+                        : "No owner"
+                  }
+                  detail={
+                    hasResponsibleAssignments || departmentCandidacy?.teamAssignments.length
+                      ? `Team is assigned to this candidate.`
                       : "No owner or hiring team is assigned yet."
                   }
                   tone="default"
@@ -532,10 +585,21 @@ export default async function CandidateDetailPage({
           </div>
 
           <div className="space-y-6">
-            {targetApplication ? (
+            {targetApplication || departmentCandidacy?.teamAssignments.length ? (
               <ResponsibleTeamCard
-                applicationId={targetApplication.id}
-                assignments={assignments}
+                applicationId={targetApplication?.id || departmentCandidacy?.id || ""}
+                assignments={
+                  targetApplication
+                    ? assignments
+                    : departmentCandidacy?.teamAssignments.map((ta) => ({
+                        id: ta.id,
+                        user: ta.user,
+                        assignmentRole: ta.role,
+                        isPrimary: ta.isPrimary,
+                        role: ta.role,
+                        source: ta.source as "template" | "manual" | "job_default"
+                      })) || []
+                }
                 users={users}
                 canEdit={session.permissions.includes("manage_candidates")}
               />
