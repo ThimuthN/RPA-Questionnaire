@@ -4,6 +4,7 @@ import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { notFound } from "next/navigation";
 import { filterRolesByApplicability } from "@/lib/auth/access-role-scope";
+import DepartmentAccessClient from "@/components/departments/DepartmentAccessClient";
 
 export default async function DepartmentAccessPage({
   params
@@ -22,16 +23,11 @@ export default async function DepartmentAccessPage({
     getDepartment(id),
     prisma.roleCatalog.findMany({
       where: { isActive: true, kind: "access_role" },
-      select: {
-        id: true,
-        label: true,
-        slug: true,
-        kind: true,
-        permissions: {
-          select: { permission: true }
-        }
+      include: {
+        permissions: { select: { permission: true } },
+        _count: { select: { accessGrants: { where: { status: "active" } } } }
       },
-      orderBy: { sortOrder: "asc" }
+      orderBy: [{ applicability: "desc" }, { label: "asc" }]
     })
   ]);
 
@@ -39,63 +35,34 @@ export default async function DepartmentAccessPage({
     notFound();
   }
 
-  // Filter to department-applicable roles only
-  const accessRoles = filterRolesByApplicability(allAccessRoles, "department");
+  // Filter to department-applicable or both-applicable roles (exclude system-only)
+  const accessRoles = allAccessRoles.filter(
+    r => r.applicability === "department" || r.applicability === "both"
+  );
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl text-[color:var(--app-heading)]">Access Control</h2>
-        <p className="text-sm text-[color:var(--app-muted)]">
-          Manage department access roles and permissions.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-medium text-[color:var(--app-heading)]">Access Control</h1>
+          <p className="text-sm text-[color:var(--app-muted)] mt-1">
+            Manage workspace access roles and permissions.
+          </p>
+        </div>
       </div>
 
       <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-        <h3 className="font-medium text-[color:var(--app-heading)] mb-2">Department Access Roles</h3>
+        <h3 className="font-medium text-[color:var(--app-heading)] mb-2">Access Roles</h3>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Access roles control what department users can do. Team members in this department are assigned an access role to grant them specific permissions.
+          Access roles control what users can do in this workspace. Assign roles from Team or User Management. Job designations classify jobs and candidates.
         </p>
       </div>
 
-      <div>
-        <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-4">Access Roles</h3>
-        {accessRoles.length === 0 ? (
-          <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center space-y-3">
-            <p className="text-sm text-[color:var(--app-muted)]">
-              No access roles configured for this workspace yet.
-            </p>
-            <p className="text-xs text-[color:var(--app-muted)]">
-              Create default access roles or add custom roles from the Admin section.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                  <tr>
-                    <th scope="col" className="px-4 py-3 font-medium">Role</th>
-                    <th scope="col" className="px-4 py-3 font-medium">Permissions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accessRoles.map((role) => (
-                    <tr key={role.id} className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]">
-                      <td className="px-4 py-3 text-sm font-medium text-[color:var(--app-heading)]">
-                        {role.label}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[color:var(--app-text)]">
-                        {role.permissions.length}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
+      <DepartmentAccessClient
+        departmentId={id}
+        departmentName={department.name}
+        initialRoles={accessRoles}
+      />
     </div>
   );
 }
