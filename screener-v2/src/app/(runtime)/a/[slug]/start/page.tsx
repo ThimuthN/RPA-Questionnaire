@@ -9,8 +9,7 @@ import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import type {
   ExamSummaryItem,
-  IntegrityPresetId,
-  StackId
+  IntegrityPresetId
 } from "@/lib/assessment-engine/types";
 import {
   integrityPresetMeta,
@@ -27,7 +26,6 @@ interface InviteMeta {
   roleLocked: boolean;
   stackLocked: boolean;
   passTarget: number | null;
-  stacks: StackId[];
   sections: SectionId[];
   integrityPreset: IntegrityPresetId;
   exams: ExamSummaryItem[];
@@ -60,7 +58,6 @@ function InviteStartContent() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [stacks, setStacks] = useState<StackId[]>([]);
   const [passcode, setPasscode] = useState(passcodeFromQuery);
   const [inviteMeta, setInviteMeta] = useState<InviteMeta | null>(null);
   const [validationState, setValidationState] = useState<InviteValidationState>("invalid");
@@ -121,7 +118,6 @@ function InviteStartContent() {
         setTotalDurationMinutes(
           typeof data.totalDurationMinutes === "number" ? data.totalDurationMinutes : null
         );
-        setStacks(data.invite?.stacks ?? []);
       } catch {
         if (!active) return;
         setValidationState("invalid");
@@ -129,7 +125,6 @@ function InviteStartContent() {
         setRemainingAttempts(0);
         setInviteMeta(null);
         setTotalDurationMinutes(null);
-        setStacks([]);
         setError("Could not load assessment details. Refresh the page and try again.");
       } finally {
         if (active) {
@@ -168,13 +163,10 @@ function InviteStartContent() {
         return;
       }
 
-      const invite = validated.invite;
-      const effectiveStacks = invite.stacks?.length ? invite.stacks : stacks;
-      setInviteMeta(invite);
+      setInviteMeta(validated.invite);
       setTotalDurationMinutes(
         typeof validated.totalDurationMinutes === "number" ? validated.totalDurationMinutes : null
       );
-      setStacks(effectiveStacks);
 
       const startResponse = await fetch("/api/attempts/start", {
         method: "POST",
@@ -188,8 +180,7 @@ function InviteStartContent() {
             fullName,
             email,
             phone
-          },
-          stacks: effectiveStacks
+          }
         })
       });
       const started = await startResponse.json();
@@ -302,12 +293,6 @@ function InviteStartContent() {
           <p className="text-xs uppercase tracking-[0.2em] text-brand-300">Test details</p>
           <StatusPill label={readiness.label} tone={readiness.tone} />
           <div className="space-y-2 text-sm">
-            <div className={detailRowClassName}>
-              <p className={detailLabelClassName}>Stack</p>
-              <p className={detailValueClassName}>
-                {detailsLoading ? "Loading..." : stacks.length ? stacks.join(", ") : "Not available"}
-              </p>
-            </div>
             <div className={detailRowClassName}>
               <p className={detailLabelClassName}>Time</p>
               <p className={detailValueClassName}>

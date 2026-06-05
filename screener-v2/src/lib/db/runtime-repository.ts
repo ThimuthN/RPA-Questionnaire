@@ -570,7 +570,7 @@ function mapInvite(row: {
       stackLocked: row.stackLocked,
       roleId: row.roleId ?? undefined,
       passTargetPercent,
-      stacks: stacks.length > 0 ? stacks : blueprintStacks(blueprint, ["UiPath"]),
+      stacks,
     sections,
     blueprint,
     maxAttempts: row.maxAttempts,
@@ -944,7 +944,7 @@ export async function startAttempt(input: {
   )
     ? blueprintRoleId(blueprint, "Associate")
     : input.roleId;
-  const effectiveStacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, ["UiPath"]);
+  const effectiveStacks = input.stacks?.length ? input.stacks : blueprintStacks(blueprint, []);
   const effectiveSections = blueprintLegacySections(blueprint);
   const examState = createExamState(blueprint);
   const sectionState = legacySectionStateFromBlueprint(blueprint, examState);
@@ -1247,6 +1247,8 @@ export async function patchAttempt(
 export async function submitAttempt(input: {
   attemptId: string;
   expectedStateVersion?: number;
+  examState?: Partial<Record<string, Partial<ExamState>>>;
+  integrity?: Partial<{ tabHiddenCount: number; copyCount: number; pasteCount: number }>;
 }): Promise<SubmitAttemptResult> {
   const currentRow = await prisma.attempt.findUnique({ where: { id: input.attemptId } });
   if (!currentRow) return { status: "missing" };
@@ -1266,18 +1268,44 @@ export async function submitAttempt(input: {
     return { status: "conflict", attempt: current };
   }
 
+  // Merge any client-side state flushed with the submit request
+  const mergedExamState: Partial<Record<string, ExamState>> = { ...current.examState };
+  if (input.examState) {
+    for (const exam of current.blueprint.exams) {
+      const incoming = input.examState[exam.instanceId];
+      if (!incoming) continue;
+      const existing = mergedExamState[exam.instanceId] ?? { answers: {}, remainingSeconds: 0 };
+      mergedExamState[exam.instanceId] = {
+        answers: { ...(existing.answers ?? {}), ...(incoming.answers ?? {}) },
+        remainingSeconds:
+          typeof incoming.remainingSeconds === "number"
+            ? Math.max(0, Math.min(existing.remainingSeconds, incoming.remainingSeconds))
+            : existing.remainingSeconds,
+        earned: existing.earned,
+        possible: existing.possible
+      };
+    }
+  }
+  const mergedIntegrity = input.integrity
+    ? {
+        tabHiddenCount: Math.max(current.integrity.tabHiddenCount, Number(input.integrity.tabHiddenCount ?? 0)),
+        copyCount: Math.max(current.integrity.copyCount, Number(input.integrity.copyCount ?? 0)),
+        pasteCount: Math.max(current.integrity.pasteCount, Number(input.integrity.pasteCount ?? 0))
+      }
+    : current.integrity;
+
   const result = buildResultSummary({
     attemptId: current.id,
     roleId: current.roleId,
     stacks: current.stacks,
     passTargetPercent: current.passTargetPercent,
     blueprint: current.blueprint,
-    examState: current.examState,
-    integrity: current.integrity
+    examState: mergedExamState,
+    integrity: mergedIntegrity
   });
 
   const submittedExamState: Partial<Record<string, ExamState>> = {
-    ...current.examState
+    ...mergedExamState
   };
 
   for (const exam of current.blueprint.exams) {
@@ -1314,14 +1342,14 @@ export async function submitAttempt(input: {
         sectionStateJson: toJsonValue(
           buildExamStateEnvelopeJson({
             examState: submittedExamState,
-            integrity: current.integrity
+            integrity: mergedIntegrity
           })
         ),
         practicalEarned: split.practicalEarned,
         practicalPossible: split.practicalPossible,
         logicReasoningEarned: split.logicReasoningEarned,
         logicReasoningPossible: split.logicReasoningPossible,
-        integrityJson: toJsonValue(current.integrity),
+        integrityJson: toJsonValue(mergedIntegrity),
         submittedAt
       }
     });

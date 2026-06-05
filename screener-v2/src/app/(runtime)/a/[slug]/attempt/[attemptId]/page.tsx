@@ -53,7 +53,6 @@ export default async function AttemptRuntimePage({
           (exam) => carriesRoleContext(exam.definitionId)
         )?.config?.roleLabel as string | undefined) ?? attempt.roleId
       }
-      stacks={attempt.stacks}
       blueprint={sanitizeBlueprintForClient(attempt.blueprint)}
       initialStage={attempt.stage}
       initialExamState={attempt.examState ?? {}}

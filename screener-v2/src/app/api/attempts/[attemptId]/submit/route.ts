@@ -9,7 +9,15 @@ import {
 } from "@/lib/server/logger";
 
 const submitSchema = z.object({
-  expectedStateVersion: z.number().int().min(0).optional()
+  expectedStateVersion: z.number().int().min(0).optional(),
+  examState: z.record(z.string(), z.any()).optional(),
+  integrity: z
+    .object({
+      tabHiddenCount: z.number().int().min(0).optional(),
+      copyCount: z.number().int().min(0).optional(),
+      pasteCount: z.number().int().min(0).optional()
+    })
+    .optional()
 });
 
 export async function POST(
@@ -27,7 +35,9 @@ export async function POST(
     const body = submitSchema.parse(await request.json().catch(() => ({})));
     const result = await submitAttempt({
       attemptId,
-      expectedStateVersion: body.expectedStateVersion
+      expectedStateVersion: body.expectedStateVersion,
+      examState: body.examState,
+      integrity: body.integrity
     });
     if (result.status === "missing") {
       return NextResponse.json({ ok: false, message: "Attempt not found." }, { status: 404 });

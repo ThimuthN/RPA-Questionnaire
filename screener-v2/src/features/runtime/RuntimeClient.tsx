@@ -9,8 +9,7 @@ import type {
   ExamBlueprint,
   ExamQuestion,
   ExamState,
-  IntegrityPresetId,
-  StackId
+  IntegrityPresetId
 } from "@/lib/assessment-engine/types";
 import { RuntimeUiStatus } from "@/features/runtime/ui-state";
 import { HudBar } from "@/components/runtime/HudBar";
@@ -30,7 +29,6 @@ interface RuntimeClientProps {
   attemptId: string;
   integrityPreset: IntegrityPresetId;
   roleId?: string;
-  stacks: StackId[];
   blueprint: ExamBlueprint;
   initialStage?: string | "submitted";
   initialExamState: Partial<Record<string, ExamState>>;
@@ -807,14 +805,6 @@ export function RuntimeClient(props: RuntimeClientProps) {
     });
   }
 
-  async function flushAttemptState() {
-    return persistAutosave({
-      stage: stageRef.current,
-      examState,
-      integrity
-    });
-  }
-
   async function onSubmitFinal(auto = false, retryCount = 0) {
     if (submitting && retryCount === 0) return;
     setSubmitting(true);
@@ -822,18 +812,15 @@ export function RuntimeClient(props: RuntimeClientProps) {
     if (auto) setShowSubmitReview(false);
 
     try {
-      const flushed = await flushAttemptState();
-      if (!flushed) {
-        setSaveIssue("We could not confirm the final save. Please keep this tab open and try again.");
-        setUiStatus(RuntimeUiStatus.Attention);
-        return;
-      }
-
+      // Send the latest client state directly with the submit — no pre-flush needed.
+      // This avoids the autosave rate limiter blocking the final state save.
       const response = await fetch(`/api/attempts/${props.attemptId}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          expectedStateVersion: stateVersionRef.current
+          expectedStateVersion: stateVersionRef.current,
+          examState: examStateRef.current,
+          integrity: integrityRef.current
         })
       });
       const data = (await response.json()) as SubmitResponse;

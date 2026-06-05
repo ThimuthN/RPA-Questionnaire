@@ -42,7 +42,7 @@ export function HudBar({
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <StatusPill label={stageLabel} tone={stageLabel.toLowerCase().includes("core") ? "blue" : "teal"} />
-              <StatusPill label={roleId || "Generic"} tone="neutral" />
+              {roleId ? <StatusPill label={roleId} tone="neutral" /> : null}
             </div>
           </div>
 
