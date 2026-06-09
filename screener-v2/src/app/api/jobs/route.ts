@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { createJobPosting } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
+import { JobValidationError, parseSalaryField, parseTeamSizeField, validateSalaryRange } from "@/lib/jobs/validation";
 
 const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
 
@@ -13,12 +14,36 @@ function sanitizeReturnTo(value: unknown): string | undefined {
   return undefined;
 }
 
+/**
+ * Converts any thrown value into a safe, user-facing error message.
+ * Zod errors → first human-readable issue message.
+ * Prisma errors → generic safe message (no internal details exposed).
+ * Application errors (our own code) → pass through as-is.
+ */
+function formatJobError(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const first = error.issues[0];
+    if (!first) return "Please check the form and try again.";
+    return first.message;
+  }
+  if (error instanceof Error) {
+    if (error.constructor.name.startsWith("Prisma")) {
+      return "Could not save the job. Please try again.";
+    }
+    if (error instanceof JobValidationError) {
+      return error.message;
+    }
+    return "Could not create job.";
+  }
+  return "Could not create job.";
+}
+
 const jobSchema = z.object({
-  title: z.string().min(2),
+  title: z.string().min(2, "Job title must be at least 2 characters."),
   roleId: z.string().min(1, "A role is required."),
   screenerPresetId: z.string().optional(),
-  summary: z.string().min(8),
-  description: z.string().min(20),
+  summary: z.string().min(8, "Summary must be at least 8 characters."),
+  description: z.string().min(20, "Description must be at least 20 characters."),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
   teamSize: z.string().optional(),
@@ -46,17 +71,22 @@ export async function POST(request: Request) {
     const body = jobSchema.parse(rawForm);
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
-      throw new Error("Description should be at least 20 characters.");
+      throw new JobValidationError("Description should be at least 20 characters.");
     }
+
+    const salaryMin = parseSalaryField(body.salaryMin);
+    const salaryMax = parseSalaryField(body.salaryMax);
+    validateSalaryRange(salaryMin, salaryMax);
+
     await createJobPosting({
       title: body.title,
       roleId: body.roleId,
       screenerPresetId: body.screenerPresetId,
       summary: body.summary,
       description,
-      salaryMin: body.salaryMin ? Number(body.salaryMin) : undefined,
-      salaryMax: body.salaryMax ? Number(body.salaryMax) : undefined,
-      teamSize: body.teamSize ? Number(body.teamSize) : undefined,
+      salaryMin,
+      salaryMax,
+      teamSize: parseTeamSizeField(body.teamSize),
       techStack: body.techStack?.trim(),
       remotePolicy: body.remotePolicy?.trim(),
       isPublished: body.isPublished === "on",
@@ -71,15 +101,16 @@ export async function POST(request: Request) {
     }
     return NextResponse.redirect(url, 303);
   } catch (error) {
+    const errorMessage = formatJobError(error);
     const errorBase = returnTo
       ? `/departments/${returnTo.split("/departments/")[1]?.split("/")[0]}/jobs/new`
       : "/people/candidates/jobs/new";
     const url = new URL(errorBase, request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not create job.");
+    url.searchParams.set("error", errorMessage);
     if (returnTo) url.searchParams.set("returnTo", returnTo);
     if (wantsJson) {
       return NextResponse.json(
-        { ok: false, message: error instanceof Error ? error.message : "Could not create job.", next: `${url.pathname}${url.search}` },
+        { ok: false, message: errorMessage, next: `${url.pathname}${url.search}` },
         { status: 400 }
       );
     }
