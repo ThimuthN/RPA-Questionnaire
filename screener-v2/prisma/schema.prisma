@@ -583,10 +583,57 @@ model CandidateApplication {
   candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
   assignments  HiringAssignment[]
+  screeningAddonResults CandidateApplicationAddonResult[]
+  responses    CandidateApplicationResponse[]
 
   @@unique([candidateId, jobPostingId])
   @@index([candidateId, createdAt])
   @@index([jobPostingId, status, createdAt])
+}
+
+model CandidateApplicationAddonResult {
+  id               String   @id @default(cuid())
+  applicationId    String
+  presetId         String?
+  presetLabel      String
+  addonId          String?
+  addonSlug        String
+  addonLabel       String
+  assessmentTypeId String
+  requiredPercent  Int
+  weight           Int
+  isMandatory      Boolean  @default(true)
+  inlineSupported  Boolean  @default(true)
+  status           String
+  applicantPercent Float?
+  pointsEarned     Float    @default(0)
+  pointsPossible   Float    @default(0)
+  sortOrder        Int
+  createdAt        DateTime @default(now())
+  application      CandidateApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  responses        CandidateApplicationResponse[]
+
+  @@index([applicationId, sortOrder])
+}
+
+model CandidateApplicationResponse {
+  id            String   @id @default(cuid())
+  applicationId String
+  addonResultId String
+  questionKey   String
+  questionLabel String
+  formatLabel   String
+  answerJson    Json
+  answerText    String?
+  pointsEarned  Float    @default(0)
+  pointsPossible Float   @default(0)
+  sortOrder     Int
+  createdAt     DateTime @default(now())
+  application   CandidateApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  addonResult   CandidateApplicationAddonResult @relation(fields: [addonResultId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, sortOrder])
+  @@index([addonResultId, sortOrder])
 }
 
 enum HiringAssignmentRole {

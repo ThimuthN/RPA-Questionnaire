@@ -1,4 +1,4 @@
-export const DRAFT_VERSION = 1 as const;
+export const DRAFT_VERSION = 2 as const;
 const PREFIX = "northstar:job-application-draft:";
 
 export type ApplicationDraft = {
@@ -7,6 +7,7 @@ export type ApplicationDraft = {
   email: string;
   phone: string;
   coverNote: string;
+  screeningAnswers: Record<string, Record<string, unknown>>;
   step: number;
 };
 

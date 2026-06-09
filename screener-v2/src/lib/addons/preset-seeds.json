@@ -54,5 +54,20 @@
         "configOverride": {}
       }
     ]
+  },
+  {
+    "seedKey": "preset-applicant-intake-questionnaire",
+    "slug": "applicant-intake-questionnaire",
+    "label": "Applicant Intake Questionnaire",
+    "description": "Reusable intake questions shown during the public application flow.",
+    "isActive": true,
+    "sortOrder": 3,
+    "items": [
+      {
+        "addonSlug": "applicant-intake-questionnaire",
+        "sortOrder": 0,
+        "configOverride": {}
+      }
+    ]
   }
 ]

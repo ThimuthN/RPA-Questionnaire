@@ -1,7 +1,11 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { mapCandidate } from "@/lib/db/candidates";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
 import {
+  type ApplicationScreeningAddonResultItem,
+  type ApplicationScreeningPackage,
+  type ApplicationScreeningStatus,
   candidateApplicationStatusValues,
   isActiveApplicationStatus,
   type CandidateApplicationListItem,
@@ -9,7 +13,14 @@ import {
   type JobPostingDetail,
   type JobPostingListItem
 } from "@/lib/jobs/types";
-import { mapCandidate } from "@/lib/db/candidates";
+import {
+  evaluateApplicationScreening,
+  normalizeApplicationScreeningAnswerMap,
+  resolveApplicationScreeningPackageFromPreset,
+  validateApplicationScreeningAnswerMap,
+  type ApplicationScreeningAnswerMap,
+  type ApplicationScreeningResponseDraft
+} from "@/lib/jobs/application-screening";
 import { cuidLike } from "@/lib/tokens/token-service";
 
 type JobPostingRow = {
@@ -109,6 +120,80 @@ function mapApplication(row: {
     updatedAt: row.updatedAt.toISOString(),
     status: row.status as CandidateApplicationStatus
   };
+}
+
+function deriveApplicationScreeningStatus(
+  rows: Array<{ status: string; isMandatory: boolean }>
+): ApplicationScreeningStatus | null {
+  if (rows.length === 0) {
+    return null;
+  }
+
+  if (rows.some((row) => row.isMandatory && row.status === "failed")) {
+    return "failed";
+  }
+
+  if (rows.some((row) => row.status === "needs_review")) {
+    return "needs_review";
+  }
+
+  return "passed";
+}
+
+function mapApplicationScreeningAddonResult(row: {
+  addonId: string | null;
+  addonLabel: string;
+  requiredPercent: number;
+  weight: number;
+  isMandatory: boolean;
+  inlineSupported: boolean;
+  status: string;
+  applicantPercent: number | null;
+  pointsEarned: number;
+  pointsPossible: number;
+  responses: Array<{
+    questionKey: string;
+    questionLabel: string;
+    formatLabel: string;
+    answerText: string | null;
+    pointsEarned: number;
+    pointsPossible: number;
+    sortOrder: number;
+  }>;
+}): ApplicationScreeningAddonResultItem {
+  return {
+    addonId: row.addonId ?? undefined,
+    addonLabel: row.addonLabel,
+    requiredPercent: row.requiredPercent,
+    weight: row.weight,
+    isMandatory: row.isMandatory,
+    inlineSupported: row.inlineSupported,
+    status: row.status as ApplicationScreeningStatus,
+    applicantPercent: row.applicantPercent,
+    pointsEarned: row.pointsEarned,
+    pointsPossible: row.pointsPossible,
+    responses: row.responses
+      .slice()
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+      .map((response) => ({
+        addonLabel: row.addonLabel,
+        questionKey: response.questionKey,
+        questionLabel: response.questionLabel,
+        formatLabel: response.formatLabel,
+        answerText: response.answerText,
+        pointsEarned: response.pointsEarned,
+        pointsPossible: response.pointsPossible,
+        sortOrder: response.sortOrder
+      }))
+  };
+}
+
+function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+  if (value === null) {
+    return Prisma.JsonNull;
+  }
+
+  return value as Prisma.InputJsonValue;
 }
 
 function buildApplicantWorkspaceWhere(filters: {
@@ -236,6 +321,72 @@ export async function getPublicJobPostingBySlug(slug: string) {
   });
 
   return row ? mapJobPosting(row) : null;
+}
+
+export async function getPublicJobApplicationContextBySlug(slug: string): Promise<{
+  job: JobPostingListItem;
+  screeningPackage: ApplicationScreeningPackage | null;
+} | null> {
+  const row = await prisma.jobPosting.findFirst({
+    where: {
+      slug,
+      isPublished: true,
+      isOpen: true
+    },
+    include: {
+      role: {
+        select: {
+          label: true,
+          department: true
+        }
+      },
+      screenerPreset: {
+        select: {
+          id: true,
+          label: true,
+          items: {
+            select: {
+              id: true,
+              sortOrder: true,
+              configOverrideJson: true,
+              weightOverride: true,
+              addon: {
+                select: {
+                  id: true,
+                  slug: true,
+                  label: true,
+                  assessmentTypeId: true,
+                  defaultConfigJson: true,
+                  defaultRequiredPercent: true,
+                  defaultWeight: true
+                }
+              }
+            },
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+          }
+        }
+      },
+      applications: {
+        select: {
+          status: true
+        }
+      }
+    }
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    job: mapJobPosting({
+      ...row,
+      screenerPreset: row.screenerPreset
+        ? { id: row.screenerPreset.id, label: row.screenerPreset.label }
+        : null
+    }),
+    screeningPackage: resolveApplicationScreeningPackageFromPreset(row.screenerPreset)
+  };
 }
 
 export async function listJobPostings(departmentId?: string) {
@@ -609,6 +760,23 @@ export async function getApplicantReviewDetail(applicationId: string) {
             }
           }
         }
+      },
+      screeningAddonResults: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        include: {
+          responses: {
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            select: {
+              questionKey: true,
+              questionLabel: true,
+              formatLabel: true,
+              answerText: true,
+              pointsEarned: true,
+              pointsPossible: true,
+              sortOrder: true
+            }
+          }
+        }
       }
     }
   });
@@ -637,7 +805,9 @@ export async function getApplicantReviewDetail(applicationId: string) {
           uploadedAt: latestResume.uploadedAt.toISOString()
         }
       : null,
-    applicationNote: row.coverNote?.trim() || ""
+    applicationNote: row.coverNote?.trim() || "",
+    screeningStatus: deriveApplicationScreeningStatus(row.screeningAddonResults),
+    screeningAddonResults: row.screeningAddonResults.map(mapApplicationScreeningAddonResult)
   };
 }
 
@@ -689,6 +859,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   email: string;
   phone?: string;
   coverNote?: string;
+  screeningAnswers?: ApplicationScreeningAnswerMap | Record<string, unknown>;
 }) {
   const job = await prisma.jobPosting.findFirst({
     where: {
@@ -738,6 +909,16 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
 
   if (!job) {
     throw new Error("This job is not available right now.");
+  }
+
+  const screeningPackage = resolveApplicationScreeningPackageFromPreset(job.screenerPreset);
+  const screeningAnswers = normalizeApplicationScreeningAnswerMap(input.screeningAnswers);
+  const screeningValidation = validateApplicationScreeningAnswerMap(
+    screeningPackage,
+    screeningAnswers
+  );
+  if (!screeningValidation.ok) {
+    throw new Error(screeningValidation.reason);
   }
 
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -832,13 +1013,63 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
     };
   }
 
-  const application = await prisma.candidateApplication.create({
-    data: {
-      candidateId: existingCandidate.id,
-      jobPostingId: job.id,
-      status: "submitted",
-      coverNote: input.coverNote?.trim() || null
+  const screeningEvaluation = evaluateApplicationScreening(
+    screeningPackage,
+    screeningAnswers
+  );
+
+  const application = await prisma.$transaction(async (tx) => {
+    const createdApplication = await tx.candidateApplication.create({
+      data: {
+        candidateId: existingCandidate.id,
+        jobPostingId: job.id,
+        status: "submitted",
+        coverNote: input.coverNote?.trim() || null
+      }
+    });
+
+    for (const addonResult of screeningEvaluation.addonResults) {
+      const createdAddonResult = await tx.candidateApplicationAddonResult.create({
+        data: {
+          applicationId: createdApplication.id,
+          presetId: addonResult.presetId,
+          presetLabel: addonResult.presetLabel,
+          addonId: addonResult.addonId ?? null,
+          addonSlug: addonResult.addonSlug,
+          addonLabel: addonResult.addonLabel,
+          assessmentTypeId: addonResult.assessmentTypeId,
+          requiredPercent: addonResult.requiredPercent,
+          weight: addonResult.weight,
+          isMandatory: addonResult.isMandatory,
+          inlineSupported: addonResult.inlineSupported,
+          status: addonResult.status,
+          applicantPercent: addonResult.applicantPercent,
+          pointsEarned: addonResult.pointsEarned,
+          pointsPossible: addonResult.pointsPossible,
+          sortOrder: addonResult.sortOrder
+        }
+      });
+
+      if (addonResult.responses.length > 0) {
+        const responses = addonResult.responses as ApplicationScreeningResponseDraft[];
+        await tx.candidateApplicationResponse.createMany({
+          data: responses.map((response) => ({
+            applicationId: createdApplication.id,
+            addonResultId: createdAddonResult.id,
+            questionKey: response.questionKey,
+            questionLabel: response.questionLabel,
+            formatLabel: response.formatLabel,
+            answerJson: toPrismaJsonValue(response.answerJson ?? null),
+            answerText: response.answerText,
+            pointsEarned: response.pointsEarned,
+            pointsPossible: response.pointsPossible,
+            sortOrder: response.sortOrder
+          }))
+        });
+      }
     }
+
+    return createdApplication;
   });
 
   return {

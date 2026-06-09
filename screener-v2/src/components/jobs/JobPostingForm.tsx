@@ -12,7 +12,7 @@ const inputCls =
   "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 w-full";
 const hintCls = "text-xs text-[color:var(--app-muted)]";
 
-const STEPS = ["Basics", "Public listing", "Compensation", "Screening", "Publish", "Review"] as const;
+const STEPS = ["Basics", "Public listing", "Compensation", "Application screening", "Publish", "Review"] as const;
 
 // ── Stepper ──────────────────────────────────────────────────────────────────
 
@@ -266,7 +266,7 @@ export function JobPostingForm({
       <div className={step === 3 ? "space-y-4" : "hidden"}>
         <label className="grid gap-1">
           <span className="text-sm text-[color:var(--app-text)]">
-            Screening assessment (optional)
+            Application screening package
           </span>
           <select
             name="screenerPresetId"
@@ -274,19 +274,15 @@ export function JobPostingForm({
             onChange={set("screenerPresetId")}
             className={inputCls}
           >
-            <option value="">None — applicants apply without a test</option>
+            <option value="">No screening package</option>
             {presetOptions.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
           </select>
-          <p className={hintCls}>Attach a preset to auto-score submissions at intake.</p>
+          <p className={hintCls}>Applicants complete this during application when supported.</p>
         </label>
-        <p className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
-          Screening configuration will be expanded in a future release with pass/fail thresholds,
-          question editing, and auto-reject rules.
-        </p>
       </div>
 
       {/* ── Step 4: Publish ────────────────────────────────────────────────── */}
@@ -355,7 +351,7 @@ export function JobPostingForm({
             />
           )}
           {vals.screenerPresetId && presetLabel && (
-            <ReviewRow label="Screening" value={presetLabel} />
+            <ReviewRow label="Application screening package" value={presetLabel} />
           )}
           <ReviewRow
             label="Published"

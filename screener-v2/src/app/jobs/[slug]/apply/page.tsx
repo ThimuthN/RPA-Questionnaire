@@ -6,7 +6,7 @@ import { Button } from "@/components/primitives/Button";
 import { ApplicationDraftCleaner, JobApplicationForm } from "@/components/jobs/JobApplicationForm";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
-import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
+import { getPublicJobApplicationContextBySlug } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 export const dynamic = "force-dynamic";
@@ -22,16 +22,17 @@ export default async function ApplyPage({
     error?: string;
     applicationId?: string;
     resumeError?: string;
-    hasScreener?: string;
   }>;
 }) {
   if (!PUBLIC_JOBS_ENABLED) notFound();
 
   const { slug } = await params;
   const pageState = await searchParams;
-  const job = await getPublicJobPostingBySlug(slug);
+  const context = await getPublicJobApplicationContextBySlug(slug);
 
-  if (!job) notFound();
+  if (!context) notFound();
+
+  const { job, screeningPackage } = context;
 
   const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const subtitle = job.roleDepartment ?? job.roleLabel ?? orgName;
@@ -70,15 +71,6 @@ export default async function ApplyPage({
                   ? " The resume upload did not finish — only your contact details were saved."
                   : ""}
               </p>
-              {pageState.hasScreener === "1" ? (
-                <div className="rounded-[18px] border border-brand-300/20 bg-brand-400/5 p-4 text-sm text-[color:var(--app-text)]">
-                  <p className="font-medium text-[color:var(--app-heading)]">Assessment configured</p>
-                  <p className="mt-1 leading-6 text-[color:var(--app-muted)]">
-                    This role has a screening assessment. The hiring team will send next steps if
-                    they move your application forward.
-                  </p>
-                </div>
-              ) : null}
               {pageState.applicationId ? (
                 <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 text-sm">
                   <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
@@ -133,7 +125,7 @@ export default async function ApplyPage({
               </div>
             ) : null}
             <StagePanel className="space-y-5">
-              <JobApplicationForm jobSlug={slug} />
+              <JobApplicationForm jobSlug={slug} screeningPackage={screeningPackage} />
             </StagePanel>
           </>
         ) : null}

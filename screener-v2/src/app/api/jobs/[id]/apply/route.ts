@@ -17,6 +17,18 @@ const publicApplySchema = z.object({
   coverNote: z.string().optional()
 });
 
+function parseScreeningAnswers(rawValue: FormDataEntryValue | null) {
+  if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawValue) as Record<string, unknown>;
+  } catch {
+    throw new Error("Could not read the screening responses. Please try again.");
+  }
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -29,6 +41,7 @@ export async function POST(
 
   try {
     const formData = await request.formData();
+    const screeningAnswers = parseScreeningAnswers(formData.get("screeningAnswers"));
     const body = publicApplySchema.parse({
       fullName: formData.get("fullName"),
       email: formData.get("email"),
@@ -47,7 +60,8 @@ export async function POST(
       fullName: body.fullName,
       email: body.email,
       phone: body.phone,
-      coverNote: body.coverNote
+      coverNote: body.coverNote,
+      screeningAnswers
     });
 
     const url = new URL(`/jobs/${slug}/apply`, request.url);

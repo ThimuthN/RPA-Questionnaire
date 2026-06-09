@@ -1,3 +1,8 @@
+import type {
+  ExamDefinitionId,
+  ExamQuestion
+} from "@/lib/assessment-engine/types";
+
 export const candidateApplicationStatusValues = [
   "submitted",
   "under_review",
@@ -60,6 +65,60 @@ export type CandidateApplicationListItem = {
   appliedAt: string;
   updatedAt: string;
   status: CandidateApplicationStatus;
+};
+
+export type ApplicationScreeningStatus = "passed" | "failed" | "needs_review";
+
+export type ApplicationScreeningQuestion = ExamQuestion & {
+  sortOrder: number;
+};
+
+export type ApplicationScreeningAddon = {
+  key: string;
+  addonId?: string;
+  addonSlug: string;
+  addonLabel: string;
+  assessmentTypeId: ExamDefinitionId;
+  configSummary: string;
+  durationMinutes: number;
+  requiredPercent: number;
+  weight: number;
+  isMandatory: boolean;
+  inlineSupported: boolean;
+  inlineSupportReason?: string;
+  sortOrder: number;
+  questions: ApplicationScreeningQuestion[];
+};
+
+export type ApplicationScreeningPackage = {
+  presetId: string;
+  presetLabel: string;
+  addons: ApplicationScreeningAddon[];
+};
+
+export type ApplicationScreeningResponseItem = {
+  addonLabel: string;
+  questionKey: string;
+  questionLabel: string;
+  formatLabel: string;
+  answerText: string | null;
+  pointsEarned: number;
+  pointsPossible: number;
+  sortOrder: number;
+};
+
+export type ApplicationScreeningAddonResultItem = {
+  addonId?: string;
+  addonLabel: string;
+  requiredPercent: number;
+  weight: number;
+  isMandatory: boolean;
+  inlineSupported: boolean;
+  status: ApplicationScreeningStatus;
+  applicantPercent: number | null;
+  pointsEarned: number;
+  pointsPossible: number;
+  responses: ApplicationScreeningResponseItem[];
 };
 
 export function isActiveApplicationStatus(status: CandidateApplicationStatus) {

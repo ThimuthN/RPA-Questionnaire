@@ -46,6 +46,11 @@ const VALID_DRAFT: Omit<ApplicationDraft, "version"> = {
   email: "jane@example.com",
   phone: "+1 555 0100",
   coverNote: "I am excited about this role.",
+  screeningAnswers: {
+    "applicant-intake-questionnaire:0": {
+      workEligibility: true
+    }
+  },
   step: 2,
 };
 
@@ -84,6 +89,25 @@ describe("saveApplicationDraft / loadApplicationDraft — round-trip", () => {
   it("persists updated coverNote", () => {
     saveApplicationDraft(TEST_KEY, { ...VALID_DRAFT, coverNote: "Updated" });
     expect(loadApplicationDraft(TEST_KEY)?.coverNote).toBe("Updated");
+  });
+
+  it("persists screening answers", () => {
+    saveApplicationDraft(TEST_KEY, {
+      ...VALID_DRAFT,
+      screeningAnswers: {
+        "addon-1:0": {
+          questionOne: "yes",
+          questionTwo: ["a", "b"]
+        }
+      }
+    });
+
+    expect(loadApplicationDraft(TEST_KEY)?.screeningAnswers).toEqual({
+      "addon-1:0": {
+        questionOne: "yes",
+        questionTwo: ["a", "b"]
+      }
+    });
   });
 
   it("overwrites a previous draft on re-save", () => {

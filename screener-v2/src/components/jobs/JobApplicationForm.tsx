@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/primitives/Button";
+import { QuestionRuntimeCard } from "@/components/runtime/QuestionRuntimeCard";
 import { Loader2 } from "lucide-react";
 import {
   clearApplicationDraft,
@@ -9,6 +10,7 @@ import {
   loadApplicationDraft,
   saveApplicationDraft,
 } from "@/lib/jobs/public-application-draft";
+import { validateApplicationScreeningAnswerMap } from "@/lib/jobs/application-screening";
 import {
   COVER_NOTE_MAX,
   EMAIL_MAX,
@@ -17,6 +19,8 @@ import {
   validateProfileStep,
   validateResumeFile,
 } from "@/lib/jobs/public-application-validation";
+import type { ApplicationScreeningAddon, ApplicationScreeningPackage } from "@/lib/jobs/types";
+import { questionRegistry } from "@/lib/question-types";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -91,12 +95,37 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 
 type Vals = { fullName: string; email: string; phone: string; coverNote: string };
 
-export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
+type ScreeningAnswers = Record<string, Record<string, unknown>>;
+
+function getAddonBadgeText(addon: ApplicationScreeningAddon) {
+  const parts = [`Pass ${addon.requiredPercent}%`];
+
+  if (addon.weight > 0) {
+    parts.push(`Weight ${addon.weight}`);
+  }
+
+  if (addon.isMandatory) {
+    parts.push("Required");
+  }
+
+  return parts.join(" | ");
+}
+
+export function JobApplicationForm({
+  jobSlug,
+  screeningPackage,
+}: {
+  jobSlug: string;
+  screeningPackage: ApplicationScreeningPackage | null;
+}) {
   const key = draftKey(jobSlug);
+  const inlineAddons = screeningPackage?.addons.filter((addon) => addon.inlineSupported) ?? [];
+  const hasInlineScreening = inlineAddons.length > 0;
 
   const [initialized, setInitialized] = useState(false);
   const [step, setStep] = useState(0);
   const [vals, setVals] = useState<Vals>({ fullName: "", email: "", phone: "", coverNote: "" });
+  const [screeningAnswers, setScreeningAnswers] = useState<ScreeningAnswers>({});
   const [stepError, setStepError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -113,6 +142,7 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
         phone: draft.phone,
         coverNote: draft.coverNote,
       });
+      setScreeningAnswers(draft.screeningAnswers ?? {});
       setStep(draft.step);
       setDraftSaved(true);
     }
@@ -122,19 +152,31 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
   // Auto-save whenever text values or step change (once initialized)
   useEffect(() => {
     if (!initialized) return;
-    if (!vals.fullName && !vals.email && !vals.phone && !vals.coverNote) return;
-    saveApplicationDraft(key, { ...vals, step });
+    const hasScreeningDraft = Object.keys(screeningAnswers).length > 0;
+    if (!vals.fullName && !vals.email && !vals.phone && !vals.coverNote && !hasScreeningDraft) return;
+    saveApplicationDraft(key, { ...vals, screeningAnswers, step });
     setDraftSaved(true);
-  }, [vals, step, key, initialized]);
+  }, [vals, screeningAnswers, step, key, initialized]);
 
   const set =
     (k: keyof Vals) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setVals((v) => ({ ...v, [k]: e.target.value }));
 
+  function updateScreeningAnswer(addonKey: string, questionId: string, value: unknown) {
+    setScreeningAnswers((current) => ({
+      ...current,
+      [addonKey]: {
+        ...(current[addonKey] ?? {}),
+        [questionId]: value,
+      },
+    }));
+  }
+
   function clearDraft() {
     clearApplicationDraft(key);
     setVals({ fullName: "", email: "", phone: "", coverNote: "" });
+    setScreeningAnswers({});
     setStep(0);
     setStepError(null);
     setDraftSaved(false);
@@ -154,6 +196,16 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
         if (err) { setStepError(err); return; }
       }
     }
+    if (step === 2) {
+      const screeningValidation = validateApplicationScreeningAnswerMap(
+        screeningPackage,
+        screeningAnswers
+      );
+      if (!screeningValidation.ok) {
+        setStepError(screeningValidation.reason);
+        return;
+      }
+    }
     setStepError(null);
     setStep((s) => s + 1);
   }
@@ -163,6 +215,31 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
     setStep((s) => s - 1);
   }
 
+  function isScreeningQuestionComplete(
+    addon: ApplicationScreeningAddon,
+    question: ApplicationScreeningAddon["questions"][number]
+  ) {
+    const definition = questionRegistry[question.format];
+    if (!definition) {
+      return false;
+    }
+
+    return definition.validateAnswer(
+      question as never,
+      screeningAnswers[addon.key]?.[question.id] as never
+    ).ok;
+  }
+
+  const screeningQuestionCount = inlineAddons.reduce(
+    (total, addon) => total + addon.questions.length,
+    0
+  );
+  const completedScreeningQuestionCount = inlineAddons.reduce(
+    (total, addon) =>
+      total +
+      addon.questions.filter((question) => isScreeningQuestionComplete(addon, question)).length,
+    0
+  );
   const isReview = step === STEPS.length - 1;
 
   return (
@@ -174,6 +251,11 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
       onSubmit={() => setIsSubmitting(true)}
     >
       <StepIndicator current={step} />
+      <input
+        type="hidden"
+        name="screeningAnswers"
+        value={JSON.stringify(screeningAnswers)}
+      />
 
       {stepError && (
         <p
@@ -252,8 +334,47 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
       <div className={step === 2 ? "space-y-4" : "hidden"}>
         <div className="space-y-1">
           <p className="text-sm font-medium text-[color:var(--app-heading)]">Additional questions</p>
-          <p className={hintCls}>No additional questions are required for this role.</p>
+          <p className={hintCls}>
+            {hasInlineScreening
+              ? "Complete the required screening items before reviewing your application."
+              : "No additional questions are required for this role."}
+          </p>
         </div>
+        {hasInlineScreening ? (
+          <div className="space-y-4">
+            {inlineAddons.map((addon) => (
+              <section
+                key={addon.key}
+                className="space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 sm:p-5"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-[color:var(--app-heading)]">
+                      {addon.addonLabel}
+                    </h3>
+                    <p className="text-sm text-[color:var(--app-muted)]">{addon.configSummary}</p>
+                  </div>
+                  <div className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1 text-xs font-medium text-[color:var(--app-muted)]">
+                    {getAddonBadgeText(addon)}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {addon.questions.map((question, index) => (
+                    <QuestionRuntimeCard
+                      key={`${addon.key}:${question.id}`}
+                      question={question}
+                      answer={screeningAnswers[addon.key]?.[question.id]}
+                      onChange={(value) => updateScreeningAnswer(addon.key, question.id, value)}
+                      questionIndex={index}
+                      questionCount={addon.questions.length}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : null}
         <label className="grid gap-1.5">
           <span className="text-sm text-[color:var(--app-text)]">Cover note (optional)</span>
           <textarea
@@ -289,6 +410,43 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
               }
             />
           )}
+          <ReviewRow
+            label="Application screening"
+            value={
+              screeningQuestionCount > 0
+                ? `${completedScreeningQuestionCount} of ${screeningQuestionCount} questions completed`
+                : "No additional questions required"
+            }
+          />
+          {hasInlineScreening ? (
+            <div className="space-y-3 pt-3">
+              {inlineAddons.map((addon) => (
+                <div
+                  key={`review:${addon.key}`}
+                  className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-[color:var(--app-heading)]">
+                        {addon.addonLabel}
+                      </p>
+                      <p className="text-xs text-[color:var(--app-muted)]">
+                        {getAddonBadgeText(addon)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-[color:var(--app-muted)]">
+                      {
+                        addon.questions.filter((question) =>
+                          isScreeningQuestionComplete(addon, question)
+                        ).length
+                      }{" "}
+                      of {addon.questions.length} answered
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <p className="pt-3 text-xs text-[color:var(--app-muted)]">
             By submitting, you are sharing this information with the hiring team for review on this
             role.
