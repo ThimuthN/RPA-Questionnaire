@@ -50,7 +50,7 @@ export async function POST(
       coverNote: body.coverNote
     });
 
-    const url = new URL(`/jobs/${slug}`, request.url);
+    const url = new URL(`/jobs/${slug}/apply`, request.url);
 
     if (submission.status === "duplicate") {
       url.searchParams.set("alreadyApplied", "1");
@@ -83,13 +83,13 @@ export async function POST(
           throw error;
         }
       } catch {
-        url.searchParams.set("applied", "1");
+        url.searchParams.set("submitted", "1");
         url.searchParams.set("resumeError", "1");
         return NextResponse.redirect(url, 303);
       }
     }
 
-    url.searchParams.set("applied", "1");
+    url.searchParams.set("submitted", "1");
     url.searchParams.set("applicationId", submission.applicationId);
     return NextResponse.redirect(url, 303);
   } catch (error) {
