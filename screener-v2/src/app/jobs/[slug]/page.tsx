@@ -1,10 +1,9 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { Briefcase, CheckCircle2, DollarSign, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
-import { JobQuickFactsCard } from "@/components/jobs/JobQuickFactsCard";
 import { ApplicationDraftCleaner } from "@/components/jobs/JobApplicationForm";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -13,7 +12,7 @@ import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 export const dynamic = "force-dynamic";
 
-const updatedAtFormatter = new Intl.DateTimeFormat("en", {
+const dateFormatter = new Intl.DateTimeFormat("en", {
   month: "short",
   day: "numeric",
   year: "numeric"
@@ -32,172 +31,209 @@ export default async function PublicJobDetailPage({
     hasScreener?: string;
   }>;
 }) {
-  if (!PUBLIC_JOBS_ENABLED) {
-    notFound();
-  }
+  if (!PUBLIC_JOBS_ENABLED) notFound();
 
   const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const { slug } = await params;
   const pageState = await searchParams;
   const job = await getPublicJobPostingBySlug(slug);
 
-  if (!job) {
-    notFound();
-  }
+  if (!job) notFound();
 
   const hasConfirmation = Boolean(pageState.applied || pageState.alreadyApplied);
+  const applyHref = `/jobs/${job.slug}/apply` as Route;
+
+  const salaryLabel =
+    job.salaryMin && job.salaryMax
+      ? `$${(job.salaryMin / 1000).toFixed(0)}k–$${(job.salaryMax / 1000).toFixed(0)}k`
+      : job.salaryMin
+        ? `$${(job.salaryMin / 1000).toFixed(0)}k+`
+        : null;
 
   return (
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow={`${orgName} careers`}
-      title={job.title}
-      subtitle={job.summary}
-      utility={
-        <>
-          <Link href="/jobs">
-            <Button variant="secondary">All roles</Button>
-          </Link>
-          {!hasConfirmation ? (
-            <Link href={`/jobs/${job.slug}/apply` as Route}>
-              <Button>Apply</Button>
-            </Link>
-          ) : null}
-        </>
-      }
+      eyebrow=""
+      title=""
+      hideHeader
     >
       {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_360px]">
-        {/* Main: role content */}
-        <div className="space-y-6">
-          <StagePanel className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-              {job.roleLabel ? (
-                <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1.5 text-sm text-[color:var(--app-text)]">
-                  {job.roleLabel}
-                </span>
-              ) : null}
-              {job.roleDepartment ? (
-                <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1.5 text-sm text-[color:var(--app-text)]">
-                  {job.roleDepartment}
-                </span>
-              ) : null}
-            </div>
+      {/* ── Job header card ── */}
+      <div className="mb-8 rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 md:p-8 space-y-5">
 
-            <JobQuickFactsCard
-              salaryMin={job.salaryMin}
-              salaryMax={job.salaryMax}
-              teamSize={job.teamSize}
-              techStack={job.techStack}
-              remotePolicy={job.remotePolicy}
-              companyName={orgName}
-            />
-
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-              Updated {updatedAtFormatter.format(new Date(job.updatedAt))}
-            </p>
-          </StagePanel>
-
-          <StagePanel className="space-y-4">
-            <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">About the role</h2>
-            <JobDescriptionContent html={job.description} />
-          </StagePanel>
+        {/* Company row */}
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 shrink-0 rounded-2xl border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_20%,var(--app-surface-soft)),var(--app-surface-muted))] flex items-center justify-center text-xl font-bold text-[color:var(--app-brand)]">
+            {orgName.charAt(0)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-[color:var(--app-heading)]">{orgName}</p>
+            {job.roleDepartment ? (
+              <p className="text-xs text-[color:var(--app-muted)]">{job.roleDepartment}</p>
+            ) : null}
+          </div>
+          <Link href="/jobs" className="shrink-0">
+            <Button variant="ghost">All roles</Button>
+          </Link>
         </div>
 
-        {/* Right rail: Apply CTA or confirmation */}
-        <StagePanel tone="summary" className="h-fit space-y-5 xl:sticky xl:top-6">
+        {/* Job title */}
+        <div>
+          <h1 className="text-2xl font-semibold text-[color:var(--app-heading)] sm:text-3xl leading-snug">
+            {job.title}
+          </h1>
+          {job.roleLabel ? (
+            <p className="mt-1 text-sm text-[color:var(--app-muted)]">{job.roleLabel}</p>
+          ) : null}
+        </div>
+
+        {/* Metadata chips */}
+        {(job.remotePolicy || salaryLabel || job.roleDepartment) ? (
+          <div className="flex flex-wrap gap-2">
+            {job.remotePolicy ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1 text-xs text-[color:var(--app-text)]">
+                <MapPin className="h-3.5 w-3.5 text-[color:var(--app-muted)]" />
+                {job.remotePolicy}
+              </span>
+            ) : null}
+            {salaryLabel ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1 text-xs text-[color:var(--app-text)]">
+                <DollarSign className="h-3.5 w-3.5 text-[color:var(--app-muted)]" />
+                {salaryLabel}
+              </span>
+            ) : null}
+            {job.roleDepartment ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-1 text-xs text-[color:var(--app-text)]">
+                <Briefcase className="h-3.5 w-3.5 text-[color:var(--app-muted)]" />
+                {job.roleDepartment}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* Footer: date + CTA */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--app-border)] pt-5">
+          <p className="text-xs text-[color:var(--app-muted)]">
+            Updated {dateFormatter.format(new Date(job.updatedAt))}
+          </p>
           {!hasConfirmation ? (
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                  Ready to apply?
-                </p>
-                <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                  Submit your application for {job.title}.
-                </p>
+            <Link href={applyHref}>
+              <Button>Apply now</Button>
+            </Link>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ── Backward-compat success banner ── */}
+      {pageState.applied ? (
+        <div className="mb-8 flex items-start gap-3 rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-5">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-emerald-50">Application received</p>
+            <p className="text-sm text-emerald-100/80">
+              Your application has been saved.
+              {pageState.resumeError
+                ? " The resume upload did not finish — only your contact details were saved."
+                : ""}
+            </p>
+          </div>
+        </div>
+      ) : null}
+      {pageState.alreadyApplied ? (
+        <div className="mb-8 rounded-[20px] border border-brand-300/30 bg-brand-500/10 p-5">
+          <p className="text-sm font-medium text-[color:var(--app-heading)]">Application already received</p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">
+            We already have an application for this email on this job.
+          </p>
+        </div>
+      ) : null}
+
+      {/* ── 2-col layout ── */}
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+
+        {/* Main: description */}
+        <StagePanel className="space-y-5">
+          <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">About the role</h2>
+          <div className="text-sm leading-7 text-[color:var(--app-muted)]">
+            <JobDescriptionContent html={job.description} />
+          </div>
+        </StagePanel>
+
+        {/* Right rail: Apply card */}
+        <div className="xl:sticky xl:top-6 h-fit">
+          <StagePanel tone="summary" className="space-y-5">
+
+            {/* Mini header */}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 shrink-0 rounded-xl border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_18%,var(--app-surface-soft)),var(--app-surface-muted))] flex items-center justify-center text-sm font-bold text-[color:var(--app-brand)]">
+                {orgName.charAt(0)}
               </div>
-              <Link href={`/jobs/${job.slug}/apply` as Route} className="block">
-                <Button className="w-full justify-center">Apply now</Button>
-              </Link>
-              <Link href="/jobs" className="block">
-                <Button type="button" variant="ghost" className="w-full justify-center">
-                  Back to jobs
-                </Button>
-              </Link>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-[color:var(--app-heading)]">
+                  {job.title}
+                </p>
+                <p className="text-xs text-[color:var(--app-muted)]">{orgName}</p>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {pageState.applied ? (
-                <div className="space-y-3 rounded-[18px] border border-emerald-400/30 bg-emerald-500/10 p-5 text-sm text-emerald-100">
-                  <div className="space-y-1">
-                    <p className="flex items-center gap-2 text-base font-medium text-emerald-50">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Application received
-                    </p>
-                    <p>
-                      We saved your application for this role.
-                      {pageState.resumeError
-                        ? " The resume upload did not finish, so only the application details were saved."
-                        : ""}
-                    </p>
+
+            {/* Facts list */}
+            {(job.remotePolicy || salaryLabel || job.roleDepartment || job.teamSize) ? (
+              <div className="space-y-2.5 border-t border-[color:var(--app-border)] pt-4">
+                {job.remotePolicy ? (
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <MapPin className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+                    <span className="text-[color:var(--app-text)]">{job.remotePolicy}</span>
                   </div>
-                  {pageState.hasScreener === "1" ? (
-                    <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                      <p className="font-medium">Assessment configured</p>
-                      <p>
-                        This job has a screening assessment configured. The hiring team will send
-                        next steps if they move your application forward.
-                      </p>
-                    </div>
-                  ) : null}
-                  {pageState.applicationId ? (
-                    <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                      <p className="font-medium">Application reference</p>
-                      <p>{pageState.applicationId}</p>
-                      <p className="mt-2 text-[color:var(--app-foreground-muted)]">
-                        Use this reference with your email to check status.
-                      </p>
-                      <p className="mt-3">
-                        <a
-                          href={`/jobs/application-status?applicationId=${encodeURIComponent(pageState.applicationId ?? "")}`}
-                          className="text-sm font-medium text-white underline"
-                        >
-                          Check application status
-                        </a>
-                      </p>
-                    </div>
-                  ) : null}
-                  <p className="text-sm text-emerald-50/90">
-                    If there is a fit, the team will move you forward from the same review workflow.
-                  </p>
-                </div>
-              ) : null}
-              {pageState.alreadyApplied ? (
-                <div className="space-y-2 rounded-[18px] border border-brand-300/30 bg-brand-500/10 p-5 text-sm text-[color:var(--app-heading)]">
-                  <p className="text-base font-medium">Application already received</p>
-                  <p>
-                    We already have an application for this email on this job, so we did not create
-                    a duplicate.
-                  </p>
-                </div>
-              ) : null}
-              <div className="flex flex-wrap gap-2">
-                <Link href="/jobs">
-                  <Button type="button" variant="secondary">
-                    Back to jobs
+                ) : null}
+                {salaryLabel ? (
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <DollarSign className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+                    <span className="text-[color:var(--app-text)]">{salaryLabel}</span>
+                  </div>
+                ) : null}
+                {job.roleDepartment ? (
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <Briefcase className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+                    <span className="text-[color:var(--app-text)]">{job.roleDepartment}</span>
+                  </div>
+                ) : null}
+                {job.teamSize ? (
+                  <div className="flex items-center gap-2.5 text-sm">
+                    <Users className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+                    <span className="text-[color:var(--app-text)]">
+                      {job.teamSize} on team
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {/* CTA */}
+            {!hasConfirmation ? (
+              <div className="space-y-2 border-t border-[color:var(--app-border)] pt-4">
+                <Link href={applyHref} className="block">
+                  <Button className="w-full justify-center">Apply now</Button>
+                </Link>
+                <Link href="/jobs" className="block">
+                  <Button variant="ghost" className="w-full justify-center text-sm">
+                    All roles
                   </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-4">
+                <Link href="/jobs">
+                  <Button variant="secondary">Back to jobs</Button>
                 </Link>
                 <Link href="/">
-                  <Button type="button" variant="ghost">
-                    Open Northstar
-                  </Button>
+                  <Button variant="ghost">Open Northstar</Button>
                 </Link>
               </div>
-            </div>
-          )}
-        </StagePanel>
+            )}
+          </StagePanel>
+        </div>
       </div>
     </SceneShell>
   );
