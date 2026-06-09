@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, BriefcaseBusiness, Building2, CheckCircle2, Clock3, FileText } from "lucide-react";
+import { BriefcaseBusiness, Building2, CheckCircle2, FileText } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { JobQuickFactsCard } from "@/components/jobs/JobQuickFactsCard";
-import { JobApplicationForm } from "@/components/jobs/JobApplicationForm";
+import { ApplicationDraftCleaner, JobApplicationForm } from "@/components/jobs/JobApplicationForm";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
@@ -61,7 +61,7 @@ export default async function PublicJobDetailPage({
           </Link>
           {!hasConfirmation ? (
             <Link href="#apply">
-              <Button>Easy apply</Button>
+              <Button>Apply</Button>
             </Link>
           ) : null}
         </>
@@ -105,10 +105,10 @@ export default async function PublicJobDetailPage({
             <div className="grid gap-4 rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_12%,var(--app-surface)),var(--app-surface-soft))] p-5 lg:grid-cols-[minmax(0,1fr)_240px]">
               <div className="space-y-2">
                 <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Role snapshot</p>
-                <h2 className="text-2xl text-[color:var(--app-heading)]">A focused application experience</h2>
+                <h2 className="text-2xl text-[color:var(--app-heading)]">How to apply</h2>
                 <p className="text-sm leading-7 text-[color:var(--app-muted)]">
-                  Review the role first, then use the easy-apply panel to send your details directly into the hiring
-                  workflow.
+                  Read through the role description, then use the application panel to submit your
+                  details to the hiring team.
                 </p>
               </div>
               <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
@@ -119,7 +119,7 @@ export default async function PublicJobDetailPage({
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-[color:var(--app-heading)]">What to expect</p>
                     <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                      Read the full description, complete the application card, and submit in one pass.
+                      Read the full description, fill in your details, and submit your application from this page.
                     </p>
                     <p className="text-sm text-[color:var(--app-text)]">
                       {job.applicantCount > 0 ? `${job.applicantCount} application${job.applicantCount === 1 ? "" : "s"} already in review.` : "No applications yet - be one of the first candidates."}
@@ -144,17 +144,17 @@ export default async function PublicJobDetailPage({
         <StagePanel id="apply" tone="summary" className="h-fit space-y-5 xl:sticky xl:top-6">
           <div className="space-y-2 border-b border-[color:var(--app-border)] pb-4">
             <div className="space-y-1">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Easy apply</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Apply</p>
               <h2 className="text-2xl text-[color:var(--app-heading)]">Apply to {job.title}</h2>
             </div>
             <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-              Share your contact details, add a resume if you have one ready, and send everything straight to the
-              hiring review queue from this page.
+              Fill in your contact details, attach a resume if you have one, and submit your
+              application directly to the hiring team.
             </p>
           </div>
 
           {!hasConfirmation ? (
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 grid-cols-2">
               <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-brand-300/20 bg-brand-400/10 p-2 text-brand-200">
@@ -162,34 +162,47 @@ export default async function PublicJobDetailPage({
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-[color:var(--app-heading)]">Profile</p>
-                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Add your contact details.</p>
+                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Your contact details.</p>
                   </div>
                 </div>
               </div>
               <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-brand-300/20 bg-brand-400/10 p-2 text-brand-200">
-                    <ArrowUpRight className="h-4 w-4" />
+                    <FileText className="h-4 w-4" />
                   </div>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-[color:var(--app-heading)]">Resume</p>
-                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Attach a PDF if available.</p>
+                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">PDF attachment, optional.</p>
                   </div>
                 </div>
               </div>
               <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <div className="flex items-start gap-3">
                   <div className="rounded-2xl border border-brand-300/20 bg-brand-400/10 p-2 text-brand-200">
-                    <Clock3 className="h-4 w-4" />
+                    <BriefcaseBusiness className="h-4 w-4" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Submit</p>
-                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Complete the form in one place.</p>
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Questions</p>
+                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Cover note, optional.</p>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-2xl border border-brand-300/20 bg-brand-400/10 p-2 text-brand-200">
+                    <BriefcaseBusiness className="h-4 w-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-[color:var(--app-heading)]">Review</p>
+                    <p className="text-xs leading-5 text-[color:var(--app-muted)]">Confirm and submit.</p>
                   </div>
                 </div>
               </div>
             </div>
           ) : null}
+
+          {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
 
           {pageState.applied ? (
             <div className="space-y-3 rounded-[18px] border border-emerald-400/30 bg-emerald-500/10 p-5 text-sm text-emerald-100">
