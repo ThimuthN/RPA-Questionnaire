@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, Building2, FileText, UserRoundSearch } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -28,25 +28,30 @@ export default async function PublicJobsPage({
   const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const params = await searchParams;
   const allJobs = await listPublicJobPostings();
-  const departments = Array.from(new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))).slice(0, 6) as string[];
-  const jobs = params.q || params.department || params.sort
-    ? await listPublicJobPostings({
-        q: params.q?.trim(),
-        department: params.department?.trim(),
-        sort:
-          params.sort === "updated_asc" || params.sort === "title_asc"
-            ? params.sort
-            : "updated_desc"
-      })
-    : allJobs;
-  const featuredJob = jobs[0] ?? null;
+  const departments = Array.from(
+    new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))
+  ).slice(0, 6) as string[];
+
+  const jobs =
+    params.q || params.department || params.sort
+      ? await listPublicJobPostings({
+          q: params.q?.trim(),
+          department: params.department?.trim(),
+          sort:
+            params.sort === "updated_asc" || params.sort === "title_asc"
+              ? params.sort
+              : "updated_desc"
+        })
+      : allJobs;
+
   const query = new URLSearchParams(
-    Object.entries(params).filter(([_, value]) => typeof value === "string" && value.length > 0)
+    Object.entries(params).filter(
+      ([_, value]) => typeof value === "string" && value.length > 0
+    )
   );
 
   const buildHref = (overrides: Record<string, string | undefined>) => {
     const next = new URLSearchParams(query.toString());
-
     for (const [key, value] of Object.entries(overrides)) {
       if (!value) {
         next.delete(key);
@@ -54,164 +59,46 @@ export default async function PublicJobsPage({
         next.set(key, value);
       }
     }
-
     return `/jobs${next.toString() ? `?${next.toString()}` : ""}` as Route;
   };
 
-  const resultsLabel = jobs.length === allJobs.length ? `${jobs.length} roles` : `Showing ${jobs.length} of ${allJobs.length} roles`;
+  const resultsLabel =
+    jobs.length === allJobs.length
+      ? `${jobs.length} open ${jobs.length === 1 ? "role" : "roles"}`
+      : `Showing ${jobs.length} of ${allJobs.length} roles`;
 
   return (
     <SceneShell
       variant="results"
       tone="page"
       eyebrow={`${orgName} careers`}
-      title={`Find your next role at ${orgName}`}
-      subtitle="Browse open roles, check the details, and apply online."
+      title="Find your next role"
+      subtitle="Browse open roles and apply online."
     >
       <div className="space-y-6">
-        {jobs.length === 0 ? (
+        {allJobs.length === 0 ? (
           <StagePanel className="space-y-3">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">No openings right now</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">Check back later for new roles.</p>
+            <h2 className="text-2xl text-[color:var(--app-heading)]">No open roles</h2>
+            <p className="text-sm text-[color:var(--app-muted)]">
+              Check back later for new opportunities.
+            </p>
           </StagePanel>
         ) : (
           <div className="space-y-6">
-            <StagePanel className="overflow-hidden p-0">
-              <div className="grid gap-0 xl:grid-cols-[minmax(0,1.15fr)_320px]">
-                <div className="space-y-6 p-6 md:p-8">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-brand-300/25 bg-brand-400/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-brand-200">
-                    <BriefcaseBusiness className="h-3.5 w-3.5" />
-                    Now hiring
-                  </div>
-                  <div className="space-y-3">
-                    <h2 className="max-w-3xl text-4xl font-display leading-[1.02] text-[color:var(--app-heading)] md:text-[3.35rem]">
-                      Explore open roles and apply in one place.
-                    </h2>
-                    <p className="max-w-2xl text-sm leading-7 text-[color:var(--app-muted)] md:text-[15px]">
-                      Open a role, read the essentials, and send your application from the same page.
-                    </p>
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                        Open positions
-                      </p>
-                      <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
-                    </div>
-                    <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                        Application flow
-                      </p>
-                      <p className="mt-2 text-base text-[color:var(--app-heading)]">Apply from the role page</p>
-                    </div>
-                    <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                        Teams hiring
-                      </p>
-                      <p className="mt-2 text-base text-[color:var(--app-heading)]">
-                        {departments.length > 0 ? departments.join(", ") : "Multiple teams"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {featuredJob ? (
-                    <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_14%,var(--app-surface)),var(--app-surface-soft))] p-5 shadow-[var(--app-shadow-soft)]">
-                      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                        <span>Featured opening</span>
-                        <span className="text-[color:var(--app-brand)]">{orgName}</span>
-                      </div>
-                      <div className="mt-3 space-y-3">
-                        <div className="space-y-1">
-                          <h3 className="text-2xl text-[color:var(--app-heading)]">{featuredJob.title}</h3>
-                          <p className="text-sm leading-6 text-[color:var(--app-muted)]">{featuredJob.summary}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-[color:var(--app-text)]">
-                          {featuredJob.roleLabel ? (
-                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1">
-                              {featuredJob.roleLabel}
-                            </span>
-                          ) : null}
-                          {featuredJob.roleDepartment ? (
-                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1">
-                              {featuredJob.roleDepartment}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--app-border)] pt-4">
-                          <p className="text-sm text-[color:var(--app-text)]">
-                            Updated {updatedAtFormatter.format(new Date(featuredJob.updatedAt))}
-                          </p>
-                          <Link href={`/jobs/${featuredJob.slug}`}>
-                            <Button>View role</Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="border-t border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] p-6 xl:border-l xl:border-t-0">
-                  <div className="space-y-5">
-                    <div className="space-y-2">
-                      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                        Candidate experience
-                      </p>
-                      <h3 className="text-2xl text-[color:var(--app-heading)]">Simple online application</h3>
-                      <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                        Candidates can review the role and apply without extra steps.
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      {[
-                        {
-                          icon: FileText,
-                          title: "View role details",
-                          body: "Each role has its own page with the key details and full description."
-                        },
-                        {
-                          icon: UserRoundSearch,
-                          title: "Apply online",
-                          body: "Add your details, upload a resume, and send your application in one form."
-                        },
-                        {
-                          icon: Building2,
-                          title: "Stay on Northstar",
-                          body: "The full application flow stays on the Northstar careers site."
-                        }
-                      ].map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <div
-                            key={item.title}
-                            className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="rounded-2xl border border-brand-300/20 bg-brand-400/10 p-2 text-brand-200">
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-sm font-medium text-[color:var(--app-heading)]">{item.title}</p>
-                                <p className="text-sm leading-6 text-[color:var(--app-muted)]">{item.body}</p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </StagePanel>
-
             <StagePanel className="space-y-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Public job board</p>
-                  <p className="text-2xl font-semibold text-[color:var(--app-heading)]">{resultsLabel}</p>
-                </div>
+                <p className="text-2xl font-semibold text-[color:var(--app-heading)]">
+                  {resultsLabel}
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={buildHref({ department: undefined })} className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-2 text-sm text-[color:var(--app-text)] transition hover:border-brand-300/60">
+                  <Link
+                    href={buildHref({ department: undefined })}
+                    className={`rounded-full px-3 py-2 text-sm transition ${
+                      !params.department
+                        ? "border border-brand-300 bg-brand-400/10 text-brand-200"
+                        : "border border-[color:var(--app-border)] bg-[color:var(--app-surface)] text-[color:var(--app-text)] hover:border-brand-300/60"
+                    }`}
+                  >
                     All departments
                   </Link>
                   {departments.map((department) => (
@@ -233,7 +120,7 @@ export default async function PublicJobsPage({
                 <input
                   name="q"
                   defaultValue={params.q ?? ""}
-                  placeholder="Search jobs, teams, or skills"
+                  placeholder="Search by title, team, or skill"
                   className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
                 />
                 <select
@@ -266,54 +153,58 @@ export default async function PublicJobsPage({
               </form>
             </StagePanel>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            {jobs.length === 0 ? (
+              <StagePanel className="space-y-3">
+                <h2 className="text-lg text-[color:var(--app-heading)]">No matching roles</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  Try adjusting your search or{" "}
+                  <Link href="/jobs" className="underline hover:text-[color:var(--app-text)]">
+                    clear filters
+                  </Link>
+                  .
+                </p>
+              </StagePanel>
+            ) : (
               <div className="space-y-4">
-                {jobs.map((job) => (
-                  <StagePanel
-                    key={job.id}
-                    tone="open"
-                    className="overflow-hidden rounded-[30px] border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-0"
-                  >
-                    <div className="space-y-5 p-6">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                          <Building2 className="h-3.5 w-3.5" />
-                          Northstar
+                {jobs.map((job) => {
+                  const salaryLabel =
+                    job.salaryMin && job.salaryMax
+                      ? `$${(job.salaryMin / 1000).toFixed(0)}k–$${(job.salaryMax / 1000).toFixed(0)}k`
+                      : job.salaryMin
+                        ? `From $${(job.salaryMin / 1000).toFixed(0)}k`
+                        : null;
+                  return (
+                    <StagePanel key={job.id} tone="open" className="space-y-4 p-5">
+                      <div className="space-y-3">
+                        <h2 className="text-xl text-[color:var(--app-heading)]">{job.title}</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {job.roleDepartment ? (
+                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-sm text-[color:var(--app-text)]">
+                              {job.roleDepartment}
+                            </span>
+                          ) : null}
+                          {job.roleLabel ? (
+                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-sm text-[color:var(--app-text)]">
+                              {job.roleLabel}
+                            </span>
+                          ) : null}
+                          {job.remotePolicy ? (
+                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-sm text-[color:var(--app-text)]">
+                              {job.remotePolicy}
+                            </span>
+                          ) : null}
+                          {salaryLabel ? (
+                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1 text-sm text-[color:var(--app-text)]">
+                              {salaryLabel}
+                            </span>
+                          ) : null}
                         </div>
-                        <p className="text-sm text-[color:var(--app-muted)]">
+                        <p className="text-sm leading-6 text-[color:var(--app-muted)]">{job.summary}</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-4 border-t border-[color:var(--app-border)] pt-4">
+                        <p className="text-xs text-[color:var(--app-muted)]">
                           Updated {updatedAtFormatter.format(new Date(job.updatedAt))}
                         </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <h2 className="text-2xl text-[color:var(--app-heading)]">{job.title}</h2>
-                          <div className="flex flex-wrap items-center gap-2 text-sm text-[color:var(--app-text)]">
-                            {job.roleLabel ? (
-                              <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1">
-                                {job.roleLabel}
-                              </span>
-                            ) : null}
-                            {job.roleDepartment ? (
-                              <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1">
-                                {job.roleDepartment}
-                              </span>
-                            ) : null}
-                            <span className="rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface-muted)] px-3 py-1">
-                              {job.applicantCount > 0 ? `${job.applicantCount} in review` : "Open for applications"}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="max-w-3xl text-sm leading-7 text-[color:var(--app-muted)]">{job.summary}</p>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[color:var(--app-border)] pt-4">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">Role page</p>
-                          <p className="text-sm text-[color:var(--app-muted)]">
-                            View the job details and apply from the same page.
-                          </p>
-                        </div>
                         <Link href={`/jobs/${job.slug}`}>
                           <Button>
                             View role
@@ -321,35 +212,11 @@ export default async function PublicJobsPage({
                           </Button>
                         </Link>
                       </div>
-                    </div>
-                  </StagePanel>
-                ))}
+                    </StagePanel>
+                  );
+                })}
               </div>
-
-              <StagePanel tone="summary" className="h-fit space-y-4 xl:sticky xl:top-6">
-                <div className="space-y-2">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-                    Careers overview
-                  </p>
-                  <h3 className="text-2xl text-[color:var(--app-heading)]">Simple hiring page</h3>
-                </div>
-                <p className="text-sm leading-6 text-[color:var(--app-muted)]">
-                  Share this page with candidates so they can open a role and apply online.
-                </p>
-                <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                  <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Open roles</p>
-                    <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
-                  </div>
-                  <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">How to share</p>
-                    <p className="mt-2 text-sm leading-6 text-[color:var(--app-muted)]">
-                      Share the careers page or send a direct role link.
-                    </p>
-                  </div>
-                </div>
-              </StagePanel>
-            </div>
+            )}
           </div>
         )}
       </div>

@@ -93,7 +93,7 @@ export async function POST(
     url.searchParams.set("applicationId", submission.applicationId);
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const url = new URL(`/jobs/${slug}`, request.url);
+    const url = new URL(`/jobs/${slug}/apply`, request.url);
     url.searchParams.set("error", error instanceof Error ? error.message : "Could not submit application.");
     return NextResponse.redirect(url, 303);
   }

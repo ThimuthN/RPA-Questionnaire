@@ -24,7 +24,7 @@ const inputCls =
   "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 w-full";
 const hintCls = "text-xs text-[color:var(--app-muted)]";
 
-const STEPS = ["Profile", "Resume", "Questions", "Review"] as const;
+const STEPS = ["Your information", "Resume", "Additional questions", "Review"] as const;
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -242,8 +242,8 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
             className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
           />
           <p className={hintCls}>
-            PDF only, max 5 MB. File selections are not saved between sessions — if you reload this
-            page, re-select your resume here.
+            PDF only, max 5 MB. Resume files are not saved in browser drafts. Reattach your resume
+            before submitting.
           </p>
         </label>
       </div>
@@ -252,7 +252,7 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
       <div className={step === 2 ? "space-y-4" : "hidden"}>
         <div className="space-y-1">
           <p className="text-sm font-medium text-[color:var(--app-heading)]">Additional questions</p>
-          <p className={hintCls}>This job does not require additional questions right now.</p>
+          <p className={hintCls}>No additional questions are required for this role.</p>
         </div>
         <label className="grid gap-1.5">
           <span className="text-sm text-[color:var(--app-text)]">Cover note (optional)</span>
@@ -299,7 +299,7 @@ export function JobApplicationForm({ jobSlug }: { jobSlug: string }) {
       {/* ── Draft saved hint ── */}
       {draftSaved && !isReview && (
         <div className="flex items-center justify-between gap-3">
-          <p className={hintCls}>Application saved in this browser.</p>
+          <p className={hintCls}>Saved in this browser.</p>
           <button
             type="button"
             onClick={clearDraft}
