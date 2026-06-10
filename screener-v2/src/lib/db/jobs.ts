@@ -40,7 +40,7 @@ type JobPostingRow = {
   isOpen: boolean;
   createdAt: Date;
   updatedAt: Date;
-  role: { label: string; department: string | null } | null;
+  role: { label: string; department: string | null; departmentId?: string | null } | null;
   screenerPreset: { id: string; label: string } | null;
   applications: Array<{ status: string }>;
 };
@@ -63,6 +63,7 @@ export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     id: row.id,
     slug: row.slug,
     title: row.title,
+    departmentId: row.role?.departmentId ?? undefined,
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? undefined,
     roleDepartment: row.role?.department ?? undefined,
@@ -337,7 +338,8 @@ export async function getPublicJobApplicationContextBySlug(slug: string): Promis
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -565,6 +567,56 @@ export async function createJobPosting(input: {
   });
 
   return mapJobPosting(row);
+}
+
+export async function validateJobPostingWorkspaceSelection(input: {
+  roleId: string;
+  departmentId?: string;
+  screenerPresetId?: string;
+}) {
+  const role = await prisma.roleCatalog.findUnique({
+    where: { id: input.roleId },
+    select: {
+      id: true,
+      departmentId: true
+    }
+  });
+  if (!role) {
+    throw new Error("Job designation not found.");
+  }
+
+  const workspaceDepartmentId = input.departmentId?.trim();
+  if (workspaceDepartmentId && role.departmentId !== workspaceDepartmentId) {
+    throw new Error("Job designation must belong to this workspace.");
+  }
+
+  const screenerPresetId = input.screenerPresetId?.trim();
+  if (!screenerPresetId) {
+    return {
+      roleDepartmentId: role.departmentId,
+      presetDepartmentId: null
+    };
+  }
+
+  const preset = await prisma.assessmentPreset.findUnique({
+    where: { id: screenerPresetId },
+    select: {
+      id: true,
+      departmentId: true
+    }
+  });
+  if (!preset) {
+    throw new Error("Application screening package not found.");
+  }
+
+  if (workspaceDepartmentId && preset.departmentId && preset.departmentId !== workspaceDepartmentId) {
+    throw new Error("Application screening package is not available in this workspace.");
+  }
+
+  return {
+    roleDepartmentId: role.departmentId,
+    presetDepartmentId: preset.departmentId ?? null
+  };
 }
 
 export async function updateJobPosting(

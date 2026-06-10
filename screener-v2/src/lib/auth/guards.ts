@@ -66,6 +66,22 @@ export function requirePermission(session: AppSession, action: AppAction) {
   return { ok: true as const };
 }
 
+export async function requireGlobalPermission(session: AppSession, action: AppAction) {
+  if (!session.userId) {
+    return { ok: false as const, response: forbiddenApi("Login required.") };
+  }
+
+  if (await isSystemAdmin(session.userId)) {
+    return { ok: true as const };
+  }
+
+  if (!(await hasGlobalPermission(session.userId, action))) {
+    return { ok: false as const, response: forbiddenApi(`Permission denied: ${action}`) };
+  }
+
+  return { ok: true as const };
+}
+
 /**
  * Auth check for role-catalog mutations.
  * System Admin bypasses permission templates — their platform grant is sufficient.

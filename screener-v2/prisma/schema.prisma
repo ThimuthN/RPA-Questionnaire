@@ -68,6 +68,7 @@ model Department {
   departmentCandidacies DepartmentCandidacy[]
   accessGrants AccessGrant[]
   hiringTeamTemplates HiringTeamTemplate[]
+  assessmentPresets AssessmentPreset[]
 
   @@index([isActive, sortOrder])
 }
@@ -144,14 +145,17 @@ model AssessmentPreset {
   slug        String   @unique
   label       String
   description String
+  departmentId String?
   isActive    Boolean  @default(true)
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   items       AssessmentPresetItem[]
   jobPostings JobPosting[]
 
   @@index([isActive, sortOrder])
+  @@index([departmentId, isActive, sortOrder])
 }
 
 model AssessmentPresetItem {

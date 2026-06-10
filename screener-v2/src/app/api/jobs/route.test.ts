@@ -6,7 +6,8 @@ vi.mock("@/lib/auth/guards", () => ({
 }));
 
 vi.mock("@/lib/db/jobs", () => ({
-  createJobPosting: vi.fn()
+  createJobPosting: vi.fn(),
+  validateJobPostingWorkspaceSelection: vi.fn()
 }));
 
 vi.mock("@/lib/jobs/rich-text", () => ({
@@ -16,7 +17,7 @@ vi.mock("@/lib/jobs/rich-text", () => ({
 
 import { POST } from "./route";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
-import { createJobPosting } from "@/lib/db/jobs";
+import { createJobPosting, validateJobPostingWorkspaceSelection } from "@/lib/db/jobs";
 
 const VALID_BODY = new URLSearchParams({
   title: "Software Engineer",
@@ -59,14 +60,29 @@ describe("/api/jobs POST authorization", () => {
     } as never);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
     vi.mocked(createJobPosting).mockResolvedValue({ id: "job-1" } as never);
+    vi.mocked(validateJobPostingWorkspaceSelection).mockResolvedValue({
+      roleDepartmentId: "dept-1",
+      presetDepartmentId: null
+    } as never);
   });
 
   it("calls requirePermissionForDepartment for create_job", async () => {
     await POST(makeRequest());
     expect(requirePermissionForDepartment).toHaveBeenCalledWith(
       expect.objectContaining({ userId: "user-1" }),
-      "create_job"
+      "create_job",
+      "dept-1"
     );
+  });
+
+  it("validates workspace-aware role and preset selection before create", async () => {
+    await POST(makeJobRequest({ departmentId: "dept-1", screenerPresetId: "preset-1" }));
+
+    expect(validateJobPostingWorkspaceSelection).toHaveBeenCalledWith({
+      roleId: "role-1",
+      departmentId: "dept-1",
+      screenerPresetId: "preset-1"
+    });
   });
 
   it("blocks unauthorized user with 403", async () => {
@@ -123,6 +139,10 @@ describe("/api/jobs POST salary validation", () => {
     } as never);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
     vi.mocked(createJobPosting).mockResolvedValue({ id: "job-1" } as never);
+    vi.mocked(validateJobPostingWorkspaceSelection).mockResolvedValue({
+      roleDepartmentId: "dept-1",
+      presetDepartmentId: null
+    } as never);
   });
 
   it("accepts valid salary fields and creates the job", async () => {
@@ -197,6 +217,10 @@ describe("/api/jobs POST error formatting", () => {
     } as never);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
     vi.mocked(createJobPosting).mockResolvedValue({ id: "job-1" } as never);
+    vi.mocked(validateJobPostingWorkspaceSelection).mockResolvedValue({
+      roleDepartmentId: "dept-1",
+      presetDepartmentId: null
+    } as never);
   });
 
   it("returns a clean message for Zod validation failure, not a raw JSON array", async () => {
@@ -270,6 +294,10 @@ describe("/api/jobs POST teamSize validation", () => {
     } as never);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
     vi.mocked(createJobPosting).mockResolvedValue({ id: "job-1" } as never);
+    vi.mocked(validateJobPostingWorkspaceSelection).mockResolvedValue({
+      roleDepartmentId: "dept-1",
+      presetDepartmentId: null
+    } as never);
   });
 
   it("accepts empty teamSize", async () => {

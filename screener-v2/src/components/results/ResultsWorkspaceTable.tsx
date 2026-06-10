@@ -57,12 +57,18 @@ export function ResultsWorkspaceTable({
   rows,
   currentPathAndQuery,
   currentQueryString,
-  compareIds
+  compareIds,
+  allowSelection = true,
+  showCompareAction = true,
+  showResultAction = true
 }: {
   rows: WorkspaceResultRow[];
   currentPathAndQuery: string;
   currentQueryString: string;
   compareIds: string[];
+  allowSelection?: boolean;
+  showCompareAction?: boolean;
+  showResultAction?: boolean;
 }) {
   const [selectedAttemptIds, setSelectedAttemptIds] = useState<string[]>([]);
   const currentCompareIds = compareIds;
@@ -88,10 +94,9 @@ export function ResultsWorkspaceTable({
     setSelectedAttemptIds([]);
   }
 
-  return (
-    <form action="/api/results/bulk" method="post" className="space-y-4">
-      <input type="hidden" name="returnTo" value={currentPathAndQuery} />
-      {selectedAttemptIds.length > 0 ? (
+  const tableContent = (
+    <>
+      {allowSelection && selectedAttemptIds.length > 0 ? (
         <StagePanel tone="summary" className="space-y-4">
           <BulkReviewControls
             selectedCount={selectedAttemptIds.length}
@@ -112,7 +117,7 @@ export function ResultsWorkspaceTable({
               }}
             >
               <tr>
-                <th scope="col" className="w-12 px-4 py-3">Select</th>
+                {allowSelection ? <th scope="col" className="w-12 px-4 py-3">Select</th> : null}
                 <th scope="col" className="w-[21%] px-4 py-3">Participant</th>
                 <th scope="col" className="w-[17%] px-4 py-3">Assessment</th>
                 <th scope="col" className="w-[11%] px-4 py-3">Score</th>
@@ -139,16 +144,18 @@ export function ResultsWorkspaceTable({
                       borderBottom: "1px solid var(--app-border)"
                     }}
                   >
-                    <td className={resultsTableCellClassName}>
-                      <input
-                        type="checkbox"
-                        name="attemptId"
-                        value={row.attemptId}
-                        checked={isSelected}
-                        onChange={() => toggleAttempt(row.attemptId)}
-                        className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent text-brand-500"
-                      />
-                    </td>
+                    {allowSelection ? (
+                      <td className={resultsTableCellClassName}>
+                        <input
+                          type="checkbox"
+                          name="attemptId"
+                          value={row.attemptId}
+                          checked={isSelected}
+                          onChange={() => toggleAttempt(row.attemptId)}
+                          className="h-4 w-4 rounded border-[color:var(--app-border)] bg-transparent text-brand-500"
+                        />
+                      </td>
+                    ) : null}
                     <td className={resultsTableCellClassName}>
                       <div className="space-y-1">
                         <p className="font-medium text-[color:var(--app-heading)]">{row.candidateName || "Unnamed participant"}</p>
@@ -198,20 +205,27 @@ export function ResultsWorkspaceTable({
                     </td>
                     <td className={resultsTableCellClassName}>
                       <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                        <Link href={`/results/${row.attemptId}`} className={actionPillPrimaryClassName}>
-                          View
-                        </Link>
+                        {showResultAction ? (
+                          <Link href={`/results/${row.attemptId}`} className={actionPillPrimaryClassName}>
+                            View
+                          </Link>
+                        ) : null}
                         {row.candidateId && (
                           <Link href={`/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
                             Profile
                           </Link>
                         )}
-                        <Link
-                          href={toggleCompareHref(currentQueryString, currentCompareIds, row.attemptId)}
-                          className={actionPillSecondaryClassName}
-                        >
-                          {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
-                        </Link>
+                        {showCompareAction ? (
+                          <Link
+                            href={toggleCompareHref(currentQueryString, currentCompareIds, row.attemptId)}
+                            className={actionPillSecondaryClassName}
+                          >
+                            {compareIds.includes(row.attemptId) ? "Remove" : "Compare"}
+                          </Link>
+                        ) : null}
+                        {!showResultAction && !showCompareAction && !row.candidateId ? (
+                          <span className="text-xs text-[color:var(--app-muted)]">No linked profile</span>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -221,6 +235,17 @@ export function ResultsWorkspaceTable({
           </table>
         </div>
       </StagePanel>
+    </>
+  );
+
+  if (!allowSelection) {
+    return <div className="space-y-4">{tableContent}</div>;
+  }
+
+  return (
+    <form action="/api/results/bulk" method="post" className="space-y-4">
+      <input type="hidden" name="returnTo" value={currentPathAndQuery} />
+      {tableContent}
     </form>
   );
 }

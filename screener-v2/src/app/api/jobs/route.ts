@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
-import { createJobPosting } from "@/lib/db/jobs";
+import { createJobPosting, validateJobPostingWorkspaceSelection } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
 import { JobValidationError, parseSalaryField, parseTeamSizeField, validateSalaryRange } from "@/lib/jobs/validation";
 
@@ -41,6 +41,7 @@ function formatJobError(error: unknown): string {
 const jobSchema = z.object({
   title: z.string().min(2, "Job title must be at least 2 characters."),
   roleId: z.string().min(1, "A role is required."),
+  departmentId: z.string().optional(),
   screenerPresetId: z.string().optional(),
   summary: z.string().min(8, "Summary must be at least 8 characters."),
   description: z.string().min(20, "Description must be at least 20 characters."),
@@ -59,16 +60,26 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = await requirePermissionForDepartment(auth.session, "create_job");
-  if (!permission.ok) {
-    return permission.response;
-  }
   const wantsJson = request.headers.get("accept")?.includes("application/json");
   const rawForm = Object.fromEntries((await request.formData()).entries());
   const returnTo = sanitizeReturnTo(rawForm.returnTo);
 
   try {
     const body = jobSchema.parse(rawForm);
+    const selection = await validateJobPostingWorkspaceSelection({
+      roleId: body.roleId,
+      departmentId: body.departmentId,
+      screenerPresetId: body.screenerPresetId
+    });
+    const permission = await requirePermissionForDepartment(
+      auth.session,
+      "create_job",
+      selection.roleDepartmentId
+    );
+    if (!permission.ok) {
+      return permission.response;
+    }
+
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
       throw new JobValidationError("Description should be at least 20 characters.");

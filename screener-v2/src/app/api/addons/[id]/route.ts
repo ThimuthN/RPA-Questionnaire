@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requireGlobalPermission } from "@/lib/auth/guards";
 import { addonUpsertSchema } from "@/lib/addons/api-schema";
 import { updateAddonCatalogEntry } from "@/lib/addons/catalog";
 import {
@@ -13,6 +13,11 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
   const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+
+  const permission = await requireGlobalPermission(auth.session, "manage_addons");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requireGlobalPermission } from "@/lib/auth/guards";
 import { addonUpsertSchema } from "@/lib/addons/api-schema";
 import { createAddonCatalogEntry, listAddonCatalog } from "@/lib/addons/catalog";
 import {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "manage_addons");
+  const permission = await requireGlobalPermission(auth.session, "manage_addons");
   if (!permission.ok) {
     return permission.response;
   }

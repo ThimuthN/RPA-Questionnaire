@@ -98,6 +98,7 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
               candidate: {
                 select: {
                   id: true,
+                  departmentId: true,
                   roleId: true,
                   positionAppliedFor: true,
                   hrOwner: true,
@@ -140,6 +141,7 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         reviewState: summary.reviewState,
         submittedAt,
         candidateId: candidate?.id,
+        candidateDepartmentId: candidate?.departmentId ?? undefined,
         candidateRoleId: candidate?.roleId ?? undefined,
         candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
         candidateOwner: candidate?.hrOwner ?? undefined,
@@ -165,87 +167,18 @@ export async function listResultWorkspacePage(
   const page = Math.max(1, Number(filters.page ?? 1));
   const pageSize = Math.min(50, Math.max(5, Number(filters.pageSize ?? 12)));
   const skip = (page - 1) * pageSize;
-
-  const resultRows = await prisma.result.findMany({
-    where: filters.attemptIds?.length
-      ? { attemptId: { in: filters.attemptIds } }
-      : undefined,
-    orderBy: { createdAt: "desc" },
-    take: pageSize,
-    skip,
-    include: {
-      attempt: {
-        include: {
-          participant: true,
-          candidateAssessment: {
-            include: {
-              candidate: {
-                select: {
-                  id: true,
-                  roleId: true,
-                  positionAppliedFor: true,
-                  hrOwner: true,
-                  stage: true,
-                  nextAction: true,
-                  screeningStatus: true,
-                  notesSummary: true,
-                  updatedAt: true,
-                  role: { select: { label: true } }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  });
-
-  const mappedRows = resultRows
-    .map((row) => {
-      if (!row.attempt) return null;
-      const attempt = mapAttempt(row.attempt);
-      const participant = row.attempt.participant ? mapParticipant(row.attempt.participant) : null;
-      const candidate = row.attempt.candidateAssessment?.candidate ?? null;
-      const summary = toResultSummary(row, attempt, participant, candidate);
-      if (!summary) return null;
-      const submittedAt = attempt.submittedAt ?? attempt.startedAt ?? row.createdAt.toISOString();
-      const latestActivityAt = candidate?.updatedAt?.toISOString() ?? submittedAt;
-      const staleDays = Math.max(
-        0,
-        Math.floor((Date.now() - Date.parse(latestActivityAt)) / (1000 * 60 * 60 * 24))
-      );
-
-      return toWorkspaceResultRow(summary, {
-        contextType: summary.contextType,
-        reviewState: summary.reviewState,
-        submittedAt,
-        candidateId: candidate?.id,
-        candidateRoleId: candidate?.roleId ?? undefined,
-        candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
-        candidateOwner: candidate?.hrOwner ?? undefined,
-        candidateStage: candidate?.stage as CandidateStage | undefined,
-        candidateNextAction: candidate?.nextAction as CandidateNextAction | undefined,
-        candidateLatestActivityAt: latestActivityAt,
-        candidateStaleDays: staleDays,
-        candidateNotesSummary: candidate?.notesSummary ?? undefined
-      });
-    })
-    .filter((row): row is WorkspaceResultRow => Boolean(row));
-
+  const mappedRows = await listWorkspaceResultRows(filters.attemptIds);
   const filteredRows = filterResultWorkspaceRows(mappedRows, filters);
-  const roleOptions = (await listRoleCatalog()).map((role) => ({
+  const roleOptions = (await listRoleCatalog(true, filters.departmentId, "job_designation")).map((role) => ({
     id: role.id,
     label: role.label
   }));
-  const ownerOptions = [...new Set(mappedRows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
-
-  const total = await prisma.result.count({
-    where: filters.attemptIds?.length ? { attemptId: { in: filters.attemptIds } } : undefined
-  });
+  const ownerOptions = [...new Set(filteredRows.map((row) => row.candidateOwner).filter(Boolean))].sort() as string[];
+  const pagedRows = filteredRows.slice(skip, skip + pageSize);
 
   return {
-    rows: filteredRows.slice(0, pageSize),
-    total,
+    rows: pagedRows,
+    total: filteredRows.length,
     page,
     pageSize,
     roleOptions,

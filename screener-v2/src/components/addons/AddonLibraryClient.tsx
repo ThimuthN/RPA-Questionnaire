@@ -117,10 +117,18 @@ function compactText(value: string, maxLength = 88) {
 
 export function AddonLibraryClient({
   initialAddons,
-  initialPresets
+  initialPresets,
+  canManageAddons = false,
+  canManageGlobalPresets = false,
+  canManageWorkspacePresets = false,
+  managedDepartmentId
 }: {
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
+  canManageAddons?: boolean;
+  canManageGlobalPresets?: boolean;
+  canManageWorkspacePresets?: boolean;
+  managedDepartmentId?: string;
 }) {
   const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
@@ -164,6 +172,23 @@ export function AddonLibraryClient({
   const selectedAddonEntry = getAddonAssessmentType(addonForm.assessmentTypeId);
   const selectedAddonType = getAddonAssessmentTypeMeta(addonForm.assessmentTypeId);
   const editingUnknownAddonType = addonModalOpen && !selectedAddonEntry;
+  const canCreatePreset = managedDepartmentId ? canManageWorkspacePresets : canManageGlobalPresets;
+
+  function canEditPreset(preset: AssessmentPresetEntry) {
+    if (!preset.departmentId) {
+      return canManageGlobalPresets;
+    }
+
+    if (managedDepartmentId) {
+      return canManageWorkspacePresets && preset.departmentId === managedDepartmentId;
+    }
+
+    return canManageGlobalPresets;
+  }
+
+  function presetScopeLabel(preset: AssessmentPresetEntry) {
+    return preset.departmentName ?? "Shared";
+  }
 
   async function submitAddon() {
     setSavingAddon(true);
@@ -213,6 +238,7 @@ export function AddonLibraryClient({
       const payload = {
         label: presetForm.label,
         description: presetForm.description,
+        departmentId: editingPresetId ? undefined : managedDepartmentId,
         isActive: presetForm.isActive,
         items: presetForm.items.map((item, index) => ({
           addonId: item.addonId,
@@ -291,6 +317,9 @@ export function AddonLibraryClient({
   }
 
   function startNewPreset() {
+    if (!canCreatePreset) {
+      return;
+    }
     setViewMode("presets");
     setEditingPresetId(null);
     setPresetForm(basePresetForm());
@@ -298,6 +327,9 @@ export function AddonLibraryClient({
   }
 
   function openAddonEditor(addon: AddonCatalogEntry) {
+    if (!canManageAddons) {
+      return;
+    }
     setEditingAddonId(addon.id);
     setAddonForm(addonToForm(addon));
     setAddonModalOpen(true);
@@ -310,6 +342,9 @@ export function AddonLibraryClient({
   }
 
   function openPresetEditor(preset: AssessmentPresetEntry) {
+    if (!canEditPreset(preset)) {
+      return;
+    }
     setEditingPresetId(preset.id);
     setPresetForm(presetToForm(preset));
     setPresetModalOpen(true);
@@ -396,13 +431,25 @@ export function AddonLibraryClient({
               />
               Show inactive
             </label>
-            {viewMode === "presets" ? (
+            {viewMode === "presets" && canCreatePreset ? (
               <Button type="button" onClick={startNewPreset}>
                 New preset
               </Button>
             ) : null}
           </div>
         </div>
+
+        {viewMode === "addons" && !canManageAddons ? (
+          <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
+            Add-ons are shared across the platform and are read-only in this view.
+          </div>
+        ) : null}
+
+        {viewMode === "presets" && !canCreatePreset && !canManageGlobalPresets ? (
+          <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
+            Presets are visible here, but only workspace-owned presets can be created or edited with the right access.
+          </div>
+        ) : null}
 
         {viewMode === "addons" ? (
           <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
@@ -436,9 +483,13 @@ export function AddonLibraryClient({
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultWeight}/100</td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.isActive ? "Active" : "Inactive"}</td>
                       <td className="px-4 py-3 text-right align-top">
-                        <Button type="button" variant="ghost" onClick={() => openAddonEditor(addon)}>
-                          Open
-                        </Button>
+                        {canManageAddons ? (
+                          <Button type="button" variant="ghost" onClick={() => openAddonEditor(addon)}>
+                            Open
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-[color:var(--app-muted)]">Read only</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -453,6 +504,7 @@ export function AddonLibraryClient({
                 <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
                   <tr>
                     <th className="px-4 py-3 font-medium">Preset</th>
+                    <th className="px-4 py-3 font-medium">Scope</th>
                     <th className="px-4 py-3 font-medium">Add-ons</th>
                     <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium text-right">Action</th>
@@ -467,12 +519,19 @@ export function AddonLibraryClient({
                           <p className="max-w-[440px] text-xs leading-5 text-[color:var(--app-muted)]">{compactText(preset.description, 72)}</p>
                         </div>
                       </td>
+                      <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">
+                        {presetScopeLabel(preset)}
+                      </td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{preset.items.length}</td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{preset.isActive ? "Active" : "Inactive"}</td>
                       <td className="px-4 py-3 text-right align-top">
-                        <Button type="button" variant="ghost" onClick={() => openPresetEditor(preset)}>
-                          Open
-                        </Button>
+                        {canEditPreset(preset) ? (
+                          <Button type="button" variant="ghost" onClick={() => openPresetEditor(preset)}>
+                            Open
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-[color:var(--app-muted)]">Read only</span>
+                        )}
                       </td>
                     </tr>
                   ))}

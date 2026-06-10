@@ -13,6 +13,7 @@ type Option = {
 
 export function ResultsFiltersModal({
   advancedCount,
+  workspaceId,
   current,
   roleOptions,
   ownerOptions,
@@ -23,6 +24,7 @@ export function ResultsFiltersModal({
   scoreBandOptions
 }: {
   advancedCount: number;
+  workspaceId?: string;
   current: {
     q?: string;
     sort?: string;
@@ -114,6 +116,7 @@ export function ResultsFiltersModal({
                     </div>
 
                     <form action="/results" className="mt-5 space-y-5">
+                      <input type="hidden" name="workspaceId" value={workspaceId ?? ""} />
                       <input type="hidden" name="q" value={current.q ?? ""} />
                       <input type="hidden" name="sort" value={current.sort ?? "newest"} />
                       <input type="hidden" name="status" value={current.status ?? ""} />
@@ -199,7 +202,7 @@ export function ResultsFiltersModal({
 
                       <div className="flex flex-wrap justify-between gap-3 border-t border-[color:var(--app-border)] pt-4">
                         <Link
-                          href="/results?clearView=1"
+                          href={workspaceId ? `/results?workspaceId=${workspaceId}&clearView=1` : "/results?clearView=1"}
                           className="inline-flex items-center justify-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2 text-sm font-medium text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]"
                         >
                           Reset all

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 import type { ReactNode } from "react";
 import { assessmentContextTypeValues, type AssessmentContextType, resultReviewStateValues, type ResultReviewState } from "@/lib/assessment-engine/types";
@@ -14,8 +14,10 @@ import { SavedViewNotice } from "@/components/workspace/SavedViewNotice";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { ResultsFiltersModal } from "@/components/results/ResultsFiltersModal";
-import { requirePageSession } from "@/lib/auth/guards";
+import { requireDepartmentWorkspaceAccess, requirePageSession } from "@/lib/auth/guards";
+import { canUsePermissionForDepartment, hasGlobalPermission, isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { candidateStageLabels, candidateStageValues } from "@/lib/candidates/types";
+import { getDepartment } from "@/lib/db/departments";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
 import { integrityRiskLevelValues, parseResultsWorkspaceQuery, resultScoreBandValues, toResultsWorkspaceSearchParams } from "@/lib/results/query";
 import type { IntegrityRiskLevel, ResultStatusFilter } from "@/lib/results/triage";
@@ -33,6 +35,7 @@ type PageState = {
   deleted?: string;
   error?: string;
   updated?: string;
+  workspaceId?: string;
   q?: string;
   status?: string;
   reviewState?: string;
@@ -184,6 +187,7 @@ export default async function ResultsPage({
   searchParams: Promise<PageState>;
 }) {
   const pageState = await searchParams;
+  const workspaceId = pageState.workspaceId?.trim() || undefined;
   const persistentState = Object.fromEntries(
     Object.entries(pageState).filter(
       ([key, value]) =>
@@ -195,16 +199,42 @@ export default async function ResultsPage({
   const query = toResultsWorkspaceSearchParams(persistentState);
   const nextPath = `/results${query.toString() ? `?${query.toString()}` : ""}`;
   const session = await requirePageSession(nextPath);
+  const globalViewAccess = session.userId
+    ? (await isSystemAdmin(session.userId)) ||
+      (await hasGlobalPermission(session.userId, "view_results"))
+    : false;
 
-  if (!session.permissions.includes("view_results")) {
+  let workspaceName: string | undefined;
+  if (workspaceId) {
+    const [department, access, canViewWorkspaceResults] = await Promise.all([
+      getDepartment(workspaceId),
+      requireDepartmentWorkspaceAccess(session, workspaceId),
+      canUsePermissionForDepartment(session, "view_results", workspaceId)
+    ]);
+
+    if (!department) {
+      notFound();
+    }
+    if (!access.ok) {
+      notFound();
+    }
+    if (!canViewWorkspaceResults) {
+      redirect(`/departments/${workspaceId}/assessments`);
+    }
+
+    workspaceName = department.name;
+  } else if (!globalViewAccess) {
     redirect("/");
   }
 
-  const page = await listResultWorkspacePage(parseResultsWorkspaceQuery(pageState));
+  const page = await listResultWorkspacePage({
+    ...parseResultsWorkspaceQuery(pageState),
+    departmentId: workspaceId
+  });
   const currentPathAndQuery = nextPath;
-  const compareIds = compareIdsFromRaw(pageState.compare);
+  const compareIds = workspaceId ? [] : compareIdsFromRaw(pageState.compare);
   const comparison =
-    compareIds.length > 0
+    !workspaceId && compareIds.length > 0
       ? await listResultWorkspacePage({
           attemptIds: compareIds,
           page: 1,
@@ -212,36 +242,54 @@ export default async function ResultsPage({
         })
       : null;
   const advancedFilterCount = countAdvancedFilters(pageState);
+  const resetHref = (workspaceId ? `/results?workspaceId=${workspaceId}` : "/results") as Route;
+  const openAssessmentsHref = (workspaceId
+    ? `/create-test?workspaceId=${workspaceId}`
+    : "/assessments") as Route;
+  const viewStorageId = workspaceId ? `results-${workspaceId}` : "results";
 
   return (
     <SceneTransition>
       <SceneShell
         variant="results"
         tone="page"
-        eyebrow="Assessments"
+        eyebrow={workspaceName ?? "Assessments"}
         title="Assessment results"
-        subtitle="Review completed assessment evidence and outcomes."
+        subtitle={
+          workspaceId
+            ? "Review completed assessment evidence linked to this workspace."
+            : "Review completed assessment evidence and outcomes."
+        }
         utility={
           <div className="flex flex-wrap items-center gap-2">
+            {workspaceId ? (
+              <Link href={`/departments/${workspaceId}/assessments` as Route}>
+                <Button variant="secondary">Back to workspace</Button>
+              </Link>
+            ) : null}
             <StatusPill label={`Pass ${page.statusCounts.pass}`} tone="emerald" />
             <StatusPill label={`Review ${page.statusCounts.review}`} tone="amber" />
             <StatusPill label={`Fail ${page.statusCounts.fail}`} tone="red" />
-            <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
-              <Button variant="secondary">Export CSV</Button>
-            </a>
-            <a href={`/api/results/export.json${query.toString() ? `?${query.toString()}` : ""}`}>
-              <Button variant="secondary">Export JSON</Button>
-            </a>
+            {!workspaceId ? (
+              <>
+                <a href={`/api/results/export.csv${query.toString() ? `?${query.toString()}` : ""}`}>
+                  <Button variant="secondary">Export CSV</Button>
+                </a>
+                <a href={`/api/results/export.json${query.toString() ? `?${query.toString()}` : ""}`}>
+                  <Button variant="secondary">Export JSON</Button>
+                </a>
+              </>
+            ) : null}
           </div>
         }
       >
         <PersistedTableState
-          storageKey="results-table-view"
+          storageKey={`${viewStorageId}-table-view`}
           transientKeys={[...transientBannerKeys]}
         />
         <StaggerGroup className="space-y-5" delay={0.04}>
           <StaggerItem>
-            <SavedViewNotice storageId="results" currentPathAndQuery={currentPathAndQuery} />
+            <SavedViewNotice storageId={viewStorageId} currentPathAndQuery={currentPathAndQuery} />
           </StaggerItem>
 
           {pageState.deleted ? (
@@ -291,6 +339,7 @@ export default async function ResultsPage({
               </div>
               <form className="space-y-4">
                 <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(180px,0.7fr)_minmax(180px,0.7fr)_auto_auto_auto]">
+                  <input type="hidden" name="workspaceId" value={workspaceId ?? ""} />
                   <FilterField label="Search" className="xl:col-span-1">
                     <input
                       name="q"
@@ -331,6 +380,7 @@ export default async function ResultsPage({
                   <div className="flex items-end">
                     <ResultsFiltersModal
                       advancedCount={advancedFilterCount}
+                      workspaceId={workspaceId}
                       current={{
                         q: pageState.q,
                         sort: pageState.sort,
@@ -355,7 +405,7 @@ export default async function ResultsPage({
                     />
                   </div>
                   <div className="flex items-end">
-                    <Link href="/results">
+                    <Link href={resetHref}>
                       <Button type="button" variant="secondary">Reset</Button>
                     </Link>
                   </div>
@@ -375,10 +425,10 @@ export default async function ResultsPage({
                 <h2 className="text-2xl text-[color:var(--app-heading)]">No results match this view</h2>
                 <p className="text-[color:var(--app-text)]">Try clearing a filter or running a new assessment.</p>
                 <div className="flex flex-wrap gap-3">
-                  <Link href="/assessments">
+                  <Link href={openAssessmentsHref}>
                     <Button>Open assessments</Button>
                   </Link>
-                  <Link href="/results?clearView=1">
+                  <Link href={resetHref}>
                     <Button variant="secondary">Reset filters</Button>
                   </Link>
                 </div>
@@ -391,6 +441,9 @@ export default async function ResultsPage({
                 currentPathAndQuery={currentPathAndQuery}
                 currentQueryString={query.toString()}
                 compareIds={compareIds}
+                allowSelection={!workspaceId}
+                showCompareAction={!workspaceId}
+                showResultAction={!workspaceId}
               />
             </StaggerItem>
           )}

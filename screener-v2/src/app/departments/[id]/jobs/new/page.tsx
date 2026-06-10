@@ -33,7 +33,10 @@ export default async function DepartmentNewJobPage({
   }
 
   // Load job designations scoped to this department only
-  const [roles, presets] = await Promise.all([listRoleCatalog(true, id, "job_designation"), listAssessmentPresets(false)]);
+  const [roles, presets] = await Promise.all([
+    listRoleCatalog(true, id, "job_designation"),
+    listAssessmentPresets({ departmentId: id, includeShared: true })
+  ]);
   const returnTo = `/departments/${id}/jobs`;
 
   return (

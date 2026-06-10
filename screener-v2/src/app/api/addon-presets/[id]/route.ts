@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
-import { updateAssessmentPreset } from "@/lib/addons/catalog";
+import {
+  requireApiSession,
+  requireGlobalPermission,
+  requirePermissionForDepartment
+} from "@/lib/auth/guards";
+import { getAssessmentPresetScope, updateAssessmentPreset } from "@/lib/addons/catalog";
 import {
   createRequestLogContext,
   logRouteError,
@@ -31,14 +35,20 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
     return auth.response;
   }
 
-  // Require admin permission to manage presets
-  const permission = requirePermission(auth.session, "manage_addons");
-  if (!permission.ok) {
-    return permission.response;
-  }
-
   try {
     const params = await context.params;
+    const currentPreset = await getAssessmentPresetScope(params.id);
+    if (!currentPreset) {
+      return NextResponse.json({ ok: false, message: "Preset not found." }, { status: 404 });
+    }
+
+    const permission = currentPreset.departmentId
+      ? await requirePermissionForDepartment(auth.session, "manage_addons", currentPreset.departmentId)
+      : await requireGlobalPermission(auth.session, "manage_addons");
+    if (!permission.ok) {
+      return permission.response;
+    }
+
     const body = presetSchema.parse(await request.json());
     const preset = await updateAssessmentPreset(params.id, {
       label: body.label,

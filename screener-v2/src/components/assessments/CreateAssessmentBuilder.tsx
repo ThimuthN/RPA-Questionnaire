@@ -272,11 +272,19 @@ function BuilderStage({
 export function CreateAssessmentBuilder({
   initialAddons,
   initialPresets,
+  eyebrow = "Assessments",
+  title = "Assemble an assessment",
+  subtitle = "Choose the mix, set the details, then share it.",
+  utility,
   linkedCandidateId,
   linkedCandidateMilestoneId
 }: {
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  utility?: ReactNode;
   linkedCandidateId?: string;
   linkedCandidateMilestoneId?: string;
 }) {
@@ -618,9 +626,10 @@ export function CreateAssessmentBuilder({
     <SceneShell
       variant="create"
       tone="page"
-      eyebrow="Assessments"
-      title="Assemble an assessment"
-      subtitle="Choose the mix, set the details, then share it."
+      eyebrow={eyebrow}
+      title={title}
+      subtitle={subtitle}
+      utility={utility}
     >
       <div className="space-y-4">
         <StepRail

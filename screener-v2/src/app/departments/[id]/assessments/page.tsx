@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { getDepartment } from "@/lib/db/departments";
-import { notFound } from "next/navigation";
 
 export default async function DepartmentAssessmentsPage({
   params
@@ -17,43 +17,40 @@ export default async function DepartmentAssessmentsPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl text-[color:var(--app-heading)]">{department.name} — Assessments</h2>
+      <div className="space-y-1">
+        <h2 className="text-2xl text-[color:var(--app-heading)]">{department.name} Assessments</h2>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Manage and review assessment templates, add-ons, and results for this workspace.
+          Use the same assessment system with workspace-specific presets and result views.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-        {/* Create Assessment Card */}
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-          <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-2">Create Assessment</h3>
-          <p className="text-sm text-[color:var(--app-muted)] mb-4">
-            Create a screening assessment at workspace level. Link to candidates during screening or advanced review.
+          <h3 className="mb-2 text-lg font-medium text-[color:var(--app-heading)]">Create Assessment</h3>
+          <p className="mb-4 text-sm text-[color:var(--app-muted)]">
+            Build an assessment with shared add-ons and presets available to this workspace.
           </p>
-          <Link href="/create-test">
+          <Link href={`/create-test?workspaceId=${id}`}>
             <Button variant="secondary">Create assessment</Button>
           </Link>
         </div>
 
-        {/* Assessment Templates / Add-ons Card */}
         <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-          <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-2">Assessment Templates</h3>
-          <p className="text-sm text-[color:var(--app-muted)] mb-4">
-            Manage reusable screening templates and add-ons used by this workspace.
+          <h3 className="mb-2 text-lg font-medium text-[color:var(--app-heading)]">Assessment Templates</h3>
+          <p className="mb-4 text-sm text-[color:var(--app-muted)]">
+            Browse shared add-ons, then create and manage presets for this workspace.
           </p>
-          <Link href="/addons">
+          <Link href={`/addons?workspaceId=${id}`}>
             <Button variant="secondary">Browse templates</Button>
           </Link>
         </div>
 
-        {/* Assessment Results Card */}
         <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
-          <h3 className="text-lg font-medium text-[color:var(--app-heading)] mb-2">Assessment Results</h3>
-          <p className="text-sm text-[color:var(--app-muted)] mb-4">
+          <h3 className="mb-2 text-lg font-medium text-[color:var(--app-heading)]">Assessment Results</h3>
+          <p className="mb-4 text-sm text-[color:var(--app-muted)]">
             Review completed assessment evidence for candidates in this workspace.
           </p>
-          <Link href="/results">
+          <Link href={`/results?workspaceId=${id}`}>
             <Button variant="secondary">View results</Button>
           </Link>
         </div>
@@ -61,7 +58,7 @@ export default async function DepartmentAssessmentsPage({
 
       <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
         <p className="text-sm text-[color:var(--app-muted)]">
-          Assessments can be created at workspace level and linked to candidates during Screening or Advanced Review. Assessment results are linked to candidate profiles where they can be reviewed and used as evidence.
+          Shared add-ons stay centralized. Workspace presets and workspace result views stay scoped to the selected department.
         </p>
       </div>
     </div>

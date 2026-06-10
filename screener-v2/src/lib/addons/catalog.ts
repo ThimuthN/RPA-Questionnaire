@@ -35,10 +35,20 @@ export interface AssessmentPresetEntry {
   slug: string;
   label: string;
   description: string;
+  departmentId?: string;
+  departmentName?: string;
   isActive: boolean;
   sortOrder: number;
   items: AssessmentPresetItemEntry[];
 }
+
+export interface ListAssessmentPresetsOptions {
+  includeInactive?: boolean;
+  departmentId?: string;
+  includeShared?: boolean;
+}
+
+type ListAssessmentPresetsInput = boolean | ListAssessmentPresetsOptions;
 
 function slugify(value: string) {
   return value
@@ -47,6 +57,17 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
+}
+
+function scopedPresetSlug(label: string, departmentId?: string | null) {
+  const base = slugify(label) || "preset";
+  if (!departmentId) {
+    return base;
+  }
+
+  const suffix = departmentId.trim().toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 8) || "workspace";
+  const maxBaseLength = Math.max(1, 64 - suffix.length - 1);
+  return `${base.slice(0, maxBaseLength)}-${suffix}`;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -94,6 +115,8 @@ function mapPreset(row: {
   slug: string;
   label: string;
   description: string;
+  departmentId: string | null;
+  department: { name: string } | null;
   isActive: boolean;
   sortOrder: number;
   items: Array<{
@@ -122,6 +145,8 @@ function mapPreset(row: {
     slug: row.slug,
     label: row.label,
     description: row.description,
+    departmentId: row.departmentId ?? undefined,
+    departmentName: row.department?.name ?? undefined,
     isActive: row.isActive,
     sortOrder: row.sortOrder,
     items: row.items.map((item) => ({
@@ -172,6 +197,37 @@ function normalizeConfigOverride(
     ...rawOverride
   });
   return Object.fromEntries(Object.keys(rawOverride).map((key) => [key, prepared[key]]));
+}
+
+function normalizePresetListOptions(input: ListAssessmentPresetsInput): ListAssessmentPresetsOptions {
+  if (typeof input === "boolean") {
+    return { includeInactive: input };
+  }
+
+  return input;
+}
+
+function buildAssessmentPresetWhere(options: ListAssessmentPresetsOptions): Prisma.AssessmentPresetWhereInput | undefined {
+  const filters: Prisma.AssessmentPresetWhereInput[] = [];
+  const workspaceDepartmentId = options.departmentId?.trim();
+
+  if (!options.includeInactive) {
+    filters.push({ isActive: true });
+  }
+
+  if (workspaceDepartmentId) {
+    filters.push({
+      OR: options.includeShared
+        ? [{ departmentId: workspaceDepartmentId }, { departmentId: null }]
+        : [{ departmentId: workspaceDepartmentId }]
+    });
+  }
+
+  if (filters.length === 0) {
+    return undefined;
+  }
+
+  return filters.length === 1 ? filters[0] : { AND: filters };
 }
 
 export async function listAddonCatalog(includeInactive = false): Promise<AddonCatalogEntry[]> {
@@ -286,10 +342,18 @@ export async function updateAddonCatalogEntry(
   return mapAddon(updated);
 }
 
-export async function listAssessmentPresets(includeInactive = false): Promise<AssessmentPresetEntry[]> {
+export async function listAssessmentPresets(
+  input: ListAssessmentPresetsInput = false
+): Promise<AssessmentPresetEntry[]> {
+  const options = normalizePresetListOptions(input);
   const rows = await prisma.assessmentPreset.findMany({
-    where: includeInactive ? undefined : { isActive: true },
+    where: buildAssessmentPresetWhere(options),
     include: {
+      department: {
+        select: {
+          name: true
+        }
+      },
       items: {
         include: {
           addon: true
@@ -303,9 +367,20 @@ export async function listAssessmentPresets(includeInactive = false): Promise<As
   return rows.map(mapPreset);
 }
 
+export async function getAssessmentPresetScope(id: string) {
+  return prisma.assessmentPreset.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      departmentId: true
+    }
+  });
+}
+
 export async function createAssessmentPreset(input: {
   label: string;
   description: string;
+  departmentId?: string;
   isActive?: boolean;
   items: Array<{
     addonId: string;
@@ -322,9 +397,11 @@ export async function createAssessmentPreset(input: {
     throw new Error("Select at least one add-on for the preset.");
   }
 
-  const slug = slugify(label);
+  const departmentId = input.departmentId?.trim() || null;
+  const slug = scopedPresetSlug(label, departmentId);
   const existing = await prisma.assessmentPreset.findFirst({
     where: {
+      departmentId,
       OR: [{ slug }, { label }]
     },
     select: { id: true }
@@ -352,6 +429,7 @@ export async function createAssessmentPreset(input: {
         slug,
         label,
         description: input.description.trim(),
+        departmentId,
         isActive: input.isActive ?? true,
         sortOrder: await nextPresetSortOrder()
       }
@@ -371,6 +449,11 @@ export async function createAssessmentPreset(input: {
     return tx.assessmentPreset.findUniqueOrThrow({
       where: { id: preset.id },
       include: {
+        department: {
+          select: {
+            name: true
+          }
+        },
         items: {
           include: {
             addon: true
@@ -406,9 +489,20 @@ export async function updateAssessmentPreset(
     throw new Error("Select at least one add-on for the preset.");
   }
 
-  const slug = slugify(label);
+  const current = await prisma.assessmentPreset.findUnique({
+    where: { id },
+    select: {
+      departmentId: true
+    }
+  });
+  if (!current) {
+    throw new Error("Preset not found.");
+  }
+
+  const slug = scopedPresetSlug(label, current.departmentId);
   const existing = await prisma.assessmentPreset.findFirst({
     where: {
+      departmentId: current.departmentId,
       OR: [{ slug }, { label }],
       NOT: { id }
     },
@@ -460,6 +554,11 @@ export async function updateAssessmentPreset(
     return tx.assessmentPreset.findUniqueOrThrow({
       where: { id },
       include: {
+        department: {
+          select: {
+            name: true
+          }
+        },
         items: {
           include: {
             addon: true

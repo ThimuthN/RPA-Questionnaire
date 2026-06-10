@@ -1,12 +1,28 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
-import { getJobPosting, updateJobPosting } from "@/lib/db/jobs";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import {
+  getJobPosting,
+  updateJobPosting,
+  validateJobPostingWorkspaceSelection
+} from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
+
+const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
+
+function sanitizeReturnTo(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (ALLOWED_RETURN_PATHS.some((prefix) => trimmed.startsWith(prefix))) {
+    return trimmed;
+  }
+  return undefined;
+}
 
 const updateJobSchema = z.object({
   title: z.string().min(2).optional(),
   roleId: z.string().min(1, "A role is required.").optional(),
+  departmentId: z.string().optional(),
   screenerPresetId: z.string().optional(),
   summary: z.string().min(8).optional(),
   description: z.string().min(20).optional(),
@@ -17,7 +33,8 @@ const updateJobSchema = z.object({
   remotePolicy: z.string().optional(),
   isPublished: z.string().optional(),
   isOpen: z.string().optional(),
-  action: z.enum(["save", "toggle_published", "toggle_open"]).optional()
+  action: z.enum(["save", "toggle_published", "toggle_open"]).optional(),
+  returnTo: z.string().optional()
 });
 
 export async function POST(
@@ -28,19 +45,31 @@ export async function POST(
   if (!auth.ok) {
     return auth.response;
   }
-  const permission = requirePermission(auth.session, "edit_job");
-  if (!permission.ok) return permission.response;
 
   const { id } = await params;
   const wantsJson = request.headers.get("accept")?.includes("application/json");
+  let formEntries: Record<string, FormDataEntryValue> = {};
 
   try {
-    const body = updateJobSchema.parse(Object.fromEntries((await request.formData()).entries()));
+    formEntries = Object.fromEntries((await request.formData()).entries());
+    const body = updateJobSchema.parse(formEntries);
+    const returnTo = sanitizeReturnTo(body.returnTo);
     const current = await getJobPosting(id);
 
     if (!current) {
       throw new Error("Job not found.");
     }
+
+    const permission = await requirePermissionForDepartment(
+      auth.session,
+      "edit_job",
+      current.departmentId
+    );
+    if (!permission.ok) {
+      return permission.response;
+    }
+
+    const successBasePath = returnTo ?? `/people/candidates/jobs/${id}`;
 
     if (body.action === "toggle_published") {
       await updateJobPosting(id, {
@@ -57,7 +86,7 @@ export async function POST(
         isPublished: !current.isPublished,
         isOpen: current.isOpen
       });
-      const url = new URL("/people/candidates/jobs", request.url);
+      const url = new URL(successBasePath, request.url);
       url.searchParams.set("updated", "1");
       if (wantsJson) {
         return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
@@ -80,7 +109,7 @@ export async function POST(
         isPublished: current.isPublished,
         isOpen: !current.isOpen
       });
-      const url = new URL("/people/candidates/jobs", request.url);
+      const url = new URL(successBasePath, request.url);
       url.searchParams.set("updated", "1");
       if (wantsJson) {
         return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
@@ -94,6 +123,11 @@ export async function POST(
     if (!body.roleId) {
       throw new Error("A role is required to save this job.");
     }
+    await validateJobPostingWorkspaceSelection({
+      roleId: body.roleId,
+      departmentId: body.departmentId,
+      screenerPresetId: body.screenerPresetId
+    });
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
       throw new Error("Description should be at least 20 characters.");
@@ -114,14 +148,15 @@ export async function POST(
       isOpen: body.isOpen === "on"
     });
 
-    const url = new URL(`/people/candidates/jobs/${id}`, request.url);
+    const url = new URL(successBasePath, request.url);
     url.searchParams.set("updated", "1");
     if (wantsJson) {
       return NextResponse.json({ ok: true, next: `${url.pathname}${url.search}` });
     }
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const url = new URL(`/people/candidates/jobs/${id}`, request.url);
+    const returnTo = sanitizeReturnTo(formEntries.returnTo);
+    const url = new URL(returnTo ?? `/people/candidates/jobs/${id}`, request.url);
     url.searchParams.set("error", error instanceof Error ? error.message : "Could not update job.");
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json(

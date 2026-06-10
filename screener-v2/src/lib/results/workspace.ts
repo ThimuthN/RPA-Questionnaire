@@ -17,6 +17,7 @@ export interface WorkspaceResultRow extends ResultSummary {
   reviewState: ResultReviewState;
   submittedAt: string;
   candidateId?: string;
+  candidateDepartmentId?: string;
   candidateOwner?: string;
   candidateRoleId?: string;
   candidateRoleLabel?: string;
@@ -34,6 +35,7 @@ export interface ResultsWorkspaceFilters {
   status?: ResultStatusFilter;
   reviewState?: ResultReviewState;
   contextType?: AssessmentContextType;
+  departmentId?: string;
   integrity?: IntegrityRiskLevel;
   role?: string;
   owner?: string;
@@ -47,6 +49,7 @@ type WorkspaceResultExtras = {
   reviewState?: ResultReviewState;
   submittedAt?: string;
   candidateId?: string;
+  candidateDepartmentId?: string;
   candidateRoleId?: string;
   candidateRoleLabel?: string;
   candidateOwner?: string;
@@ -81,6 +84,7 @@ export function filterResultWorkspaceRows(rows: WorkspaceResultRow[], filters: R
     if (filters.status && row.resultStatus !== filters.status) return false;
     if (filters.reviewState && row.reviewState !== filters.reviewState) return false;
     if (filters.contextType && row.contextType !== filters.contextType) return false;
+    if (filters.departmentId && row.candidateDepartmentId !== filters.departmentId) return false;
     if (filters.integrity && row.integrityRisk !== filters.integrity) return false;
     if (filters.role && row.candidateRoleId !== filters.role) return false;
     if (filters.owner && (row.candidateOwner || "") !== filters.owner) return false;
@@ -109,6 +113,7 @@ export function toWorkspaceResultRow(
     reviewState: extras?.reviewState ?? row.reviewState ?? "unreviewed",
     submittedAt: extras?.submittedAt ?? new Date().toISOString(),
     candidateId: extras?.candidateId,
+    candidateDepartmentId: extras?.candidateDepartmentId,
     candidateRoleId: extras?.candidateRoleId,
     candidateRoleLabel: extras?.candidateRoleLabel,
     candidateOwner: extras?.candidateOwner,

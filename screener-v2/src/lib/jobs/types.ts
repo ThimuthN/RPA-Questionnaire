@@ -27,6 +27,7 @@ export type JobPostingListItem = {
   id: string;
   slug: string;
   title: string;
+  departmentId?: string;
   roleId?: string;
   roleLabel?: string;
   roleDepartment?: string;

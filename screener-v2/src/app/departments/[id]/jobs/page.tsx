@@ -3,6 +3,8 @@ import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { DataTable } from "@/components/primitives/DataTable";
+import { requirePageSession } from "@/lib/auth/guards";
+import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { getDepartment } from "@/lib/db/departments";
 import { listJobPostings } from "@/lib/db/jobs";
 import type { JobPostingListItem } from "@/lib/jobs/types";
@@ -21,10 +23,13 @@ export default async function DepartmentJobsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await requirePageSession(`/departments/${id}/jobs`);
 
-  const [department, jobs] = await Promise.all([
+  const [department, jobs, canCreateJob, canEditJob] = await Promise.all([
     getDepartment(id),
-    listJobPostings(id)
+    listJobPostings(id),
+    canUsePermissionForDepartment(session, "create_job", id),
+    canUsePermissionForDepartment(session, "edit_job", id)
   ]);
 
   if (!department) {
@@ -40,9 +45,11 @@ export default async function DepartmentJobsPage({
             Manage job posts and review applicant queue.
           </p>
         </div>
-        <Link href={`/departments/${id}/jobs/new` as Route}>
-          <Button>Create job</Button>
-        </Link>
+        {canCreateJob ? (
+          <Link href={`/departments/${id}/jobs/new` as Route}>
+            <Button>Create job</Button>
+          </Link>
+        ) : null}
       </div>
 
       {jobs.length === 0 ? (
@@ -93,6 +100,31 @@ export default async function DepartmentJobsPage({
               header: "Next action",
               width: "w-[14%]",
               render: (job) => <p className="text-sm font-medium text-[color:var(--app-heading)]">{nextJobAction(job)}</p>
+            },
+            {
+              header: "Actions",
+              width: "w-[18%]",
+              render: (job) => (
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Link href={`/departments/${id}/applicants?jobId=${job.id}` as Route}>
+                    <Button type="button">Review applicants</Button>
+                  </Link>
+                  {job.isPublished ? (
+                    <Link href={`/jobs/${job.slug}` as Route}>
+                      <Button type="button" variant="secondary">
+                        Public page
+                      </Button>
+                    </Link>
+                  ) : null}
+                  {canEditJob ? (
+                    <Link href={`/departments/${id}/jobs/${job.id}` as Route}>
+                      <Button type="button" variant="secondary">
+                        Edit job
+                      </Button>
+                    </Link>
+                  ) : null}
+                </div>
+              )
             },
             {
               header: "Updated",
