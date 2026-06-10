@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { isMissingAssessmentPresetDepartmentColumnError } from "@/lib/addons/catalog";
 import { prisma } from "@/lib/db/prisma";
 import { mapCandidate } from "@/lib/db/candidates";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
@@ -604,6 +605,19 @@ export async function validateJobPostingWorkspaceSelection(input: {
       id: true,
       departmentId: true
     }
+  }).catch(async (error) => {
+    if (!isMissingAssessmentPresetDepartmentColumnError(error)) {
+      throw error;
+    }
+
+    const legacyPreset = await prisma.assessmentPreset.findUnique({
+      where: { id: screenerPresetId },
+      select: {
+        id: true
+      }
+    });
+
+    return legacyPreset ? { id: legacyPreset.id, departmentId: null } : null;
   });
   if (!preset) {
     throw new Error("Application screening package not found.");

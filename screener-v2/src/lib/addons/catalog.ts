@@ -230,6 +230,43 @@ function buildAssessmentPresetWhere(options: ListAssessmentPresetsOptions): Pris
   return filters.length === 1 ? filters[0] : { AND: filters };
 }
 
+export function isMissingAssessmentPresetDepartmentColumnError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const code = "code" in error ? String((error as { code?: unknown }).code ?? "") : "";
+  const message = "message" in error ? String((error as { message?: unknown }).message ?? "") : "";
+  return code === "P2022" && message.includes("AssessmentPreset.departmentId");
+}
+
+function buildLegacyAssessmentPresetWhere(includeInactive = false): Prisma.AssessmentPresetWhereInput | undefined {
+  return includeInactive ? undefined : { isActive: true };
+}
+
+async function listAssessmentPresetsLegacy(includeInactive = false): Promise<AssessmentPresetEntry[]> {
+  const rows = await prisma.assessmentPreset.findMany({
+    where: buildLegacyAssessmentPresetWhere(includeInactive),
+    include: {
+      items: {
+        include: {
+          addon: true
+        },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+      }
+    },
+    orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
+  });
+
+  return rows.map((row) =>
+    mapPreset({
+      ...row,
+      departmentId: null,
+      department: null
+    })
+  );
+}
+
 export async function listAddonCatalog(includeInactive = false): Promise<AddonCatalogEntry[]> {
   const rows = await prisma.addonCatalog.findMany({
     where: includeInactive ? undefined : { isActive: true },
@@ -346,35 +383,58 @@ export async function listAssessmentPresets(
   input: ListAssessmentPresetsInput = false
 ): Promise<AssessmentPresetEntry[]> {
   const options = normalizePresetListOptions(input);
-  const rows = await prisma.assessmentPreset.findMany({
-    where: buildAssessmentPresetWhere(options),
-    include: {
-      department: {
-        select: {
-          name: true
+  try {
+    const rows = await prisma.assessmentPreset.findMany({
+      where: buildAssessmentPresetWhere(options),
+      include: {
+        department: {
+          select: {
+            name: true
+          }
+        },
+        items: {
+          include: {
+            addon: true
+          },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
         }
       },
-      items: {
-        include: {
-          addon: true
-        },
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
-      }
-    },
-    orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
-  });
+      orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
+    });
 
-  return rows.map(mapPreset);
+    return rows.map(mapPreset);
+  } catch (error) {
+    if (!isMissingAssessmentPresetDepartmentColumnError(error)) {
+      throw error;
+    }
+
+    return listAssessmentPresetsLegacy(options.includeInactive);
+  }
 }
 
 export async function getAssessmentPresetScope(id: string) {
-  return prisma.assessmentPreset.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      departmentId: true
+  try {
+    return await prisma.assessmentPreset.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        departmentId: true
+      }
+    });
+  } catch (error) {
+    if (!isMissingAssessmentPresetDepartmentColumnError(error)) {
+      throw error;
     }
-  });
+
+    const preset = await prisma.assessmentPreset.findUnique({
+      where: { id },
+      select: {
+        id: true
+      }
+    });
+
+    return preset ? { id: preset.id, departmentId: null } : null;
+  }
 }
 
 export async function createAssessmentPreset(input: {
