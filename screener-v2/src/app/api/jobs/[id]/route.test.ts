@@ -149,4 +149,51 @@ describe("/api/jobs/[id] POST", () => {
     expect(body.ok).toBe(false);
     expect(updateJobPosting).not.toHaveBeenCalled();
   });
+
+  it("rejects invalid salary ranges before update", async () => {
+    const response = await POST(
+      makeRequest({ salaryMin: "150000", salaryMax: "120000" }),
+      { params: Promise.resolve({ id: "job-1" }) }
+    );
+
+    expect(response.status).toBe(303);
+    const location = response.headers.get("location");
+    expect(location).toContain("error=Minimum+salary+cannot+be+greater+than+maximum+salary.");
+    expect(updateJobPosting).not.toHaveBeenCalled();
+  });
+
+  it("returns JSON validation errors when the editor submits via fetch", async () => {
+    const request = new Request("http://localhost/api/jobs/job-1", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json"
+      },
+      body: new URLSearchParams({
+        title: "RPA Engineer",
+        roleId: "role-1",
+        summary: "Build automation systems",
+        description: "short",
+        returnTo: "/departments/dept-1/jobs/job-1"
+      }).toString()
+    });
+
+    const response = await POST(request, { params: Promise.resolve({ id: "job-1" }) });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.ok).toBe(false);
+    expect(body.message).toBe("Description must be at least 20 characters.");
+  });
+
+  it("does not leak unexpected internal errors on update", async () => {
+    vi.mocked(updateJobPosting).mockRejectedValue(new Error("socket timeout at db host 10.0.0.15"));
+
+    const response = await POST(makeRequest(), { params: Promise.resolve({ id: "job-1" }) });
+
+    expect(response.status).toBe(303);
+    const location = response.headers.get("location");
+    expect(location).toContain("error=Could+not+update+job.");
+    expect(location).not.toContain("socket");
+  });
 });

@@ -60,13 +60,13 @@ export default async function DepartmentNewJobPage({
               This creates the internal record and the public page when published.
             </p>
           </div>
-          {pageState.error ? <p className="text-sm text-[color:var(--app-danger)]">{pageState.error}</p> : null}
           <JobPostingForm
             action="/api/jobs"
             submitLabel="Create job"
             cancelHref={`/departments/${id}/jobs` as Route}
             returnTo={returnTo}
             departmentId={id}
+            initialError={pageState.error}
             roleOptions={roles.map((role) => ({
               id: role.id,
               label: role.label,

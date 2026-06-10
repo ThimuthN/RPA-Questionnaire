@@ -48,7 +48,7 @@ export function JobPostingEditorContent({
 }) {
   return (
     <>
-      {pageState.created || pageState.updated || pageState.error ? (
+      {pageState.created || pageState.updated ? (
         <div className="space-y-2">
           {pageState.created ? (
             <p className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
@@ -58,11 +58,6 @@ export function JobPostingEditorContent({
           {pageState.updated ? (
             <p className="rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
               Job updated.
-            </p>
-          ) : null}
-          {pageState.error ? (
-            <p className="rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
-              {pageState.error}
             </p>
           ) : null}
         </div>
@@ -82,6 +77,7 @@ export function JobPostingEditorContent({
             cancelHref={cancelHref}
             returnTo={editorHref}
             job={job}
+            initialError={pageState.error}
             roleOptions={roleOptions}
             presetOptions={presetOptions}
             departmentId={departmentId}

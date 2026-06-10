@@ -7,6 +7,12 @@ import {
   validateJobPostingWorkspaceSelection
 } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
+import {
+  JobValidationError,
+  parseSalaryField,
+  parseTeamSizeField,
+  validateSalaryRange
+} from "@/lib/jobs/validation";
 
 const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
 
@@ -19,13 +25,36 @@ function sanitizeReturnTo(value: unknown): string | undefined {
   return undefined;
 }
 
+function formatJobError(error: unknown) {
+  if (error instanceof z.ZodError) {
+    const first = error.issues[0];
+    if (!first) {
+      return "Please check the form and try again.";
+    }
+
+    return first.message;
+  }
+
+  if (error instanceof Error) {
+    if (error.constructor.name.startsWith("Prisma")) {
+      return "Could not save the job. Please try again.";
+    }
+    if (error instanceof JobValidationError) {
+      return error.message;
+    }
+    return "Could not update job.";
+  }
+
+  return "Could not update job.";
+}
+
 const updateJobSchema = z.object({
-  title: z.string().min(2).optional(),
+  title: z.string().min(2, "Job title must be at least 2 characters.").optional(),
   roleId: z.string().min(1, "A role is required.").optional(),
   departmentId: z.string().optional(),
   screenerPresetId: z.string().optional(),
-  summary: z.string().min(8).optional(),
-  description: z.string().min(20).optional(),
+  summary: z.string().min(8, "Summary must be at least 8 characters.").optional(),
+  description: z.string().min(20, "Description must be at least 20 characters.").optional(),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
   teamSize: z.string().optional(),
@@ -57,7 +86,7 @@ export async function POST(
     const current = await getJobPosting(id);
 
     if (!current) {
-      throw new Error("Job not found.");
+      throw new JobValidationError("Job not found.");
     }
 
     const permission = await requirePermissionForDepartment(
@@ -118,10 +147,10 @@ export async function POST(
     }
 
     if (!body.title || !body.summary || !body.description) {
-      throw new Error("Job details are required.");
+      throw new JobValidationError("Job details are required.");
     }
     if (!body.roleId) {
-      throw new Error("A role is required to save this job.");
+      throw new JobValidationError("A role is required to save this job.");
     }
     await validateJobPostingWorkspaceSelection({
       roleId: body.roleId,
@@ -130,8 +159,11 @@ export async function POST(
     });
     const description = sanitizeJobDescriptionHtml(body.description);
     if (jobDescriptionTextContent(description).length < 20) {
-      throw new Error("Description should be at least 20 characters.");
+      throw new JobValidationError("Description should be at least 20 characters.");
     }
+    const salaryMin = parseSalaryField(body.salaryMin);
+    const salaryMax = parseSalaryField(body.salaryMax);
+    validateSalaryRange(salaryMin, salaryMax);
 
     await updateJobPosting(id, {
       title: body.title,
@@ -139,9 +171,9 @@ export async function POST(
       screenerPresetId: body.screenerPresetId,
       summary: body.summary,
       description,
-      salaryMin: body.salaryMin ? Number(body.salaryMin) : null,
-      salaryMax: body.salaryMax ? Number(body.salaryMax) : null,
-      teamSize: body.teamSize ? Number(body.teamSize) : null,
+      salaryMin: salaryMin ?? null,
+      salaryMax: salaryMax ?? null,
+      teamSize: parseTeamSizeField(body.teamSize) ?? null,
       techStack: body.techStack?.trim(),
       remotePolicy: body.remotePolicy?.trim(),
       isPublished: body.isPublished === "on",
@@ -157,10 +189,11 @@ export async function POST(
   } catch (error) {
     const returnTo = sanitizeReturnTo(formEntries.returnTo);
     const url = new URL(returnTo ?? `/people/candidates/jobs/${id}`, request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not update job.");
+    const errorMessage = formatJobError(error);
+    url.searchParams.set("error", errorMessage);
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json(
-        { ok: false, message: error instanceof Error ? error.message : "Could not update job.", next: `${url.pathname}${url.search}` },
+        { ok: false, message: errorMessage, next: `${url.pathname}${url.search}` },
         { status: 400 }
       );
     }

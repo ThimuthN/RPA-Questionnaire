@@ -45,11 +45,11 @@ export default async function NewJobPostingPage({
             <h2 className="text-2xl text-[color:var(--app-heading)]">Create a job</h2>
             <p className="text-sm text-[color:var(--app-muted)]">This creates the internal record and the public page when published.</p>
           </div>
-          {pageState.error ? <p className="text-sm text-[color:var(--app-danger)]">{pageState.error}</p> : null}
           <JobPostingForm
             action="/api/jobs"
             submitLabel="Create job"
             cancelHref="/people/candidates/jobs"
+            initialError={pageState.error}
             roleOptions={roles.map((role) => ({
               id: role.id,
               label: role.label,
