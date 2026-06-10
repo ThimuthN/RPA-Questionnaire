@@ -59,7 +59,11 @@ export function isNavItemActive(pathname: string, href: string) {
     (href === "/people/candidates/jobs" && pathname.startsWith("/people/candidates/jobs")) ||
     (href === "/people/candidates/applicants" && pathname.startsWith("/people/candidates/applicants")) ||
     (href === "/people/candidates" && pathname === "/people/candidates") ||
-    (href === "/assessments" && (pathname.startsWith("/assessments") || pathname.startsWith("/create-test"))) ||
+    (href === "/assessments" &&
+      (pathname.startsWith("/assessments") ||
+        pathname.startsWith("/create-test") ||
+        pathname.startsWith("/addons") ||
+        pathname.startsWith("/results"))) ||
     (href === "/departments" && pathname === "/departments")
   );
 }

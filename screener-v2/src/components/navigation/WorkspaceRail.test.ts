@@ -7,9 +7,9 @@ describe("resolveCurrentWorkspace", () => {
     { id: "dept-2", name: "RPA IND", isActive: true }
   ];
 
-  it("uses query workspace context on candidate detail pages", () => {
+  it("uses query workspace context on workspace-scoped routes", () => {
     const workspace = resolveCurrentWorkspace({
-      pathname: "/people/candidates/cand-1",
+      pathname: "/addons",
       searchParams: new URLSearchParams("workspaceId=dept-1"),
       isAdmin: true,
       visibleDepartments
@@ -31,7 +31,7 @@ describe("resolveCurrentWorkspace", () => {
 
   it("ignores invalid query workspace ids", () => {
     const workspace = resolveCurrentWorkspace({
-      pathname: "/people/candidates/cand-1",
+      pathname: "/results",
       searchParams: new URLSearchParams("workspaceId=dept-missing"),
       isAdmin: true,
       visibleDepartments
@@ -131,6 +131,17 @@ describe("resolveCurrentWorkspace", () => {
   it("resolves /create-test to admin workspace for admin users", () => {
     const workspace = resolveCurrentWorkspace({
       pathname: "/create-test",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
+  it("resolves /results to admin workspace for admin users", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/results",
       searchParams: new URLSearchParams(),
       isAdmin: true,
       visibleDepartments

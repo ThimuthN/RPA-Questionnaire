@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home,
   BriefcaseBusiness,
@@ -25,6 +25,36 @@ const WORKSPACE_SUBITEMS = [
   { key: "designations", label: "Job Designations", icon: BriefcaseBusiness, href: "/departments/{id}/designations" }
 ];
 
+function isAssessmentWorkspacePath(pathname: string, departmentId: string, workspaceId?: string | null) {
+  return (
+    workspaceId === departmentId &&
+    (pathname.startsWith("/assessments") ||
+      pathname.startsWith("/create-test") ||
+      pathname.startsWith("/addons") ||
+      pathname.startsWith("/results"))
+  );
+}
+
+export function isWorkspaceSubnavItemActive({
+  itemKey,
+  href,
+  pathname,
+  departmentId,
+  workspaceId
+}: {
+  itemKey: string;
+  href: string;
+  pathname: string;
+  departmentId: string;
+  workspaceId?: string | null;
+}) {
+  if (pathname === href || pathname.startsWith(`${href}/`)) {
+    return true;
+  }
+
+  return itemKey === "assessments" && isAssessmentWorkspacePath(pathname, departmentId, workspaceId);
+}
+
 export function WorkspaceSubnav({
   departmentId,
   collapsed
@@ -33,6 +63,7 @@ export function WorkspaceSubnav({
   collapsed: boolean;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (!departmentId) {
     return null;
@@ -43,7 +74,13 @@ export function WorkspaceSubnav({
       {WORKSPACE_SUBITEMS.map((item) => {
         const Icon = item.icon;
         const href = item.href.replace("{id}", departmentId) as Route;
-        const isActive = pathname === href || pathname.startsWith(`${href}/`);
+        const isActive = isWorkspaceSubnavItemActive({
+          itemKey: item.key,
+          href,
+          pathname,
+          departmentId,
+          workspaceId: searchParams?.get("workspaceId")
+        });
 
         return (
           <Link

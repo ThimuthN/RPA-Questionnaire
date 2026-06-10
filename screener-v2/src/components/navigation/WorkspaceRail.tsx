@@ -21,10 +21,6 @@ function routeWorkspaceDepartmentId(pathname: string) {
   return pathname.match(/^\/departments\/([^/]+)/)?.[1];
 }
 
-function isCandidateProfilePath(pathname: string) {
-  return /^\/people\/candidates\/[^/]+$/.test(pathname);
-}
-
 export function resolveCurrentWorkspace({
   pathname,
   searchParams,
@@ -42,11 +38,8 @@ export function resolveCurrentWorkspace({
     return routedDepartmentId;
   }
 
-  // 2. workspaceId param (candidate profile paths)
-  const workspaceId =
-    isCandidateProfilePath(pathname)
-      ? searchParams?.get("workspaceId")?.trim() || undefined
-      : undefined;
+  // 2. Explicit workspaceId search param for workspace-scoped cross-route pages
+  const workspaceId = searchParams?.get("workspaceId")?.trim() || undefined;
   if (workspaceId && visibleDepartments.some((department) => department.isActive && department.id === workspaceId)) {
     return workspaceId;
   }
@@ -64,6 +57,7 @@ export function resolveCurrentWorkspace({
     pathname === "/departments" ||
     pathname.startsWith("/people/") ||
     pathname.startsWith("/assessments") ||
+    pathname.startsWith("/results") ||
     pathname.startsWith("/access-roles") ||
     pathname.startsWith("/users") ||
     pathname.startsWith("/create-test") ||

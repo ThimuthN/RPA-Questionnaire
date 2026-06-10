@@ -103,6 +103,12 @@ describe("nav-config", () => {
       expect(isNavItemActive("/assessments", "/assessments")).toBe(true);
     });
 
+    it("marks /addons and /results as active for Assessments item", () => {
+      expect(isNavItemActive("/addons", "/assessments")).toBe(true);
+      expect(isNavItemActive("/results", "/assessments")).toBe(true);
+      expect(isNavItemActive("/results/attempt-1", "/assessments")).toBe(true);
+    });
+
     it("marks /departments as active for Manage Workspaces item", () => {
       expect(isNavItemActive("/departments", "/departments")).toBe(true);
     });
