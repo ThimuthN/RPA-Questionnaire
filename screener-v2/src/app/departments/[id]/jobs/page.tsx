@@ -1,21 +1,15 @@
 import Link from "next/link";
 import type { Route } from "next";
+import { MoreVertical } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { DropdownMenu } from "@/components/primitives/DropdownMenu";
 import { DataTable } from "@/components/primitives/DataTable";
 import { requirePageSession } from "@/lib/auth/guards";
 import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { getDepartment } from "@/lib/db/departments";
 import { listJobPostings } from "@/lib/db/jobs";
-import type { JobPostingListItem } from "@/lib/jobs/types";
 import { notFound } from "next/navigation";
-
-function nextJobAction(job: JobPostingListItem) {
-  if (!job.isPublished) return "Publish job";
-  if (!job.isOpen) return "Open applications";
-  if (job.applicantCount > 0) return "Review applicants";
-  return "Wait for applicants";
-}
 
 export default async function DepartmentJobsPage({
   params
@@ -61,75 +55,87 @@ export default async function DepartmentJobsPage({
           columns={[
             {
               header: "Job",
-              width: "w-[26%]",
+              width: "w-[32%]",
               render: (job) => (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
-                  <p className="text-xs text-[color:var(--app-muted)]">{job.roleLabel || "No role linked"}</p>
+                  <p className="text-sm font-semibold text-[color:var(--app-heading)]">{job.title}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">
+                    {job.roleLabel ? job.roleLabel : "No role linked"}
+                  </p>
                 </div>
               )
             },
             {
               header: "Summary",
+              width: "w-[28%]",
+              render: (job) => (
+                <p className="text-sm text-[color:var(--app-text)] line-clamp-2">{job.summary}</p>
+              )
+            },
+            {
+              header: "Status",
               width: "w-[18%]",
-              render: (job) => <p className="text-sm text-[color:var(--app-text)]">{job.summary}</p>
+              render: (job) => (
+                <div className="flex flex-wrap gap-1.5">
+                  <StatusPill
+                    label={job.isPublished ? "Published" : "Draft"}
+                    tone={job.isPublished ? "emerald" : "neutral"}
+                  />
+                  <StatusPill
+                    label={job.isOpen ? "Open" : "Closed"}
+                    tone={job.isOpen ? "blue" : "amber"}
+                  />
+                </div>
+              )
             },
             {
               header: "Applicants",
-              width: "w-[14%]",
+              width: "w-[12%]",
               render: (job) => (
                 <Link
                   href={`/departments/${id}/applicants?jobId=${job.id}`}
-                  className="text-[color:var(--app-brand)] hover:underline"
+                  className="text-sm font-medium text-[color:var(--app-brand)] hover:underline"
                 >
                   {job.applicantCount}
                 </Link>
               )
             },
             {
-              header: "Status",
-              width: "w-[16%]",
-              render: (job) => (
-                <div className="flex flex-wrap gap-2">
-                  <StatusPill label={job.isPublished ? "Published" : "Draft"} tone={job.isPublished ? "emerald" : "neutral"} />
-                  <StatusPill label={job.isOpen ? "Open" : "Closed"} tone={job.isOpen ? "blue" : "amber"} />
-                </div>
-              )
-            },
-            {
-              header: "Next action",
-              width: "w-[14%]",
-              render: (job) => <p className="text-sm font-medium text-[color:var(--app-heading)]">{nextJobAction(job)}</p>
-            },
-            {
-              header: "Actions",
-              width: "w-[18%]",
-              render: (job) => (
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Link href={`/departments/${id}/applicants?jobId=${job.id}` as Route}>
-                    <Button type="button">Review applicants</Button>
-                  </Link>
-                  {job.isPublished ? (
-                    <Link href={`/jobs/${job.slug}` as Route}>
-                      <Button type="button" variant="secondary">
-                        Public page
-                      </Button>
-                    </Link>
-                  ) : null}
-                  {canEditJob ? (
-                    <Link href={`/departments/${id}/jobs/${job.id}` as Route}>
-                      <Button type="button" variant="secondary">
-                        Edit job
-                      </Button>
-                    </Link>
-                  ) : null}
-                </div>
-              )
-            },
-            {
-              header: "Updated",
+              header: "Action",
               width: "w-[10%]",
-              render: (job) => <p className="text-sm text-[color:var(--app-muted)]">{new Date(job.updatedAt).toLocaleDateString()}</p>
+              render: (job) => {
+                const dropdownItems = [
+                  ...(job.isPublished
+                    ? [
+                        {
+                          label: "View public page",
+                          href: `/jobs/${job.slug}` as Route
+                        }
+                      ]
+                    : []),
+                  ...(canEditJob
+                    ? [
+                        {
+                          label: "Edit job",
+                          href: `${`/departments/${id}/jobs/${job.id}`}` as Route
+                        }
+                      ]
+                    : [])
+                ];
+
+                return (
+                  <div className="flex items-center justify-between gap-2">
+                    <Link href={`/departments/${id}/applicants?jobId=${job.id}` as Route}>
+                      <Button type="button" className="px-3 py-1.5 text-sm">
+                        Review
+                      </Button>
+                    </Link>
+                    {dropdownItems.length > 0 ? (
+                      <DropdownMenu items={dropdownItems} trigger={<MoreVertical className="h-4 w-4" />} />
+                    ) : null}
+                  </div>
+                );
+              }
             }
           ]}
           data={jobs}
