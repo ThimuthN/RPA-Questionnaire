@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { MoreVertical } from "lucide-react";
 
 export interface DropdownMenuItemProps {
   label: string;
@@ -13,7 +12,7 @@ export interface DropdownMenuItemProps {
 
 export function DropdownMenu({
   items,
-  trigger = <ChevronDown className="h-4 w-4" />
+  trigger = <MoreVertical className="h-4 w-4" />
 }: {
   items: DropdownMenuItemProps[];
   trigger?: React.ReactNode;
@@ -38,23 +37,23 @@ export function DropdownMenu({
     <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-2 text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        className="inline-flex items-center justify-center text-[color:var(--app-muted)] transition hover:text-[color:var(--app-text)]"
         aria-label="More options"
       >
         {trigger}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 min-w-max rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-xl">
+        <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-md">
           {items.map((item, idx) => {
+            const isLast = idx === items.length - 1;
             const content = (
               <span
-                className={cn(
-                  "block w-full px-4 py-2 text-left text-sm font-medium transition",
+                className={`block w-full px-4 py-2 text-left text-sm transition ${
                   item.variant === "danger"
-                    ? "text-red-300 hover:bg-red-500/10"
+                    ? "text-red-400 hover:bg-red-500/10"
                     : "text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
-                )}
+                }`}
               >
                 {item.label}
               </span>
@@ -66,7 +65,7 @@ export function DropdownMenu({
                   key={idx}
                   href={item.href}
                   onClick={() => setIsOpen(false)}
-                  className="block no-underline"
+                  className={`block no-underline ${!isLast ? "border-b border-[color:var(--app-border)]" : ""}`}
                 >
                   {content}
                 </a>
@@ -80,7 +79,7 @@ export function DropdownMenu({
                   item.onClick?.();
                   setIsOpen(false);
                 }}
-                className="w-full"
+                className={`w-full text-left ${!isLast ? "border-b border-[color:var(--app-border)]" : ""}`}
               >
                 {content}
               </button>

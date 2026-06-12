@@ -31,12 +31,12 @@ export default async function DepartmentJobsPage({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl text-[color:var(--app-heading)]">Job Openings</h2>
-          <p className="text-sm text-[color:var(--app-muted)]">
-            Manage job posts and review applicant queue.
+          <h1 className="text-3xl font-semibold text-[color:var(--app-heading)]">Job Openings</h1>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">
+            Manage and review your open positions
           </p>
         </div>
         {canCreateJob ? (
@@ -47,8 +47,8 @@ export default async function DepartmentJobsPage({
       </div>
 
       {jobs.length === 0 ? (
-        <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 text-center text-sm text-[color:var(--app-muted)]">
-          No jobs yet. Create one to start hiring.
+        <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-8 text-center">
+          <p className="text-sm text-[color:var(--app-muted)]">No jobs yet. Create one to start hiring.</p>
         </div>
       ) : (
         <DataTable

@@ -22,35 +22,35 @@ export function DataTable<T extends { id: string }>({
   }
 
   return (
-    <div className="rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
+    <div className="rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
       <table className="w-full table-fixed">
-          <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)]">
-            <tr>
+        <thead>
+          <tr className="border-b border-[color:var(--app-border)]">
+            {columns.map((col, idx) => (
+              <th
+                key={idx}
+                className={`${col.width ?? ""} px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[color:var(--app-muted)]`}
+              >
+                {col.header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => (
+            <tr
+              key={item.id}
+              className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-surface-soft)]"
+            >
               {columns.map((col, idx) => (
-                <th
-                  key={idx}
-                  className={`${col.width ?? ""} px-5 py-4 text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]`}
-                >
-                  {col.header}
-                </th>
+                <td key={idx} className={`${col.width ?? ""} px-5 py-3.5 align-middle`}>
+                  {col.render(item)}
+                </td>
               ))}
             </tr>
-          </thead>
-          <tbody>
-            {data.map((item) => (
-              <tr
-                key={item.id}
-                className="border-t border-[color:var(--app-border)] transition hover:bg-[color:var(--app-table-row-hover)]"
-              >
-                {columns.map((col, idx) => (
-                  <td key={idx} className={`${col.width ?? ""} px-5 py-4 align-middle`}>
-                    {col.render(item)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
