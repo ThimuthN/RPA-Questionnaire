@@ -39,7 +39,7 @@ export function SceneShell({
       className={cn(
         "relative isolate md:px-9 md:py-9",
         tone === "scene" &&
-          "overflow-hidden rounded-[32px] px-6 py-7 shadow-[var(--app-shadow)]",
+          "overflow-hidden rounded-xl px-6 py-7 shadow-[var(--app-shadow)]",
         tone === "scene" && sceneClasses[variant],
         tone === "page" && "px-0 py-0",
         className

@@ -11,13 +11,28 @@ const config: Config = {
         brand: { 600: "#1f6fff", 500: "#2f86ff", 300: "#8ab8ff" },
       },
       borderRadius: {
-        sm: "10px",
-        md: "14px",
+        xs: "8px",
+        sm: "12px",
+        md: "16px",
         lg: "20px",
+        xl: "24px",
+      },
+      spacing: {
+        "spacing-xs": "8px",
+        "spacing-sm": "12px",
+        "spacing-md": "16px",
+        "spacing-lg": "20px",
+        "spacing-xl": "24px",
       },
       boxShadow: {
         soft: "0 10px 30px rgba(8, 23, 51, 0.12)",
         strong: "0 18px 50px rgba(6, 18, 39, 0.28)",
+      },
+      fontSize: {
+        "heading-1": ["2.5rem", { lineHeight: "1.1" }],
+        "heading-2": ["2rem", { lineHeight: "1.2" }],
+        "heading-3": ["1.5rem", { lineHeight: "1.3" }],
+        "heading-4": ["1.25rem", { lineHeight: "1.4" }],
       },
       fontFamily: {
         display: ["var(--font-display)", "sans-serif"],

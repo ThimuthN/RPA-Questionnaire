@@ -243,19 +243,21 @@ export function ResponsibleTeamCard({
                     {roleAssignments.map((assignment) => (
                       <div
                         key={assignment.id}
-                        className="flex flex-wrap items-center gap-2 rounded-[12px] bg-[color:var(--app-surface)] p-3"
+                        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-sm bg-[color:var(--app-surface)] p-3"
                       >
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[color:var(--app-heading)]">
                             {assignment.user.name || assignment.user.email}
                           </p>
-                          <p className="text-xs text-[color:var(--app-muted)]">{assignment.user.email}</p>
+                          <p className="text-xs text-[color:var(--app-muted)] truncate">{assignment.user.email}</p>
                         </div>
-                        <StatusPill label={roleLabels[assignment.assignmentRole] || assignment.assignmentRole} tone="neutral" />
-                        {assignment.source ? (
-                          <StatusPill label={sourceLabels[assignment.source]} tone="blue" />
-                        ) : null}
-                        {assignment.isPrimary ? <StatusPill label={primaryLabel} tone="emerald" /> : null}
+                        <div className="flex flex-wrap gap-2 justify-end">
+                          <StatusPill label={roleLabels[assignment.assignmentRole] || assignment.assignmentRole} tone="neutral" />
+                          {assignment.source ? (
+                            <StatusPill label={sourceLabels[assignment.source]} tone="blue" />
+                          ) : null}
+                          {assignment.isPrimary ? <StatusPill label={primaryLabel} tone="emerald" /> : null}
+                        </div>
                       </div>
                     ))}
                   </div>

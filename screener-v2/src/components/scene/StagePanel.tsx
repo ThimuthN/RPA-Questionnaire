@@ -13,7 +13,7 @@ export function StagePanel({
     <section
       {...props}
       className={cn(
-        "group relative overflow-hidden rounded-[28px] p-6 backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform,filter] duration-[var(--scene-interaction)] ease-out",
+        "group relative overflow-hidden rounded-xl p-6 backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform,filter] duration-[var(--scene-interaction)] ease-out",
         tone === "workspace" &&
           "border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] shadow-[var(--app-shadow)] hover:-translate-y-[2px]",
         tone === "summary" &&

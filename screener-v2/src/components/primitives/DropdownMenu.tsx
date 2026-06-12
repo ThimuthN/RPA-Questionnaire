@@ -79,7 +79,7 @@ export function DropdownMenu({
         createPortal(
           <div
             ref={menuRef}
-            className="fixed z-50 min-w-48 rounded border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-md"
+            className="fixed z-50 min-w-48 rounded-sm border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]"
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`

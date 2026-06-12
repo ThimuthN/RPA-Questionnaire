@@ -5,7 +5,7 @@ export function Card({ children, className }: PropsWithChildren<{ className?: st
   return (
     <section
       className={cn(
-        "rounded-[22px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-5 shadow-[var(--app-shadow)] backdrop-blur-sm",
+        "rounded-lg border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] p-4 shadow-[var(--app-shadow)] backdrop-blur-sm",
         className
       )}
     >
