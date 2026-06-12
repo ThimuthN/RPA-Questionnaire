@@ -964,9 +964,6 @@ export function CandidateMilestoneTimeline({
                     <span
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition duration-300 ${timelineNodeClassNames[nodeState]}`}
                     >
-                      {isActive ? (
-                        <span className="absolute inset-[-6px] rounded-full border border-[color:var(--app-brand)]/35" />
-                      ) : null}
                       <span className="relative z-[1]">
                         {isComplete ? (
                           <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
