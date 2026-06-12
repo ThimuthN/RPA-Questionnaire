@@ -20,8 +20,6 @@ export function StagePanel({
           "border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-muted))] shadow-[var(--app-shadow-soft)] hover:-translate-y-[2px]",
         tone === "open" &&
           "border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] shadow-none",
-        tone !== "open" &&
-          "before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(140deg,rgba(255,255,255,0.08),transparent_26%,transparent_70%,rgba(111,215,255,0.04))] before:opacity-60 before:transition-opacity before:duration-[var(--scene-interaction)] before:content-[''] hover:before:opacity-100",
         className
       )}
     >
