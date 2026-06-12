@@ -28,7 +28,7 @@ vi.mock("@/lib/tokens/token-service", () => ({
   cuidLike: vi.fn(() => "mock-cuid")
 }));
 
-import { mapJobPosting, listPublicJobPostings, listJobPostings } from "./jobs";
+import { getJobPosting, mapJobPosting, listPublicJobPostings, listJobPostings } from "./jobs";
 import { prisma } from "./prisma";
 
 function makeJobRow(overrides: Record<string, unknown> = {}) {
@@ -49,7 +49,7 @@ function makeJobRow(overrides: Record<string, unknown> = {}) {
     isOpen: true,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-02"),
-    role: { label: "Engineering", department: "Tech" },
+    role: { label: "Engineering", department: "Tech", departmentId: "dept-1" },
     screenerPreset: null,
     applications: [],
     ...overrides
@@ -76,7 +76,7 @@ describe("jobs mapper", () => {
         isOpen: true,
         createdAt: new Date("2024-01-01"),
         updatedAt: new Date("2024-01-02"),
-        role: { label: "Engineering", department: "Tech" },
+        role: { label: "Engineering", department: "Tech", departmentId: "dept-1" },
         screenerPreset: { id: "preset-1", label: "Technical Assessment" },
         applications: []
       };
@@ -94,6 +94,7 @@ describe("jobs mapper", () => {
           techStack: "TypeScript, React",
           remotePolicy: "Hybrid",
           roleLabel: "Engineering",
+          departmentId: "dept-1",
           roleDepartment: "Tech",
           screenerPresetLabel: "Technical Assessment",
           applicantCount: 0
@@ -193,6 +194,7 @@ describe("listJobPostings", () => {
     await listJobPostings();
     const call = vi.mocked(prisma.jobPosting.findMany).mock.calls[0][0] as any;
     expect(call.where).toEqual({});
+    expect(call.include.role.select.departmentId).toBe(true);
   });
 
   it("scopes to the given department when departmentId is provided", async () => {
@@ -215,5 +217,31 @@ describe("listJobPostings", () => {
     ] as any);
     const jobs = await listJobPostings();
     expect(jobs).toHaveLength(2);
+  });
+});
+
+describe("getJobPosting", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("keeps the job department id on mapped detail records", async () => {
+    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue({
+      ...makeJobRow(),
+      applications: []
+    } as any);
+
+    const job = await getJobPosting("job-1");
+
+    expect(job?.departmentId).toBe("dept-1");
+  });
+
+  it("selects role.departmentId for workspace-aware edit pages", async () => {
+    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue(null as any);
+
+    await getJobPosting("job-1");
+
+    const call = vi.mocked(prisma.jobPosting.findUnique).mock.calls[0][0] as any;
+    expect(call.include.role.select.departmentId).toBe(true);
   });
 });

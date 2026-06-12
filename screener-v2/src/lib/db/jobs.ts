@@ -274,7 +274,8 @@ export async function listPublicJobPostings(filters: ListPublicJobPostingsFilter
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -305,7 +306,8 @@ export async function getPublicJobPostingBySlug(slug: string) {
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -404,7 +406,8 @@ export async function listJobPostings(departmentId?: string) {
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -431,7 +434,8 @@ export async function getJobPosting(jobId: string) {
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -462,7 +466,8 @@ export async function getJobPosting(jobId: string) {
               role: {
                 select: {
                   label: true,
-                  department: true
+                  department: true,
+                  departmentId: true
                 }
               },
               screenerPreset: {
@@ -550,7 +555,8 @@ export async function createJobPosting(input: {
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -676,7 +682,8 @@ export async function updateJobPosting(
       role: {
         select: {
           label: true,
-          department: true
+          department: true,
+          departmentId: true
         }
       },
       screenerPreset: {
@@ -746,7 +753,8 @@ export async function listApplicantWorkspacePage(filters: {
             role: {
               select: {
                 label: true,
-                department: true
+                department: true,
+                departmentId: true
               }
             }
           }
@@ -816,7 +824,8 @@ export async function getApplicantReviewDetail(applicationId: string) {
           role: {
             select: {
               label: true,
-              department: true
+              department: true,
+              departmentId: true
             }
           },
           screenerPreset: {
