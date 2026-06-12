@@ -110,7 +110,7 @@ export default async function DepartmentJobsPage({
                     ? [
                         {
                           label: "Edit job",
-                          href: `${`/departments/${id}/jobs/${job.id}`}` as Route
+                          href: `/departments/${id}/jobs/${job.id}` as Route
                         }
                       ]
                     : [])
