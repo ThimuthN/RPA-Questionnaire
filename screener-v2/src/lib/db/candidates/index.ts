@@ -3,6 +3,7 @@ export { mapCandidate } from "./mappers";
 export {
   createCandidate,
   createCandidatesBatch,
+  ensureCandidateMilestones,
   updateCandidate,
   deleteCandidate,
   candidateExists,

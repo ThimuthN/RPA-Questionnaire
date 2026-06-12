@@ -27,8 +27,8 @@ vi.mock("@/components/candidates/CandidateNotesModal", () => ({
 }));
 
 vi.mock("@/components/candidates/DefaultJourneySkeleton", () => ({
-  DefaultJourneySkeleton: ({ hasLinkedApplication }: { hasLinkedApplication: boolean }) => (
-    <div data-testid="journey-skeleton">{hasLinkedApplication ? "Linked journey" : "No linked application journey"}</div>
+  DefaultJourneySkeleton: ({ hasHiringJourney }: { hasHiringJourney: boolean }) => (
+    <div data-testid="journey-skeleton">{hasHiringJourney ? "Linked journey" : "No linked application journey"}</div>
   )
 }));
 
@@ -99,6 +99,7 @@ vi.mock("@/lib/auth/candidate-access", () => ({
 }));
 
 vi.mock("@/lib/db/candidates", () => ({
+  ensureCandidateMilestones: vi.fn(),
   getCandidateDetail: vi.fn()
 }));
 
@@ -130,7 +131,7 @@ vi.mock("@/lib/db/hiring-assignments", () => ({
 import CandidateDetailPage from "./page";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
-import { getCandidateDetail } from "@/lib/db/candidates";
+import { ensureCandidateMilestones, getCandidateDetail } from "@/lib/db/candidates";
 import { getDepartment } from "@/lib/db/departments";
 import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
 import { getApplicationAssignments } from "@/lib/db/hiring-assignments";
@@ -165,6 +166,7 @@ describe("Candidate Detail Page", () => {
     } as never);
     vi.mocked(requireCandidatePermission).mockResolvedValue({ ok: true } as never);
     vi.mocked(getCandidateDetail).mockResolvedValue(mockCandidate as never);
+    vi.mocked(ensureCandidateMilestones).mockResolvedValue(false as never);
     vi.mocked(getDepartment).mockResolvedValue({
       id: "dept-1",
       slug: "rpa-sl",
@@ -254,5 +256,37 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="responsible-team-card"');
+  });
+
+  it("initializes milestones for candidates with an active hiring journey but no milestone records", async () => {
+    vi.mocked(getCandidateDetail)
+      .mockResolvedValueOnce({
+        ...mockCandidate,
+        departmentCandidacies: [{ departmentId: "dept-1", status: "active" }],
+        milestones: []
+      } as never)
+      .mockResolvedValueOnce({
+        ...mockCandidate,
+        departmentCandidacies: [{ departmentId: "dept-1", status: "active" }],
+        milestones: [
+          {
+            id: "milestone-1",
+            type: "registration",
+            title: "Registered",
+            status: "done",
+            sortOrder: 10,
+            mode: "manual"
+          }
+        ]
+      } as never);
+    vi.mocked(ensureCandidateMilestones).mockResolvedValue(true as never);
+
+    await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({})
+    });
+
+    expect(vi.mocked(ensureCandidateMilestones)).toHaveBeenCalledWith("cand-1");
+    expect(vi.mocked(getCandidateDetail)).toHaveBeenCalledTimes(2);
   });
 });

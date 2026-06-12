@@ -97,7 +97,7 @@ describe("/api/candidates POST", () => {
           { userId: "user-1", role: "owner", source: "manual" },
           { userId: "user-2", role: "recruiter", source: "manual" }
         ],
-        createMilestones: false
+        createMilestones: true
       })
     );
     expect(response.status).toBe(303);

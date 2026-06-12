@@ -184,6 +184,30 @@ export async function createCandidate(input: {
   return mapCandidate(created);
 }
 
+export async function ensureCandidateMilestones(candidateId: string) {
+  const milestoneCount = await prisma.candidateMilestone.count({
+    where: { candidateId }
+  });
+
+  if (milestoneCount > 0) {
+    return false;
+  }
+
+  await prisma.candidateMilestone.createMany({
+    data: defaultCandidateMilestones().map((milestone) => ({
+      id: cuidLike(),
+      candidateId,
+      type: milestone.type,
+      title: milestone.title,
+      status: milestone.status,
+      sortOrder: milestone.sortOrder,
+      mode: milestone.mode
+    }))
+  });
+
+  return true;
+}
+
 export async function createCandidatesBatch(
   inputs: Array<{
     fullName: string;

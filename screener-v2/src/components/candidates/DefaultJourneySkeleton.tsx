@@ -13,15 +13,9 @@ const defaultStages = [
   },
   {
     id: "screening",
-    title: "Screening",
-    summary: "Resume review and initial filters",
-    detail: "Track resume review and any early filtering criteria here."
-  },
-  {
-    id: "assessment",
-    title: "Assessment",
-    summary: "Platform or external evidence",
-    detail: "Only real assessment links, scores, and outcomes should appear here."
+    title: "Screening assessment",
+    summary: "Resume review and screening evidence",
+    detail: "Use this stage for resume review and the first screening decision."
   },
   {
     id: "interview",
@@ -32,7 +26,7 @@ const defaultStages = [
   {
     id: "advanced-review",
     title: "Advanced Review",
-    summary: "Calibration and deep-dive checks",
+    summary: "Panel review and calibration",
     detail: "Use this step for the review work between interview and final decision."
   },
   {
@@ -50,9 +44,9 @@ function connectorClassName(index: number) {
 }
 
 export function DefaultJourneySkeleton({
-  hasLinkedApplication
+  hasHiringJourney
 }: {
-  hasLinkedApplication: boolean;
+  hasHiringJourney: boolean;
 }) {
   const [activeStageId, setActiveStageId] = useState<(typeof defaultStages)[number]["id"]>(defaultStages[0].id);
   const activeStage = defaultStages.find((stage) => stage.id === activeStageId) ?? defaultStages[0];
@@ -61,13 +55,13 @@ export function DefaultJourneySkeleton({
     <div className="space-y-5">
       <div className="space-y-2">
         <p className="text-sm text-[color:var(--app-muted)]">
-          {hasLinkedApplication
+          {hasHiringJourney
             ? "No tracked milestones yet. Progress will appear as this candidate moves through review."
-            : "No linked application yet. Journey progress starts after the candidate is linked to a workspace hiring journey."}
+            : "No active hiring journey yet. Progress appears after this candidate is connected to a workspace hiring flow."}
         </p>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-6">
+      <div className="grid gap-3 lg:grid-cols-5">
         {defaultStages.map((stage, index) => {
           const isActive = stage.id === activeStageId;
           return (
@@ -113,9 +107,9 @@ export function DefaultJourneySkeleton({
         <div className="mt-4 space-y-2">
           <h3 className="text-xl text-[color:var(--app-heading)]">{activeStage.title}</h3>
           <p className="text-sm leading-6 text-[color:var(--app-text)]">{activeStage.detail}</p>
-          {!hasLinkedApplication ? (
+          {!hasHiringJourney ? (
             <p className="text-sm text-amber-300">
-              Real workflow progress starts only after the candidate is connected to a workspace hiring journey.
+              Connect this candidate to a department hiring journey before expecting workflow progress here.
             </p>
           ) : null}
         </div>

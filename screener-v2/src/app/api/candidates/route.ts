@@ -207,7 +207,7 @@ export async function POST(request: Request) {
       nextAction: body.nextAction,
       screeningStatus: body.screeningStatus || undefined,
       teamAssignments: normalizedAssignments,
-      createMilestones: false
+      createMilestones: true
     });
 
     if (formRequest) {

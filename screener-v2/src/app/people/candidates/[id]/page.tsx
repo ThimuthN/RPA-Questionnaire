@@ -21,7 +21,7 @@ import type { CandidateStage } from "@/lib/candidates/types";
 import { buildCandidateActivityFeed } from "@/lib/candidates/workspace";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
-import { getCandidateDetail } from "@/lib/db/candidates";
+import { ensureCandidateMilestones, getCandidateDetail } from "@/lib/db/candidates";
 import { getDepartment } from "@/lib/db/departments";
 import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
@@ -230,9 +230,21 @@ export default async function CandidateDetailPage({
     redirect("/people/candidates");
   }
 
-  const candidate = await getCandidateDetail(id);
+  let candidate = await getCandidateDetail(id);
   if (!candidate) {
     notFound();
+  }
+
+  const hasActiveHiringJourney =
+    candidate.applications.length > 0 ||
+    Boolean(candidate.departmentCandidacies?.some((candidacy) => candidacy.status === "active"));
+
+  if (candidate.milestones.length === 0 && hasActiveHiringJourney) {
+    await ensureCandidateMilestones(candidate.id);
+    candidate = await getCandidateDetail(id);
+    if (!candidate) {
+      notFound();
+    }
   }
 
   const activeApplication = primaryApplication(candidate);
@@ -542,7 +554,7 @@ export default async function CandidateDetailPage({
               {candidate.milestones.length === 0 ? (
                 <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
                   <DefaultJourneySkeleton
-                    hasLinkedApplication={candidate.applications.length > 0}
+                    hasHiringJourney={candidate.applications.length > 0 || hasActiveDepartmentCandidacy}
                   />
                 </div>
               ) : (
