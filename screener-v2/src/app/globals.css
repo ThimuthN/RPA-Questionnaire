@@ -230,28 +230,6 @@ html[data-theme="light"] .northstar-ribbon-shell {
   box-shadow: 0 12px 30px rgba(18, 58, 82, 0.12);
 }
 
-html[data-theme="light"] .northstar-ribbon-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 18%, transparent 82%, rgba(255, 255, 255, 0.04)),
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: auto, 34px 34px, 34px 34px;
-  opacity: 0.42;
-}
-
-html[data-theme="light"] .northstar-ribbon-shell::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.08));
-}
 
 html[data-theme="dark"] .northstar-asset {
   filter:
