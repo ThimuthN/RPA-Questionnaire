@@ -49,8 +49,6 @@ export function SceneShell({
       {tone === "scene" ? (
         <>
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
-          <div className="pointer-events-none absolute inset-0 rounded-[32px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.02)]" />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/12" />
         </>
       ) : null}
 
