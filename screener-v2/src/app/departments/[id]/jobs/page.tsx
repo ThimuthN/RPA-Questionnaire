@@ -55,26 +55,19 @@ export default async function DepartmentJobsPage({
           columns={[
             {
               header: "Job",
-              width: "w-[32%]",
+              width: "w-[40%]",
               render: (job) => (
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-[color:var(--app-heading)]">{job.title}</p>
                   <p className="text-xs text-[color:var(--app-muted)]">
-                    {job.roleLabel ? job.roleLabel : "No role linked"}
+                    {job.roleLabel || "—"}
                   </p>
                 </div>
               )
             },
             {
-              header: "Summary",
-              width: "w-[28%]",
-              render: (job) => (
-                <p className="text-sm text-[color:var(--app-text)] line-clamp-2">{job.summary}</p>
-              )
-            },
-            {
               header: "Status",
-              width: "w-[18%]",
+              width: "w-[22%]",
               render: (job) => (
                 <div className="flex flex-wrap gap-1.5">
                   <StatusPill
@@ -90,7 +83,7 @@ export default async function DepartmentJobsPage({
             },
             {
               header: "Applicants",
-              width: "w-[12%]",
+              width: "w-[14%]",
               render: (job) => (
                 <Link
                   href={`/departments/${id}/applicants?jobId=${job.id}`}
@@ -102,7 +95,7 @@ export default async function DepartmentJobsPage({
             },
             {
               header: "Action",
-              width: "w-[10%]",
+              width: "w-[24%]",
               render: (job) => {
                 const dropdownItems = [
                   ...(job.isPublished
