@@ -30,7 +30,29 @@ type User = {
 type Props = {
   rows: ApplicantRow[];
   users: User[];
+  scope?: "global" | "department";
+  departmentId?: string;
 };
+
+const assignmentRoleLabels = {
+  owner: "Owner",
+  recruiter: "Recruiter",
+  hiring_manager: "Hiring Manager",
+  interviewer: "Interviewer",
+  reviewer: "Reviewer",
+  final_approver: "Final Approver",
+  coordinator: "Coordinator",
+  approver: "Approver"
+} as const;
+
+const applicationAssignmentRoles = [
+  "recruiter",
+  "hiring_manager",
+  "interviewer",
+  "reviewer",
+  "coordinator",
+  "approver"
+] as const;
 
 function statusTone(status: CandidateApplicationStatus): "neutral" | "blue" | "amber" | "emerald" {
   if (status === "submitted") return "neutral";
@@ -39,7 +61,12 @@ function statusTone(status: CandidateApplicationStatus): "neutral" | "blue" | "a
   return "blue";
 }
 
-export function ApplicantsTable({ rows, users }: Props) {
+export function ApplicantsTable({
+  rows,
+  users,
+  scope = "global",
+  departmentId
+}: Props) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -58,6 +85,12 @@ export function ApplicantsTable({ rows, users }: Props) {
   };
 
   const hasSelections = selectedIds.length > 0;
+
+  function reviewHref(applicationId: string) {
+    return scope === "department" && departmentId
+      ? (`/departments/${departmentId}/applicants/${applicationId}` as Route)
+      : (`/people/candidates/applicants/${applicationId}` as Route);
+  }
 
   return (
     <>
@@ -141,7 +174,7 @@ export function ApplicantsTable({ rows, users }: Props) {
                   <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{row.candidateOwner || "Unassigned"}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <Link href={`/people/candidates/applicants/${row.id}` as Route}>
+                      <Link href={reviewHref(row.id)}>
                         <Button type="button" className="px-3 py-2 text-xs">
                           Review application
                         </Button>
@@ -160,6 +193,8 @@ export function ApplicantsTable({ rows, users }: Props) {
         title="Assign responsible team"
         description={`${selectedIds.length} applications selected`}
         users={users}
+        availableRoles={[...applicationAssignmentRoles]}
+        roleLabels={assignmentRoleLabels}
         onClose={() => setIsModalOpen(false)}
         onSubmit={async (assignments) => {
           const res = await fetch("/api/candidate-applications/assignments/bulk", {

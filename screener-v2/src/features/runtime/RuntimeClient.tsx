@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { QuestionRuntimeCard } from "@/components/runtime/QuestionRuntimeCard";
 import { Button } from "@/components/primitives/Button";
@@ -35,6 +36,11 @@ interface RuntimeClientProps {
   initialIntegrity: IntegritySnapshot;
   initialStateVersion: number;
   watermarkLabel: string;
+  completionHref?: string;
+  completionLabel?: string;
+  restartHref?: string;
+  submittedTitle?: string;
+  submittedBody?: string;
 }
 
 type AttemptSyncPayload = {
@@ -914,7 +920,10 @@ export function RuntimeClient(props: RuntimeClientProps) {
         <Card>
           <h1 className="text-2xl text-white">Exam unavailable</h1>
           <p className="mt-2 text-slate-300">Restart this attempt from check-in.</p>
-          <Button className="mt-4" onClick={() => router.push(`/a/${props.slug}/start`)}>
+          <Button
+            className="mt-4"
+            onClick={() => router.push((props.restartHref ?? `/a/${props.slug}/start`) as Route)}
+          >
             Back to Check-in
           </Button>
         </Card>
@@ -926,11 +935,11 @@ export function RuntimeClient(props: RuntimeClientProps) {
     return (
       <section className="space-y-4">
         <StagePanel className="space-y-3">
-          <h1 className="text-3xl text-white">{copy.runtime.submittedTitle}</h1>
-          <p className="text-slate-200">{copy.runtime.submittedBody}</p>
+          <h1 className="text-3xl text-white">{props.submittedTitle ?? copy.runtime.submittedTitle}</h1>
+          <p className="text-slate-200">{props.submittedBody ?? copy.runtime.submittedBody}</p>
           <div className="flex flex-wrap gap-3">
-            <Button onClick={() => router.push("/")}>
-              {copy.runtime.finish}
+            <Button onClick={() => router.push((props.completionHref ?? "/") as Route)}>
+              {props.completionLabel ?? copy.runtime.finish}
             </Button>
           </div>
         </StagePanel>

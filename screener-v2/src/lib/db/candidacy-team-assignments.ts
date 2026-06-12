@@ -124,6 +124,10 @@ export async function replaceCandidacyTeamAssignments(
   assignments: CandidacyTeamAssignmentInput[],
   actorId?: string
 ) {
+  if (!assignments.some((assignment) => assignment.role === "owner")) {
+    throw new Error("Candidacy must have at least one owner.");
+  }
+
   return prisma.$transaction(async (tx) => {
     // Deactivate all existing assignments
     await tx.departmentCandidacyTeamAssignment.updateMany({

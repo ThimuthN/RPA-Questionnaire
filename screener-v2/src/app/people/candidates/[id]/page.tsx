@@ -23,6 +23,7 @@ import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { getCandidateDetail } from "@/lib/db/candidates";
 import { getDepartment } from "@/lib/db/departments";
+import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
 import { candidateApplicationStatusLabels, isActiveApplicationStatus } from "@/lib/jobs/types";
 import { prisma } from "@/lib/db/prisma";
 import { getApplicationAssignments } from "@/lib/db/hiring-assignments";
@@ -255,67 +256,8 @@ export default async function CandidateDetailPage({
   const targetApplication = activeApplication || candidate.applications[0] || null;
 
   // Load workspace context and team assignments
-  const [assignments, users, departmentCandidacy] = await Promise.all([
+  const [assignments, departmentCandidacy] = await Promise.all([
     targetApplication ? getApplicationAssignments(targetApplication.id) : Promise.resolve([]),
-    (async () => {
-      if (targetApplication) {
-        // Load workspace team users via AccessGrant if job has a department
-        const jobPosting = await prisma.jobPosting.findUnique({
-          where: { id: targetApplication.jobPostingId },
-          select: { departmentId: true }
-        });
-
-        if (jobPosting?.departmentId) {
-          // Department workspace: load team members from AccessGrant
-          const grants = await prisma.accessGrant.findMany({
-            where: {
-              departmentId: jobPosting.departmentId,
-              scope: "department",
-              status: "active"
-            },
-            select: {
-              user: { select: { id: true, name: true, email: true } }
-            },
-            orderBy: { user: { name: "asc" } }
-          });
-          return grants.map(g => g.user);
-        } else {
-          // Admin workspace: load all active users
-          return prisma.user.findMany({
-            where: { isActive: true },
-            select: { id: true, name: true, email: true },
-            orderBy: { name: "asc" }
-          });
-        }
-      } else {
-        // No application - try to get users from department candidacy
-        try {
-          const candidacy = await prisma.departmentCandidacy.findFirst({
-            where: { candidateId: candidate.id, status: "active" },
-            select: { departmentId: true }
-          });
-
-          if (candidacy?.departmentId) {
-            const grants = await prisma.accessGrant.findMany({
-              where: {
-                departmentId: candidacy.departmentId,
-                scope: "department",
-                status: "active"
-              },
-              select: {
-                user: { select: { id: true, name: true, email: true } }
-              },
-              orderBy: { user: { name: "asc" } }
-            });
-            return grants.map(g => g.user);
-          }
-        } catch (error) {
-          return [];
-        }
-
-        return [];
-      }
-    })(),
     (async () => {
       // Load DepartmentCandidacy with team assignments
       try {
@@ -344,6 +286,12 @@ export default async function CandidateDetailPage({
       }
     })()
   ]);
+  const teamDepartmentId = targetApplication
+    ? candidate.departmentId ?? departmentCandidacy?.department.id
+    : departmentCandidacy?.department.id ?? candidate.departmentId;
+  const teamOptions = teamDepartmentId
+    ? await listDepartmentHiringTeamOptions(teamDepartmentId)
+    : { templates: [], users: [] };
   const hasResponsibleAssignments = assignments.length > 0;
   const hasCandidacyTeamAssignments = (departmentCandidacy?.teamAssignments.length ?? 0) > 0;
   const hasActiveDepartmentCandidacy = Boolean(departmentCandidacy);
@@ -624,8 +572,9 @@ export default async function CandidateDetailPage({
                         source: ta.source as "template" | "manual" | "job_default"
                       })) || []
                 }
-                users={users}
-                canEdit={session.permissions.includes("manage_candidates") && Boolean(targetApplication)}
+                users={teamOptions.users}
+                templates={teamOptions.templates}
+                canEdit={session.permissions.includes("manage_candidates") && Boolean(targetApplication || departmentCandidacy)}
               />
             ) : (
               <section className="space-y-4">

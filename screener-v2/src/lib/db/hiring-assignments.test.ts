@@ -15,6 +15,9 @@ vi.mock("./prisma", () => ({
     },
     candidateApplication: {
       findUnique: vi.fn()
+    },
+    candidate: {
+      update: vi.fn()
     }
   }
 }));
@@ -77,10 +80,15 @@ describe("hiring-assignments", () => {
     });
 
     it("only removes primary flag from other user when isPrimary is set", async () => {
-      vi.mocked(prisma.candidateApplication.findUnique).mockResolvedValue({
-        id: "app-1",
-        candidateId: "cand-1"
-      } as any);
+      vi.mocked(prisma.candidateApplication.findUnique)
+        .mockResolvedValueOnce({
+          id: "app-1",
+          candidateId: "cand-1"
+        } as any)
+        .mockResolvedValueOnce({
+          candidateId: "cand-1",
+          assignments: []
+        } as any);
       vi.mocked(prisma.user.findMany).mockResolvedValue([
         { id: "user-1" },
         { id: "user-2" }
@@ -89,6 +97,7 @@ describe("hiring-assignments", () => {
       vi.mocked(prisma.hiringAssignment.create).mockResolvedValue({
         id: "assign-1"
       } as any);
+      vi.mocked(prisma.candidate.update).mockResolvedValue({ id: "cand-1" } as any);
 
       await setApplicationAssignments(
         "app-1",

@@ -7,7 +7,15 @@ import {
   persistCandidateResumeUpload
 } from "@/lib/candidates/resume-storage";
 import { normalizeResumeFileName } from "@/lib/candidates/resume-config";
-import { createCandidateApplicationFromPublicSubmission } from "@/lib/db/jobs";
+import {
+  beginPublicApplicationScreeningFlow,
+  createCandidateApplicationFromPublicSubmission,
+  publicApplicationScreeningSlug
+} from "@/lib/db/jobs";
+import {
+  createRuntimeSessionToken,
+  setRuntimeSessionCookie
+} from "@/lib/auth/runtime-session";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 const publicApplySchema = z.object({
@@ -16,18 +24,6 @@ const publicApplySchema = z.object({
   phone: z.string().optional(),
   coverNote: z.string().optional()
 });
-
-function parseScreeningAnswers(rawValue: FormDataEntryValue | null) {
-  if (typeof rawValue !== "string" || rawValue.trim().length === 0) {
-    return undefined;
-  }
-
-  try {
-    return JSON.parse(rawValue) as Record<string, unknown>;
-  } catch {
-    throw new Error("Could not read the screening responses. Please try again.");
-  }
-}
 
 export async function POST(
   request: Request,
@@ -41,7 +37,6 @@ export async function POST(
 
   try {
     const formData = await request.formData();
-    const screeningAnswers = parseScreeningAnswers(formData.get("screeningAnswers"));
     const body = publicApplySchema.parse({
       fullName: formData.get("fullName"),
       email: formData.get("email"),
@@ -60,18 +55,32 @@ export async function POST(
       fullName: body.fullName,
       email: body.email,
       phone: body.phone,
-      coverNote: body.coverNote,
-      screeningAnswers
+      coverNote: body.coverNote
     });
 
     const url = new URL(`/jobs/${slug}/apply`, request.url);
 
     if (submission.status === "duplicate") {
+      if (submission.screeningAttemptId) {
+        const screeningUrl = new URL(
+          `/jobs/${slug}/apply/screening/${submission.applicationId}`,
+          request.url
+        );
+        const response = NextResponse.redirect(screeningUrl, 303);
+        const runtimeToken = await createRuntimeSessionToken({
+          attemptId: submission.screeningAttemptId,
+          slug: publicApplicationScreeningSlug(submission.applicationId)
+        });
+        setRuntimeSessionCookie(response, runtimeToken);
+        return response;
+      }
+
       url.searchParams.set("alreadyApplied", "1");
       url.searchParams.set("applicationId", submission.applicationId);
       return NextResponse.redirect(url, 303);
     }
 
+    let resumeUploadFailed = false;
     if (file instanceof File && file.size > 0) {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-");
       const storageKey = `candidate-resumes/${submission.candidateId}/${stamp}-${normalizeResumeFileName(file.name)}`;
@@ -97,14 +106,39 @@ export async function POST(
           throw error;
         }
       } catch {
-        url.searchParams.set("submitted", "1");
-        url.searchParams.set("resumeError", "1");
-        return NextResponse.redirect(url, 303);
+        resumeUploadFailed = true;
+      }
+    }
+
+    if (submission.requiresScreening) {
+      const screeningFlow = await beginPublicApplicationScreeningFlow({
+        applicationId: submission.applicationId
+      });
+
+      if (screeningFlow) {
+        const screeningUrl = new URL(
+          `/jobs/${slug}/apply/screening/${submission.applicationId}`,
+          request.url
+        );
+        if (resumeUploadFailed) {
+          screeningUrl.searchParams.set("resumeError", "1");
+        }
+
+        const response = NextResponse.redirect(screeningUrl, 303);
+        const runtimeToken = await createRuntimeSessionToken({
+          attemptId: screeningFlow.attemptId,
+          slug: screeningFlow.runtimeSlug
+        });
+        setRuntimeSessionCookie(response, runtimeToken);
+        return response;
       }
     }
 
     url.searchParams.set("submitted", "1");
     url.searchParams.set("applicationId", submission.applicationId);
+    if (resumeUploadFailed) {
+      url.searchParams.set("resumeError", "1");
+    }
     return NextResponse.redirect(url, 303);
   } catch (error) {
     const url = new URL(`/jobs/${slug}/apply`, request.url);

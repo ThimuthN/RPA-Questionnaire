@@ -7,6 +7,7 @@ vi.mock("@/lib/auth/guards", () => ({
 }));
 
 vi.mock("@/lib/db/hiring-assignments", () => ({
+  applyHiringTeamTemplateToApplication: vi.fn(),
   getApplicationAssignments: vi.fn(),
   setApplicationAssignments: vi.fn()
 }));
@@ -21,7 +22,11 @@ vi.mock("@/lib/db/prisma", () => ({
 
 import { GET, PUT } from "./route";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
-import { getApplicationAssignments, setApplicationAssignments } from "@/lib/db/hiring-assignments";
+import {
+  applyHiringTeamTemplateToApplication,
+  getApplicationAssignments,
+  setApplicationAssignments
+} from "@/lib/db/hiring-assignments";
 import { prisma } from "@/lib/db/prisma";
 
 describe("/api/candidate-applications/[id]/assignments", () => {
@@ -108,6 +113,41 @@ describe("/api/candidate-applications/[id]/assignments", () => {
 
     expect(response.status).toBe(200);
     expect(vi.mocked(setApplicationAssignments)).toHaveBeenCalled();
+  });
+
+  it("applies a hiring team template when requested", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session } as any);
+    vi.mocked(prisma.candidateApplication.findUnique).mockResolvedValue({
+      id: "app-1",
+      candidateId: "cand-1",
+      candidate: { departmentId: deptId }
+    } as any);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as any);
+    vi.mocked(applyHiringTeamTemplateToApplication).mockResolvedValue({
+      created: 2,
+      updated: 0,
+      primaryRoleConflicts: []
+    } as any);
+    vi.mocked(getApplicationAssignments).mockResolvedValue([] as any);
+
+    const response = await PUT(
+      new Request("http://localhost/api/candidate-applications/app-1/assignments", {
+        method: "PUT",
+        body: JSON.stringify({
+          mode: "apply_template",
+          templateId: "template-1"
+        })
+      }),
+      { params: Promise.resolve({ id: "app-1" }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(vi.mocked(applyHiringTeamTemplateToApplication)).toHaveBeenCalledWith(
+      "app-1",
+      "template-1",
+      "user-1"
+    );
+    expect(vi.mocked(setApplicationAssignments)).not.toHaveBeenCalled();
   });
 
   it("returns 404 when application not found", async () => {

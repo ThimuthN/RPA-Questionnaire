@@ -46,6 +46,23 @@ export function JobPostingEditorContent({
   editorHref: string;
   applicantListHref: LinkHref;
 }) {
+  const applicationReviewHref = (applicationId: string) =>
+    departmentId
+      ? (`/departments/${departmentId}/applicants/${applicationId}` as Route)
+      : (`/people/candidates/applicants/${applicationId}` as Route);
+
+  const candidateProfileHref = (candidateId: string) => {
+    if (!departmentId) {
+      return `/people/candidates/${candidateId}` as Route;
+    }
+
+    const params = new URLSearchParams({
+      workspaceId: departmentId,
+      returnTo: editorHref
+    });
+    return `/people/candidates/${candidateId}?${params.toString()}` as Route;
+  };
+
   return (
     <>
       {pageState.created || pageState.updated ? (
@@ -196,12 +213,12 @@ export function JobPostingEditorContent({
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Link href={`/people/candidates/applicants/${application.id}` as Route}>
+                      <Link href={applicationReviewHref(application.id)}>
                         <Button type="button" className="px-3 py-2 text-xs">
                           Review application
                         </Button>
                       </Link>
-                      <Link href={`/candidates/${application.candidateId}` as Route}>
+                      <Link href={candidateProfileHref(application.candidateId)}>
                         <Button type="button" variant="secondary" className="px-3 py-2 text-xs">
                           Open candidate
                         </Button>

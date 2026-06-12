@@ -1,8 +1,10 @@
 import { Prisma } from "@prisma/client";
 import { isMissingAssessmentPresetDepartmentColumnError } from "@/lib/addons/catalog";
+import type { ExamState } from "@/lib/assessment-engine/types";
 import { prisma } from "@/lib/db/prisma";
 import { mapCandidate } from "@/lib/db/candidates";
 import { createCandidate, findExistingCandidateByEmail } from "@/lib/db/candidates";
+import { createOrGetParticipant, getAttempt, startAttempt } from "@/lib/db/repositories";
 import {
   type ApplicationScreeningAddonResultItem,
   type ApplicationScreeningPackage,
@@ -15,10 +17,11 @@ import {
   type JobPostingListItem
 } from "@/lib/jobs/types";
 import {
+  buildApplicationScreeningBlueprint,
   evaluateApplicationScreening,
+  evaluateApplicationScreeningFromExamState,
   normalizeApplicationScreeningAnswerMap,
   resolveApplicationScreeningPackageFromPreset,
-  validateApplicationScreeningAnswerMap,
   type ApplicationScreeningAnswerMap,
   type ApplicationScreeningResponseDraft
 } from "@/lib/jobs/application-screening";
@@ -196,6 +199,83 @@ function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue | typeof Prism
   }
 
   return value as Prisma.InputJsonValue;
+}
+
+function applicationScreeningRuntimeSlug(applicationId: string) {
+  return `application-screening-${applicationId}`;
+}
+
+function buildApplicationScreeningFinishHref(input: {
+  jobSlug: string;
+  applicationId: string;
+  resumeError?: boolean;
+}) {
+  const params = new URLSearchParams({
+    submitted: "1",
+    applicationId: input.applicationId
+  });
+
+  if (input.resumeError) {
+    params.set("resumeError", "1");
+  }
+
+  return `/jobs/${input.jobSlug}/apply?${params.toString()}`;
+}
+
+async function replaceApplicationScreeningResultsInTx(args: {
+  tx: Prisma.TransactionClient;
+  applicationId: string;
+  evaluation: ReturnType<typeof evaluateApplicationScreeningFromExamState>;
+}) {
+  await args.tx.candidateApplicationResponse.deleteMany({
+    where: { applicationId: args.applicationId }
+  });
+  await args.tx.candidateApplicationAddonResult.deleteMany({
+    where: { applicationId: args.applicationId }
+  });
+
+  for (const addonResult of args.evaluation.addonResults) {
+    const createdAddonResult = await args.tx.candidateApplicationAddonResult.create({
+      data: {
+        applicationId: args.applicationId,
+        presetId: addonResult.presetId,
+        presetLabel: addonResult.presetLabel,
+        addonId: addonResult.addonId ?? null,
+        addonSlug: addonResult.addonSlug,
+        addonLabel: addonResult.addonLabel,
+        assessmentTypeId: addonResult.assessmentTypeId,
+        requiredPercent: addonResult.requiredPercent,
+        weight: addonResult.weight,
+        isMandatory: addonResult.isMandatory,
+        inlineSupported: addonResult.inlineSupported,
+        status: addonResult.status,
+        applicantPercent: addonResult.applicantPercent,
+        pointsEarned: addonResult.pointsEarned,
+        pointsPossible: addonResult.pointsPossible,
+        sortOrder: addonResult.sortOrder
+      }
+    });
+
+    if (addonResult.responses.length === 0) {
+      continue;
+    }
+
+    const responses = addonResult.responses as ApplicationScreeningResponseDraft[];
+    await args.tx.candidateApplicationResponse.createMany({
+      data: responses.map((response) => ({
+        applicationId: args.applicationId,
+        addonResultId: createdAddonResult.id,
+        questionKey: response.questionKey,
+        questionLabel: response.questionLabel,
+        formatLabel: response.formatLabel,
+        answerJson: toPrismaJsonValue(response.answerJson ?? null),
+        answerText: response.answerText,
+        pointsEarned: response.pointsEarned,
+        pointsPossible: response.pointsPossible,
+        sortOrder: response.sortOrder
+      }))
+    });
+  }
 }
 
 function buildApplicantWorkspaceWhere(filters: {
@@ -988,13 +1068,6 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
 
   const screeningPackage = resolveApplicationScreeningPackageFromPreset(job.screenerPreset);
   const screeningAnswers = normalizeApplicationScreeningAnswerMap(input.screeningAnswers);
-  const screeningValidation = validateApplicationScreeningAnswerMap(
-    screeningPackage,
-    screeningAnswers
-  );
-  if (!screeningValidation.ok) {
-    throw new Error(screeningValidation.reason);
-  }
 
   const normalizedEmail = input.email.trim().toLowerCase();
   let existingCandidate = await findExistingCandidateByEmail(normalizedEmail);
@@ -1075,7 +1148,8 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       }
     },
     select: {
-      id: true
+      id: true,
+      screeningAttemptId: true
     }
   });
 
@@ -1084,14 +1158,12 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       status: "duplicate" as const,
       candidateId: existingCandidate.id,
       applicationId: existingApplication.id,
-      jobId: job.id
+      jobId: job.id,
+      screeningAttemptId: existingApplication.screeningAttemptId ?? undefined
     };
   }
 
-  const screeningEvaluation = evaluateApplicationScreening(
-    screeningPackage,
-    screeningAnswers
-  );
+  const screeningEvaluation = evaluateApplicationScreening(screeningPackage, screeningAnswers);
 
   const application = await prisma.$transaction(async (tx) => {
     const createdApplication = await tx.candidateApplication.create({
@@ -1103,45 +1175,12 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       }
     });
 
-    for (const addonResult of screeningEvaluation.addonResults) {
-      const createdAddonResult = await tx.candidateApplicationAddonResult.create({
-        data: {
-          applicationId: createdApplication.id,
-          presetId: addonResult.presetId,
-          presetLabel: addonResult.presetLabel,
-          addonId: addonResult.addonId ?? null,
-          addonSlug: addonResult.addonSlug,
-          addonLabel: addonResult.addonLabel,
-          assessmentTypeId: addonResult.assessmentTypeId,
-          requiredPercent: addonResult.requiredPercent,
-          weight: addonResult.weight,
-          isMandatory: addonResult.isMandatory,
-          inlineSupported: addonResult.inlineSupported,
-          status: addonResult.status,
-          applicantPercent: addonResult.applicantPercent,
-          pointsEarned: addonResult.pointsEarned,
-          pointsPossible: addonResult.pointsPossible,
-          sortOrder: addonResult.sortOrder
-        }
+    if (screeningEvaluation.addonResults.length > 0) {
+      await replaceApplicationScreeningResultsInTx({
+        tx,
+        applicationId: createdApplication.id,
+        evaluation: screeningEvaluation
       });
-
-      if (addonResult.responses.length > 0) {
-        const responses = addonResult.responses as ApplicationScreeningResponseDraft[];
-        await tx.candidateApplicationResponse.createMany({
-          data: responses.map((response) => ({
-            applicationId: createdApplication.id,
-            addonResultId: createdAddonResult.id,
-            questionKey: response.questionKey,
-            questionLabel: response.questionLabel,
-            formatLabel: response.formatLabel,
-            answerJson: toPrismaJsonValue(response.answerJson ?? null),
-            answerText: response.answerText,
-            pointsEarned: response.pointsEarned,
-            pointsPossible: response.pointsPossible,
-            sortOrder: response.sortOrder
-          }))
-        });
-      }
     }
 
     return createdApplication;
@@ -1153,8 +1192,291 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
     applicationId: application.id,
     jobId: job.id,
     jobTitle: job.title,
-    screenerPreset: job.screenerPreset
+    screenerPreset: job.screenerPreset,
+    requiresScreening: screeningEvaluation.addonResults.length > 0
   };
+}
+
+export async function beginPublicApplicationScreeningFlow(input: {
+  applicationId: string;
+}) {
+  const application = await prisma.candidateApplication.findUnique({
+    where: { id: input.applicationId },
+    select: {
+      id: true,
+      screeningAttemptId: true,
+      candidate: {
+        select: {
+          fullName: true,
+          email: true,
+          phone: true
+        }
+      },
+      jobPosting: {
+        select: {
+          slug: true,
+          screenerPreset: {
+            select: {
+              id: true,
+              label: true,
+              items: {
+                select: {
+                  id: true,
+                  sortOrder: true,
+                  configOverrideJson: true,
+                  weightOverride: true,
+                  addon: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      label: true,
+                      description: true,
+                      assessmentTypeId: true,
+                      defaultConfigJson: true,
+                      defaultDurationMinutes: true,
+                      defaultRequiredPercent: true,
+                      defaultWeight: true
+                    }
+                  }
+                },
+                orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!application) {
+    throw new Error("Application not found.");
+  }
+
+  const screeningPackage = resolveApplicationScreeningPackageFromPreset(
+    application.jobPosting.screenerPreset
+  );
+
+  if (!screeningPackage || screeningPackage.addons.length === 0) {
+    return null;
+  }
+
+  const attemptId = application.screeningAttemptId ?? null;
+  if (attemptId) {
+    const existingAttempt = await getAttempt(attemptId);
+    if (existingAttempt) {
+      return {
+        applicationId: application.id,
+        attemptId: existingAttempt.id,
+        jobSlug: application.jobPosting.slug,
+        runtimeSlug: applicationScreeningRuntimeSlug(application.id)
+      };
+    }
+  }
+
+  const participant = await createOrGetParticipant({
+    kind: "candidate",
+    fullName: application.candidate.fullName,
+    email: application.candidate.email,
+    phone: application.candidate.phone ?? undefined
+  });
+  const started = await startAttempt({
+    assessmentVersionId: "application-screening",
+    participantId: participant.id,
+    contextType: "hiring",
+    integrityPreset: "standard",
+    passTargetPercent: 0,
+    blueprint: buildApplicationScreeningBlueprint(screeningPackage)
+  });
+
+  await prisma.candidateApplication.update({
+    where: { id: application.id },
+    data: {
+      screeningAttemptId: started.attempt.id
+    }
+  });
+
+  return {
+    applicationId: application.id,
+    attemptId: started.attempt.id,
+    jobSlug: application.jobPosting.slug,
+    runtimeSlug: applicationScreeningRuntimeSlug(application.id)
+  };
+}
+
+export async function syncPublicApplicationScreeningResultsFromAttempt(attemptId: string) {
+  const application = await prisma.candidateApplication.findFirst({
+    where: { screeningAttemptId: attemptId },
+    select: {
+      id: true,
+      jobPosting: {
+        select: {
+          screenerPreset: {
+            select: {
+              id: true,
+              label: true,
+              items: {
+                select: {
+                  id: true,
+                  sortOrder: true,
+                  configOverrideJson: true,
+                  weightOverride: true,
+                  addon: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      label: true,
+                      description: true,
+                      assessmentTypeId: true,
+                      defaultConfigJson: true,
+                      defaultDurationMinutes: true,
+                      defaultRequiredPercent: true,
+                      defaultWeight: true
+                    }
+                  }
+                },
+                orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  const screeningPackage = resolveApplicationScreeningPackageFromPreset(
+    application.jobPosting.screenerPreset
+  );
+  if (!screeningPackage) {
+    return null;
+  }
+
+  const attempt = await getAttempt(attemptId);
+  if (!attempt || attempt.status !== "submitted") {
+    return null;
+  }
+
+  const evaluation = evaluateApplicationScreeningFromExamState(
+    screeningPackage,
+    attempt.examState as Partial<Record<string, ExamState>>
+  );
+
+  await prisma.$transaction(async (tx) => {
+    await replaceApplicationScreeningResultsInTx({
+      tx,
+      applicationId: application.id,
+      evaluation
+    });
+  });
+
+  return {
+    applicationId: application.id
+  };
+}
+
+export async function getPublicApplicationScreeningContext(input: {
+  applicationId: string;
+  jobSlug: string;
+}) {
+  const application = await prisma.candidateApplication.findFirst({
+    where: {
+      id: input.applicationId,
+      jobPosting: {
+        slug: input.jobSlug
+      }
+    },
+    select: {
+      id: true,
+      screeningAttemptId: true,
+      candidate: {
+        select: {
+          fullName: true
+        }
+      },
+      jobPosting: {
+        select: {
+          title: true,
+          role: {
+            select: {
+              label: true,
+              department: true
+            }
+          },
+          screenerPreset: {
+            select: {
+              id: true,
+              label: true,
+              items: {
+                select: {
+                  id: true,
+                  sortOrder: true,
+                  configOverrideJson: true,
+                  weightOverride: true,
+                  addon: {
+                    select: {
+                      id: true,
+                      slug: true,
+                      label: true,
+                      description: true,
+                      assessmentTypeId: true,
+                      defaultConfigJson: true,
+                      defaultDurationMinutes: true,
+                      defaultRequiredPercent: true,
+                      defaultWeight: true
+                    }
+                  }
+                },
+                orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!application) {
+    return null;
+  }
+
+  const screeningPackage = resolveApplicationScreeningPackageFromPreset(
+    application.jobPosting.screenerPreset
+  );
+  if (!screeningPackage || screeningPackage.addons.length === 0 || !application.screeningAttemptId) {
+    return null;
+  }
+
+  const totalDurationMinutes = screeningPackage.addons.reduce(
+    (total, addon) => total + addon.durationMinutes,
+    0
+  );
+
+  return {
+    applicationId: application.id,
+    attemptId: application.screeningAttemptId,
+    candidateName: application.candidate.fullName,
+    jobTitle: application.jobPosting.title,
+    roleLabel: application.jobPosting.role?.label ?? undefined,
+    roleDepartment: application.jobPosting.role?.department ?? undefined,
+    screeningPackage,
+    totalDurationMinutes,
+    runtimeSlug: applicationScreeningRuntimeSlug(application.id)
+  };
+}
+
+export function publicApplicationScreeningFinishHref(input: {
+  jobSlug: string;
+  applicationId: string;
+  resumeError?: boolean;
+}) {
+  return buildApplicationScreeningFinishHref(input);
+}
+
+export function publicApplicationScreeningSlug(applicationId: string) {
+  return applicationScreeningRuntimeSlug(applicationId);
 }
 
 export async function updateCandidateApplicationLifecycle(input: {

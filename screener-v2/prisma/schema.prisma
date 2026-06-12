@@ -325,6 +325,7 @@ model Attempt {
   result                 Result?
   candidateAssessment    CandidateAssessment?
   candidateAssessmentAttempts CandidateAssessmentAttempt[]
+  applicationScreening  CandidateApplication? @relation("CandidateApplicationScreeningAttempt")
 
   @@index([inviteId])
   @@index([participantId])
@@ -580,12 +581,14 @@ model CandidateApplication {
   id           String   @id @default(cuid())
   candidateId  String
   jobPostingId String
+  screeningAttemptId String? @unique
   status       String
   coverNote    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  screeningAttempt Attempt? @relation("CandidateApplicationScreeningAttempt", fields: [screeningAttemptId], references: [id], onDelete: SetNull)
   assignments  HiringAssignment[]
   screeningAddonResults CandidateApplicationAddonResult[]
   responses    CandidateApplicationResponse[]
@@ -593,6 +596,7 @@ model CandidateApplication {
   @@unique([candidateId, jobPostingId])
   @@index([candidateId, createdAt])
   @@index([jobPostingId, status, createdAt])
+  @@index([screeningAttemptId])
 }
 
 model CandidateApplicationAddonResult {

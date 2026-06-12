@@ -1,4 +1,5 @@
 import type { HiringTeamRole } from "@prisma/client";
+import { listDepartmentTeamViaAccessGrant } from "@/lib/auth/access-grants";
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
 
@@ -179,4 +180,28 @@ export async function getTemplateMembers(templateId: string) {
     },
     orderBy: { role: "asc" }
   });
+}
+
+export async function listDepartmentHiringTeamOptions(departmentId: string) {
+  const [templates, teamUsers] = await Promise.all([
+    listHiringTeamTemplates(departmentId, true),
+    listDepartmentTeamViaAccessGrant(departmentId)
+  ]);
+
+  return {
+    templates: templates.map((template) => ({
+      id: template.id,
+      name: template.name,
+      description: template.description ?? undefined,
+      members: template.members.map((member) => ({
+        user: member.user,
+        role: member.role
+      }))
+    })),
+    users: teamUsers.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email
+    }))
+  };
 }

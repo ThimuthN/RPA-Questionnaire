@@ -215,7 +215,12 @@ export async function ApplicantWorkspaceView({
         </StagePanel>
       ) : (
         <>
-          <ApplicantsTable rows={page.rows} users={users} />
+          <ApplicantsTable
+            rows={page.rows}
+            users={users}
+            scope={scope}
+            departmentId={departmentId}
+          />
           <PaginationBar
             page={page.page}
             pageSize={page.pageSize}

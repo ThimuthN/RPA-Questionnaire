@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Edit2 } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { Button } from "@/components/primitives/Button";
 import { AssignmentModal } from "./AssignmentModal";
 
 type Assignment = {
@@ -23,11 +24,26 @@ type User = {
   email: string;
 };
 
+type TeamTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  members: Array<{
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+    role: string;
+  }>;
+};
+
 type Props = {
   mode: "application" | "candidacy";
   entityId: string;
   assignments: Assignment[];
   users: User[];
+  templates?: TeamTemplate[];
   canEdit: boolean;
 };
 
@@ -48,6 +64,24 @@ const sourceLabels: Record<NonNullable<Assignment["source"]>, string> = {
   job_default: "Job default"
 };
 
+const applicationRoles = [
+  "recruiter",
+  "hiring_manager",
+  "interviewer",
+  "reviewer",
+  "coordinator",
+  "approver"
+] as const;
+
+const candidacyRoles = [
+  "owner",
+  "recruiter",
+  "hiring_manager",
+  "interviewer",
+  "reviewer",
+  "final_approver"
+] as const;
+
 function groupAssignmentsByRole(assignments: Assignment[]) {
   const grouped: Record<string, Assignment[]> = {};
   for (const assignment of assignments) {
@@ -60,11 +94,65 @@ function groupAssignmentsByRole(assignments: Assignment[]) {
   return grouped;
 }
 
-export function ResponsibleTeamCard({ mode, entityId, assignments, users, canEdit }: Props) {
+export function ResponsibleTeamCard({
+  mode,
+  entityId,
+  assignments,
+  users,
+  templates = [],
+  canEdit
+}: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [templateError, setTemplateError] = useState<string | null>(null);
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false);
   const grouped = groupAssignmentsByRole(assignments);
   const isEmpty = assignments.length === 0;
-  const allowEditing = canEdit && mode === "application";
+  const allowEditing = canEdit;
+  const hasTemplates = templates.length > 0;
+  const endpoint =
+    mode === "application"
+      ? `/api/candidate-applications/${entityId}/assignments`
+      : `/api/candidacies/${entityId}/assignments`;
+  const availableRoles = mode === "application" ? applicationRoles : candidacyRoles;
+  const primaryLabel = mode === "application" ? "Primary owner" : "Primary";
+  const introLabel = mode === "application" ? "Allocate hiring panel" : "Allocate hiring team";
+  const introCopy =
+    mode === "application"
+      ? "Apply a department hiring team template, or edit the panel manually when you need a one-off change."
+      : "Apply a department hiring team template, or edit the team manually for this candidate.";
+
+  async function applyTemplate() {
+    if (!selectedTemplateId) {
+      setTemplateError("Select a hiring team template.");
+      return;
+    }
+
+    setTemplateError(null);
+    setIsApplyingTemplate(true);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "apply_template",
+          templateId: selectedTemplateId
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to apply hiring team template");
+      }
+
+      window.location.reload();
+    } catch (error) {
+      setTemplateError(error instanceof Error ? error.message : "Failed to apply hiring team template");
+    } finally {
+      setIsApplyingTemplate(false);
+    }
+  }
 
   return (
     <>
@@ -89,6 +177,57 @@ export function ResponsibleTeamCard({ mode, entityId, assignments, users, canEdi
             </button>
           ) : null}
         </div>
+
+        {allowEditing ? (
+          <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-[color:var(--app-heading)]">{introLabel}</p>
+              <p className="text-sm text-[color:var(--app-muted)]">
+                {introCopy}
+              </p>
+            </div>
+
+            {hasTemplates ? (
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <select
+                  value={selectedTemplateId}
+                  onChange={(event) => setSelectedTemplateId(event.target.value)}
+                  className="min-w-0 flex-1 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
+                >
+                  <option value="">Select hiring team template</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} ({template.members.length} member{template.members.length === 1 ? "" : "s"})
+                    </option>
+                  ))}
+                </select>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" onClick={applyTemplate} disabled={isApplyingTemplate}>
+                    {isApplyingTemplate ? "Applying..." : "Apply template"}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)}>
+                    Customize manually
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  No department hiring team templates are available yet.
+                </p>
+                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)}>
+                  Assign manually
+                </Button>
+              </div>
+            )}
+
+            {templateError ? (
+              <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger)]/10 p-3 text-sm text-[color:var(--app-danger)]">
+                {templateError}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
           {isEmpty ? (
@@ -116,7 +255,7 @@ export function ResponsibleTeamCard({ mode, entityId, assignments, users, canEdi
                         {assignment.source ? (
                           <StatusPill label={sourceLabels[assignment.source]} tone="blue" />
                         ) : null}
-                        {assignment.isPrimary ? <StatusPill label="Primary owner" tone="emerald" /> : null}
+                        {assignment.isPrimary ? <StatusPill label={primaryLabel} tone="emerald" /> : null}
                       </div>
                     ))}
                   </div>
@@ -130,21 +269,37 @@ export function ResponsibleTeamCard({ mode, entityId, assignments, users, canEdi
       <AssignmentModal
         isOpen={isModalOpen && allowEditing}
         title="Edit responsible team"
+        availableRoles={[...availableRoles]}
+        roleLabels={roleLabels as Record<
+          "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" | "coordinator" | "approver",
+          string
+        >}
         users={users}
         currentAssignments={assignments}
         onClose={() => setIsModalOpen(false)}
         onSubmit={async (nextAssignments) => {
-          const response = await fetch(`/api/candidate-applications/${entityId}/assignments`, {
+          const response = await fetch(endpoint, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              mode: "replace_role",
-              assignments: nextAssignments.map((assignment) => ({
-                userId: assignment.userId!,
-                assignmentRole: assignment.role,
-                isPrimary: assignment.isPrimary
-              }))
-            })
+            body: JSON.stringify(
+              mode === "application"
+                ? {
+                    mode: "replace_all",
+                    assignments: nextAssignments.map((assignment) => ({
+                      userId: assignment.userId!,
+                      assignmentRole: assignment.role,
+                      isPrimary: assignment.isPrimary
+                    }))
+                  }
+                : {
+                    mode: "replace_all",
+                    assignments: nextAssignments.map((assignment) => ({
+                      userId: assignment.userId!,
+                      role: assignment.role,
+                      isPrimary: assignment.isPrimary
+                    }))
+                  }
+            )
           });
           if (!response.ok) {
             const data = await response.json();

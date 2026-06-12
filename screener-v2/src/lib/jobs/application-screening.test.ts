@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { applicantIntakeQuestion } from "@/features/applicant-intake-questionnaire/questions";
 import type { ApplicationScreeningPackage } from "@/lib/jobs/types";
 import {
+  buildApplicationScreeningBlueprint,
   evaluateApplicationScreening,
+  evaluateApplicationScreeningFromExamState,
   resolveApplicationScreeningPackageFromPreset,
   validateApplicationScreeningAnswerMap
 } from "@/lib/jobs/application-screening";
@@ -165,6 +167,28 @@ describe("evaluateApplicationScreening", () => {
       status: "needs_review",
       inlineSupported: false,
       applicantPercent: null
+    });
+  });
+
+  it("scores unanswered application screening attempts as failed evidence", () => {
+    const packageState = resolveApplicationScreeningPackageFromPreset(makePreset());
+    expect(packageState).not.toBeNull();
+
+    const evaluation = evaluateApplicationScreeningFromExamState(
+      packageState,
+      {}
+    );
+    const blueprint = buildApplicationScreeningBlueprint(packageState as ApplicationScreeningPackage);
+
+    expect(blueprint.exams).toHaveLength(2);
+    expect(evaluation.overallStatus).toBe("failed");
+    expect(evaluation.addonResults[0]).toMatchObject({
+      status: "failed",
+      applicantPercent: 0
+    });
+    expect(evaluation.addonResults[0]?.responses[0]).toMatchObject({
+      answerJson: null,
+      answerText: null
     });
   });
 });

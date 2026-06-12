@@ -1,4 +1,4 @@
-import type { HiringAssignmentRole } from "@prisma/client";
+import type { HiringAssignmentRole, HiringTeamRole } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export type AssignmentInput = {
@@ -7,7 +7,78 @@ export type AssignmentInput = {
   isPrimary?: boolean;
 };
 
-export type BulkAssignmentMode = "add" | "replace_role";
+export type BulkAssignmentMode = "add" | "replace_role" | "replace_all";
+
+function mapTemplateRoleToAssignmentRole(role: HiringTeamRole): AssignmentInput | null {
+  if (role === "owner") {
+    return {
+      userId: "",
+      assignmentRole: "recruiter",
+      isPrimary: true
+    };
+  }
+
+  if (role === "final_approver") {
+    return {
+      userId: "",
+      assignmentRole: "approver",
+      isPrimary: false
+    };
+  }
+
+  if (
+    role === "recruiter" ||
+    role === "hiring_manager" ||
+    role === "interviewer" ||
+    role === "reviewer"
+  ) {
+    return {
+      userId: "",
+      assignmentRole: role,
+      isPrimary: false
+    };
+  }
+
+  return null;
+}
+
+async function syncCandidateOwnerFromApplication(applicationId: string) {
+  const application = await prisma.candidateApplication.findUnique({
+    where: { id: applicationId },
+    select: {
+      candidateId: true,
+      assignments: {
+        where: {
+          active: true,
+          assignmentRole: "recruiter"
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: [{ isPrimary: "desc" }, { assignedAt: "asc" }]
+      }
+    }
+  });
+
+  if (!application) {
+    return;
+  }
+
+  const primaryOwner = application.assignments[0] ?? null;
+  await prisma.candidate.update({
+    where: { id: application.candidateId },
+    data: {
+      hrOwnerId: primaryOwner?.user.id ?? null,
+      hrOwner: primaryOwner ? primaryOwner.user.name?.trim() || primaryOwner.user.email : null
+    }
+  });
+}
 
 export async function validateUsers(userIds: string[]) {
   const users = await prisma.user.findMany({
@@ -61,6 +132,16 @@ export async function setApplicationAssignments(
       where: {
         applicationId,
         assignmentRole: { in: roles },
+        active: true
+      },
+      data: { active: false }
+    });
+  }
+
+  if (mode === "replace_all") {
+    await prisma.hiringAssignment.updateMany({
+      where: {
+        applicationId,
         active: true
       },
       data: { active: false }
@@ -132,7 +213,77 @@ export async function setApplicationAssignments(
     }
   }
 
+  await syncCandidateOwnerFromApplication(applicationId);
   return result;
+}
+
+export async function applyHiringTeamTemplateToApplication(
+  applicationId: string,
+  templateId: string,
+  assignedById?: string
+) {
+  const application = await prisma.candidateApplication.findUnique({
+    where: { id: applicationId },
+    select: {
+      id: true,
+      candidate: {
+        select: {
+          departmentId: true
+        }
+      }
+    }
+  });
+
+  if (!application) {
+    throw new Error("Application not found");
+  }
+
+  const departmentId = application.candidate.departmentId;
+  if (!departmentId) {
+    throw new Error("Application is not linked to a department.");
+  }
+
+  const template = await prisma.hiringTeamTemplate.findFirst({
+    where: {
+      id: templateId,
+      departmentId,
+      isActive: true
+    },
+    include: {
+      members: true
+    }
+  });
+
+  if (!template) {
+    throw new Error("Selected hiring team template was not found in this workspace.");
+  }
+
+  const mappedAssignments: AssignmentInput[] = [];
+  for (const member of template.members) {
+    const mapped = mapTemplateRoleToAssignmentRole(member.role);
+    if (!mapped) {
+      continue;
+    }
+
+    mappedAssignments.push({
+      userId: member.userId,
+      assignmentRole: mapped.assignmentRole,
+      isPrimary: mapped.isPrimary
+    });
+  }
+
+  if (mappedAssignments.length === 0) {
+    throw new Error("Selected hiring team template has no assignable members.");
+  }
+
+  const hasPrimaryRecruiter = mappedAssignments.some(
+    (assignment) => assignment.assignmentRole === "recruiter" && assignment.isPrimary
+  );
+  if (!hasPrimaryRecruiter) {
+    throw new Error("Selected hiring team template must include an owner.");
+  }
+
+  return setApplicationAssignments(applicationId, "replace_all", mappedAssignments, assignedById);
 }
 
 export async function bulkAssignApplications(
@@ -168,4 +319,3 @@ export async function bulkAssignApplications(
 
   return results;
 }
-

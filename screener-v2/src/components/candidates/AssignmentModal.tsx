@@ -5,16 +5,15 @@ import { X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 
 type User = { id: string; name: string | null; email: string };
-type AssignmentRole = "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "coordinator" | "approver";
-
-const roleLabels: Record<AssignmentRole, string> = {
-  recruiter: "Primary Recruiter",
-  hiring_manager: "Hiring Manager",
-  interviewer: "Interviewer",
-  reviewer: "Reviewer",
-  coordinator: "Coordinator",
-  approver: "Approver"
-};
+type AssignmentRole =
+  | "owner"
+  | "recruiter"
+  | "hiring_manager"
+  | "interviewer"
+  | "reviewer"
+  | "final_approver"
+  | "coordinator"
+  | "approver";
 
 type AssignmentInput = { role: AssignmentRole; userId?: string; isPrimary?: boolean };
 
@@ -23,12 +22,24 @@ type Props = {
   title: string;
   description?: string;
   users: User[];
+  availableRoles: AssignmentRole[];
+  roleLabels: Record<AssignmentRole, string>;
   currentAssignments?: Array<{ user: { id: string; name: string | null; email: string }; assignmentRole: string; isPrimary: boolean }>;
   onClose: () => void;
   onSubmit: (assignments: AssignmentInput[]) => Promise<void>;
 };
 
-export function AssignmentModal({ isOpen, title, description, users, currentAssignments, onClose, onSubmit }: Props) {
+export function AssignmentModal({
+  isOpen,
+  title,
+  description,
+  users,
+  availableRoles,
+  roleLabels,
+  currentAssignments,
+  onClose,
+  onSubmit
+}: Props) {
   const [assignments, setAssignments] = useState<AssignmentInput[]>(
     currentAssignments && currentAssignments.length > 0
       ? currentAssignments.map((a) => ({
@@ -36,14 +47,16 @@ export function AssignmentModal({ isOpen, title, description, users, currentAssi
           userId: a.user.id,
           isPrimary: a.isPrimary
         }))
-      : [{ role: "recruiter", isPrimary: true }]
+      : [{ role: availableRoles[0] ?? "recruiter", isPrimary: true }]
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleAddRole = () => setAssignments([...assignments, { role: "hiring_manager" }]);
+  const fallbackRole = availableRoles.find((role) => role !== "owner") ?? availableRoles[0] ?? "recruiter";
+
+  const handleAddRole = () => setAssignments([...assignments, { role: fallbackRole }]);
   const handleRemoveRole = (i: number) => setAssignments(assignments.filter((_, idx) => idx !== i));
   const handleRoleChange = (i: number, role: AssignmentRole) => {
     const a = [...assignments];
@@ -118,8 +131,8 @@ export function AssignmentModal({ isOpen, title, description, users, currentAssi
                       onChange={(e) => handleRoleChange(i, e.target.value as AssignmentRole)}
                       className="w-full rounded-[8px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm"
                     >
-                      {Object.entries(roleLabels).map(([v, l]) => (
-                        <option key={v} value={v}>{l}</option>
+                      {availableRoles.map((role) => (
+                        <option key={role} value={role}>{roleLabels[role]}</option>
                       ))}
                     </select>
 
@@ -134,7 +147,7 @@ export function AssignmentModal({ isOpen, title, description, users, currentAssi
                       ))}
                     </select>
 
-                    {a.role === "recruiter" && (
+                    {(a.role === "recruiter" || a.role === "owner") && (
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"

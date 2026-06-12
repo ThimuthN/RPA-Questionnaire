@@ -11,6 +11,27 @@ const actionSchema = z.object({
   returnTo: z.string().optional()
 });
 
+function buildApplicantRedirectUrl(
+  request: Request,
+  options: {
+    returnTo?: string;
+    departmentId?: string | null;
+    error?: string;
+  }
+) {
+  const fallbackPath = options.departmentId
+    ? `/departments/${options.departmentId}/applicants`
+    : "/people/candidates/applicants";
+  const safePath = options.returnTo?.trim().startsWith("/")
+    ? options.returnTo.trim()
+    : fallbackPath;
+  const url = new URL(safePath, request.url);
+  if (options.error) {
+    url.searchParams.set("error", options.error);
+  }
+  return url;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,23 +57,31 @@ export async function POST(
     });
 
     if (!application) {
-      const url = new URL("/people/candidates/applicants", request.url);
-      url.searchParams.set("error", "Application not found.");
+      const url = buildApplicantRedirectUrl(request, {
+        returnTo: body.returnTo,
+        error: "Application not found."
+      });
       return NextResponse.redirect(url, 303);
     }
 
     if (body.action === "review" || body.action === "close") {
       const permCheck = await requirePermissionForDepartment(session, "manage_candidates", application.candidate.departmentId);
       if (!permCheck.ok) {
-        const url = new URL("/people/candidates/applicants", request.url);
-        url.searchParams.set("error", "Not authorized to manage this application.");
+        const url = buildApplicantRedirectUrl(request, {
+          returnTo: body.returnTo,
+          departmentId: application.candidate.departmentId,
+          error: "Not authorized to manage this application."
+        });
         return NextResponse.redirect(url, 303);
       }
     } else if (body.action === "promote") {
       const canPromote = await canUsePermissionForDepartment(session, "promote_candidate", application.candidate.departmentId) || await canUsePermissionForDepartment(session, "manage_candidates", application.candidate.departmentId);
       if (!canPromote) {
-        const url = new URL("/people/candidates/applicants", request.url);
-        url.searchParams.set("error", "Not authorized to move this applicant to the pipeline.");
+        const url = buildApplicantRedirectUrl(request, {
+          returnTo: body.returnTo,
+          departmentId: application.candidate.departmentId,
+          error: "Not authorized to move this applicant to the pipeline."
+        });
         return NextResponse.redirect(url, 303);
       }
     }
@@ -63,13 +92,15 @@ export async function POST(
       hrOwner: body.hrOwner
     });
 
-    const redirectTo = body.returnTo?.trim() || `/candidates/${result.candidateId}`;
-    const url = new URL(redirectTo.startsWith("/") ? redirectTo : `/candidates/${result.candidateId}`, request.url);
+    const fallbackCandidatePath = `/people/candidates/${result.candidateId}`;
+    const redirectTo = body.returnTo?.trim() || fallbackCandidatePath;
+    const url = new URL(redirectTo.startsWith("/") ? redirectTo : fallbackCandidatePath, request.url);
     url.searchParams.set("updated", "1");
     return NextResponse.redirect(url, 303);
   } catch (error) {
-    const url = new URL("/people/candidates/applicants", request.url);
-    url.searchParams.set("error", "Could not update application.");
+    const url = buildApplicantRedirectUrl(request, {
+      error: "Could not update application."
+    });
     return NextResponse.redirect(url, 303);
   }
 }

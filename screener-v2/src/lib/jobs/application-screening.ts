@@ -87,7 +87,7 @@ function toScreeningQuestions(items: ExamQuestion[]): ApplicationScreeningQuesti
 
 function getInlineSupportReason(questions: ApplicationScreeningQuestion[]): string | undefined {
   if (questions.length === 0) {
-    return "This add-on does not expose inline application questions.";
+    return "This add-on does not expose any public screening questions.";
   }
 
   const unsupported = questions.find((question) => !questionRegistry[question.format]);
@@ -98,10 +98,11 @@ function getInlineSupportReason(questions: ApplicationScreeningQuestion[]): stri
   return `Question format "${unsupported.format}" is not supported inline.`;
 }
 
-function buildInlineBlueprint(packageState: ApplicationScreeningPackage): ExamBlueprint {
+export function buildApplicationScreeningBlueprint(
+  packageState: ApplicationScreeningPackage
+): ExamBlueprint {
   return {
     exams: packageState.addons
-      .filter((addon) => addon.inlineSupported)
       .map((addon) => ({
         instanceId: addon.key,
         definitionId: addon.assessmentTypeId,
@@ -121,14 +122,12 @@ function buildInlineBlueprint(packageState: ApplicationScreeningPackage): ExamBl
   };
 }
 
-function buildInlineExamState(
+function buildApplicationScreeningExamState(
   packageState: ApplicationScreeningPackage,
   answers: ApplicationScreeningAnswerMap
 ): Partial<Record<string, ExamState>> {
   return Object.fromEntries(
-    packageState.addons
-      .filter((addon) => addon.inlineSupported)
-      .map((addon) => [
+    packageState.addons.map((addon) => [
         addon.key,
         {
           answers: answers[addon.key] ?? {},
@@ -236,7 +235,7 @@ export function resolveApplicationScreeningPackageFromPreset(
 export function hasInlineApplicationScreening(
   packageState: ApplicationScreeningPackage | null
 ): boolean {
-  return Boolean(packageState?.addons.some((addon) => addon.inlineSupported));
+  return Boolean(packageState?.addons.length);
 }
 
 export function normalizeApplicationScreeningAnswerMap(
@@ -302,21 +301,37 @@ export function evaluateApplicationScreening(
     };
   }
 
-  const inlineBlueprint = buildInlineBlueprint(packageState);
-  const inlineExamState = buildInlineExamState(packageState, answers);
+  return evaluateApplicationScreeningFromExamState(
+    packageState,
+    buildApplicationScreeningExamState(packageState, answers)
+  );
+}
+
+export function evaluateApplicationScreeningFromExamState(
+  packageState: ApplicationScreeningPackage | null,
+  examState: Partial<Record<string, ExamState>>
+): ApplicationScreeningEvaluation {
+  if (!packageState) {
+    return {
+      overallStatus: "passed",
+      addonResults: []
+    };
+  }
+
+  const screeningBlueprint = buildApplicationScreeningBlueprint(packageState);
   const summary =
-    inlineBlueprint.exams.length > 0
+    screeningBlueprint.exams.length > 0
       ? buildResultSummary({
           attemptId: "application-screening",
           stacks: [],
           passTargetPercent: 0,
-          blueprint: inlineBlueprint,
-          examState: inlineExamState
+          blueprint: screeningBlueprint,
+          examState
         })
       : null;
   const reviewSections =
-    inlineBlueprint.exams.length > 0
-      ? buildReviewSectionsFromBlueprint(inlineBlueprint, inlineExamState)
+    screeningBlueprint.exams.length > 0
+      ? buildReviewSectionsFromBlueprint(screeningBlueprint, examState)
       : [];
   const breakdownByAddonKey = new Map(
     Object.values(summary?.examBreakdown ?? {}).map((row) => [row.instanceId, row])
@@ -324,7 +339,7 @@ export function evaluateApplicationScreening(
   const reviewByAddonKey = new Map(reviewSections.map((section) => [section.id, section]));
 
   const addonResults: ApplicationScreeningAddonEvaluation[] = packageState.addons.map((addon) => {
-    if (!addon.inlineSupported) {
+    if (addon.questions.length === 0) {
       return {
         addonKey: addon.key,
         addonId: addon.addonId,
@@ -349,7 +364,7 @@ export function evaluateApplicationScreening(
 
     const breakdown = breakdownByAddonKey.get(addon.key);
     const review = reviewByAddonKey.get(addon.key);
-    const addonAnswers = answers[addon.key] ?? {};
+    const addonAnswers = examState[addon.key]?.answers ?? {};
     const responseAnswerMap = buildResponseAnswerMap(addon, addonAnswers);
 
     return {
@@ -364,7 +379,7 @@ export function evaluateApplicationScreening(
       requiredPercent: addon.requiredPercent,
       weight: addon.weight,
       isMandatory: addon.isMandatory,
-      inlineSupported: true,
+      inlineSupported: addon.inlineSupported,
       status: breakdown?.pass ? "passed" : "failed",
       applicantPercent: breakdown?.percent ?? 0,
       pointsEarned: breakdown?.pointsEarned ?? 0,

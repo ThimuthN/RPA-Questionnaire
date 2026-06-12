@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireRuntimeAttemptApiAccess } from "@/lib/auth/guards";
 import { submitAttempt } from "@/lib/db/repositories";
+import { syncPublicApplicationScreeningResultsFromAttempt } from "@/lib/db/jobs";
 import {
   createRequestLogContext,
   logRouteError,
@@ -62,6 +63,9 @@ export async function POST(
         },
         { status: 409 }
       );
+    }
+    if (result.status === "submitted") {
+      await syncPublicApplicationScreeningResultsFromAttempt(attemptId);
     }
     return NextResponse.json({
       ok: true,

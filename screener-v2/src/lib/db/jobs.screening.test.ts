@@ -7,6 +7,8 @@ const prismaMocks = vi.hoisted(() => ({
   txCandidateUpdate: vi.fn(),
   txDepartmentCandidacyUpsert: vi.fn(),
   txCandidateApplicationCreate: vi.fn(),
+  txAddonResultDeleteMany: vi.fn(),
+  txResponseDeleteMany: vi.fn(),
   txAddonResultCreate: vi.fn(),
   txResponseCreateMany: vi.fn(),
   transaction: vi.fn()
@@ -202,15 +204,19 @@ beforeEach(() => {
         create: prismaMocks.txCandidateApplicationCreate
       },
       candidateApplicationAddonResult: {
+        deleteMany: prismaMocks.txAddonResultDeleteMany,
         create: prismaMocks.txAddonResultCreate
       },
       candidateApplicationResponse: {
+        deleteMany: prismaMocks.txResponseDeleteMany,
         createMany: prismaMocks.txResponseCreateMany
       }
     })
   );
 
   prismaMocks.txCandidateApplicationCreate.mockResolvedValue({ id: "application-1" });
+  prismaMocks.txAddonResultDeleteMany.mockResolvedValue({ count: 0 });
+  prismaMocks.txResponseDeleteMany.mockResolvedValue({ count: 0 });
   prismaMocks.txAddonResultCreate.mockResolvedValue({ id: "addon-result-1" });
   prismaMocks.txResponseCreateMany.mockResolvedValue({ count: 7 });
   candidateMocks.mapCandidate.mockImplementation((candidate) => candidate);
@@ -303,6 +309,49 @@ describe("createCandidateApplicationFromPublicSubmission", () => {
             amount: 150000,
             period: "monthly"
           }
+        })
+      ])
+    );
+  });
+
+  it("seeds unanswered screening evidence when the application is submitted before the test starts", async () => {
+    prismaMocks.jobPostingFindFirst.mockResolvedValue(
+      makeJobRow({
+        screenerPresetId: "preset-1",
+        screenerPreset: makeScreeningPreset()
+      })
+    );
+    candidateMocks.findExistingCandidateByEmail.mockResolvedValue(null);
+    candidateMocks.createCandidate.mockResolvedValue({
+      id: "cand-1",
+      fullName: "Alice Applicant",
+      email: "alice@example.com"
+    });
+    prismaMocks.candidateApplicationFindUnique.mockResolvedValue(null);
+
+    const result = await createCandidateApplicationFromPublicSubmission({
+      jobSlug: "rpa-engineer",
+      fullName: "Alice Applicant",
+      email: "alice@example.com"
+    });
+
+    expect(result).toMatchObject({
+      status: "created",
+      requiresScreening: true
+    });
+    expect(prismaMocks.txAddonResultCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        applicationId: "application-1",
+        status: "failed",
+        applicantPercent: 0
+      })
+    });
+    const responseBatch = prismaMocks.txResponseCreateMany.mock.calls[0]?.[0]?.data as Array<Record<string, unknown>>;
+    expect(responseBatch).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          applicationId: "application-1",
+          answerText: null
         })
       ])
     );

@@ -24,20 +24,22 @@ export default async function ApplyPage({
     resumeError?: string;
   }>;
 }) {
-  if (!PUBLIC_JOBS_ENABLED) notFound();
+  if (!PUBLIC_JOBS_ENABLED) {
+    notFound();
+  }
 
   const { slug } = await params;
   const pageState = await searchParams;
   const context = await getPublicJobApplicationContextBySlug(slug);
 
-  if (!context) notFound();
+  if (!context) {
+    notFound();
+  }
 
   const { job, screeningPackage } = context;
-
   const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const subtitle = job.roleDepartment ?? job.roleLabel ?? orgName;
   const hasConfirmation = Boolean(pageState.submitted || pageState.alreadyApplied);
-
   const backToRole = `/jobs/${slug}` as Route;
 
   return (
@@ -46,21 +48,20 @@ export default async function ApplyPage({
       tone="page"
       eyebrow="Application"
       title={`Apply to ${job.title}`}
-      subtitle={`${orgName} · ${subtitle}`}
+      subtitle={`${orgName} - ${subtitle}`}
       utility={
         <Link href={backToRole}>
           <Button variant="secondary">Back to role</Button>
         </Link>
       }
     >
-      <div className="max-w-2xl space-y-6">
-        {/* ── Submitted ── */}
+      <div className="max-w-3xl space-y-6">
         {pageState.submitted ? (
           <>
             <ApplicationDraftCleaner slug={slug} />
             <StagePanel className="space-y-5">
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
                 <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
                   Application submitted
                 </h2>
@@ -68,7 +69,7 @@ export default async function ApplyPage({
               <p className="text-sm leading-6 text-[color:var(--app-muted)]">
                 Thank you. Your application has been received.
                 {pageState.resumeError
-                  ? " The resume upload did not finish — only your contact details were saved."
+                  ? " The resume upload did not finish, so only your contact details were saved."
                   : ""}
               </p>
               {pageState.applicationId ? (
@@ -96,7 +97,6 @@ export default async function ApplyPage({
           </>
         ) : null}
 
-        {/* ── Already applied ── */}
         {pageState.alreadyApplied ? (
           <StagePanel className="space-y-4">
             <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
@@ -116,7 +116,6 @@ export default async function ApplyPage({
           </StagePanel>
         ) : null}
 
-        {/* ── Error banner + form (draft restored) ── */}
         {!hasConfirmation ? (
           <>
             {pageState.error ? (
@@ -125,6 +124,12 @@ export default async function ApplyPage({
               </div>
             ) : null}
             <StagePanel className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Complete your application</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  Save your profile, attach your resume, and continue into screening when this role includes it.
+                </p>
+              </div>
               <JobApplicationForm jobSlug={slug} screeningPackage={screeningPackage} />
             </StagePanel>
           </>

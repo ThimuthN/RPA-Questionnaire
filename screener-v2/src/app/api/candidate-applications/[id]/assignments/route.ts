@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
-import { getApplicationAssignments, setApplicationAssignments } from "@/lib/db/hiring-assignments";
+import {
+  applyHiringTeamTemplateToApplication,
+  getApplicationAssignments,
+  setApplicationAssignments
+} from "@/lib/db/hiring-assignments";
 import { prisma } from "@/lib/db/prisma";
 
 const assignmentSchema = z.object({
@@ -11,8 +15,9 @@ const assignmentSchema = z.object({
 });
 
 const bodySchema = z.object({
-  mode: z.enum(["add", "replace_role"]),
-  assignments: z.array(assignmentSchema)
+  mode: z.enum(["add", "replace_role", "replace_all", "apply_template"]),
+  assignments: z.array(assignmentSchema).optional(),
+  templateId: z.string().min(1).optional()
 });
 
 export async function GET(
@@ -65,6 +70,14 @@ export async function PUT(
   try {
     const body = bodySchema.parse(await request.json());
 
+    if (body.mode === "apply_template" && !body.templateId) {
+      return NextResponse.json({ ok: false, message: "Template is required" }, { status: 400 });
+    }
+
+    if (body.mode !== "apply_template" && (!body.assignments || body.assignments.length === 0)) {
+      return NextResponse.json({ ok: false, message: "Assignments are required" }, { status: 400 });
+    }
+
     const application = await prisma.candidateApplication.findUnique({
       where: { id },
       select: { candidateId: true, candidate: { select: { departmentId: true } } }
@@ -79,7 +92,15 @@ export async function PUT(
       return NextResponse.json({ ok: false, message: "Not authorized to manage assignments" }, { status: 403 });
     }
 
-    const result = await setApplicationAssignments(id, body.mode, body.assignments, session.userId || undefined);
+    const result =
+      body.mode === "apply_template"
+        ? await applyHiringTeamTemplateToApplication(id, body.templateId || "", session.userId || undefined)
+        : await setApplicationAssignments(
+            id,
+            body.mode,
+            body.assignments ?? [],
+            session.userId || undefined
+          );
 
     const assignments = await getApplicationAssignments(id);
     return NextResponse.json({

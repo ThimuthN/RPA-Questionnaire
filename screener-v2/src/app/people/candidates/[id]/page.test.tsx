@@ -106,6 +106,10 @@ vi.mock("@/lib/db/departments", () => ({
   getDepartment: vi.fn()
 }));
 
+vi.mock("@/lib/db/hiring-team-templates", () => ({
+  listDepartmentHiringTeamOptions: vi.fn()
+}));
+
 vi.mock("@/lib/jobs/types", () => ({
   candidateApplicationStatusLabels: { under_review: "Under review" },
   isActiveApplicationStatus: vi.fn(() => false)
@@ -113,14 +117,8 @@ vi.mock("@/lib/jobs/types", () => ({
 
 vi.mock("@/lib/db/prisma", () => ({
   prisma: {
-    user: {
-      findMany: vi.fn()
-    },
-    jobPosting: {
-      findUnique: vi.fn()
-    },
-    accessGrant: {
-      findMany: vi.fn()
+    departmentCandidacy: {
+      findFirst: vi.fn()
     }
   }
 }));
@@ -134,6 +132,7 @@ import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { getCandidateDetail } from "@/lib/db/candidates";
 import { getDepartment } from "@/lib/db/departments";
+import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
 import { getApplicationAssignments } from "@/lib/db/hiring-assignments";
 import { prisma } from "@/lib/db/prisma";
 
@@ -173,10 +172,12 @@ describe("Candidate Detail Page", () => {
       isActive: true,
       sortOrder: 1
     } as never);
+    vi.mocked(listDepartmentHiringTeamOptions).mockResolvedValue({
+      templates: [],
+      users: []
+    } as never);
     vi.mocked(getApplicationAssignments).mockResolvedValue([] as never);
-    vi.mocked(prisma.user.findMany).mockResolvedValue([] as never);
-    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue(null as never);
-    vi.mocked(prisma.accessGrant.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.departmentCandidacy.findFirst).mockResolvedValue(null as never);
   });
 
   it("renders workspace-aware breadcrumb and back link when workspaceId is present", async () => {
@@ -245,10 +246,6 @@ describe("Candidate Detail Page", () => {
         }
       ]
     } as never);
-    vi.mocked(prisma.jobPosting.findUnique).mockResolvedValue({
-      departmentId: "dept-1"
-    } as never);
-    vi.mocked(prisma.accessGrant.findMany).mockResolvedValue([] as never);
 
     const result = await CandidateDetailPage({
       params: Promise.resolve({ id: "cand-1" }),
