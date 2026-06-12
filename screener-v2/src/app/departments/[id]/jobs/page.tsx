@@ -55,7 +55,7 @@ export default async function DepartmentJobsPage({
           columns={[
             {
               header: "Job",
-              width: "w-[40%]",
+              width: "w-[35%]",
               render: (job) => (
                 <div className="space-y-0.5">
                   <p className="text-sm font-semibold text-[color:var(--app-heading)]">{job.title}</p>
@@ -67,7 +67,7 @@ export default async function DepartmentJobsPage({
             },
             {
               header: "Status",
-              width: "w-[22%]",
+              width: "w-[25%]",
               render: (job) => (
                 <div className="flex flex-wrap gap-1.5">
                   <StatusPill
@@ -83,7 +83,7 @@ export default async function DepartmentJobsPage({
             },
             {
               header: "Applicants",
-              width: "w-[14%]",
+              width: "w-[12%]",
               render: (job) => (
                 <Link
                   href={`/departments/${id}/applicants?jobId=${job.id}`}
@@ -95,7 +95,7 @@ export default async function DepartmentJobsPage({
             },
             {
               header: "Action",
-              width: "w-[24%]",
+              width: "w-[28%]",
               render: (job) => {
                 const dropdownItems = [
                   ...(job.isPublished

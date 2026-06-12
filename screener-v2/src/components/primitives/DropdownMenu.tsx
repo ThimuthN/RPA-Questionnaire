@@ -35,7 +35,7 @@ export function DropdownMenu({
   }, [isOpen]);
 
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <div className="relative" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="inline-flex items-center justify-center rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-2 text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
@@ -45,7 +45,7 @@ export function DropdownMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 min-w-max rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 min-w-max rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-xl">
           {items.map((item, idx) => {
             const content = (
               <span

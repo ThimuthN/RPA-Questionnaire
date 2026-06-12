@@ -23,8 +23,7 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
-      <div className="overflow-x-auto">
-        <table className="w-full table-fixed">
+      <table className="w-full table-fixed">
           <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)]">
             <tr>
               {columns.map((col, idx) => (
@@ -52,7 +51,6 @@ export function DataTable<T extends { id: string }>({
             ))}
           </tbody>
         </table>
-      </div>
     </div>
   );
 }
