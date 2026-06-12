@@ -24,7 +24,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[border-color,background-color,box-shadow,transform,filter,color] duration-[var(--scene-interaction)] hover:-translate-y-[1px] hover:brightness-105",
+        "inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] transition-[border-color,background-color,box-shadow,transform,filter,color] duration-[var(--scene-interaction)] hover:-translate-y-[1px] hover:brightness-105",
         toneClass[tone],
         className
       )}

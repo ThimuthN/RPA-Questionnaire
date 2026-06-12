@@ -16,7 +16,7 @@ export function SignalMarquee({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-full border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_96%,white),color-mix(in_srgb,var(--app-surface-soft)_94%,var(--app-bg)))] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--app-border)_40%,white)]",
+        "relative overflow-hidden rounded-full border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface)_96%,white),color-mix(in_srgb,var(--app-surface-soft)_94%,var(--app-bg)))] px-3 py-2",
         className
       )}
     >
