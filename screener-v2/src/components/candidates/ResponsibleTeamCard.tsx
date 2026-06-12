@@ -188,11 +188,11 @@ export function ResponsibleTeamCard({
             </div>
 
             {hasTemplates ? (
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="space-y-3">
                 <select
                   value={selectedTemplateId}
                   onChange={(event) => setSelectedTemplateId(event.target.value)}
-                  className="min-w-0 flex-1 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
+                  className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
                 >
                   <option value="">Select hiring team template</option>
                   {templates.map((template) => (
@@ -201,21 +201,21 @@ export function ResponsibleTeamCard({
                     </option>
                   ))}
                 </select>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" onClick={applyTemplate} disabled={isApplyingTemplate}>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button type="button" onClick={applyTemplate} disabled={isApplyingTemplate} className="flex-1">
                     {isApplyingTemplate ? "Applying..." : "Apply template"}
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)}>
+                  <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)} className="flex-1">
                     Customize manually
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
+              <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
                 <p className="text-sm text-[color:var(--app-muted)]">
                   No department hiring team templates are available yet.
                 </p>
-                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)}>
+                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)} className="w-full">
                   Assign manually
                 </Button>
               </div>

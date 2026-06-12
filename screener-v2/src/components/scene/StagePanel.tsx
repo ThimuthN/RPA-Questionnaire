@@ -21,7 +21,7 @@ export function StagePanel({
         tone === "open" &&
           "border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] shadow-none",
         tone !== "open" &&
-          "before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(140deg,rgba(255,255,255,0.08),transparent_26%,transparent_70%,rgba(111,215,255,0.04))] before:opacity-60 before:transition-opacity before:duration-[var(--scene-interaction)] before:content-[''] hover:before:opacity-100 after:pointer-events-none after:absolute after:inset-x-8 after:top-0 after:h-px after:bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent)] after:opacity-70 after:content-['']",
+          "before:pointer-events-none before:absolute before:inset-0 before:bg-[linear-gradient(140deg,rgba(255,255,255,0.08),transparent_26%,transparent_70%,rgba(111,215,255,0.04))] before:opacity-60 before:transition-opacity before:duration-[var(--scene-interaction)] before:content-[''] hover:before:opacity-100",
         className
       )}
     >
