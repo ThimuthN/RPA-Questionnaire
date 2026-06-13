@@ -301,6 +301,7 @@ export function mapInterviewPanel(row: {
   scheduledAt: Date | null;
   durationMin: number;
   status: string;
+  meetingUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
   members: Array<{
@@ -324,6 +325,7 @@ export function mapInterviewPanel(row: {
     scheduledAt: row.scheduledAt?.toISOString(),
     durationMin: row.durationMin,
     status: row.status,
+    meetingUrl: row.meetingUrl ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     members: row.members.map((member) => ({

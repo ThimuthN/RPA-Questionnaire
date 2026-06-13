@@ -32,6 +32,7 @@ const saveMilestoneSchema = z.object({
   interviewScheduledAt: z.string().optional(),
   interviewDurationMin: z.string().optional(),
   interviewFormat: z.string().optional(),
+  interviewMeetingUrl: z.string().optional(),
   interviewerIdsJson: z.string().optional(),
   returnTo: z.string().optional()
 });
@@ -138,6 +139,7 @@ export async function POST(
       body.interviewScheduledAt !== undefined ||
       body.interviewDurationMin !== undefined ||
       body.interviewFormat !== undefined ||
+      body.interviewMeetingUrl !== undefined ||
       body.interviewerIdsJson !== undefined
     ) {
       const interviewerIds = typeof body.interviewerIdsJson === "string" && body.interviewerIdsJson.trim().length > 0
@@ -154,6 +156,7 @@ export async function POST(
         scheduledAt: body.interviewScheduledAt,
         durationMin: parsedInterviewDuration,
         format: body.interviewFormat,
+        meetingUrl: body.interviewMeetingUrl,
         interviewerIds,
         actorId: session.userId ?? undefined,
         actorName: session.name || session.email || "System"

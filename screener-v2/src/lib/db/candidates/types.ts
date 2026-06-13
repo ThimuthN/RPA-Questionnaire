@@ -123,6 +123,7 @@ export interface CandidateInterviewPanelRecord {
   scheduledAt?: string;
   durationMin: number;
   status: string;
+  meetingUrl?: string;
   createdAt: string;
   updatedAt: string;
   members: Array<{

@@ -812,6 +812,7 @@ model InterviewPanel {
   scheduledAt DateTime?
   durationMin Int      @default(60)
   status      String   @default("scheduled")
+  meetingUrl  String?
   createdById String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

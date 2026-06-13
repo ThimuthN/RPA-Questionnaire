@@ -49,6 +49,12 @@ export async function POST(
       }
     });
 
+    // Revert finalized milestone so the pipeline timeline reflects the un-finalized state
+    await tx.candidateMilestone.updateMany({
+      where: { candidateId: id, type: "finalized", status: "done" },
+      data: { status: "not_started" }
+    });
+
     await tx.candidateActivityEvent.create({
       data: {
         id: cuidLike(),

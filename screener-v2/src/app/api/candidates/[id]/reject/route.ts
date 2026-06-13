@@ -50,6 +50,12 @@ export async function POST(
       }
     });
 
+    // Sync finalized milestone to done
+    await tx.candidateMilestone.updateMany({
+      where: { candidateId: id, type: "finalized", status: { not: "done" } },
+      data: { status: "done" }
+    });
+
     await tx.departmentCandidacy.updateMany({
       where: { candidateId: id, status: "active" },
       data: { status: "dept_rejected", updatedAt: new Date() }

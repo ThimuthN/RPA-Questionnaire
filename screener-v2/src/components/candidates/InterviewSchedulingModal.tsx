@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CalendarDays, Clock3, MessageSquare, Trash2, Users, X } from "lucide-react";
+import { CalendarDays, Clock3, Link2, MessageSquare, Trash2, Users, X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import type { CandidateInterviewPanelRecord } from "@/lib/db/candidates";
@@ -64,6 +64,7 @@ export function InterviewSchedulingModal({
         : "",
     durationMin: String(interviewPanel?.durationMin ?? 60),
     format: interviewPanel?.format || "video",
+    meetingUrl: interviewPanel?.meetingUrl || "",
     result: milestone?.result || "",
     notes: milestone?.notes || ""
   });
@@ -92,6 +93,7 @@ export function InterviewSchedulingModal({
           : "",
       durationMin: String(interviewPanel?.durationMin ?? 60),
       format: interviewPanel?.format || "video",
+      meetingUrl: interviewPanel?.meetingUrl || "",
       result: milestone?.result || "",
       notes: milestone?.notes || ""
     });
@@ -129,6 +131,9 @@ export function InterviewSchedulingModal({
       form.append("interviewScheduledAt", formData.date);
       form.append("interviewDurationMin", formData.durationMin);
       form.append("interviewFormat", formData.format);
+      if (formData.meetingUrl) {
+        form.append("interviewMeetingUrl", formData.meetingUrl);
+      }
       form.append("interviewerIdsJson", JSON.stringify(selectedInterviewerIds));
       if (formData.result) {
         form.append("result", formData.result);
@@ -147,7 +152,7 @@ export function InterviewSchedulingModal({
         throw new Error(data?.message || "Failed to save interview");
       }
 
-      setFormData({ date: "", durationMin: "60", format: "video", result: "", notes: "" });
+      setFormData({ date: "", durationMin: "60", format: "video", meetingUrl: "", result: "", notes: "" });
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -282,6 +287,27 @@ export function InterviewSchedulingModal({
                     </select>
                   </label>
                 </div>
+
+                {formData.format === "video" ? (
+                  <label className="grid gap-2">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-[color:var(--app-muted)]" />
+                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                        Meeting link
+                      </span>
+                    </div>
+                    <input
+                      type="url"
+                      value={formData.meetingUrl}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, meetingUrl: e.target.value }))}
+                      placeholder="https://teams.microsoft.com/…"
+                      className={fieldClassName}
+                    />
+                    <p className="text-xs text-[color:var(--app-muted)]">
+                      Paste a Teams, Zoom, or Google Meet link — optional
+                    </p>
+                  </label>
+                ) : null}
 
                 <div className="grid gap-2">
                   <div className="flex items-center gap-2">

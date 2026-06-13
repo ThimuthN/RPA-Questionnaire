@@ -89,6 +89,14 @@ export async function POST(
     }
   }
 
+  // Milestone types that correspond to each candidate stage
+  const stageToMilestoneType: Partial<Record<string, string[]>> = {
+    screening: ["screener"],
+    interview: ["interview"],
+    advanced_review: ["review_round", "advanced_review"],
+    finalized: ["finalized"]
+  };
+
   await prisma.$transaction(async (tx) => {
     await tx.candidate.update({
       where: { id: candidateId },
@@ -97,6 +105,36 @@ export async function POST(
         updatedAt: new Date()
       }
     });
+
+    // Advance the corresponding milestone to in_progress so both stay in sync
+    const milestoneTypes = stageToMilestoneType[next];
+    if (milestoneTypes) {
+      const targetMilestone = await tx.candidateMilestone.findFirst({
+        where: {
+          candidateId,
+          type: { in: milestoneTypes },
+          status: "not_started"
+        },
+        orderBy: { sortOrder: "asc" }
+      });
+
+      if (targetMilestone) {
+        await tx.candidateMilestone.update({
+          where: { id: targetMilestone.id },
+          data: { status: "in_progress" }
+        });
+
+        // Mark any earlier not_started milestones as skipped
+        await tx.candidateMilestone.updateMany({
+          where: {
+            candidateId,
+            sortOrder: { lt: targetMilestone.sortOrder },
+            status: "not_started"
+          },
+          data: { status: "skipped" }
+        });
+      }
+    }
 
     await tx.candidateActivityEvent.create({
       data: {

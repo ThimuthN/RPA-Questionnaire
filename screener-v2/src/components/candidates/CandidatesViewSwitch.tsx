@@ -34,11 +34,11 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
     { key: "interview", label: "Interview", countKey: "interview", href: `${baseCandidatesPath}?stage=interview` as Route },
     {
       key: "advanced_review",
-      label: "Advanced Review",
+      label: "Review",
       countKey: "advanced_review",
       href: `${baseCandidatesPath}?stage=advanced_review` as Route
     },
-    { key: "finalized", label: "Finalized", countKey: "finalized", href: `${baseCandidatesPath}?stage=finalized` as Route }
+    { key: "finalized", label: "Final", countKey: "finalized", href: `${baseCandidatesPath}?stage=finalized` as Route }
   ];
 
   const hiringSwitchItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
@@ -71,20 +71,32 @@ export async function CandidatesViewSwitch({
     <div className="inline-flex flex-wrap items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] p-1 text-sm text-[color:var(--app-text)] shadow-[var(--app-shadow-soft)]">
       {items.map((item) => {
         const count = item.countKey ? counts[item.countKey] : null;
-        const label = count !== null ? `${item.label} (${count})` : item.label;
+        const isActive = current === item.key;
+        const isEmpty = count !== null && count === 0 && !isActive;
 
         return (
           <Link
             key={item.key}
             href={item.href}
             className={cn(
-              "rounded-full px-3 py-1.5 transition-all whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--app-control-bg)]",
-              current === item.key
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all whitespace-nowrap font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 focus-visible:ring-offset-1 focus-visible:ring-offset-[color:var(--app-control-bg)]",
+              isActive
                 ? "bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_22%,transparent)] hover:shadow-[0_16px_32px_color-mix(in_srgb,var(--app-brand)_28%,transparent)]"
-                : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)] hover:shadow-sm"
+                : cn(
+                    "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)] hover:shadow-sm",
+                    isEmpty && "opacity-40"
+                  )
             )}
           >
-            {label}
+            {item.label}
+            {count !== null && count > 0 ? (
+              <span className={cn(
+                "rounded-full px-1.5 py-0.5 text-[10px] font-semibold tabular-nums leading-none",
+                isActive ? "bg-white/20 text-white" : "bg-[color:var(--app-surface)] text-[color:var(--app-heading)]"
+              )}>
+                {count}
+              </span>
+            ) : null}
           </Link>
         );
       })}

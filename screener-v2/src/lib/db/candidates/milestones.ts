@@ -14,6 +14,17 @@ import { cuidLike } from "@/lib/tokens/token-service";
 import { mapMilestone } from "./mappers";
 import { logActivityEvent } from "./activity";
 
+// Derive candidate.stage from the next milestone's sortOrder, not its type.
+// This prevents custom interview-type substeps inserted at sortOrder >= 40
+// (inside the advanced_review group) from reverting stage back to "interview".
+function stageForCascadeAdvancement(sortOrder: number): string | null {
+  if (sortOrder < 20) return null; // pre-screener zone, no stage change
+  if (sortOrder < 30) return "screening";
+  if (sortOrder < 40) return "interview";
+  if (sortOrder < 9999) return "advanced_review";
+  return null; // finalized excluded by the sortOrder < 9999 filter upstream
+}
+
 async function applyMilestoneCascade(
   candidateId: string,
   savedMilestoneId: string,
@@ -22,7 +33,7 @@ async function applyMilestoneCascade(
 ) {
   const allMilestones = await tx.candidateMilestone.findMany({
     where: { candidateId },
-    select: { id: true, sortOrder: true, status: true },
+    select: { id: true, sortOrder: true, status: true, type: true },
     orderBy: { sortOrder: "asc" }
   });
 
@@ -51,6 +62,15 @@ async function applyMilestoneCascade(
         where: { id: nextMilestone.id },
         data: { status: "in_progress" }
       });
+
+      // Sync candidate.stage so both sources of truth stay aligned
+      const nextStage = stageForCascadeAdvancement(nextMilestone.sortOrder);
+      if (nextStage) {
+        await tx.candidate.update({
+          where: { id: candidateId },
+          data: { stage: nextStage }
+        });
+      }
     }
   }
 }
@@ -298,6 +318,7 @@ export async function upsertInterviewPanelForMilestone(input: {
   scheduledAt?: string;
   durationMin?: number;
   format?: string;
+  meetingUrl?: string;
   interviewerIds?: string[];
   actorId?: string;
   actorName?: string;
@@ -353,6 +374,10 @@ export async function upsertInterviewPanelForMilestone(input: {
       ? Math.max(15, Math.round(input.durationMin))
       : 60;
   const format = input.format?.trim() || "video";
+  const meetingUrl =
+    typeof input.meetingUrl === "string" && input.meetingUrl.trim().length > 0
+      ? input.meetingUrl.trim()
+      : null;
   const status = scheduledAt ? "scheduled" : interviewerIds.length > 0 ? "draft" : "pending";
 
   return prisma.$transaction(async (tx) => {
@@ -383,6 +408,7 @@ export async function upsertInterviewPanelForMilestone(input: {
             scheduledAt,
             durationMin,
             format,
+            meetingUrl,
             status
           },
           include: {
@@ -405,6 +431,7 @@ export async function upsertInterviewPanelForMilestone(input: {
             scheduledAt,
             durationMin,
             format,
+            meetingUrl,
             status,
             createdById: input.actorId ?? null
           },

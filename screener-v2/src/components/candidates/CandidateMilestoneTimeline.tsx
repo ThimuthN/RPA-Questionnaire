@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -28,10 +28,15 @@ import {
   type CheckType
 } from "@/lib/candidates/milestones";
 import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
+import { cn } from "@/lib/utils";
 
-type TimelineNode = CandidateMilestoneRecord | { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] };
+type TimelineNode =
+  | CandidateMilestoneRecord
+  | { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] };
 
-function isAdvancedReviewGroup(node: TimelineNode): node is { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] } {
+function isAdvancedReviewGroup(
+  node: TimelineNode
+): node is { id: string; type: "__advanced_review"; groupedMilestones: CandidateMilestoneRecord[] } {
   return node.type === "__advanced_review";
 }
 
@@ -42,7 +47,6 @@ function groupMilestonesForTimeline(milestones: CandidateMilestoneRecord[]): Tim
 
   for (const m of sorted) {
     if (m.type === "finalized") {
-      // Add any accumulated advanced milestones as a group before finalized
       if (advancedMilestones.length > 0) {
         result.push({
           id: "advanced_review_group",
@@ -59,7 +63,6 @@ function groupMilestonesForTimeline(milestones: CandidateMilestoneRecord[]): Tim
     }
   }
 
-  // Add any remaining advanced milestones at the end
   if (advancedMilestones.length > 0) {
     result.push({
       id: "advanced_review_group",
@@ -74,74 +77,40 @@ function groupMilestonesForTimeline(milestones: CandidateMilestoneRecord[]): Tim
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
-const timelineNodeClassNames = {
-  complete:
-    "border-transparent bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-success)_78%,white),color-mix(in_srgb,var(--app-brand)_32%,var(--app-success)))] text-white shadow-[0_16px_32px_color-mix(in_srgb,var(--app-success)_22%,transparent)]",
-  active:
-    "border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-white shadow-[0_18px_36px_color-mix(in_srgb,var(--app-brand)_24%,transparent)]",
-  pending:
-    "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
-} as const;
-
 function isMilestoneComplete(status: CandidateMilestoneRecord["status"]) {
   return status === "done" || status === "skipped";
 }
 
 function defaultActiveMilestoneId(milestones: CandidateMilestoneRecord[], hasResume: boolean) {
-  const inProgress = milestones.find((milestone) => milestone.status === "in_progress");
-  if (inProgress) {
-    return inProgress.id;
-  }
+  const inProgress = milestones.find((m) => m.status === "in_progress");
+  if (inProgress) return inProgress.id;
 
   const nextActionable = milestones.find(
-    (milestone) =>
-      !isMilestoneComplete(milestone.status) && !(milestone.type === "registration" && hasResume)
+    (m) => !isMilestoneComplete(m.status) && !(m.type === "registration" && hasResume)
   );
   return nextActionable?.id ?? milestones[0]?.id ?? "advanced_review_group";
 }
 
 function derivedResult(milestone: CandidateMilestoneRecord) {
-  if (milestone.mode === "manual") {
-    return milestone.result;
-  }
-
-  if (milestone.assessment?.status === "passed") {
-    return "pass" as const;
-  }
-
-  if (milestone.assessment?.status === "failed") {
-    return "fail" as const;
-  }
-
-  if (milestone.assessment?.status === "review") {
-    return "review" as const;
-  }
-
+  if (milestone.mode === "manual") return milestone.result;
+  if (milestone.assessment?.status === "passed") return "pass" as const;
+  if (milestone.assessment?.status === "failed") return "fail" as const;
+  if (milestone.assessment?.status === "review") return "review" as const;
   return undefined;
 }
 
 function resultTone(result?: string) {
   switch (result) {
-    case "pass":
-      return "emerald" as const;
-    case "fail":
-      return "red" as const;
-    case "review":
-      return "amber" as const;
-    default:
-      return "neutral" as const;
+    case "pass": return "emerald" as const;
+    case "fail": return "red" as const;
+    case "review": return "amber" as const;
+    default: return "neutral" as const;
   }
 }
 
 function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
-  if (type === "interview") {
-    return "Interview notes";
-  }
-
-  if (type === "finalized") {
-    return "Finalized notes";
-  }
-
+  if (type === "interview") return "Interview notes";
+  if (type === "finalized") return "Finalized notes";
   return "Feedback";
 }
 
@@ -154,14 +123,15 @@ function interviewFormatLabel(format?: string) {
 }
 
 function displayMilestoneTitle(milestone: CandidateMilestoneRecord) {
-  return milestone.type === "screener" ? "Screening assessment" : milestone.title;
+  if (milestone.type === "registration") return "Applied";
+  if (milestone.type === "screener") return "Screening";
+  return milestone.title;
 }
 
 function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: CandidateMilestoneMode) {
   if (type === "screener" || type === "advanced_review" || type === "review_round") {
     return mode === "platform" ? "Save step" : "Save notes";
   }
-
   return "Save";
 }
 
@@ -172,22 +142,17 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
 
   if (milestone.type === "interview" && milestone.interviewPanel?.scheduledAt) {
     const memberCount = milestone.interviewPanel.members.length;
-    return `${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()} | ${interviewFormatLabel(milestone.interviewPanel.format)}${memberCount > 0 ? ` | ${memberCount} interviewer${memberCount === 1 ? "" : "s"}` : ""}`;
+    return `${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()} · ${interviewFormatLabel(milestone.interviewPanel.format)}${memberCount > 0 ? ` · ${memberCount} interviewer${memberCount === 1 ? "" : "s"}` : ""}`;
   }
 
   if (milestone.mode === "platform") {
     if (milestone.assessment) {
       if (typeof milestone.assessment.finalPercent === "number") {
-        return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} | ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
+        return `${candidateMilestoneResultLabels[derivedResult(milestone) ?? "review"]} · ${milestone.assessment.finalPercent.toFixed(1)} / 100`;
       }
-      if (milestone.assessment.status === "invited") {
-        return "Assessment assigned.";
-      }
-      if (milestone.assessment.status === "in_progress") {
-        return "Assessment in progress.";
-      }
+      if (milestone.assessment.status === "invited") return "Assessment assigned.";
+      if (milestone.assessment.status === "in_progress") return "Assessment in progress.";
     }
-
     return "No assessment yet.";
   }
 
@@ -195,15 +160,13 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
     return candidateMilestoneResultLabels[milestone.result];
   }
 
-  if (typeof milestone.score === "number") {
-    return `Score ${milestone.score}`;
-  }
+  if (typeof milestone.score === "number") return `Score ${milestone.score}`;
 
-  if (milestone.notes?.trim()) {
-    return milestone.notes.trim().slice(0, 120);
-  }
+  if (milestone.notes?.trim()) return milestone.notes.trim().slice(0, 120);
 
-  return milestone.status === "not_started" ? "No activity yet." : candidateMilestoneStatusLabels[milestone.status];
+  return milestone.status === "not_started"
+    ? "Not started"
+    : candidateMilestoneStatusLabels[milestone.status];
 }
 
 function withStatusQuery(href: string, key: string, value = "1") {
@@ -211,6 +174,48 @@ function withStatusQuery(href: string, key: string, value = "1") {
   url.searchParams.set(key, value);
   return `${url.pathname}${url.search}${url.hash}` as Route;
 }
+
+// ─── Stage Rail ──────────────────────────────────────────────────────────────
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5" aria-hidden="true">
+      <path
+        d="M3.5 8.5L6.5 11.5L12.5 5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function nodeRailState(
+  node: TimelineNode,
+  isActive: boolean
+): "complete" | "active" | "pending" | "failed" {
+  if (isAdvancedReviewGroup(node)) {
+    const all = node.groupedMilestones;
+    if (all.every((m) => isMilestoneComplete(m.status))) return "complete";
+    if (isActive || all.some((m) => m.status === "in_progress" || m.status === "done")) return "active";
+    return "pending";
+  }
+  if (isMilestoneComplete(node.status)) return "complete";
+  if (node.status === "failed") return "failed";
+  if (isActive || node.status === "in_progress") return "active";
+  return "pending";
+}
+
+function railNodeTitle(node: TimelineNode): string {
+  if (isAdvancedReviewGroup(node)) return "Review";
+  if (node.type === "registration") return "Applied";
+  if (node.type === "screener") return "Screening";
+  if (node.type === "finalized") return "Final";
+  return node.title;
+}
+
+// ─── Milestone panel sub-cards ───────────────────────────────────────────────
 
 function MilestoneStatusSelect({
   name,
@@ -246,9 +251,7 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
     : null;
   const inviteCode = milestone.assessment?.inviteSlug?.toUpperCase();
 
-  if (!milestone.assessment) {
-    return null;
-  }
+  if (!milestone.assessment) return null;
 
   return (
     <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
@@ -261,37 +264,31 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
           <StatusPill label={`${milestone.assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
         ) : null}
       </div>
-
       <div className="grid gap-3 text-sm md:grid-cols-2">
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Invite code</p>
           <p className="text-[color:var(--app-heading)]">{inviteCode || "Not available"}</p>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Created</p>
           <p className="text-[color:var(--app-heading)]">{new Date(milestone.assessment.createdAt).toLocaleString()}</p>
         </div>
-        <div className="space-y-1 md:col-span-2">
+        <div className="space-y-0.5 md:col-span-2">
           <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Share path</p>
           <p className="break-all text-[color:var(--app-text)]">
             {shareHref ? shareHref : "Available after the assessment is created."}
           </p>
         </div>
       </div>
-
       <div className="flex flex-wrap gap-2">
         {shareHref ? (
           <a href={shareHref} target="_blank" rel="noreferrer">
-            <Button type="button" variant="secondary">
-              Open share page
-            </Button>
+            <Button type="button" variant="secondary">Open share page</Button>
           </a>
         ) : null}
         {resultHref ? (
           <Link href={resultHref}>
-            <Button type="button" variant="secondary">
-              View result
-            </Button>
+            <Button type="button" variant="secondary">View result</Button>
           </Link>
         ) : null}
       </div>
@@ -299,163 +296,44 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
   );
 }
 
-function TestMilestoneCard({
-  candidateId,
+function CheckBadge({ status }: { status: string }) {
+  const tone = status === "passed" ? ("emerald" as const) : status === "failed" ? ("red" as const) : ("neutral" as const);
+  const label = status === "passed" ? "Approved" : status === "failed" ? "Rejected" : "Pending";
+  return <StatusPill tone={tone} label={label} />;
+}
+
+function RegistrationMilestoneCard({
   milestone,
-  detailHref,
-  assessmentAddons,
-  assessmentPresets,
-  assessmentWorkspaceLabel
+  hasResume,
+  detailHref
 }: {
-  candidateId: string;
   milestone: CandidateMilestoneRecord;
+  hasResume: boolean;
   detailHref: string;
-  assessmentAddons: AddonCatalogEntry[];
-  assessmentPresets: AssessmentPresetEntry[];
-  assessmentWorkspaceLabel?: string;
 }) {
-  const router = useRouter();
-  const [selectedMode, setSelectedMode] = useState<CandidateMilestoneMode>(milestone.mode);
-  const [builderOpen, setBuilderOpen] = useState(false);
-  const isPlatform = selectedMode === "platform";
+  const checks = milestone.checks || [];
+  const resumeUploadCheck = checks.find((c) => c.type === "resume_upload");
 
   return (
     <div className="space-y-3">
-      <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
-        <input type="hidden" name="action" value="save" />
-        <input type="hidden" name="title" value={milestone.title} />
-        <input type="hidden" name="returnTo" value={detailHref} />
-        {isPlatform ? <input type="hidden" name="result" value="" /> : null}
-
-        <div className="flex flex-wrap gap-2">
-          <StatusPill label={selectedMode === "platform" ? "In platform" : "External"} tone="neutral" />
-          {milestone.date ? (
-            <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
-          ) : null}
+      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Resume</h4>
+          {resumeUploadCheck ? <CheckBadge status={resumeUploadCheck.status} /> : null}
         </div>
-
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
-          <div className="grid gap-1.5">
-            <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Step format</span>
-            <ChoicePills
-              name="mode"
-              idPrefix={`milestone-mode-${milestone.id}`}
-              value={selectedMode}
-              onChange={(value) => setSelectedMode(value as CandidateMilestoneMode)}
-              options={[
-                { value: "platform", label: "In platform" },
-                { value: "manual", label: "External" }
-              ]}
-            />
+        {resumeUploadCheck?.notes ? (
+          <p className="text-xs text-[color:var(--app-muted)]">{resumeUploadCheck.notes}</p>
+        ) : null}
+        {!hasResume ? (
+          <div className="pt-1">
+            <Link href={`${detailHref}#resume` as Route}>
+              <Button type="button" variant="secondary">Upload resume</Button>
+            </Link>
           </div>
-
-          <MilestoneStatusSelect name="status" defaultValue={milestone.status} />
-        </div>
-
-        {isPlatform ? (
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="secondary">
-              {saveButtonLabel(milestone.type, selectedMode)}
-            </Button>
-            {!milestone.assessment ? (
-              <Button type="button" onClick={() => setBuilderOpen(true)}>
-                Create assessment
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="grid gap-1">
-                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Date</span>
-                <input
-                  name="date"
-                  type="datetime-local"
-                  defaultValue={milestone.date ? new Date(milestone.date).toISOString().slice(0, 16) : ""}
-                  className={fieldClassName}
-                />
-              </label>
-
-              <label className="grid gap-1">
-                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Score</span>
-                <input
-                  name="score"
-                  type="number"
-                  step="0.1"
-                  defaultValue={typeof milestone.score === "number" ? String(milestone.score) : ""}
-                  placeholder="Optional"
-                  className={fieldClassName}
-                />
-              </label>
-            </div>
-
-            <div className="grid gap-1.5">
-              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Result</span>
-              <ChoicePills
-                name="result"
-                idPrefix={`milestone-result-${milestone.id}`}
-                defaultValue={milestone.result || ""}
-                options={[
-                  { value: "", label: "Not set" },
-                  { value: "pass", label: "Pass" },
-                  { value: "fail", label: "Fail" }
-                ]}
-              />
-            </div>
-
-            <label className="grid gap-1">
-              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Feedback</span>
-              <textarea
-                name="notes"
-                rows={4}
-                defaultValue={milestone.notes || ""}
-                className={`${fieldClassName} min-h-[116px] resize-y`}
-              />
-            </label>
-
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit">{saveButtonLabel(milestone.type, selectedMode)}</Button>
-            </div>
-          </>
-        )}
-      </form>
-
-      {isPlatform && milestone.assessment ? (
-        <LinkedAssessmentSummary milestone={milestone} />
-      ) : null}
-
-      <CandidateAssessmentBuilderOverlay
-        isOpen={builderOpen}
-        onClose={() => setBuilderOpen(false)}
-        onInviteCreated={() => router.refresh()}
-        initialAddons={assessmentAddons}
-        initialPresets={assessmentPresets}
-        linkedCandidateId={candidateId}
-        linkedCandidateMilestoneId={milestone.id}
-        eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
-        title="Create a screening assessment"
-        subtitle="Build the assessment in place, keep the candidate open, and refresh the linked evidence here."
-      />
+        ) : null}
+      </div>
     </div>
   );
-}
-
-function CheckBadge({ status }: { status: string }) {
-  const tone =
-    status === "passed"
-      ? ("emerald" as const)
-      : status === "failed"
-        ? ("red" as const)
-        : ("neutral" as const);
-
-  const label =
-    status === "passed"
-      ? "Approved"
-      : status === "failed"
-        ? "Rejected"
-        : "Pending";
-
-  return <StatusPill tone={tone} label={label} />;
 }
 
 function ScreenerMilestoneCard({
@@ -503,9 +381,7 @@ function ScreenerMilestoneCard({
         setCheckError(data.message || "Could not update check. Please try again.");
       }
     } catch (error) {
-      setCheckError(
-        error instanceof Error ? error.message : "Network error. Please check your connection and try again."
-      );
+      setCheckError(error instanceof Error ? error.message : "Network error. Please try again.");
     } finally {
       setIsPending(false);
     }
@@ -513,36 +389,27 @@ function ScreenerMilestoneCard({
 
   return (
     <div className="space-y-4">
-      {checkError && (
+      {checkError ? (
         <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
           {checkError}
         </div>
-      )}
+      ) : null}
+
       <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Resume Review</h4>
-          {resumeReviewCheck && <CheckBadge status={resumeReviewCheck.status} />}
+          <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Resume review</h4>
+          {resumeReviewCheck ? <CheckBadge status={resumeReviewCheck.status} /> : null}
         </div>
-        {resumeReviewCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{resumeReviewCheck.notes}</p>}
+        {resumeReviewCheck?.notes ? (
+          <p className="text-xs text-[color:var(--app-muted)]">{resumeReviewCheck.notes}</p>
+        ) : null}
         {!resumeReviewCheck || resumeReviewCheck.status === "not_started" ? (
-          <div className="flex gap-2 pt-3">
-            <Button
-              type="button"
-              onClick={() => handleCheckAction("resume_review", "passed")}
-              disabled={isPending}
-              variant="secondary"
-              className="flex-1"
-            >
-              {isPending ? "Updating..." : "Approve"}
+          <div className="flex gap-2 pt-2">
+            <Button type="button" onClick={() => handleCheckAction("resume_review", "passed")} disabled={isPending} variant="secondary" className="flex-1">
+              {isPending ? "Updating…" : "Approve"}
             </Button>
-            <Button
-              type="button"
-              onClick={() => handleCheckAction("resume_review", "failed")}
-              disabled={isPending}
-              variant="danger"
-              className="flex-1"
-            >
-              {isPending ? "Updating..." : "Reject"}
+            <Button type="button" onClick={() => handleCheckAction("resume_review", "failed")} disabled={isPending} variant="danger" className="flex-1">
+              {isPending ? "Updating…" : "Reject"}
             </Button>
           </div>
         ) : null}
@@ -550,11 +417,10 @@ function ScreenerMilestoneCard({
 
       <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Screening assessment</h4>
-          {screenerTestCheck && <CheckBadge status={screenerTestCheck.status} />}
+          <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Screening assessment</h4>
+          {screenerTestCheck ? <CheckBadge status={screenerTestCheck.status} /> : null}
         </div>
-        {screenerTestCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{screenerTestCheck.notes}</p>}
-        <div className="space-y-3 pt-2">
+        <div className="space-y-3 pt-1">
           {!milestone.assessment ? (
             <Button type="button" variant="secondary" onClick={() => setBuilderOpen(true)}>
               Create assessment
@@ -575,44 +441,141 @@ function ScreenerMilestoneCard({
         linkedCandidateMilestoneId={milestone.id}
         eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
         title="Create a screening assessment"
-        subtitle="Build the screening assessment in place and keep the candidate review anchored to this workspace."
+        subtitle="Build the screening assessment and keep the candidate profile anchored to this workspace."
       />
     </div>
   );
 }
 
-function RegistrationMilestoneCard({
+function TestMilestoneCard({
+  candidateId,
   milestone,
-  hasResume,
-  detailHref
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel
 }: {
+  candidateId: string;
   milestone: CandidateMilestoneRecord;
-  hasResume: boolean;
   detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
 }) {
-  const checks = milestone.checks || [];
-  const resumeUploadCheck = checks.find((c) => c.type === "resume_upload");
+  const router = useRouter();
+  const [selectedMode, setSelectedMode] = useState<CandidateMilestoneMode>(milestone.mode);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const isPlatform = selectedMode === "platform";
 
   return (
     <div className="space-y-3">
-      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Resume Upload</h4>
-          {resumeUploadCheck && <CheckBadge status={resumeUploadCheck.status} />}
+      <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
+        <input type="hidden" name="action" value="save" />
+        <input type="hidden" name="title" value={milestone.title} />
+        <input type="hidden" name="returnTo" value={detailHref} />
+        {isPlatform ? <input type="hidden" name="result" value="" /> : null}
+
+        <div className="flex flex-wrap gap-2">
+          <StatusPill label={selectedMode === "platform" ? "In platform" : "External"} tone="neutral" />
+          {milestone.date ? (
+            <StatusPill label={new Date(milestone.date).toLocaleDateString()} tone="neutral" />
+          ) : null}
         </div>
-        {resumeUploadCheck?.notes && (
-          <p className="text-xs text-[color:var(--app-muted)]">{resumeUploadCheck.notes}</p>
-        )}
-        {!hasResume ? (
-          <div className="pt-2">
-            <Link href={`${detailHref}#resume` as Route}>
-              <Button type="button" variant="secondary">
-                Add resume
-              </Button>
-            </Link>
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px] lg:items-end">
+          <div className="grid gap-1.5">
+            <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Format</span>
+            <ChoicePills
+              name="mode"
+              idPrefix={`milestone-mode-${milestone.id}`}
+              value={selectedMode}
+              onChange={(value) => setSelectedMode(value as CandidateMilestoneMode)}
+              options={[
+                { value: "platform", label: "In platform" },
+                { value: "manual", label: "External" }
+              ]}
+            />
           </div>
-        ) : null}
-      </div>
+          <MilestoneStatusSelect name="status" defaultValue={milestone.status} />
+        </div>
+
+        {isPlatform ? (
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" variant="secondary">{saveButtonLabel(milestone.type, selectedMode)}</Button>
+            {!milestone.assessment ? (
+              <Button type="button" onClick={() => setBuilderOpen(true)}>Create assessment</Button>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="grid gap-1">
+                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Date</span>
+                <input
+                  name="date"
+                  type="datetime-local"
+                  defaultValue={milestone.date ? new Date(milestone.date).toISOString().slice(0, 16) : ""}
+                  className={fieldClassName}
+                />
+              </label>
+              <label className="grid gap-1">
+                <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Score</span>
+                <input
+                  name="score"
+                  type="number"
+                  step="0.1"
+                  defaultValue={typeof milestone.score === "number" ? String(milestone.score) : ""}
+                  placeholder="Optional"
+                  className={fieldClassName}
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-1.5">
+              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Result</span>
+              <ChoicePills
+                name="result"
+                idPrefix={`milestone-result-${milestone.id}`}
+                defaultValue={milestone.result || ""}
+                options={[
+                  { value: "", label: "Not set" },
+                  { value: "pass", label: "Pass" },
+                  { value: "fail", label: "Fail" }
+                ]}
+              />
+            </div>
+
+            <label className="grid gap-1">
+              <span className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Feedback</span>
+              <textarea
+                name="notes"
+                rows={4}
+                defaultValue={milestone.notes || ""}
+                className={`${fieldClassName} min-h-[116px] resize-y`}
+              />
+            </label>
+
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit">{saveButtonLabel(milestone.type, selectedMode)}</Button>
+            </div>
+          </>
+        )}
+      </form>
+
+      {isPlatform && milestone.assessment ? <LinkedAssessmentSummary milestone={milestone} /> : null}
+
+      <CandidateAssessmentBuilderOverlay
+        isOpen={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onInviteCreated={() => router.refresh()}
+        initialAddons={assessmentAddons}
+        initialPresets={assessmentPresets}
+        linkedCandidateId={candidateId}
+        linkedCandidateMilestoneId={milestone.id}
+        eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
+        title="Create a screening assessment"
+        subtitle="Build the assessment and keep the candidate open. Refresh the linked evidence here."
+      />
     </div>
   );
 }
@@ -624,11 +587,7 @@ function InterviewMilestoneCard({
 }: {
   candidateId: string;
   milestone: CandidateMilestoneRecord;
-  availableInterviewers: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-  }>;
+  availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -639,8 +598,8 @@ function InterviewMilestoneCard({
       <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Interview schedule</h4>
-            <p className="mt-1 text-xs text-[color:var(--app-muted)]">
+            <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Interview schedule</h4>
+            <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">
               {milestone.interviewPanel?.scheduledAt
                 ? `Scheduled ${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()}`
                 : "No interview scheduled yet."}
@@ -655,32 +614,41 @@ function InterviewMilestoneCard({
 
         {milestone.interviewPanel ? (
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Format</p>
-              <p className="text-sm text-[color:var(--app-heading)]">
-                {interviewFormatLabel(milestone.interviewPanel.format)}
-              </p>
+              <p className="text-sm text-[color:var(--app-heading)]">{interviewFormatLabel(milestone.interviewPanel.format)}</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Duration</p>
-              <p className="text-sm text-[color:var(--app-heading)]">
-                {milestone.interviewPanel.durationMin} min
-              </p>
+              <p className="text-sm text-[color:var(--app-heading)]">{milestone.interviewPanel.durationMin} min</p>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-0.5">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Interviewers</p>
               <p className="text-sm text-[color:var(--app-heading)]">
                 {milestone.interviewPanel.members.length > 0
-                  ? milestone.interviewPanel.members.map((member) => member.user.name || member.user.email).join(", ")
+                  ? milestone.interviewPanel.members.map((m) => m.user.name || m.user.email).join(", ")
                   : "None selected"}
               </p>
             </div>
+            {milestone.interviewPanel.meetingUrl ? (
+              <div className="space-y-0.5 md:col-span-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Meeting link</p>
+                <a
+                  href={milestone.interviewPanel.meetingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-[color:var(--app-brand)] hover:underline break-all"
+                >
+                  {milestone.interviewPanel.meetingUrl}
+                </a>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
         <div className="flex flex-wrap gap-2 pt-1">
           <Button type="button" onClick={() => setOpen(true)}>
-            {milestone.interviewPanel ? "Update interview" : "Schedule interview"}
+            {milestone.interviewPanel ? "Reschedule" : "Schedule interview"}
           </Button>
           {milestone.interviewPanel ? (
             <Button type="button" variant="secondary" onClick={() => setScorecardOpen(true)}>
@@ -705,106 +673,13 @@ function InterviewMilestoneCard({
         onClose={() => setOpen(false)}
         candidateId={candidateId}
         milestoneId={milestone.id}
-        milestone={{
-          date: milestone.date,
-          result: milestone.result,
-          notes: milestone.notes
-        }}
+        milestone={{ date: milestone.date, result: milestone.result, notes: milestone.notes }}
         interviewPanel={milestone.interviewPanel ?? null}
         availableInterviewers={availableInterviewers}
-        onSuccess={() => {
-          setOpen(false);
-          router.refresh();
-        }}
+        onSuccess={() => { setOpen(false); router.refresh(); }}
       />
     </div>
   );
-}
-
-function MilestonePanelContent({
-  candidateId,
-  node,
-  hasResume,
-  detailHref,
-  assessmentAddons,
-  assessmentPresets,
-  assessmentWorkspaceLabel,
-  availableInterviewers
-}: {
-  candidateId: string;
-  node: TimelineNode;
-  hasResume: boolean;
-  detailHref: string;
-  assessmentAddons: AddonCatalogEntry[];
-  assessmentPresets: AssessmentPresetEntry[];
-  assessmentWorkspaceLabel?: string;
-  availableInterviewers: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-  }>;
-}) {
-  if (isAdvancedReviewGroup(node)) {
-    return (
-      <AdvancedReviewCard
-        candidateId={candidateId}
-        groupedMilestones={node.groupedMilestones}
-        assessmentAddons={assessmentAddons}
-        assessmentPresets={assessmentPresets}
-        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
-        availableInterviewers={availableInterviewers}
-      />
-    );
-  }
-
-  const milestone = node;
-  if (milestone.type === "registration") {
-    return (
-      <RegistrationMilestoneCard
-        milestone={milestone}
-        hasResume={hasResume}
-        detailHref={detailHref}
-      />
-    );
-  }
-
-  if (milestone.type === "screener") {
-    return (
-      <ScreenerMilestoneCard
-        candidateId={candidateId}
-        milestone={milestone}
-        detailHref={detailHref}
-        assessmentAddons={assessmentAddons}
-        assessmentPresets={assessmentPresets}
-        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
-      />
-    );
-  }
-
-  if (milestone.type === "interview") {
-    return (
-      <InterviewMilestoneCard
-        candidateId={candidateId}
-        milestone={milestone}
-        availableInterviewers={availableInterviewers}
-      />
-    );
-  }
-
-  if (milestone.type === "advanced_review" || milestone.type === "review_round") {
-    return (
-      <TestMilestoneCard
-        candidateId={candidateId}
-        milestone={milestone}
-        detailHref={detailHref}
-        assessmentAddons={assessmentAddons}
-        assessmentPresets={assessmentPresets}
-        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
-      />
-    );
-  }
-
-  return <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} detailHref={detailHref} />;
 }
 
 function DocumentationMilestoneCard({
@@ -839,7 +714,6 @@ function DocumentationMilestoneCard({
             className={fieldClassName}
           />
         </label>
-
         <MilestoneStatusSelect name="status" defaultValue={milestone.status} />
       </div>
 
@@ -897,11 +771,7 @@ function AdvancedReviewCard({
   assessmentAddons: AddonCatalogEntry[];
   assessmentPresets: AssessmentPresetEntry[];
   assessmentWorkspaceLabel?: string;
-  availableInterviewers: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-  }>;
+  availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
 }) {
   const router = useRouter();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
@@ -915,26 +785,18 @@ function AdvancedReviewCard({
   const handleAddMilestone = async (type: "advanced_review" | "interview") => {
     setCreateError("");
     const setter = type === "advanced_review" ? setIsCreatingTest : setIsCreatingInterview;
-
     try {
       setter(true);
-
       const response = await fetch(`/api/candidates/${candidateId}/milestones`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type })
       });
-
       if (response.ok) {
         const newMilestone = await response.json();
         setPendingMilestoneId(newMilestone.id);
-
-        // Open the appropriate modal instead of redirecting
-        if (type === "advanced_review") {
-          setTestModalOpen(true);
-        } else {
-          setInterviewModalOpen(true);
-        }
+        if (type === "advanced_review") setTestModalOpen(true);
+        else setInterviewModalOpen(true);
       } else {
         const data = await response.json();
         setCreateError(data.error || "Failed to create milestone");
@@ -965,12 +827,8 @@ function AdvancedReviewCard({
   const handleDeleteMilestone = async (milestoneId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm("Remove this item? This action is logged.")) return;
-
     try {
-      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, {
-        method: "DELETE"
-      });
-
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, { method: "DELETE" });
       if (response.ok) {
         router.refresh();
       } else {
@@ -988,64 +846,54 @@ function AdvancedReviewCard({
 
   return (
     <div className="space-y-5">
-      {createError && (
+      {createError ? (
         <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-3 text-sm text-[color:var(--app-danger)]">
           {createError}
         </div>
-      )}
+      ) : null}
 
       {groupedMilestones.length > 0 ? (
-        <div className="space-y-3">
-          <div className="px-1">
-            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">Current items</p>
-          </div>
+        <div className="space-y-2">
           {groupedMilestones.map((m) => {
             const result = derivedResult(m);
             const canCreateAssessment = m.mode === "platform" && !m.assessment;
             const handleEdit = () => {
               setEditingMilestoneId(m.id);
-              if (m.type === "advanced_review" || m.type === "review_round") {
-                setTestModalOpen(true);
-              } else if (m.type === "interview") {
-                setInterviewModalOpen(true);
-              }
+              if (m.type === "advanced_review" || m.type === "review_round") setTestModalOpen(true);
+              else if (m.type === "interview") setInterviewModalOpen(true);
             };
             return (
               <div
                 key={m.id}
-                className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]">
+                className="group rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]"
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={handleEdit}
-                    className="flex-1 text-left">
+                  <button type="button" onClick={handleEdit} className="flex-1 text-left">
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-wrap gap-2">
-                          <CandidateMilestoneTypePill type={m.type} />
-                          <CandidateMilestoneStatusPill status={m.status} />
-                        </div>
-                        {result && <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <CandidateMilestoneTypePill type={m.type} />
+                        <CandidateMilestoneStatusPill status={m.status} />
+                        {result ? (
+                          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
+                        ) : null}
                       </div>
                       <div>
-                        <p className="font-medium text-sm text-[color:var(--app-heading)]">{m.title}</p>
-                        <p className="text-xs text-[color:var(--app-muted)] mt-1">{stepSummary(m, false)}</p>
+                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{m.title}</p>
+                        <p className="mt-0.5 text-xs text-[color:var(--app-muted)]">{stepSummary(m, false)}</p>
                       </div>
                       {canCreateAssessment ? (
-                        <div className="pt-1">
-                          <span className="inline-flex rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1.5 text-xs text-[color:var(--app-heading)]">
-                            Create assessment
-                          </span>
-                        </div>
+                        <span className="inline-flex rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1 text-xs text-[color:var(--app-heading)]">
+                          Create assessment
+                        </span>
                       ) : null}
                     </div>
                   </button>
                   <button
                     type="button"
                     onClick={(e) => handleDeleteMilestone(m.id, e)}
-                    className="rounded p-1.5 opacity-0 group-hover:opacity-100 transition hover:bg-[color:var(--app-danger)]/10"
-                    title="Delete milestone"
-                    aria-label="Delete milestone">
+                    className="rounded p-1.5 opacity-0 transition hover:bg-[color:var(--app-danger)]/10 group-hover:opacity-100"
+                    aria-label="Delete milestone"
+                  >
                     <X className="h-4 w-4 text-[color:var(--app-danger)]" />
                   </button>
                 </div>
@@ -1054,43 +902,24 @@ function AdvancedReviewCard({
           })}
         </div>
       ) : (
-        <div className="rounded-[16px] border border-dashed border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6 text-center">
-          <p className="text-sm text-[color:var(--app-muted)]">No additional assessments or interview notes added yet.</p>
+        <div className="rounded-[16px] border border-dashed border-[color:var(--app-border)] p-6 text-center">
+          <p className="text-sm text-[color:var(--app-muted)]">No additional assessments or interview notes yet.</p>
         </div>
       )}
 
       <div className="space-y-3 border-t border-[color:var(--app-border)] pt-5">
-        <div className="px-1">
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">Add more</p>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button
-            type="button"
-            onClick={() => handleAddMilestone("advanced_review")}
-            disabled={isCreatingTest}
-            variant="secondary"
-            className="flex-1"
-          >
-            <span>
-              {isCreatingTest ? "Creating assessment..." : "Add assessment"}
-            </span>
+        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Add more</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button type="button" onClick={() => handleAddMilestone("advanced_review")} disabled={isCreatingTest} variant="secondary" className="flex-1">
+            {isCreatingTest ? "Creating…" : "Add assessment"}
           </Button>
-          <Button
-            type="button"
-            onClick={() => handleAddMilestone("interview")}
-            disabled={isCreatingInterview}
-            variant="secondary"
-            className="flex-1"
-          >
-            <span>
-              {isCreatingInterview ? "Creating interview note..." : "Add interview note"}
-            </span>
+          <Button type="button" onClick={() => handleAddMilestone("interview")} disabled={isCreatingInterview} variant="secondary" className="flex-1">
+            {isCreatingInterview ? "Creating…" : "Add interview note"}
           </Button>
         </div>
       </div>
 
-      {/* Modals for assessment and interview-note submission/editing */}
-      {(pendingMilestoneId || editingMilestoneId) && (
+      {(pendingMilestoneId || editingMilestoneId) ? (
         <>
           <TestSubmissionModal
             isOpen={testModalOpen}
@@ -1124,10 +953,51 @@ function AdvancedReviewCard({
             onSuccess={handleModalSuccess}
           />
         </>
-      )}
+      ) : null}
     </div>
   );
 }
+
+function MilestonePanelContent({
+  candidateId,
+  node,
+  hasResume,
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel,
+  availableInterviewers
+}: {
+  candidateId: string;
+  node: TimelineNode;
+  hasResume: boolean;
+  detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
+  availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
+}) {
+  if (isAdvancedReviewGroup(node)) {
+    return (
+      <AdvancedReviewCard
+        candidateId={candidateId}
+        groupedMilestones={node.groupedMilestones}
+        assessmentAddons={assessmentAddons}
+        assessmentPresets={assessmentPresets}
+        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+        availableInterviewers={availableInterviewers}
+      />
+    );
+  }
+
+  if (node.type === "registration") return <RegistrationMilestoneCard milestone={node} hasResume={hasResume} detailHref={detailHref} />;
+  if (node.type === "screener") return <ScreenerMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} assessmentAddons={assessmentAddons} assessmentPresets={assessmentPresets} assessmentWorkspaceLabel={assessmentWorkspaceLabel} />;
+  if (node.type === "interview") return <InterviewMilestoneCard candidateId={candidateId} milestone={node} availableInterviewers={availableInterviewers} />;
+  if (node.type === "advanced_review" || node.type === "review_round") return <TestMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} assessmentAddons={assessmentAddons} assessmentPresets={assessmentPresets} assessmentWorkspaceLabel={assessmentWorkspaceLabel} />;
+  return <DocumentationMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} />;
+}
+
+// ─── Main export ─────────────────────────────────────────────────────────────
 
 export function CandidateMilestoneTimeline({
   candidateId,
@@ -1146,11 +1016,7 @@ export function CandidateMilestoneTimeline({
   assessmentAddons: AddonCatalogEntry[];
   assessmentPresets: AssessmentPresetEntry[];
   assessmentWorkspaceLabel?: string;
-  availableInterviewers: Array<{
-    id: string;
-    name: string | null;
-    email: string;
-  }>;
+  availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
 }) {
   const reduceMotion = useReducedMotion();
   const timelineNodes = groupMilestonesForTimeline(milestones);
@@ -1161,170 +1027,172 @@ export function CandidateMilestoneTimeline({
 
   useEffect(() => {
     const exists =
-      milestones.some((m) => m.id === activeMilestoneId) || activeMilestoneId === "advanced_review_group";
-    if (!exists) {
-      setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
-    }
+      milestones.some((m) => m.id === activeMilestoneId) ||
+      activeMilestoneId === "advanced_review_group";
+    if (!exists) setActiveMilestoneId(defaultActiveMilestoneId(milestones, hasResume));
   }, [milestones, hasResume, activeMilestoneId]);
 
-  const activeNode = timelineNodes.find((node) => {
-    if (isAdvancedReviewGroup(node)) {
-      return activeMilestoneId === "advanced_review_group";
-    }
-    return node.id === activeMilestoneId;
-  }) ?? timelineNodes[0] ?? null;
+  const activeNode =
+    timelineNodes.find((node) =>
+      isAdvancedReviewGroup(node)
+        ? activeMilestoneId === "advanced_review_group"
+        : node.id === activeMilestoneId
+    ) ??
+    timelineNodes[0] ??
+    null;
 
-  if (!activeNode) {
-    return null;
-  }
+  if (!activeNode) return null;
+
+  // Compute active node display info
+  const activeIsAdvanced = isAdvancedReviewGroup(activeNode);
+  const activeStatus = activeIsAdvanced
+    ? activeNode.groupedMilestones.every((m) => isMilestoneComplete(m.status))
+      ? ("done" as const)
+      : activeNode.groupedMilestones.some((m) => m.status === "in_progress" || m.status === "done")
+      ? ("in_progress" as const)
+      : ("not_started" as const)
+    : activeNode.status;
+
+  const activeTitle = activeIsAdvanced
+    ? "Advanced Review"
+    : displayMilestoneTitle(activeNode);
+
+  const activeSummary = activeIsAdvanced
+    ? `${activeNode.groupedMilestones.length} item${activeNode.groupedMilestones.length === 1 ? "" : "s"}`
+    : stepSummary(activeNode, hasResume);
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-3 pb-2">
-        <div className="space-y-3">
-          {timelineNodes.map((node, index) => {
-              const isActive =
-                isAdvancedReviewGroup(node)
-                  ? activeMilestoneId === "advanced_review_group"
-                  : node.id === activeMilestoneId;
+    <div className="space-y-6">
+      {/* ── Horizontal stage rail ── */}
+      <div className="flex items-start overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {timelineNodes.map((node, index) => {
+          const isLast = index === timelineNodes.length - 1;
+          const isActive = isAdvancedReviewGroup(node)
+            ? activeMilestoneId === "advanced_review_group"
+            : node.id === activeMilestoneId;
 
-              let isComplete = false;
-              let result: CandidateMilestoneResult | undefined = undefined;
-              let status: CandidateMilestoneRecord["status"] = "not_started";
-              let title: string = "";
-              let summary: string = "";
+          const isComplete = isAdvancedReviewGroup(node)
+            ? node.groupedMilestones.every((m) => isMilestoneComplete(m.status))
+            : isMilestoneComplete(node.status);
 
-              if (isAdvancedReviewGroup(node)) {
-                title = "Advanced Review";
-                const allDone = node.groupedMilestones.every((m) => isMilestoneComplete(m.status));
-                const anyDone = node.groupedMilestones.some((m) => isMilestoneComplete(m.status));
-                const anyInProgress = node.groupedMilestones.some((m) => m.status === "in_progress");
-                isComplete = allDone;
-                status = allDone ? "done" : anyInProgress ? "in_progress" : anyDone ? "in_progress" : "not_started";
-                summary = `${node.groupedMilestones.length} item${node.groupedMilestones.length === 1 ? "" : "s"}`;
-              } else {
-                result = derivedResult(node);
-                isComplete = isMilestoneComplete(node.status);
-                status = node.status;
-                title = displayMilestoneTitle(node);
-                summary = stepSummary(node, hasResume);
-              }
+          const isFailed = !isAdvancedReviewGroup(node) && node.status === "failed";
+          const title = railNodeTitle(node);
 
-              const nodeState = isComplete ? "complete" : isActive ? "active" : "pending";
+          const dotClass = cn(
+            "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer",
+            isComplete &&
+              "bg-[color:var(--app-brand)] text-white",
+            isActive && !isComplete &&
+              "bg-[color:var(--app-brand)] text-white ring-[3px] ring-[color-mix(in_srgb,var(--app-brand)_28%,transparent)]",
+            isFailed &&
+              "bg-[color:var(--app-danger)] text-white",
+            !isComplete && !isActive && !isFailed &&
+              "border-2 border-[color:var(--app-border)] bg-[color:var(--app-surface)] text-[color:var(--app-muted)]"
+          );
 
-              return (
+          return (
+            <Fragment key={node.id}>
+              {/* Stage node */}
+              <div className="flex min-w-[76px] flex-col items-center">
                 <button
-                  key={node.id}
                   type="button"
                   onClick={() => setActiveMilestoneId(node.id)}
-                  className={`w-full rounded-[16px] border transition text-left p-4 ${isActive ? "border-[color:var(--app-brand)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_8%,var(--app-surface)),color-mix(in_srgb,var(--app-brand)_4%,var(--app-surface-soft)))]" : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] hover:bg-[color:var(--app-surface)]"}`}
+                  className={dotClass}
+                  aria-label={`Go to ${title}`}
                 >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border text-sm font-semibold transition duration-300 ${timelineNodeClassNames[nodeState]}`}
-                    >
-                      <span className="relative z-[1]">
-                        {isComplete ? (
-                          <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true">
-                            <path
-                              d="M5 10.5L8.2 13.7L15 6.8"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        ) : (
-                          index + 1
-                        )}
-                      </span>
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[color:var(--app-heading)]">{title}</p>
-                      <p className="text-xs text-[color:var(--app-muted)] mt-1">{summary}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <CandidateMilestoneStatusPill status={status} />
-                        {result && !isAdvancedReviewGroup(node) ? (
-                          <StatusPill label={candidateMilestoneResultLabels[result]} tone={resultTone(result)} />
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
+                  {isComplete ? (
+                    <CheckIcon />
+                  ) : isFailed ? (
+                    <span>✕</span>
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
                 </button>
-              );
-            })}
-        </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveMilestoneId(node.id)}
+                  className="mt-2.5 px-0.5 text-center"
+                >
+                  <p
+                    className={cn(
+                      "text-[11px] font-medium leading-tight transition-colors",
+                      isActive
+                        ? "text-[color:var(--app-heading)]"
+                        : "text-[color:var(--app-muted)]"
+                    )}
+                  >
+                    {title}
+                  </p>
+                </button>
+              </div>
+
+              {/* Connector line */}
+              {!isLast && (
+                <div
+                  className={cn(
+                    "mt-4 h-px flex-1 transition-colors duration-300",
+                    isComplete
+                      ? "bg-[color:var(--app-brand)]"
+                      : "bg-[color:var(--app-border)]"
+                  )}
+                />
+              )}
+            </Fragment>
+          );
+        })}
       </div>
 
-      <div className="rounded-[26px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--app-surface-soft)_92%,white),color-mix(in_srgb,var(--app-surface)_94%,black))] shadow-[var(--app-shadow-soft)]">
-        <div className="p-6 lg:p-7">
-          <div className="space-y-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="space-y-3 flex-1">
-                <div className="flex flex-wrap gap-2">
-                  {!isAdvancedReviewGroup(activeNode) && (
-                    <>
-                      <CandidateMilestoneTypePill type={activeNode.type} />
-                      {derivedResult(activeNode) ? (
-                        <StatusPill
-                          label={candidateMilestoneResultLabels[derivedResult(activeNode) ?? "review"]}
-                          tone={resultTone(derivedResult(activeNode))}
-                        />
-                      ) : null}
-                      {activeNode.assessment?.status === "in_progress" ? (
-                        <CandidateAssessmentPill status={activeNode.assessment.status} />
-                      ) : null}
-                    </>
-                  )}
-                  <CandidateMilestoneStatusPill
-                    status={isAdvancedReviewGroup(activeNode)
-                      ? (activeNode.groupedMilestones.every(m => m.status === "done" || m.status === "skipped")
-                          ? "done"
-                          : activeNode.groupedMilestones.some(m => m.status === "in_progress" || m.status === "done")
-                          ? "in_progress"
-                          : "not_started")
-                      : activeNode.status}
-                  />
-                </div>
-
-                <div>
-                  <h3 className="text-2xl font-semibold text-[color:var(--app-heading)]">
-                    {isAdvancedReviewGroup(activeNode) ? "Advanced Review" : displayMilestoneTitle(activeNode)}
-                  </h3>
-                  <p className="max-w-2xl text-sm text-[color:var(--app-text)] mt-2">
-                    {isAdvancedReviewGroup(activeNode)
-                      ? `Manage additional assessments and interview notes (${activeNode.groupedMilestones.length} item${activeNode.groupedMilestones.length === 1 ? "" : "s"})`
-                      : stepSummary(activeNode, hasResume)}
-                  </p>
-                </div>
+      {/* ── Active stage detail — flat, no outer box ── */}
+      <div className="border-t border-[color:var(--app-border)] pt-5">
+        <div className="space-y-4">
+          {/* Stage header */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                {!activeIsAdvanced ? (
+                  <>
+                    <CandidateMilestoneTypePill type={activeNode.type} />
+                    {derivedResult(activeNode) ? (
+                      <StatusPill
+                        label={candidateMilestoneResultLabels[derivedResult(activeNode)!]}
+                        tone={resultTone(derivedResult(activeNode))}
+                      />
+                    ) : null}
+                    {!activeIsAdvanced && activeNode.assessment?.status === "in_progress" ? (
+                      <CandidateAssessmentPill status={activeNode.assessment.status} />
+                    ) : null}
+                  </>
+                ) : null}
+                <CandidateMilestoneStatusPill status={activeStatus} />
               </div>
+              <h3 className="text-lg font-semibold text-[color:var(--app-heading)]">{activeTitle}</h3>
+              <p className="text-sm text-[color:var(--app-muted)]">{activeSummary}</p>
             </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeNode.id}
-                initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
-                animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
-                transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-                className="border-t border-[color:var(--app-border)] pt-5"
-              >
-                <MilestonePanelContent
-                  candidateId={candidateId}
-                  node={activeNode}
-                  hasResume={hasResume}
-                  detailHref={detailHref}
-                  assessmentAddons={assessmentAddons}
-                  assessmentPresets={assessmentPresets}
-                  assessmentWorkspaceLabel={assessmentWorkspaceLabel}
-                  availableInterviewers={availableInterviewers}
-                />
-              </motion.div>
-            </AnimatePresence>
           </div>
+
+          {/* Stage content */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeNode.id}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+              animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
+              transition={{ duration: reduceMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <MilestonePanelContent
+                candidateId={candidateId}
+                node={activeNode}
+                hasResume={hasResume}
+                detailHref={detailHref}
+                assessmentAddons={assessmentAddons}
+                assessmentPresets={assessmentPresets}
+                assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+                availableInterviewers={availableInterviewers}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </div>
   );
 }
-

@@ -62,6 +62,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       },
     });
 
+    // Sync finalized milestone to done
+    await prisma.candidateMilestone.updateMany({
+      where: { candidateId: id, type: 'finalized', status: { not: 'done' } },
+      data: { status: 'done' }
+    });
+
     // Log activity
     await prisma.candidateActivityEvent.create({
       data: {
