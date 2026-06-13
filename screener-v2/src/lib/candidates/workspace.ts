@@ -24,6 +24,7 @@ export interface CandidateActivityItem {
   id: string;
   at: string;
   kind: "candidate" | "resume" | "note" | "assessment" | "result" | "milestone" | "application" | "activity";
+  rawEvent?: string;
   title: string;
   detail: string;
   actorName?: string | null;
@@ -288,6 +289,7 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
       id: event.id,
       at: event.createdAt,
       kind: "activity",
+      rawEvent: event.event,
       title: eventTitle(event.event),
       detail: event.detail || "Activity logged",
       actorName: event.actorName || null,
