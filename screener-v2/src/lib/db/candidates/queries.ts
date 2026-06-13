@@ -14,6 +14,7 @@ import {
   mapNote,
   mapAssessment,
   mapMilestone,
+  mapInterviewPanel,
   sortCandidateAssessmentsByLatestActivity,
   currentFocusFromMilestones,
   loadResultsByAttemptId,
@@ -557,6 +558,22 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
           }
         }
       },
+      interviewPanels: {
+        orderBy: [{ scheduledAt: "asc" }, { createdAt: "asc" }],
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true
+                }
+              }
+            }
+          }
+        }
+      },
       role: {
         select: {
           label: true,
@@ -597,6 +614,11 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
     .map((note) => note.createdById)
     .filter((value): value is string => Boolean(value));
   const authorsById = await loadUsersById(authorIds);
+  const interviewPanelsByMilestoneId = new Map(
+    row.interviewPanels
+      .filter((panel) => Boolean(panel.milestoneId))
+      .map((panel) => [panel.milestoneId as string, mapInterviewPanel(panel)])
+  );
   const milestones = row.milestones.map((milestone) =>
     mapMilestone(
       milestone,
@@ -607,7 +629,8 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
               ? resultsByAttemptId.get(milestone.candidateAssessment.attemptId) ?? null
               : null
           )
-        : null
+        : null,
+      interviewPanelsByMilestoneId.get(milestone.id) ?? null
     )
   );
   const assessments = sortCandidateAssessmentsByLatestActivity(

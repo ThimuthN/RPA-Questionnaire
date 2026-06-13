@@ -16,6 +16,7 @@ export {
   updateCandidateMilestone,
   quickUpdateCandidateMilestoneStatus,
   initOrUpdateMilestoneCheck,
+  upsertInterviewPanelForMilestone,
   linkCandidateAssessmentToMilestone,
   attachExistingAssessmentToMilestone
 } from "./milestones";

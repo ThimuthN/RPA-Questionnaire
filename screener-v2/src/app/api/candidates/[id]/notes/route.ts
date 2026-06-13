@@ -10,6 +10,10 @@ const noteSchema = z.object({
   body: z.string().min(2)
 });
 
+function wantsJson(request: Request) {
+  return request.headers.get("accept")?.includes("application/json") ?? false;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -36,12 +40,21 @@ export async function POST(
       createdById: session.userId ?? undefined
     });
 
+    if (wantsJson(request)) {
+      return NextResponse.json({ ok: true });
+    }
+
     const url = new URL(`/candidates/${id}`, request.url);
     url.searchParams.set("noteAdded", "1");
     return NextResponse.redirect(url, 303);
   } catch (error) {
+    const message = error instanceof z.ZodError ? "Invalid note." : "Could not add note.";
+    if (wantsJson(request)) {
+      return NextResponse.json({ ok: false, message }, { status: 400 });
+    }
+
     const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("error", error instanceof z.ZodError ? "Invalid note." : "Could not add note.");
+    url.searchParams.set("error", message);
     return NextResponse.redirect(url, 303);
   }
 }

@@ -54,6 +54,10 @@ export async function createCandidate(input: {
   screeningStatus?: CandidateScreeningStatus;
   candidateFolderUrl?: string;
   notesSummary?: string;
+  linkedInUrl?: string;
+  location?: string;
+  currentTitle?: string;
+  salaryExpectation?: string;
   teamAssignments?: CandidateTeamAssignmentInput[];
   teamUserIds?: Array<Pick<CandidateTeamAssignmentInput, "userId" | "role">>;
   createMilestones?: boolean;
@@ -99,7 +103,11 @@ export async function createCandidate(input: {
         nextAction: input.nextAction ?? "none",
         screeningStatus: input.screeningStatus ?? null,
         candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
-        notesSummary: input.notesSummary?.trim() || null
+        notesSummary: input.notesSummary?.trim() || null,
+        linkedInUrl: input.linkedInUrl?.trim() || null,
+        location: input.location?.trim() || null,
+        currentTitle: input.currentTitle?.trim() || null,
+        salaryExpectation: input.salaryExpectation?.trim() || null
       },
       include: {
         role: {
@@ -342,6 +350,10 @@ export async function updateCandidate(
     screeningStatus?: CandidateScreeningStatus;
     candidateFolderUrl?: string;
     notesSummary?: string;
+    linkedInUrl?: string;
+    location?: string;
+    currentTitle?: string;
+    salaryExpectation?: string;
     actorId?: string;
     actorName?: string;
   }
@@ -396,7 +408,11 @@ export async function updateCandidate(
         nextAction: input.nextAction,
         screeningStatus: input.screeningStatus ?? null,
         candidateFolderUrl: input.candidateFolderUrl?.trim() || null,
-        notesSummary: input.notesSummary?.trim() || null
+        notesSummary: input.notesSummary?.trim() || null,
+        linkedInUrl: input.linkedInUrl?.trim() || null,
+        location: input.location?.trim() || null,
+        currentTitle: input.currentTitle?.trim() || null,
+        salaryExpectation: input.salaryExpectation?.trim() || null
       },
       include: {
         role: {

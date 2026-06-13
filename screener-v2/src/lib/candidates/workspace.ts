@@ -186,6 +186,8 @@ function eventTitle(eventName: string): string {
     "milestone_status_changed": "Status changed",
     "candidate_profile_updated": "Profile updated",
     "assessment_linked": "Assessment linked",
+    "interview_panel_scheduled": "Interview scheduled",
+    "interview_panel_updated": "Interview updated",
     "resume_uploaded": "Resume uploaded",
     "candidate_updated": "Candidate updated",
     "note_updated": "Note edited",
@@ -262,14 +264,25 @@ export function buildCandidateActivityFeed(candidate: CandidateDetail): Candidat
   }
 
   for (const milestone of candidate.milestones) {
-    if (milestone.status === "not_started" && !milestone.notes && !milestone.assessment) continue;
+    if (
+      milestone.status === "not_started" &&
+      !milestone.notes &&
+      !milestone.assessment &&
+      !milestone.interviewPanel
+    ) continue;
     const latestCheck = milestone.checks?.[milestone.checks.length - 1];
     items.push({
       id: `${milestone.id}-milestone`,
       at: milestone.updatedAt,
       kind: "milestone",
       title: milestone.title,
-      detail: milestone.notes || milestone.assessment?.status || milestone.status,
+      detail:
+        milestone.notes ||
+        (milestone.interviewPanel?.scheduledAt
+          ? `Scheduled ${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()}`
+          : undefined) ||
+        milestone.assessment?.status ||
+        milestone.status,
       actorName: latestCheck?.actorName || null
     });
   }

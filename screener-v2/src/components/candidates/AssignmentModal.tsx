@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 
@@ -29,6 +29,21 @@ type Props = {
   onSubmit: (assignments: AssignmentInput[]) => Promise<void>;
 };
 
+function buildInitialAssignments(
+  currentAssignments: Props["currentAssignments"],
+  availableRoles: AssignmentRole[]
+) {
+  if (currentAssignments && currentAssignments.length > 0) {
+    return currentAssignments.map((assignment) => ({
+      role: assignment.assignmentRole as AssignmentRole,
+      userId: assignment.user.id,
+      isPrimary: assignment.isPrimary
+    }));
+  }
+
+  return [{ role: availableRoles[0] ?? "recruiter", isPrimary: true }];
+}
+
 export function AssignmentModal({
   isOpen,
   title,
@@ -41,16 +56,19 @@ export function AssignmentModal({
   onSubmit
 }: Props) {
   const [assignments, setAssignments] = useState<AssignmentInput[]>(
-    currentAssignments && currentAssignments.length > 0
-      ? currentAssignments.map((a) => ({
-          role: a.assignmentRole as AssignmentRole,
-          userId: a.user.id,
-          isPrimary: a.isPrimary
-        }))
-      : [{ role: availableRoles[0] ?? "recruiter", isPrimary: true }]
+    buildInitialAssignments(currentAssignments, availableRoles)
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setAssignments(buildInitialAssignments(currentAssignments, availableRoles));
+    setError(null);
+  }, [availableRoles, currentAssignments, isOpen]);
 
   if (!isOpen) return null;
 

@@ -35,6 +35,10 @@ const candidateSchema = z.object({
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
   notesSummary: z.string().optional(),
+  linkedInUrl: z.string().optional(),
+  location: z.string().optional(),
+  currentTitle: z.string().optional(),
+  salaryExpectation: z.string().optional(),
   teamTemplateId: z.string().optional().or(z.literal("")),
   teamUserIds: z.array(teamAssignmentSchema).optional()
 });
@@ -203,6 +207,10 @@ export async function POST(request: Request) {
       hrOwnerId: body.hrOwnerId,
       candidateFolderUrl: body.candidateFolderUrl,
       notesSummary: body.notesSummary,
+      linkedInUrl: body.linkedInUrl,
+      location: body.location,
+      currentTitle: body.currentTitle,
+      salaryExpectation: body.salaryExpectation,
       stage: body.stage,
       nextAction: body.nextAction,
       screeningStatus: body.screeningStatus || undefined,

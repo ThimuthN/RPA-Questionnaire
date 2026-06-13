@@ -1,6 +1,9 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 import { ApplicantReviewContent } from "@/components/candidates/ApplicantReviewContent";
+import { Button } from "@/components/primitives/Button";
+import { SceneShell } from "@/components/scene/SceneShell";
 import { requirePageSession } from "@/lib/auth/guards";
 import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { getDepartment } from "@/lib/db/departments";
@@ -23,7 +26,12 @@ export default async function DepartmentApplicantReviewPage({
     getApplicantReviewDetail(applicationId)
   ]);
 
-  if (!department || !detail || detail.candidate.departmentId !== departmentId) {
+  if (!department || !detail) {
+    notFound();
+  }
+  const belongsToDept =
+    detail.candidate.departmentId === departmentId || detail.job.departmentId === departmentId;
+  if (!belongsToDept) {
     notFound();
   }
 
@@ -49,13 +57,18 @@ export default async function DepartmentApplicantReviewPage({
   });
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--app-brand)]">{department.name}</p>
-        <h1 className="text-3xl text-[color:var(--app-heading)]">{detail.candidate.fullName}</h1>
-        <p className="text-sm text-[color:var(--app-muted)]">Application for {detail.job.title}</p>
-      </div>
-
+    <SceneShell
+      variant="results"
+      tone="page"
+      eyebrow={department.name}
+      title={detail.candidate.fullName}
+      subtitle={`Application for ${detail.job.title}`}
+      utility={
+        <Link href={`/departments/${departmentId}/applicants` as Route}>
+          <Button variant="secondary">Back to applicants</Button>
+        </Link>
+      }
+    >
       <ApplicantReviewContent
         detail={detail}
         pageState={pageState}
@@ -68,6 +81,6 @@ export default async function DepartmentApplicantReviewPage({
         canManageApplications={canManageApplications}
         canMoveToPipeline={canMoveToPipeline}
       />
-    </div>
+    </SceneShell>
   );
 }

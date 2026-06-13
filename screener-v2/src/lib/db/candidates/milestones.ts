@@ -292,6 +292,180 @@ export async function initOrUpdateMilestoneCheck(
   return updated;
 }
 
+export async function upsertInterviewPanelForMilestone(input: {
+  candidateId: string;
+  milestoneId: string;
+  scheduledAt?: string;
+  durationMin?: number;
+  format?: string;
+  interviewerIds?: string[];
+  actorId?: string;
+  actorName?: string;
+}) {
+  const milestone = await prisma.candidateMilestone.findFirst({
+    where: {
+      id: input.milestoneId,
+      candidateId: input.candidateId
+    },
+    select: {
+      id: true,
+      title: true,
+      sortOrder: true,
+      type: true
+    }
+  });
+
+  if (!milestone) {
+    throw new Error("Milestone not found.");
+  }
+
+  if (milestone.type !== "interview") {
+    throw new Error("Interview panels can only be attached to interview milestones.");
+  }
+
+  const interviewerIds = Array.from(
+    new Set((input.interviewerIds ?? []).map((value) => value.trim()).filter(Boolean))
+  );
+  if (interviewerIds.length > 0) {
+    const users = await prisma.user.findMany({
+      where: {
+        id: { in: interviewerIds },
+        isActive: true
+      },
+      select: { id: true }
+    });
+
+    if (users.length !== interviewerIds.length) {
+      throw new Error("One or more selected interviewers could not be found.");
+    }
+  }
+
+  const scheduledAt =
+    typeof input.scheduledAt === "string" && input.scheduledAt.trim().length > 0
+      ? new Date(input.scheduledAt)
+      : null;
+  if (scheduledAt && Number.isNaN(scheduledAt.getTime())) {
+    throw new Error("Interview date is invalid.");
+  }
+
+  const durationMin =
+    typeof input.durationMin === "number" && Number.isFinite(input.durationMin)
+      ? Math.max(15, Math.round(input.durationMin))
+      : 60;
+  const format = input.format?.trim() || "video";
+  const status = scheduledAt ? "scheduled" : interviewerIds.length > 0 ? "draft" : "pending";
+
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.interviewPanel.findUnique({
+      where: { milestoneId: input.milestoneId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }
+      }
+    });
+
+    const roundNumber =
+      existing?.roundNumber ??
+      (await tx.interviewPanel.count({
+        where: { candidateId: input.candidateId }
+      })) + 1;
+
+    const panel = existing
+      ? await tx.interviewPanel.update({
+          where: { id: existing.id },
+          data: {
+            roundName: milestone.title,
+            scheduledAt,
+            durationMin,
+            format,
+            status
+          },
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true }
+                }
+              }
+            }
+          }
+        })
+      : await tx.interviewPanel.create({
+          data: {
+            id: cuidLike(),
+            candidateId: input.candidateId,
+            milestoneId: input.milestoneId,
+            roundNumber,
+            roundName: milestone.title,
+            scheduledAt,
+            durationMin,
+            format,
+            status,
+            createdById: input.actorId ?? null
+          },
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true }
+                }
+              }
+            }
+          }
+        });
+
+    await tx.interviewPanelMember.deleteMany({
+      where: { panelId: panel.id }
+    });
+
+    if (interviewerIds.length > 0) {
+      await tx.interviewPanelMember.createMany({
+        data: interviewerIds.map((userId) => ({
+          id: cuidLike(),
+          panelId: panel.id,
+          userId,
+          role: "interviewer"
+        }))
+      });
+    }
+
+    await tx.candidate.update({
+      where: { id: input.candidateId },
+      data: {
+        updatedAt: new Date()
+      }
+    });
+
+    await logActivityEvent(tx, {
+      candidateId: input.candidateId,
+      event: scheduledAt ? "interview_panel_scheduled" : "interview_panel_updated",
+      entityType: "interview_panel",
+      entityId: panel.id,
+      detail: `${milestone.title}${scheduledAt ? ` scheduled for ${scheduledAt.toLocaleString()}` : " updated"}`,
+      actorId: input.actorId,
+      actorName: input.actorName
+    });
+
+    return tx.interviewPanel.findUniqueOrThrow({
+      where: { id: panel.id },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true }
+            }
+          }
+        }
+      }
+    });
+  });
+}
+
 export async function linkCandidateAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;

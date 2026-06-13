@@ -26,8 +26,24 @@ const updateCandidateSchema = z.object({
   nextAction: z.enum(candidateNextActionValues).optional(),
   screeningStatus: z.enum(candidateScreeningStatusValues).optional().or(z.literal("")),
   candidateFolderUrl: z.string().optional(),
-  notesSummary: z.string().optional()
+  notesSummary: z.string().optional(),
+  linkedInUrl: z.string().optional(),
+  location: z.string().optional(),
+  currentTitle: z.string().optional(),
+  salaryExpectation: z.string().optional(),
+  returnTo: z.string().optional()
 });
+
+function wantsJson(request: Request) {
+  return request.headers.get("accept")?.includes("application/json") ?? false;
+}
+
+function redirectToCandidatePath(request: Request, candidateId: string, returnTo?: string, key = "updated", value = "1") {
+  const safePath = returnTo?.trim().startsWith("/") ? returnTo.trim() : `/people/candidates/${candidateId}`;
+  const url = new URL(safePath, request.url);
+  url.searchParams.set(key, value);
+  return NextResponse.redirect(url, 303);
+}
 
 export async function POST(
   request: Request,
@@ -38,9 +54,11 @@ export async function POST(
     return auth.response;
   }
 
+  let returnTo: string | undefined;
   try {
     const { id } = await params;
     const body = updateCandidateSchema.parse(Object.fromEntries((await request.formData()).entries()));
+    returnTo = body.returnTo;
 
     // Fetch current candidate to get existing stage/nextAction if not provided
     const current = await prisma.candidate.findUnique({
@@ -112,6 +130,10 @@ export async function POST(
       hrOwnerId: body.hrOwnerId,
       candidateFolderUrl: body.candidateFolderUrl,
       notesSummary: body.notesSummary,
+      linkedInUrl: body.linkedInUrl,
+      location: body.location,
+      currentTitle: body.currentTitle,
+      salaryExpectation: body.salaryExpectation,
       stage: body.stage || (current.stage as CandidateStage),
       nextAction: body.nextAction || (current.nextAction as CandidateNextAction),
       screeningStatus: body.screeningStatus || undefined,
@@ -119,13 +141,23 @@ export async function POST(
       actorName: auth.session.name || auth.session.email || "System"
     });
 
-    const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("updated", "1");
-    return NextResponse.redirect(url, 303);
+    if (wantsJson(request)) {
+      return NextResponse.json({ ok: true });
+    }
+
+    return redirectToCandidatePath(request, id, returnTo, "updated", "1");
   } catch (error) {
     const { id } = await params;
-    const url = new URL(`/candidates/${id}`, request.url);
-    url.searchParams.set("error", error instanceof Error ? error.message : "Could not update candidate.");
-    return NextResponse.redirect(url, 303);
+    const message = error instanceof Error ? error.message : "Could not update candidate.";
+    if (wantsJson(request)) {
+      return NextResponse.json({ ok: false, message }, { status: 400 });
+    }
+    return redirectToCandidatePath(
+      request,
+      id,
+      returnTo,
+      "error",
+      message
+    );
   }
 }

@@ -24,7 +24,13 @@ export async function requireCandidatePermission(
     select: {
       id: true,
       departmentId: true,
-      orgStage: true
+      orgStage: true,
+      departmentCandidacies: {
+        where: { status: "active" },
+        select: { departmentId: true },
+        orderBy: { updatedAt: "desc" },
+        take: 1
+      }
     }
   });
 
@@ -35,9 +41,17 @@ export async function requireCandidatePermission(
     };
   }
 
-  const result = await requirePermissionForDepartment(session, action, candidate.departmentId);
+  const scopedDepartmentId = candidate.departmentId ?? candidate.departmentCandidacies[0]?.departmentId ?? null;
+  const result = await requirePermissionForDepartment(session, action, scopedDepartmentId);
   if (!result.ok) {
     return { ok: false, response: result.response };
   }
-  return { ok: true, candidate };
+  return {
+    ok: true,
+    candidate: {
+      id: candidate.id,
+      departmentId: scopedDepartmentId,
+      orgStage: candidate.orgStage
+    }
+  };
 }

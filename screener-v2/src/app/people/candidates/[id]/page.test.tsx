@@ -26,6 +26,14 @@ vi.mock("@/components/candidates/CandidateNotesModal", () => ({
   CandidateNotesModal: () => <div data-testid="notes-card" />
 }));
 
+vi.mock("@/components/candidates/CandidateSidebar", () => ({
+  CandidateSidebar: () => <div data-testid="candidate-sidebar" />
+}));
+
+vi.mock("@/components/candidates/CandidateOfferPanel", () => ({
+  CandidateOfferPanel: () => <div data-testid="offer-panel" />
+}));
+
 vi.mock("@/components/candidates/DefaultJourneySkeleton", () => ({
   DefaultJourneySkeleton: ({ hasHiringJourney }: { hasHiringJourney: boolean }) => (
     <div data-testid="journey-skeleton">{hasHiringJourney ? "Linked journey" : "No linked application journey"}</div>
@@ -69,8 +77,9 @@ vi.mock("@/components/primitives/StatusPill", () => ({
 }));
 
 vi.mock("@/components/scene/SceneShell", () => ({
-  SceneShell: ({ title, utility, children }: { title: React.ReactNode; utility?: React.ReactNode; children: React.ReactNode }) => (
+  SceneShell: ({ eyebrow, title, utility, children }: { eyebrow?: React.ReactNode; title: React.ReactNode; utility?: React.ReactNode; children: React.ReactNode }) => (
     <div>
+      {eyebrow ? <div data-testid="scene-eyebrow">{eyebrow}</div> : null}
       <div data-testid="scene-title">{title}</div>
       <div data-testid="scene-utility">{utility}</div>
       {children}
@@ -80,6 +89,11 @@ vi.mock("@/components/scene/SceneShell", () => ({
 
 vi.mock("@/components/scene/StagePanel", () => ({
   StagePanel: ({ children }: { children: React.ReactNode }) => <section>{children}</section>
+}));
+
+vi.mock("@/lib/addons/catalog", () => ({
+  listAddonCatalog: vi.fn(),
+  listAssessmentPresets: vi.fn()
 }));
 
 vi.mock("@/lib/candidates/lifecycle", () => ({
@@ -96,6 +110,10 @@ vi.mock("@/lib/auth/guards", () => ({
 
 vi.mock("@/lib/auth/candidate-access", () => ({
   requireCandidatePermission: vi.fn()
+}));
+
+vi.mock("@/lib/auth/permission-evaluator", () => ({
+  canUsePermissionForDepartment: vi.fn()
 }));
 
 vi.mock("@/lib/db/candidates", () => ({
@@ -120,6 +138,9 @@ vi.mock("@/lib/db/prisma", () => ({
   prisma: {
     departmentCandidacy: {
       findFirst: vi.fn()
+    },
+    candidateOffer: {
+      findUnique: vi.fn()
     }
   }
 }));
@@ -129,8 +150,10 @@ vi.mock("@/lib/db/hiring-assignments", () => ({
 }));
 
 import CandidateDetailPage from "./page";
+import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
+import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { ensureCandidateMilestones, getCandidateDetail } from "@/lib/db/candidates";
 import { getDepartment } from "@/lib/db/departments";
 import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
@@ -154,7 +177,9 @@ const mockCandidate = {
   milestones: [],
   notes: [],
   departmentCandidacies: [],
-  activityEvents: []
+  activityEvents: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 describe("Candidate Detail Page", () => {
@@ -165,6 +190,7 @@ describe("Candidate Detail Page", () => {
       permissions: ["view_candidates", "manage_candidates"]
     } as never);
     vi.mocked(requireCandidatePermission).mockResolvedValue({ ok: true } as never);
+    vi.mocked(canUsePermissionForDepartment).mockResolvedValue(true as never);
     vi.mocked(getCandidateDetail).mockResolvedValue(mockCandidate as never);
     vi.mocked(ensureCandidateMilestones).mockResolvedValue(false as never);
     vi.mocked(getDepartment).mockResolvedValue({
@@ -178,11 +204,24 @@ describe("Candidate Detail Page", () => {
       templates: [],
       users: []
     } as never);
+    vi.mocked(listAddonCatalog).mockResolvedValue([] as never);
+    vi.mocked(listAssessmentPresets).mockResolvedValue([] as never);
     vi.mocked(getApplicationAssignments).mockResolvedValue([] as never);
     vi.mocked(prisma.departmentCandidacy.findFirst).mockResolvedValue(null as never);
+    vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue(null as never);
   });
 
-  it("renders workspace-aware breadcrumb and back link when workspaceId is present", async () => {
+  it("renders candidate sidebar", async () => {
+    const result = await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({})
+    });
+
+    const markup = renderToStaticMarkup(result);
+    expect(markup).toContain('data-testid="candidate-sidebar"');
+  });
+
+  it("renders workspace-aware eyebrow when workspaceId is present", async () => {
     const result = await CandidateDetailPage({
       params: Promise.resolve({ id: "cand-1" }),
       searchParams: Promise.resolve({
@@ -192,45 +231,28 @@ describe("Candidate Detail Page", () => {
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("Workspaces");
     expect(markup).toContain("RPA SL");
-    expect(markup).toContain('href="/departments/dept-1"');
-    expect(markup).toContain('href="/departments/dept-1/candidates"');
-    expect(markup).toContain('href="/departments/dept-1/candidates?stage=pipeline"');
-    expect(markup).toContain("Back to RPA SL candidates");
-  });
-
-  it("derives workspace context from candidate data when no workspaceId is provided", async () => {
-    const result = await CandidateDetailPage({
-      params: Promise.resolve({ id: "cand-1" }),
-      searchParams: Promise.resolve({})
-    });
-
-    const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("RPA SL");
-    expect(markup).toContain("Back to RPA SL candidates");
   });
 
   it("renders default journey skeleton when candidate has no milestones", async () => {
     const result = await CandidateDetailPage({
       params: Promise.resolve({ id: "cand-1" }),
-      searchParams: Promise.resolve({})
+      searchParams: Promise.resolve({ tab: "pipeline" })
     });
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="journey-skeleton"');
   });
 
-  it("shows linked-application and responsible-team warnings near status when missing", async () => {
+  it("shows hiring-journey and team warnings when both are missing", async () => {
     const result = await CandidateDetailPage({
       params: Promise.resolve({ id: "cand-1" }),
       searchParams: Promise.resolve({})
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("Setup required");
-    expect(markup).toContain("Linked application");
-    expect(markup).toContain("Responsible team");
+    expect(markup).toContain("Link this profile to a job application or department pipeline");
+    expect(markup).toContain("Assign a responsible team before advancing interviews");
   });
 
   it("shows responsible team card when an application exists", async () => {
@@ -288,5 +310,45 @@ describe("Candidate Detail Page", () => {
 
     expect(vi.mocked(ensureCandidateMilestones)).toHaveBeenCalledWith("cand-1");
     expect(vi.mocked(getCandidateDetail)).toHaveBeenCalledTimes(2);
+  });
+
+  it("renders pipeline tabs with workspace context preserved in links", async () => {
+    const result = await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({
+        workspaceId: "dept-1",
+        returnTo: "/departments/dept-1/candidates",
+        tab: "pipeline"
+      })
+    });
+
+    const markup = renderToStaticMarkup(result);
+    expect(markup).toContain("Pipeline");
+    expect(markup).toContain("Notes");
+    expect(markup).toContain("Activity");
+    expect(markup).toContain("Files");
+    expect(markup).toContain("Offer");
+    // workspaceId preserved in tab links
+    expect(markup).toContain("workspaceId=dept-1");
+  });
+
+  it("renders offer panel when offer tab is active", async () => {
+    const result = await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({ tab: "offer" })
+    });
+
+    const markup = renderToStaticMarkup(result);
+    expect(markup).toContain('data-testid="offer-panel"');
+  });
+
+  it("migrates legacy 'progress' tab to 'pipeline'", async () => {
+    const result = await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({ tab: "progress" })
+    });
+
+    const markup = renderToStaticMarkup(result);
+    expect(markup).toContain('data-testid="journey-skeleton"');
   });
 });

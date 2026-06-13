@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { resumeSourceOptions } from "@/lib/candidates/types";
@@ -15,10 +16,13 @@ interface UserOption {
 }
 
 export function EditCandidateInfoModal({
-  candidate
+  candidate,
+  returnTo
 }: {
   candidate: CandidateDetail;
+  returnTo?: string;
 }) {
+  const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -51,7 +55,7 @@ export function EditCandidateInfoModal({
 
   useEffect(() => {
     loadOwners(candidate.departmentId || "");
-  }, []);
+  }, [candidate.departmentId]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,18 +121,22 @@ export function EditCandidateInfoModal({
                         try {
                           const response = await fetch(`/api/candidates/${candidate.id}`, {
                             method: "POST",
+                            headers: {
+                              Accept: "application/json"
+                            },
                             body: formData
                           });
 
                           if (!response.ok) {
-                            const text = await response.text();
-                            throw new Error(text || `API error: ${response.status}`);
+                            const data = (await response.json().catch(() => null)) as { message?: string } | null;
+                            throw new Error(data?.message || `API error: ${response.status}`);
                           }
 
-                          // Success - reload page to get fresh data
-                          window.location.reload();
+                          setOpen(false);
+                          router.refresh();
                         } catch (err) {
                           setSubmitError(err instanceof Error ? err.message : "Failed to save");
+                        } finally {
                           setIsSubmitting(false);
                         }
                       }}
@@ -140,10 +148,8 @@ export function EditCandidateInfoModal({
                             {submitError}
                           </div>
                         )}
-                        <input type="hidden" name="phone" value={candidate.phone || ""} />
-                        <input type="hidden" name="batchId" value={candidate.batchId || ""} />
-                        <input type="hidden" name="notesSummary" value={candidate.notesSummary || ""} />
                         <input type="hidden" name="hrOwnerId" value={selectedOwnerId} />
+                        {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <label className="grid gap-1">
@@ -168,6 +174,70 @@ export function EditCandidateInfoModal({
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
+
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Phone</span>
+                            <input
+                              name="phone"
+                              defaultValue={candidate.phone || ""}
+                              disabled={isSubmitting}
+                              placeholder="Add a contact number"
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
+
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Current title</span>
+                            <input
+                              name="currentTitle"
+                              defaultValue={candidate.currentTitle || ""}
+                              disabled={isSubmitting}
+                              placeholder="e.g. Senior Software Engineer"
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
+
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Location</span>
+                            <input
+                              name="location"
+                              defaultValue={candidate.location || ""}
+                              disabled={isSubmitting}
+                              placeholder="e.g. New York, NY"
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
+
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Salary expectation</span>
+                            <input
+                              name="salaryExpectation"
+                              defaultValue={candidate.salaryExpectation || ""}
+                              disabled={isSubmitting}
+                              placeholder="e.g. $80,000–$100,000"
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
+
+                          <label className="grid gap-1 md:col-span-2">
+                            <span className="text-sm text-[color:var(--app-text)]">LinkedIn URL</span>
+                            <input
+                              name="linkedInUrl"
+                              type="url"
+                              defaultValue={candidate.linkedInUrl || ""}
+                              disabled={isSubmitting}
+                              placeholder="https://linkedin.com/in/..."
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
+
+                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                            <span className="text-sm text-[color:var(--app-text)]">Registered</span>
+                            <p className="text-sm text-[color:var(--app-heading)]">
+                              {new Date(candidate.createdAt).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-[color:var(--app-muted)]">Original intake date for this candidate record.</p>
+                          </div>
 
                           <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
                             <span className="text-sm text-[color:var(--app-text)]">Department</span>
@@ -197,6 +267,17 @@ export function EditCandidateInfoModal({
                               ))}
                             </select>
                           </label>
+
+                          <label className="grid gap-1">
+                            <span className="text-sm text-[color:var(--app-text)]">Batch / cohort</span>
+                            <input
+                              name="batchId"
+                              defaultValue={candidate.batchId || ""}
+                              disabled={isSubmitting}
+                              placeholder="Optional intake group"
+                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                            />
+                          </label>
                         </div>
 
                         <div className="grid gap-2">
@@ -220,6 +301,18 @@ export function EditCandidateInfoModal({
                             placeholder="https://..."
                             disabled={isSubmitting}
                             className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
+                          />
+                        </label>
+
+                        <label className="grid gap-1">
+                          <span className="text-sm text-[color:var(--app-text)]">Candidate notes</span>
+                          <textarea
+                            name="notesSummary"
+                            rows={4}
+                            defaultValue={candidate.notesSummary || ""}
+                            disabled={isSubmitting}
+                            placeholder="Key context, expectations, risks, or recruiter notes..."
+                            className="min-h-[120px] rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                           />
                         </label>
                       </div>

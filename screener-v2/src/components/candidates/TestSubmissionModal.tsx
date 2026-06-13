@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, BookOpen, Trash2 } from "lucide-react";
-import Link from "next/link";
-import type { Route } from "next";
+import type { AddonCatalogEntry, AssessmentPresetEntry } from "@/lib/addons/catalog";
 import { Button } from "@/components/primitives/Button";
+import { CandidateAssessmentBuilderOverlay } from "@/components/candidates/CandidateAssessmentBuilderOverlay";
 import type { CandidateMilestoneMode } from "@/lib/candidates/milestones";
 
 const fieldClassName =
@@ -18,6 +18,27 @@ interface TestSubmissionModalProps {
   milestoneId: string;
   milestone?: { mode?: string; date?: string; score?: number; result?: string; notes?: string };
   onSuccess?: () => void;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
+}
+
+function deriveMilestoneStatus(args: {
+  mode: CandidateMilestoneMode;
+  date: string;
+  notes: string;
+  result: string;
+}) {
+  if (args.mode === "platform") {
+    return "in_progress";
+  }
+  if (args.result === "pass" || args.result === "fail") {
+    return "done";
+  }
+  if (args.date || args.notes.trim()) {
+    return "in_progress";
+  }
+  return "not_started";
 }
 
 export function TestSubmissionModal({
@@ -26,13 +47,17 @@ export function TestSubmissionModal({
   candidateId,
   milestoneId,
   milestone,
-  onSuccess
+  onSuccess,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel
 }: TestSubmissionModalProps) {
   const [mode, setMode] = useState<CandidateMilestoneMode>((milestone?.mode as CandidateMilestoneMode) || "manual");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const [formData, setFormData] = useState({
     date: milestone?.date ? new Date(milestone.date).toISOString().slice(0, 16) : "",
     score: milestone?.score ? String(milestone.score) : "",
@@ -41,6 +66,22 @@ export function TestSubmissionModal({
   });
 
   const isPlatform = mode === "platform";
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setMode((milestone?.mode as CandidateMilestoneMode) || "manual");
+    setFormData({
+      date: milestone?.date ? new Date(milestone.date).toISOString().slice(0, 16) : "",
+      score: milestone?.score ? String(milestone.score) : "",
+      result: milestone?.result || "",
+      notes: milestone?.notes || ""
+    });
+    setError("");
+    setShowDeleteConfirm(false);
+  }, [isOpen, milestone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +93,15 @@ export function TestSubmissionModal({
       form.append("action", "save");
       form.append("title", "Assessment");
       form.append("mode", mode);
+      form.append(
+        "status",
+        deriveMilestoneStatus({
+          mode,
+          date: formData.date,
+          notes: formData.notes,
+          result: formData.result
+        })
+      );
       if (formData.date) form.append("date", formData.date);
       if (formData.score) form.append("score", formData.score);
       if (formData.result) form.append("result", formData.result);
@@ -101,12 +151,11 @@ export function TestSubmissionModal({
     }
   };
 
-  const createTestHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestoneId}` as Route;
-
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -191,12 +240,14 @@ export function TestSubmissionModal({
                         Use the assessment builder to create screening evidence. Candidates complete it on the platform and results are recorded automatically.
                       </p>
                     </div>
-                    <Link href={createTestHref}>
-                      <Button type="button" className="w-full gap-2">
+                    <Button
+                      type="button"
+                      className="w-full gap-2"
+                      onClick={() => setBuilderOpen(true)}
+                    >
                         <Zap className="h-4 w-4" />
-                        Open Assessment Builder
-                      </Button>
-                    </Link>
+                        Open assessment builder
+                    </Button>
                   </motion.div>
                 ) : (
                   <motion.form
@@ -342,8 +393,22 @@ export function TestSubmissionModal({
               </div>
             </div>
           </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+          </>
+        )}
+      </AnimatePresence>
+
+      <CandidateAssessmentBuilderOverlay
+        isOpen={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onInviteCreated={onSuccess}
+        initialAddons={assessmentAddons}
+        initialPresets={assessmentPresets}
+        linkedCandidateId={candidateId}
+        linkedCandidateMilestoneId={milestoneId}
+        eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
+        title="Create a screening assessment"
+        subtitle="Stay on the candidate record, build the assessment, and keep the linked evidence in this workflow."
+      />
+    </>
   );
 }

@@ -211,7 +211,7 @@ export function ResultsWorkspaceTable({
                           </Link>
                         ) : null}
                         {row.candidateId && (
-                          <Link href={`/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
+                          <Link href={`/people/candidates/${row.candidateId}`} className={actionPillSecondaryClassName}>
                             Profile
                           </Link>
                         )}

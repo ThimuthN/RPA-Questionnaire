@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Pencil, Trash2, X } from "lucide-react";
 import { CandidateNoteTypePill } from "@/components/candidates/CandidatePills";
 import { Button } from "@/components/primitives/Button";
@@ -23,12 +24,14 @@ function NoteItem({
   note,
   index,
   candidateId,
-  reduceMotion
+  reduceMotion,
+  onUpdated
 }: {
   note: CandidateNoteItem;
   index: number;
   candidateId: string;
   reduceMotion: boolean;
+  onUpdated: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedBody, setEditedBody] = useState(note.body);
@@ -46,7 +49,7 @@ function NoteItem({
       });
       if (res.ok) {
         setIsEditing(false);
-        window.location.reload();
+        onUpdated();
       }
     } catch (err) {
       console.error("Failed to save note:", err);
@@ -63,7 +66,7 @@ function NoteItem({
         method: "DELETE"
       });
       if (res.ok) {
-        window.location.reload();
+        onUpdated();
       }
     } catch (err) {
       console.error("Failed to delete note:", err);
@@ -156,6 +159,7 @@ export function CandidateNotesModal({
   candidateId: string;
   notes: CandidateNoteItem[];
 }) {
+  const router = useRouter();
   const reduceMotion = Boolean(useReducedMotion());
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -273,18 +277,22 @@ export function CandidateNotesModal({
                           try {
                             const response = await fetch(`/api/candidates/${candidateId}/notes`, {
                               method: "POST",
+                              headers: {
+                                Accept: "application/json"
+                              },
                               body: formData
                             });
 
                             if (!response.ok) {
-                              const text = await response.text();
-                              throw new Error(text || `API error: ${response.status}`);
+                              const data = (await response.json().catch(() => null)) as { message?: string } | null;
+                              throw new Error(data?.message || `API error: ${response.status}`);
                             }
 
-                            // Success - reload page to get fresh data
-                            window.location.reload();
+                            setOpen(false);
+                            router.refresh();
                           } catch (err) {
                             setSubmitError(err instanceof Error ? err.message : "Failed to add note");
+                          } finally {
                             setIsSubmitting(false);
                           }
                         }}
@@ -347,6 +355,7 @@ export function CandidateNotesModal({
                               index={index}
                               candidateId={candidateId}
                               reduceMotion={reduceMotion}
+                              onUpdated={() => router.refresh()}
                             />
                           ))
                         )}

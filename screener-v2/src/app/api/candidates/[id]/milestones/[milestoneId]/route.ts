@@ -14,6 +14,7 @@ import {
 import {
   initOrUpdateMilestoneCheck,
   quickUpdateCandidateMilestoneStatus,
+  upsertInterviewPanelForMilestone,
   updateCandidateMilestone
 } from "@/lib/db/candidates";
 
@@ -26,7 +27,12 @@ const saveMilestoneSchema = z.object({
   notes: z.string().optional(),
   score: z.string().optional(),
   result: z.enum(candidateMilestoneResultValues).optional().or(z.literal("")),
-  recommendation: z.string().optional()
+  recommendation: z.string().optional(),
+  interviewScheduledAt: z.string().optional(),
+  interviewDurationMin: z.string().optional(),
+  interviewFormat: z.string().optional(),
+  interviewerIdsJson: z.string().optional(),
+  returnTo: z.string().optional()
 });
 
 const quickStatusSchema = z.object({
@@ -41,8 +47,15 @@ const checkSchema = z.object({
   notes: z.string().optional()
 });
 
-function redirectToCandidate(request: Request, candidateId: string, searchKey: string, value = "1") {
-  const url = new URL(`/candidates/${candidateId}`, request.url);
+function redirectToPath(
+  request: Request,
+  candidateId: string,
+  returnTo: string | undefined,
+  searchKey: string,
+  value = "1"
+) {
+  const safePath = returnTo?.trim().startsWith("/") ? returnTo.trim() : `/people/candidates/${candidateId}`;
+  const url = new URL(safePath, request.url);
   url.searchParams.set(searchKey, value);
   return NextResponse.redirect(url, 303);
 }
@@ -65,15 +78,17 @@ export async function POST(
   }
 
   const { session } = auth;
+  let returnTo: string | undefined;
 
   try {
     const raw = Object.fromEntries((await request.formData()).entries());
+    returnTo = typeof raw.returnTo === "string" ? raw.returnTo : undefined;
     const action = typeof raw.action === "string" ? raw.action : "save";
 
     if (action === "status") {
       const body = quickStatusSchema.parse(raw);
       await quickUpdateCandidateMilestoneStatus(id, milestoneId, body.status, session.userId ?? undefined, session.name || session.email || "System");
-      return redirectToCandidate(request, id, "updated");
+      return redirectToPath(request, id, returnTo, "updated");
     }
 
     if (action === "check") {
@@ -87,15 +102,22 @@ export async function POST(
         session.userId ?? undefined,
         session.name ?? undefined
       );
-      return redirectToCandidate(request, id, "updated");
+      return redirectToPath(request, id, returnTo, "updated");
     }
 
     const body = saveMilestoneSchema.parse(raw);
     const parsedScore =
       typeof body.score === "string" && body.score.trim().length > 0 ? Number(body.score) : undefined;
+    const parsedInterviewDuration =
+      typeof body.interviewDurationMin === "string" && body.interviewDurationMin.trim().length > 0
+        ? Number(body.interviewDurationMin)
+        : undefined;
 
     if (typeof parsedScore === "number" && !Number.isFinite(parsedScore)) {
       throw new Error("Score must be a number.");
+    }
+    if (typeof parsedInterviewDuration === "number" && !Number.isFinite(parsedInterviewDuration)) {
+      throw new Error("Interview duration must be a number.");
     }
 
     await updateCandidateMilestone(id, milestoneId, {
@@ -111,11 +133,38 @@ export async function POST(
       actorName: session.name || session.email || "System"
     });
 
-    return redirectToCandidate(request, id, "updated");
+    if (
+      body.interviewScheduledAt !== undefined ||
+      body.interviewDurationMin !== undefined ||
+      body.interviewFormat !== undefined ||
+      body.interviewerIdsJson !== undefined
+    ) {
+      const interviewerIds = typeof body.interviewerIdsJson === "string" && body.interviewerIdsJson.trim().length > 0
+        ? JSON.parse(body.interviewerIdsJson)
+        : [];
+
+      if (!Array.isArray(interviewerIds) || interviewerIds.some((value) => typeof value !== "string")) {
+        throw new Error("Interviewers are invalid.");
+      }
+
+      await upsertInterviewPanelForMilestone({
+        candidateId: id,
+        milestoneId,
+        scheduledAt: body.interviewScheduledAt,
+        durationMin: parsedInterviewDuration,
+        format: body.interviewFormat,
+        interviewerIds,
+        actorId: session.userId ?? undefined,
+        actorName: session.name || session.email || "System"
+      });
+    }
+
+    return redirectToPath(request, id, returnTo, "updated");
   } catch (error) {
-    return redirectToCandidate(
+    return redirectToPath(
       request,
       id,
+      returnTo,
       "error",
       error instanceof z.ZodError ? "Invalid milestone update." : "Could not update milestone."
     );

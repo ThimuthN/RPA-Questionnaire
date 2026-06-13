@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import type { AddonCatalogEntry, AssessmentPresetEntry } from "@/lib/addons/catalog";
 import {
   CandidateAssessmentPill,
   CandidateMilestoneStatusPill,
@@ -14,8 +15,10 @@ import {
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { CandidateAssessmentBuilderOverlay } from "@/components/candidates/CandidateAssessmentBuilderOverlay";
 import { TestSubmissionModal } from "@/components/candidates/TestSubmissionModal";
 import { InterviewSchedulingModal } from "@/components/candidates/InterviewSchedulingModal";
+import { InterviewScorecardModal } from "@/components/candidates/InterviewScorecardModal";
 import {
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
@@ -142,6 +145,14 @@ function feedbackLabel(type: CandidateMilestoneRecord["type"]) {
   return "Feedback";
 }
 
+function interviewFormatLabel(format?: string) {
+  if (!format) return "Interview";
+  if (format === "video") return "Video";
+  if (format === "phone") return "Phone";
+  if (format === "onsite") return "On-site";
+  return format;
+}
+
 function displayMilestoneTitle(milestone: CandidateMilestoneRecord) {
   return milestone.type === "screener" ? "Screening assessment" : milestone.title;
 }
@@ -157,6 +168,11 @@ function saveButtonLabel(type: CandidateMilestoneRecord["type"], mode: Candidate
 function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
   if (milestone.type === "registration") {
     return hasResume ? "Resume attached." : "Resume missing.";
+  }
+
+  if (milestone.type === "interview" && milestone.interviewPanel?.scheduledAt) {
+    const memberCount = milestone.interviewPanel.members.length;
+    return `${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()} | ${interviewFormatLabel(milestone.interviewPanel.format)}${memberCount > 0 ? ` | ${memberCount} interviewer${memberCount === 1 ? "" : "s"}` : ""}`;
   }
 
   if (milestone.mode === "platform") {
@@ -188,6 +204,12 @@ function stepSummary(milestone: CandidateMilestoneRecord, hasResume: boolean) {
   }
 
   return milestone.status === "not_started" ? "No activity yet." : candidateMilestoneStatusLabels[milestone.status];
+}
+
+function withStatusQuery(href: string, key: string, value = "1") {
+  const url = new URL(href, "http://localhost");
+  url.searchParams.set(key, value);
+  return `${url.pathname}${url.search}${url.hash}` as Route;
 }
 
 function MilestoneStatusSelect({
@@ -279,20 +301,30 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
 
 function TestMilestoneCard({
   candidateId,
-  milestone
+  milestone,
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel
 }: {
   candidateId: string;
   milestone: CandidateMilestoneRecord;
+  detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
 }) {
+  const router = useRouter();
   const [selectedMode, setSelectedMode] = useState<CandidateMilestoneMode>(milestone.mode);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const isPlatform = selectedMode === "platform";
-  const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
 
   return (
     <div className="space-y-3">
       <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
         <input type="hidden" name="action" value="save" />
         <input type="hidden" name="title" value={milestone.title} />
+        <input type="hidden" name="returnTo" value={detailHref} />
         {isPlatform ? <input type="hidden" name="result" value="" /> : null}
 
         <div className="flex flex-wrap gap-2">
@@ -326,9 +358,9 @@ function TestMilestoneCard({
               {saveButtonLabel(milestone.type, selectedMode)}
             </Button>
             {!milestone.assessment ? (
-              <Link href={sendHref}>
-                <Button type="button">Create assessment</Button>
-              </Link>
+              <Button type="button" onClick={() => setBuilderOpen(true)}>
+                Create assessment
+              </Button>
             ) : null}
           </div>
         ) : (
@@ -391,6 +423,19 @@ function TestMilestoneCard({
       {isPlatform && milestone.assessment ? (
         <LinkedAssessmentSummary milestone={milestone} />
       ) : null}
+
+      <CandidateAssessmentBuilderOverlay
+        isOpen={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onInviteCreated={() => router.refresh()}
+        initialAddons={assessmentAddons}
+        initialPresets={assessmentPresets}
+        linkedCandidateId={candidateId}
+        linkedCandidateMilestoneId={milestone.id}
+        eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
+        title="Create a screening assessment"
+        subtitle="Build the assessment in place, keep the candidate open, and refresh the linked evidence here."
+      />
     </div>
   );
 }
@@ -415,17 +460,26 @@ function CheckBadge({ status }: { status: string }) {
 
 function ScreenerMilestoneCard({
   candidateId,
-  milestone
+  milestone,
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel
 }: {
   candidateId: string;
   milestone: CandidateMilestoneRecord;
+  detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
 }) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [checkError, setCheckError] = useState("");
+  const [builderOpen, setBuilderOpen] = useState(false);
   const checks = milestone.checks || [];
   const resumeReviewCheck = checks.find((c) => c.type === "resume_review");
   const screenerTestCheck = checks.find((c) => c.type === "screener_test");
-  const sendHref = `/create-test?candidateId=${candidateId}&milestoneId=${milestone.id}` as Route;
 
   const handleCheckAction = async (checkType: CheckType, status: string) => {
     setIsPending(true);
@@ -434,6 +488,7 @@ function ScreenerMilestoneCard({
       formData.append("action", "check");
       formData.append("checkType", checkType);
       formData.append("status", status);
+      formData.append("returnTo", detailHref);
 
       const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestone.id}`, {
         method: "POST",
@@ -441,7 +496,8 @@ function ScreenerMilestoneCard({
       });
 
       if (response.ok) {
-        window.location.href = `/candidates/${candidateId}?updated=1`;
+        router.replace(withStatusQuery(detailHref, "updated"));
+        router.refresh();
       } else {
         const data = await response.json();
         setCheckError(data.message || "Could not update check. Please try again.");
@@ -500,28 +556,39 @@ function ScreenerMilestoneCard({
         {screenerTestCheck?.notes && <p className="text-xs text-[color:var(--app-muted)]">{screenerTestCheck.notes}</p>}
         <div className="space-y-3 pt-2">
           {!milestone.assessment ? (
-            <Link href={sendHref}>
-              <Button type="button" variant="secondary">
-                Create assessment
-              </Button>
-            </Link>
+            <Button type="button" variant="secondary" onClick={() => setBuilderOpen(true)}>
+              Create assessment
+            </Button>
           ) : (
             <LinkedAssessmentSummary milestone={milestone} />
           )}
         </div>
       </div>
+
+      <CandidateAssessmentBuilderOverlay
+        isOpen={builderOpen}
+        onClose={() => setBuilderOpen(false)}
+        onInviteCreated={() => router.refresh()}
+        initialAddons={assessmentAddons}
+        initialPresets={assessmentPresets}
+        linkedCandidateId={candidateId}
+        linkedCandidateMilestoneId={milestone.id}
+        eyebrow={assessmentWorkspaceLabel ? `${assessmentWorkspaceLabel} assessment` : "Candidate assessment"}
+        title="Create a screening assessment"
+        subtitle="Build the screening assessment in place and keep the candidate review anchored to this workspace."
+      />
     </div>
   );
 }
 
 function RegistrationMilestoneCard({
-  candidateId,
   milestone,
-  hasResume
+  hasResume,
+  detailHref
 }: {
-  candidateId: string;
   milestone: CandidateMilestoneRecord;
   hasResume: boolean;
+  detailHref: string;
 }) {
   const checks = milestone.checks || [];
   const resumeUploadCheck = checks.find((c) => c.type === "resume_upload");
@@ -538,7 +605,7 @@ function RegistrationMilestoneCard({
         )}
         {!hasResume ? (
           <div className="pt-2">
-            <Link href={`/candidates/${candidateId}#resume` as Route}>
+            <Link href={`${detailHref}#resume` as Route}>
               <Button type="button" variant="secondary">
                 Add resume
               </Button>
@@ -550,47 +617,211 @@ function RegistrationMilestoneCard({
   );
 }
 
+function InterviewMilestoneCard({
+  candidateId,
+  milestone,
+  availableInterviewers
+}: {
+  candidateId: string;
+  milestone: CandidateMilestoneRecord;
+  availableInterviewers: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [scorecardOpen, setScorecardOpen] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h4 className="font-semibold text-sm text-[color:var(--app-heading)]">Interview schedule</h4>
+            <p className="mt-1 text-xs text-[color:var(--app-muted)]">
+              {milestone.interviewPanel?.scheduledAt
+                ? `Scheduled ${new Date(milestone.interviewPanel.scheduledAt).toLocaleString()}`
+                : "No interview scheduled yet."}
+            </p>
+          </div>
+          {milestone.interviewPanel?.scheduledAt ? (
+            <StatusPill label="Scheduled" tone="blue" />
+          ) : (
+            <StatusPill label="Not scheduled" tone="neutral" />
+          )}
+        </div>
+
+        {milestone.interviewPanel ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Format</p>
+              <p className="text-sm text-[color:var(--app-heading)]">
+                {interviewFormatLabel(milestone.interviewPanel.format)}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Duration</p>
+              <p className="text-sm text-[color:var(--app-heading)]">
+                {milestone.interviewPanel.durationMin} min
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Interviewers</p>
+              <p className="text-sm text-[color:var(--app-heading)]">
+                {milestone.interviewPanel.members.length > 0
+                  ? milestone.interviewPanel.members.map((member) => member.user.name || member.user.email).join(", ")
+                  : "None selected"}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button type="button" onClick={() => setOpen(true)}>
+            {milestone.interviewPanel ? "Update interview" : "Schedule interview"}
+          </Button>
+          {milestone.interviewPanel ? (
+            <Button type="button" variant="secondary" onClick={() => setScorecardOpen(true)}>
+              Scorecard
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {milestone.interviewPanel ? (
+        <InterviewScorecardModal
+          panelId={milestone.interviewPanel.id}
+          panelName={milestone.interviewPanel.roundName}
+          isOpen={scorecardOpen}
+          onClose={() => setScorecardOpen(false)}
+          onSuccess={() => { setScorecardOpen(false); router.refresh(); }}
+        />
+      ) : null}
+
+      <InterviewSchedulingModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        candidateId={candidateId}
+        milestoneId={milestone.id}
+        milestone={{
+          date: milestone.date,
+          result: milestone.result,
+          notes: milestone.notes
+        }}
+        interviewPanel={milestone.interviewPanel ?? null}
+        availableInterviewers={availableInterviewers}
+        onSuccess={() => {
+          setOpen(false);
+          router.refresh();
+        }}
+      />
+    </div>
+  );
+}
+
 function MilestonePanelContent({
   candidateId,
   node,
-  hasResume
+  hasResume,
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel,
+  availableInterviewers
 }: {
   candidateId: string;
   node: TimelineNode;
   hasResume: boolean;
+  detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
+  availableInterviewers: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
 }) {
   if (isAdvancedReviewGroup(node)) {
-    return <AdvancedReviewCard candidateId={candidateId} groupedMilestones={node.groupedMilestones} />;
+    return (
+      <AdvancedReviewCard
+        candidateId={candidateId}
+        groupedMilestones={node.groupedMilestones}
+        assessmentAddons={assessmentAddons}
+        assessmentPresets={assessmentPresets}
+        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+        availableInterviewers={availableInterviewers}
+      />
+    );
   }
 
   const milestone = node;
   if (milestone.type === "registration") {
-    return <RegistrationMilestoneCard candidateId={candidateId} milestone={milestone} hasResume={hasResume} />;
+    return (
+      <RegistrationMilestoneCard
+        milestone={milestone}
+        hasResume={hasResume}
+        detailHref={detailHref}
+      />
+    );
   }
 
   if (milestone.type === "screener") {
-    return <ScreenerMilestoneCard candidateId={candidateId} milestone={milestone} />;
+    return (
+      <ScreenerMilestoneCard
+        candidateId={candidateId}
+        milestone={milestone}
+        detailHref={detailHref}
+        assessmentAddons={assessmentAddons}
+        assessmentPresets={assessmentPresets}
+        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+      />
+    );
+  }
+
+  if (milestone.type === "interview") {
+    return (
+      <InterviewMilestoneCard
+        candidateId={candidateId}
+        milestone={milestone}
+        availableInterviewers={availableInterviewers}
+      />
+    );
   }
 
   if (milestone.type === "advanced_review" || milestone.type === "review_round") {
-    return <TestMilestoneCard candidateId={candidateId} milestone={milestone} />;
+    return (
+      <TestMilestoneCard
+        candidateId={candidateId}
+        milestone={milestone}
+        detailHref={detailHref}
+        assessmentAddons={assessmentAddons}
+        assessmentPresets={assessmentPresets}
+        assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+      />
+    );
   }
 
-  return <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} />;
+  return <DocumentationMilestoneCard candidateId={candidateId} milestone={milestone} detailHref={detailHref} />;
 }
 
 function DocumentationMilestoneCard({
   candidateId,
-  milestone
+  milestone,
+  detailHref
 }: {
   candidateId: string;
   milestone: CandidateMilestoneRecord;
+  detailHref: string;
 }) {
   return (
     <form action={`/api/candidates/${candidateId}/milestones/${milestone.id}`} method="post" className="space-y-3">
       <input type="hidden" name="action" value="save" />
       <input type="hidden" name="title" value={milestone.title} />
       <input type="hidden" name="mode" value={milestone.mode} />
+      <input type="hidden" name="returnTo" value={detailHref} />
 
       {milestone.date ? (
         <div className="flex flex-wrap gap-2">
@@ -655,10 +886,22 @@ function DocumentationMilestoneCard({
 
 function AdvancedReviewCard({
   candidateId,
-  groupedMilestones
+  groupedMilestones,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel,
+  availableInterviewers
 }: {
   candidateId: string;
   groupedMilestones: CandidateMilestoneRecord[];
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
+  availableInterviewers: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
 }) {
   const router = useRouter();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
@@ -758,7 +1001,6 @@ function AdvancedReviewCard({
           </div>
           {groupedMilestones.map((m) => {
             const result = derivedResult(m);
-            const setupHref = `/create-test?candidateId=${candidateId}&milestoneId=${m.id}` as Route;
             const canCreateAssessment = m.mode === "platform" && !m.assessment;
             const handleEdit = () => {
               setEditingMilestoneId(m.id);
@@ -791,11 +1033,9 @@ function AdvancedReviewCard({
                       </div>
                       {canCreateAssessment ? (
                         <div className="pt-1">
-                          <Link href={setupHref}>
-                            <Button type="button" variant="secondary" className="px-3 py-1.5 text-xs">
-                              Create assessment
-                            </Button>
-                          </Link>
+                          <span className="inline-flex rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1.5 text-xs text-[color:var(--app-heading)]">
+                            Create assessment
+                          </span>
                         </div>
                       ) : null}
                     </div>
@@ -865,6 +1105,9 @@ function AdvancedReviewCard({
               notes: editingMilestone.notes
             } : undefined}
             onSuccess={handleModalSuccess}
+            assessmentAddons={assessmentAddons}
+            assessmentPresets={assessmentPresets}
+            assessmentWorkspaceLabel={assessmentWorkspaceLabel}
           />
           <InterviewSchedulingModal
             isOpen={interviewModalOpen}
@@ -876,6 +1119,8 @@ function AdvancedReviewCard({
               result: editingMilestone.result,
               notes: editingMilestone.notes
             } : undefined}
+            interviewPanel={editingMilestone?.interviewPanel ?? null}
+            availableInterviewers={availableInterviewers}
             onSuccess={handleModalSuccess}
           />
         </>
@@ -887,11 +1132,25 @@ function AdvancedReviewCard({
 export function CandidateMilestoneTimeline({
   candidateId,
   milestones,
-  hasResume
+  hasResume,
+  detailHref,
+  assessmentAddons,
+  assessmentPresets,
+  assessmentWorkspaceLabel,
+  availableInterviewers
 }: {
   candidateId: string;
   milestones: CandidateMilestoneRecord[];
   hasResume: boolean;
+  detailHref: string;
+  assessmentAddons: AddonCatalogEntry[];
+  assessmentPresets: AssessmentPresetEntry[];
+  assessmentWorkspaceLabel?: string;
+  availableInterviewers: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
 }) {
   const reduceMotion = useReducedMotion();
   const timelineNodes = groupMilestonesForTimeline(milestones);
@@ -1054,6 +1313,11 @@ export function CandidateMilestoneTimeline({
                   candidateId={candidateId}
                   node={activeNode}
                   hasResume={hasResume}
+                  detailHref={detailHref}
+                  assessmentAddons={assessmentAddons}
+                  assessmentPresets={assessmentPresets}
+                  assessmentWorkspaceLabel={assessmentWorkspaceLabel}
+                  availableInterviewers={availableInterviewers}
                 />
               </motion.div>
             </AnimatePresence>

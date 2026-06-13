@@ -42,6 +42,10 @@ export interface CandidateRecord {
   finalizedAs?: "hired" | "rejected";
   candidateFolderUrl?: string;
   notesSummary?: string;
+  linkedInUrl?: string;
+  location?: string;
+  currentTitle?: string;
+  salaryExpectation?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -109,6 +113,30 @@ export interface CandidateMilestoneCheckRecord {
   updatedAt: string;
 }
 
+export interface CandidateInterviewPanelRecord {
+  id: string;
+  candidateId: string;
+  milestoneId?: string;
+  roundNumber: number;
+  roundName: string;
+  format: string;
+  scheduledAt?: string;
+  durationMin: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  members: Array<{
+    id: string;
+    userId: string;
+    role: string;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  }>;
+}
+
 export interface CandidateMilestoneRecord {
   id: string;
   candidateId: string;
@@ -126,6 +154,7 @@ export interface CandidateMilestoneRecord {
   createdAt: string;
   updatedAt: string;
   assessment?: CandidateAssessmentRecord | null;
+  interviewPanel?: CandidateInterviewPanelRecord | null;
   checks?: CandidateMilestoneCheckRecord[];
 }
 

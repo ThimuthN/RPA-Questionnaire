@@ -183,7 +183,7 @@ export default async function ResultDetailPage({
                         </Button>
                       )}
                     />
-                    <Link href={`/candidates/${candidate.id}`}>
+                    <Link href={`/people/candidates/${candidate.id}`}>
                       <Button variant="secondary">Open candidate</Button>
                     </Link>
                   </div>

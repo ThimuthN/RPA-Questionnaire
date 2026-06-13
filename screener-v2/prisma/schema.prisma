@@ -380,6 +380,10 @@ model Candidate {
   screeningStatus    String?
   candidateFolderUrl String?
   notesSummary       String?
+  linkedInUrl        String?
+  location           String?
+  currentTitle       String?
+  salaryExpectation  String?
   orgStatus          String   @default("active")
   orgStage           String   @default("active")
   finalizedAs        String?

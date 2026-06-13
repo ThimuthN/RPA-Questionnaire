@@ -175,6 +175,34 @@ export function NewCandidateForm({
       </label>
 
       <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Phone</span>
+        <input
+          name="phone"
+          type="tel"
+          placeholder="Optional contact number"
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        />
+      </label>
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Current title</span>
+        <input
+          name="currentTitle"
+          placeholder="e.g. Senior Software Engineer"
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        />
+      </label>
+
+      <label className="grid gap-1">
+        <span className="text-sm text-[color:var(--app-text)]">Location</span>
+        <input
+          name="location"
+          placeholder="e.g. New York, NY"
+          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+        />
+      </label>
+
+      <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Department</span>
         <select
           name="departmentId"

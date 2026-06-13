@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MessageSquare, Trash2 } from "lucide-react";
+import { CalendarDays, Clock3, MessageSquare, Trash2, Users, X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
+import type { CandidateInterviewPanelRecord } from "@/lib/db/candidates";
 
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
@@ -15,7 +16,27 @@ interface InterviewSchedulingModalProps {
   candidateId: string;
   milestoneId: string;
   milestone?: { date?: string; result?: string; notes?: string };
+  interviewPanel?: CandidateInterviewPanelRecord | null;
+  availableInterviewers: Array<{
+    id: string;
+    name: string | null;
+    email: string;
+  }>;
   onSuccess?: () => void;
+}
+
+function deriveMilestoneStatus(args: {
+  scheduledAt: string;
+  notes: string;
+  result: string;
+}) {
+  if (args.result === "pass" || args.result === "fail" || args.result === "review") {
+    return "done";
+  }
+  if (args.scheduledAt || args.notes.trim()) {
+    return "in_progress";
+  }
+  return "not_started";
 }
 
 export function InterviewSchedulingModal({
@@ -24,17 +45,65 @@ export function InterviewSchedulingModal({
   candidateId,
   milestoneId,
   milestone,
+  interviewPanel,
+  availableInterviewers,
   onSuccess
 }: InterviewSchedulingModalProps) {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedInterviewerIds, setSelectedInterviewerIds] = useState<string[]>(
+    interviewPanel?.members.map((member) => member.userId) ?? []
+  );
   const [formData, setFormData] = useState({
-    date: milestone?.date ? new Date(milestone.date).toISOString().slice(0, 16) : "",
+    date: interviewPanel?.scheduledAt
+      ? new Date(interviewPanel.scheduledAt).toISOString().slice(0, 16)
+      : milestone?.date
+        ? new Date(milestone.date).toISOString().slice(0, 16)
+        : "",
+    durationMin: String(interviewPanel?.durationMin ?? 60),
+    format: interviewPanel?.format || "video",
     result: milestone?.result || "",
     notes: milestone?.notes || ""
   });
+
+  const scheduledSummary = interviewPanel?.scheduledAt
+    ? new Date(interviewPanel.scheduledAt).toLocaleString()
+    : null;
+  const hasSavedSetup = Boolean(
+    interviewPanel ||
+      milestone?.date ||
+      milestone?.result ||
+      milestone?.notes
+  );
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    setSelectedInterviewerIds(interviewPanel?.members.map((member) => member.userId) ?? []);
+    setFormData({
+      date: interviewPanel?.scheduledAt
+        ? new Date(interviewPanel.scheduledAt).toISOString().slice(0, 16)
+        : milestone?.date
+          ? new Date(milestone.date).toISOString().slice(0, 16)
+          : "",
+      durationMin: String(interviewPanel?.durationMin ?? 60),
+      format: interviewPanel?.format || "video",
+      result: milestone?.result || "",
+      notes: milestone?.notes || ""
+    });
+    setError("");
+    setShowDeleteConfirm(false);
+  }, [isOpen, interviewPanel, milestone]);
+
+  const toggleInterviewer = (userId: string) => {
+    setSelectedInterviewerIds((current) =>
+      current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,25 +115,43 @@ export function InterviewSchedulingModal({
       form.append("action", "save");
       form.append("title", "Interview");
       form.append("mode", "manual");
-      if (formData.date) form.append("date", formData.date);
-      if (formData.result) form.append("result", formData.result);
-      if (formData.notes) form.append("notes", formData.notes);
+      form.append(
+        "status",
+        deriveMilestoneStatus({
+          scheduledAt: formData.date,
+          notes: formData.notes,
+          result: formData.result
+        })
+      );
+      if (formData.date) {
+        form.append("date", formData.date);
+      }
+      form.append("interviewScheduledAt", formData.date);
+      form.append("interviewDurationMin", formData.durationMin);
+      form.append("interviewFormat", formData.format);
+      form.append("interviewerIdsJson", JSON.stringify(selectedInterviewerIds));
+      if (formData.result) {
+        form.append("result", formData.result);
+      }
+      if (formData.notes) {
+        form.append("notes", formData.notes);
+      }
 
       const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestoneId}`, {
         method: "POST",
         body: form
       });
 
-      if (response.ok) {
-        setFormData({ date: "", result: "", notes: "" });
-        onSuccess?.();
-        onClose();
-      } else {
-        const data = await response.json();
-        setError(data.message || "Failed to save interview notes");
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { message?: string } | null;
+        throw new Error(data?.message || "Failed to save interview");
       }
+
+      setFormData({ date: "", durationMin: "60", format: "video", result: "", notes: "" });
+      onSuccess?.();
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error saving interview notes");
+      setError(err instanceof Error ? err.message : "Error saving interview");
     } finally {
       setIsPending(false);
     }
@@ -78,16 +165,15 @@ export function InterviewSchedulingModal({
         method: "DELETE"
       });
 
-      if (response.ok) {
-        onSuccess?.();
-        onClose();
-      } else {
-        const data = await response.json();
-        setError(data.error || "Failed to delete interview notes");
-        setShowDeleteConfirm(false);
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Failed to remove interview setup");
       }
+
+      onSuccess?.();
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error deleting interview notes");
+      setError(err instanceof Error ? err.message : "Error removing interview setup");
       setShowDeleteConfirm(false);
     } finally {
       setIsDeleting(false);
@@ -113,15 +199,14 @@ export function InterviewSchedulingModal({
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
           >
-            <div className="w-full max-w-md rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl overflow-hidden">
-              {/* Header */}
+            <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl">
               <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-gradient-to-r from-[color:var(--app-surface)] to-[color:var(--app-surface-soft)] p-6">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10">
                     <MessageSquare className="h-5 w-5 text-brand-500" />
                   </div>
                   <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
-                    {milestone ? "Update interview notes" : "Add interview notes"}
+                    {interviewPanel ? "Update interview" : "Schedule interview"}
                   </h2>
                 </div>
                 <button
@@ -134,7 +219,7 @@ export function InterviewSchedulingModal({
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5 p-6">
-                {error && (
+                {error ? (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -142,33 +227,121 @@ export function InterviewSchedulingModal({
                   >
                     {error}
                   </motion.div>
-                )}
+                ) : null}
 
                 <label className="grid gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Interview date</span>
+                    <CalendarDays className="h-4 w-4 text-[color:var(--app-muted)]" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Interview schedule
+                    </span>
                   </div>
                   <input
                     type="datetime-local"
                     value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
                     className={fieldClassName}
                   />
-                  <p className="text-xs text-[color:var(--app-muted)]">Optional date for the interview milestone</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">
+                    {scheduledSummary
+                      ? `Currently scheduled for ${scheduledSummary}.`
+                      : "Pick the interview date and time when it is confirmed."}
+                  </p>
                 </label>
 
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2">
+                    <div className="flex items-center gap-2">
+                      <Clock3 className="h-4 w-4 text-[color:var(--app-muted)]" />
+                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                        Duration
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      min={15}
+                      step={15}
+                      value={formData.durationMin}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, durationMin: e.target.value }))}
+                      className={fieldClassName}
+                    />
+                  </label>
+
+                  <label className="grid gap-2">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Format
+                    </span>
+                    <select
+                      value={formData.format}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, format: e.target.value }))}
+                      className={fieldClassName}
+                    >
+                      <option value="video">Video</option>
+                      <option value="phone">Phone</option>
+                      <option value="onsite">On-site</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-[color:var(--app-muted)]" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Interviewers
+                    </span>
+                  </div>
+                  {availableInterviewers.length > 0 ? (
+                    <div className="space-y-2 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3">
+                      {availableInterviewers.map((user) => {
+                        const checked = selectedInterviewerIds.includes(user.id);
+                        return (
+                          <label
+                            key={user.id}
+                            className={`flex cursor-pointer items-start gap-3 rounded-[14px] px-3 py-2 transition ${
+                              checked
+                                ? "bg-[color:var(--app-brand)]/10"
+                                : "hover:bg-[color:var(--app-surface)]"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleInterviewer(user.id)}
+                              className="mt-1"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-sm text-[color:var(--app-heading)]">
+                                {user.name || user.email}
+                              </span>
+                              <span className="block truncate text-xs text-[color:var(--app-muted)]">
+                                {user.email}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
+                      No responsible team members are assigned yet. Apply a hiring-team template first, then schedule the interview.
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid gap-1.5">
-                  <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Outcome</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                    Outcome
+                  </span>
                   <ChoicePills
                     name="result"
                     idPrefix="interview-result"
                     value={formData.result}
-                    onChange={(value) => setFormData(prev => ({ ...prev, result: value }))}
+                    onChange={(value) => setFormData((prev) => ({ ...prev, result: value }))}
                     options={[
                       { value: "", label: "Not set" },
-                      { value: "pass", label: "✓ Pass" },
-                      { value: "fail", label: "✗ Fail" },
-                      { value: "review", label: "⚠ Review" }
+                      { value: "pass", label: "Pass" },
+                      { value: "fail", label: "Fail" },
+                      { value: "review", label: "Review" }
                     ]}
                   />
                 </div>
@@ -176,13 +349,15 @@ export function InterviewSchedulingModal({
                 <label className="grid gap-2">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4 text-[color:var(--app-muted)]" />
-                    <span className="text-xs uppercase tracking-[0.2em] font-semibold text-[color:var(--app-muted)]">Notes</span>
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Notes
+                    </span>
                   </div>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
                     rows={4}
-                    placeholder="Interview feedback, observations, strengths, and risks..."
+                    placeholder="Interview brief, focus areas, risks, or follow-up..."
                     className={`${fieldClassName} min-h-[116px] resize-y`}
                   />
                   <p className="text-xs text-[color:var(--app-muted)]">Optional context for the hiring decision</p>
@@ -218,7 +393,7 @@ export function InterviewSchedulingModal({
                     </>
                   ) : (
                     <>
-                      {milestone && (
+                      {hasSavedSetup ? (
                         <Button
                           type="button"
                           variant="ghost"
@@ -228,7 +403,7 @@ export function InterviewSchedulingModal({
                           <Trash2 className="h-4 w-4" />
                           Delete
                         </Button>
-                      )}
+                      ) : null}
                       <Button
                         type="button"
                         variant="secondary"
@@ -247,10 +422,10 @@ export function InterviewSchedulingModal({
                             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                             Saving...
                           </span>
-                        ) : milestone ? (
-                          "Update notes"
+                        ) : interviewPanel ? (
+                          "Update interview"
                         ) : (
-                          "Save notes"
+                          "Save schedule"
                         )}
                       </Button>
                     </>

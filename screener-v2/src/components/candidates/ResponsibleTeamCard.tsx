@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Edit2 } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { Button } from "@/components/primitives/Button";
@@ -102,6 +103,7 @@ export function ResponsibleTeamCard({
   templates = [],
   canEdit
 }: Props) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [templateError, setTemplateError] = useState<string | null>(null);
@@ -146,7 +148,8 @@ export function ResponsibleTeamCard({
         throw new Error(data.message || "Failed to apply hiring team template");
       }
 
-      window.location.reload();
+      setSelectedTemplateId("");
+      router.refresh();
     } catch (error) {
       setTemplateError(error instanceof Error ? error.message : "Failed to apply hiring team template");
     } finally {
@@ -308,7 +311,7 @@ export function ResponsibleTeamCard({
             throw new Error(data.message || "Failed to update");
           }
           setIsModalOpen(false);
-          window.location.reload();
+          router.refresh();
         }}
       />
     </>

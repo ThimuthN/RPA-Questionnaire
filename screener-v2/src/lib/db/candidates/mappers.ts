@@ -17,6 +17,7 @@ import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import type {
   CandidateApplicationRecord,
   CandidateAssessmentRecord,
+  CandidateInterviewPanelRecord,
   CandidateMilestoneRecord,
   CandidateNoteRecord,
   CandidateRecord,
@@ -42,6 +43,10 @@ export function mapCandidate(row: {
   screeningStatus: string | null;
   candidateFolderUrl: string | null;
   notesSummary: string | null;
+  linkedInUrl?: string | null;
+  location?: string | null;
+  currentTitle?: string | null;
+  salaryExpectation?: string | null;
   orgStatus?: string | null;
   orgStage?: string | null;
   finalizedAs?: string | null;
@@ -71,6 +76,10 @@ export function mapCandidate(row: {
     finalizedAs: (row.finalizedAs as "hired" | "rejected" | null) ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
     notesSummary: row.notesSummary ?? undefined,
+    linkedInUrl: row.linkedInUrl ?? undefined,
+    location: row.location ?? undefined,
+    currentTitle: row.currentTitle ?? undefined,
+    salaryExpectation: row.salaryExpectation ?? undefined,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString()
   };
@@ -248,7 +257,8 @@ export function mapMilestone(
       updatedAt: Date;
     }>;
   },
-  assessment?: CandidateAssessmentRecord | null
+  assessment?: CandidateAssessmentRecord | null,
+  interviewPanel?: CandidateInterviewPanelRecord | null
 ): CandidateMilestoneRecord {
   return {
     id: row.id,
@@ -267,6 +277,7 @@ export function mapMilestone(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     assessment: assessment ?? null,
+    interviewPanel: interviewPanel ?? null,
     checks: row.checks?.map((check) => ({
       id: check.id,
       type: check.type as CheckType,
@@ -276,6 +287,50 @@ export function mapMilestone(
       actorName: check.actorName ?? undefined,
       createdAt: check.createdAt.toISOString(),
       updatedAt: check.updatedAt.toISOString()
+    }))
+  };
+}
+
+export function mapInterviewPanel(row: {
+  id: string;
+  candidateId: string;
+  milestoneId: string | null;
+  roundNumber: number;
+  roundName: string;
+  format: string;
+  scheduledAt: Date | null;
+  durationMin: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  members: Array<{
+    id: string;
+    userId: string;
+    role: string;
+    user: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  }>;
+}): CandidateInterviewPanelRecord {
+  return {
+    id: row.id,
+    candidateId: row.candidateId,
+    milestoneId: row.milestoneId ?? undefined,
+    roundNumber: row.roundNumber,
+    roundName: row.roundName,
+    format: row.format,
+    scheduledAt: row.scheduledAt?.toISOString(),
+    durationMin: row.durationMin,
+    status: row.status,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    members: row.members.map((member) => ({
+      id: member.id,
+      userId: member.userId,
+      role: member.role,
+      user: member.user
     }))
   };
 }

@@ -79,6 +79,28 @@ describe("requireCandidatePermission", () => {
     expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(session, "view_candidates", "dept-3");
   });
 
+  it("falls back to the active department candidacy when the candidate record is not directly assigned", async () => {
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue({
+      id: "cand-1",
+      departmentId: null,
+      orgStage: "active",
+      departmentCandidacies: [{ departmentId: "dept-9" }]
+    } as any);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true });
+
+    const result = await requireCandidatePermission(session, "cand-1", "view_candidates");
+
+    expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(session, "view_candidates", "dept-9");
+    expect(result).toEqual({
+      ok: true,
+      candidate: {
+        id: "cand-1",
+        departmentId: "dept-9",
+        orgStage: "active"
+      }
+    });
+  });
+
   it("does not use the plain global permission guard", async () => {
     vi.mocked(prisma.candidate.findUnique).mockResolvedValue({ id: "cand-1", departmentId: "dept-1", orgStage: "active" } as any);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true });

@@ -129,6 +129,15 @@ export async function replaceCandidacyTeamAssignments(
   }
 
   return prisma.$transaction(async (tx) => {
+    const candidacy = await tx.departmentCandidacy.findUnique({
+      where: { id: candidacyId },
+      select: { departmentId: true }
+    });
+
+    if (!candidacy) {
+      throw new Error("Candidacy not found");
+    }
+
     // Deactivate all existing assignments
     await tx.departmentCandidacyTeamAssignment.updateMany({
       where: { candidacyId, isActive: true },
@@ -138,16 +147,6 @@ export async function replaceCandidacyTeamAssignments(
     const created: any[] = [];
 
     for (const assignment of assignments) {
-      // Validate user for this candidacy
-      const candidacy = await tx.departmentCandidacy.findUnique({
-        where: { id: candidacyId },
-        select: { departmentId: true }
-      });
-
-      if (!candidacy) {
-        throw new Error("Candidacy not found");
-      }
-
       const user = await tx.user.findUnique({
         where: { id: assignment.userId },
         select: { id: true, isActive: true }
@@ -157,28 +156,58 @@ export async function replaceCandidacyTeamAssignments(
         throw new Error(`User ${assignment.userId} not found or inactive`);
       }
 
-      // Create assignment
-      const created_assignment = await tx.departmentCandidacyTeamAssignment.create({
-        data: {
-          id: cuidLike(),
-          candidacyId,
-          userId: assignment.userId,
-          role: assignment.role,
-          source: assignment.source ?? "manual",
-          templateId: assignment.templateId ?? null,
-          isPrimary: assignment.isPrimary ?? (assignment.role === "owner"),
-          isActive: true,
-          addedAt: new Date(),
-          addedById: actorId ?? null
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true }
+      const existing = await tx.departmentCandidacyTeamAssignment.findUnique({
+        where: {
+          candidacyId_userId_role: {
+            candidacyId,
+            userId: assignment.userId,
+            role: assignment.role
           }
         }
       });
 
-      created.push(created_assignment);
+      const assignmentData = {
+        source: assignment.source ?? "manual",
+        templateId: assignment.templateId ?? null,
+        isPrimary: assignment.isPrimary ?? (assignment.role === "owner"),
+        isActive: true,
+        addedAt: new Date(),
+        addedById: actorId ?? null,
+        updatedAt: new Date()
+      };
+
+      const nextAssignment = existing
+        ? await tx.departmentCandidacyTeamAssignment.update({
+            where: {
+              candidacyId_userId_role: {
+                candidacyId,
+                userId: assignment.userId,
+                role: assignment.role
+              }
+            },
+            data: assignmentData,
+            include: {
+              user: {
+                select: { id: true, name: true, email: true }
+              }
+            }
+          })
+        : await tx.departmentCandidacyTeamAssignment.create({
+            data: {
+              id: cuidLike(),
+              candidacyId,
+              userId: assignment.userId,
+              role: assignment.role,
+              ...assignmentData
+            },
+            include: {
+              user: {
+                select: { id: true, name: true, email: true }
+              }
+            }
+          });
+
+      created.push(nextAssignment);
     }
 
     return created;

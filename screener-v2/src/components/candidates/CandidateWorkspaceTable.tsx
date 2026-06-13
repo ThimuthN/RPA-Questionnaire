@@ -44,7 +44,7 @@ const quickActionItemClassName =
 const quickActionDangerClassName =
   "block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium text-[color:var(--app-danger)] transition hover:bg-[color:var(--app-danger-soft)]";
 
-function contextualAction(candidate: CandidateWorkspaceItem) {
+function contextualAction(candidate: CandidateWorkspaceItem, workspaceId?: string, returnTo?: string) {
   if (candidate.latestAssessment?.attemptId) {
     return {
       href: `/results/${candidate.latestAssessment.attemptId}` as Route,
@@ -54,8 +54,9 @@ function contextualAction(candidate: CandidateWorkspaceItem) {
   }
 
   if (candidate.latestAssessmentStatus === "none") {
+    const href = buildCandidateProfileHref(candidate.id, workspaceId, returnTo) + "&tab=progress";
     return {
-      href: `/create-test?candidateId=${candidate.id}` as Route,
+      href: href as Route,
       label: "Assign assessment",
       shortLabel: "Assign"
     };
@@ -221,7 +222,7 @@ export function CandidateWorkspaceTable({
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 const stage = normalizeCandidateStage(candidate.stage);
                 const decision = finalDecisionLabel(candidate);
-                const action = contextualAction(candidate);
+                const action = contextualAction(candidate, workspaceId, currentPathAndQuery);
                 const candidateResumeHref = resumeHref(candidate);
                 const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
                 return (
@@ -343,7 +344,7 @@ export function CandidateWorkspaceTable({
               const candidate = rows.find((c) => c.id === openMenuId)!;
               const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
               const candidateResumeHref = resumeHref(candidate);
-              const action = contextualAction(candidate);
+              const action = contextualAction(candidate, workspaceId, currentPathAndQuery);
               const stage = normalizeCandidateStage(candidate.stage);
               const forwardStages = getForwardCandidateStages(stage);
 

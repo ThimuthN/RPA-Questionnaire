@@ -276,8 +276,10 @@ export function CreateAssessmentBuilder({
   title = "Assemble an assessment",
   subtitle = "Choose the mix, set the details, then share it.",
   utility,
+  embedded = false,
   linkedCandidateId,
-  linkedCandidateMilestoneId
+  linkedCandidateMilestoneId,
+  onInviteCreated
 }: {
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
@@ -285,8 +287,10 @@ export function CreateAssessmentBuilder({
   title?: string;
   subtitle?: string;
   utility?: ReactNode;
+  embedded?: boolean;
   linkedCandidateId?: string;
   linkedCandidateMilestoneId?: string;
+  onInviteCreated?: () => void | Promise<void>;
 }) {
   const reduceMotion = useReducedMotion();
   const [step, setStep] = useState<WizardStep>("select");
@@ -519,6 +523,7 @@ export function CreateAssessmentBuilder({
           setRoleWarning(roleWarning);
         }
         setStep("share");
+        await onInviteCreated?.();
         return;
       }
 
@@ -622,16 +627,19 @@ export function CreateAssessmentBuilder({
     </div>
   );
 
-  return (
-    <SceneShell
-      variant="create"
-      tone="page"
-      eyebrow={eyebrow}
-      title={title}
-      subtitle={subtitle}
-      utility={utility}
-    >
-      <div className="space-y-4">
+  const builderContent = (
+    <div className="space-y-4">
+      {embedded ? (
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.22em] text-brand-300">{eyebrow}</p>
+            <h1 className="text-3xl text-[color:var(--app-heading)]">{title}</h1>
+            <p className="max-w-3xl text-sm text-[color:var(--app-muted)]">{subtitle}</p>
+          </div>
+          {utility ? <div className="flex flex-wrap gap-2">{utility}</div> : null}
+        </div>
+      ) : null}
+
         <StepRail
           activeId={step}
           className={stepRailGridClassName(visibleStepIds.length)}
@@ -1221,7 +1229,23 @@ export function CreateAssessmentBuilder({
           </div>
           ) : null}
         </div>
-      </div>
+    </div>
+  );
+
+  if (embedded) {
+    return builderContent;
+  }
+
+  return (
+    <SceneShell
+      variant="create"
+      tone="page"
+      eyebrow={eyebrow}
+      title={title}
+      subtitle={subtitle}
+      utility={utility}
+    >
+      {builderContent}
     </SceneShell>
   );
 }
