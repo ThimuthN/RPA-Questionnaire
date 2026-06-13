@@ -19,6 +19,7 @@ export {
   upsertInterviewPanelForMilestone,
   linkCandidateAssessmentToMilestone,
   attachExistingAssessmentToMilestone,
+  unlinkAssessmentFromMilestone,
   deriveStageFromMilestones,
   syncCandidateStageFromMilestones
 } from "./milestones";

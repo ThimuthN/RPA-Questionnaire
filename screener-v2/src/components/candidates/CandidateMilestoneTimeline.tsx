@@ -353,6 +353,7 @@ function ScreenerMilestoneCard({
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
+  const [isUnlinking, setIsUnlinking] = useState(false);
   const [checkError, setCheckError] = useState("");
   const [builderOpen, setBuilderOpen] = useState(false);
   const checks = milestone.checks || [];
@@ -387,6 +388,34 @@ function ScreenerMilestoneCard({
     }
   };
 
+  const handleUnlinkAssessment = async () => {
+    setIsUnlinking(true);
+    setCheckError("");
+    try {
+      const formData = new FormData();
+      formData.append("action", "unlink_assessment");
+      const response = await fetch(`/api/candidates/${candidateId}/milestones/${milestone.id}`, {
+        method: "POST",
+        body: formData
+      });
+      if (response.ok) {
+        router.refresh();
+      } else {
+        const data = await response.json();
+        setCheckError(data.message || "Could not unlink assessment.");
+      }
+    } catch (error) {
+      setCheckError(error instanceof Error ? error.message : "Network error.");
+    } finally {
+      setIsUnlinking(false);
+    }
+  };
+
+  const canManualOverride =
+    milestone.mode === "platform" &&
+    !!milestone.assessment &&
+    screenerTestCheck?.status !== "passed";
+
   return (
     <div className="space-y-4">
       {checkError ? (
@@ -420,15 +449,38 @@ function ScreenerMilestoneCard({
           <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Screening assessment</h4>
           {screenerTestCheck ? <CheckBadge status={screenerTestCheck.status} /> : null}
         </div>
-        <div className="space-y-3 pt-1">
-          {!milestone.assessment ? (
+        {!milestone.assessment ? (
+          <div className="pt-1">
             <Button type="button" variant="secondary" onClick={() => setBuilderOpen(true)}>
               Create assessment
             </Button>
-          ) : (
+          </div>
+        ) : (
+          <>
             <LinkedAssessmentSummary milestone={milestone} />
-          )}
-        </div>
+            <div className="flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-3">
+              {canManualOverride ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => handleCheckAction("screener_test", "passed")}
+                  disabled={isPending}
+                >
+                  {isPending ? "Updating…" : "Mark as complete"}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleUnlinkAssessment}
+                disabled={isUnlinking}
+                className="text-[color:var(--app-danger)]"
+              >
+                {isUnlinking ? "Unlinking…" : "Unlink assessment"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
 
       <CandidateAssessmentBuilderOverlay
@@ -897,6 +949,7 @@ function AdvancedReviewCard({
                     <X className="h-4 w-4 text-[color:var(--app-danger)]" />
                   </button>
                 </div>
+                {m.assessment ? <LinkedAssessmentSummary milestone={m} /> : null}
               </div>
             );
           })}

@@ -16,7 +16,8 @@ import {
   initOrUpdateMilestoneCheck,
   quickUpdateCandidateMilestoneStatus,
   upsertInterviewPanelForMilestone,
-  updateCandidateMilestone
+  updateCandidateMilestone,
+  unlinkAssessmentFromMilestone
 } from "@/lib/db/candidates";
 
 const saveMilestoneSchema = z.object({
@@ -105,6 +106,11 @@ export async function POST(
         session.name ?? undefined
       );
       return redirectToPath(request, id, returnTo, "updated");
+    }
+
+    if (action === "unlink_assessment") {
+      await unlinkAssessmentFromMilestone(id, milestoneId, session.userId ?? undefined);
+      return NextResponse.json({ success: true });
     }
 
     const body = saveMilestoneSchema.parse(raw);

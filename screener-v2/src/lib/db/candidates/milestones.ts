@@ -619,6 +619,56 @@ export async function linkCandidateAssessmentToMilestone(input: {
   });
 }
 
+export async function unlinkAssessmentFromMilestone(
+  candidateId: string,
+  milestoneId: string,
+  actorId?: string
+) {
+  await prisma.$transaction(async (tx) => {
+    // Remove the screener_test check so status is re-derived without it
+    await tx.candidateMilestoneCheck.deleteMany({
+      where: { milestoneId, type: "screener_test" }
+    });
+
+    // Re-derive status from remaining checks
+    const remainingChecks = await tx.candidateMilestoneCheck.findMany({
+      where: { milestoneId },
+      select: { type: true, status: true }
+    });
+
+    const ms = await tx.candidateMilestone.findUniqueOrThrow({
+      where: { id: milestoneId },
+      select: { type: true }
+    });
+
+    const defs = milestoneCheckDefs[ms.type as CandidateMilestoneType] ?? [];
+    const newStatus = deriveMilestoneStatus(
+      remainingChecks as Array<{ type: CheckType; status: string }>,
+      defs
+    );
+
+    await tx.candidateMilestone.update({
+      where: { id: milestoneId },
+      data: {
+        candidateAssessmentId: null,
+        mode: "manual",
+        status: newStatus
+      }
+    });
+
+    await logActivityEvent(tx, {
+      candidateId,
+      event: "assessment_unlinked",
+      entityType: "milestone",
+      entityId: milestoneId,
+      detail: "Assessment unlinked from screening step",
+      actorId
+    });
+
+    await syncCandidateStageFromMilestones(candidateId, tx);
+  });
+}
+
 export async function attachExistingAssessmentToMilestone(input: {
   candidateId: string;
   milestoneId: string;
