@@ -1075,19 +1075,26 @@ export function CandidateMilestoneTimeline({
             ? node.groupedMilestones.every((m) => isMilestoneComplete(m.status))
             : isMilestoneComplete(node.status);
 
+          // Skipped = bypassed, visually distinct from done
+          const isSkipped = !isAdvancedReviewGroup(node) && node.status === "skipped";
+          const isDone = isComplete && !isSkipped;
           const isFailed = !isAdvancedReviewGroup(node) && node.status === "failed";
           const title = railNodeTitle(node);
 
           const dotClass = cn(
             "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer",
-            isComplete &&
-              "bg-[color:var(--app-brand)] text-white",
-            isActive && !isComplete &&
-              "bg-[color:var(--app-brand)] text-white ring-[3px] ring-[color-mix(in_srgb,var(--app-brand)_28%,transparent)]",
-            isFailed &&
-              "bg-[color:var(--app-danger)] text-white",
-            !isComplete && !isActive && !isFailed &&
-              "border-2 border-[color:var(--app-border)] bg-[color:var(--app-surface)] text-[color:var(--app-muted)]"
+            isSkipped
+              ? cn(
+                  "border-2 border-dashed border-[color:var(--app-muted)]/40 text-[color:var(--app-muted)]",
+                  isActive ? "bg-[color:var(--app-surface)] ring-[3px] ring-[color:var(--app-muted)]/15" : "bg-transparent"
+                )
+              : isDone
+              ? "bg-[color:var(--app-brand)] text-white"
+              : isActive
+              ? "bg-[color:var(--app-brand)] text-white ring-[3px] ring-[color-mix(in_srgb,var(--app-brand)_28%,transparent)]"
+              : isFailed
+              ? "bg-[color:var(--app-danger)] text-white"
+              : "border-2 border-[color:var(--app-border)] bg-[color:var(--app-surface)] text-[color:var(--app-muted)]"
           );
 
           return (
@@ -1100,7 +1107,9 @@ export function CandidateMilestoneTimeline({
                   className={dotClass}
                   aria-label={`Go to ${title}`}
                 >
-                  {isComplete ? (
+                  {isSkipped ? (
+                    <span>–</span>
+                  ) : isDone ? (
                     <CheckIcon />
                   ) : isFailed ? (
                     <span>✕</span>
@@ -1118,6 +1127,8 @@ export function CandidateMilestoneTimeline({
                       "text-[11px] font-medium leading-tight transition-colors",
                       isActive
                         ? "text-[color:var(--app-heading)]"
+                        : isSkipped
+                        ? "text-[color:var(--app-muted)] opacity-50"
                         : "text-[color:var(--app-muted)]"
                     )}
                   >
@@ -1126,14 +1137,12 @@ export function CandidateMilestoneTimeline({
                 </button>
               </div>
 
-              {/* Connector line */}
+              {/* Connector line — dashed/muted when the left node was skipped */}
               {!isLast && (
                 <div
                   className={cn(
                     "mt-4 h-px flex-1 transition-colors duration-300",
-                    isComplete
-                      ? "bg-[color:var(--app-brand)]"
-                      : "bg-[color:var(--app-border)]"
+                    isDone ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-border)]"
                   )}
                 />
               )}
@@ -1169,6 +1178,13 @@ export function CandidateMilestoneTimeline({
               <p className="text-sm text-[color:var(--app-muted)]">{activeSummary}</p>
             </div>
           </div>
+
+          {/* Skipped step notice — shown when the selected step was bypassed */}
+          {!activeIsAdvanced && activeStatus === "skipped" ? (
+            <div className="rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
+              This step was skipped. Update the status below to re-activate it — earlier steps will stay skipped and the pipeline stage will sync automatically.
+            </div>
+          ) : null}
 
           {/* Stage content */}
           <AnimatePresence mode="wait">

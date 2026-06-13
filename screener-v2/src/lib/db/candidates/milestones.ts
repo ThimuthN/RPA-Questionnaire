@@ -40,6 +40,10 @@ async function applyMilestoneCascade(
   const savedIndex = allMilestones.findIndex((m) => m.id === savedMilestoneId);
   if (savedIndex === -1) return;
 
+  const currentMilestone = allMilestones[savedIndex];
+
+  // Any not_started step before this one gets skipped — including when re-activating
+  // a previously skipped step by jumping back to it.
   const earlierNotStartedIds = allMilestones
     .slice(0, savedIndex)
     .filter((m) => m.status === "not_started")
@@ -52,24 +56,35 @@ async function applyMilestoneCascade(
     });
   }
 
+  // When a step becomes active, stage immediately reflects where the candidate is.
+  if (newStatus === "in_progress") {
+    const stage = stageForCascadeAdvancement(currentMilestone.sortOrder);
+    if (stage) {
+      await tx.candidate.update({ where: { id: candidateId }, data: { stage } });
+    }
+  }
+
   if (newStatus === "done") {
     const nextMilestone = allMilestones
       .slice(savedIndex + 1)
       .find((m) => m.status === "not_started" && m.sortOrder < 9999);
 
     if (nextMilestone) {
+      // Advance the next pending step and sync stage to it.
       await tx.candidateMilestone.update({
         where: { id: nextMilestone.id },
         data: { status: "in_progress" }
       });
-
-      // Sync candidate.stage so both sources of truth stay aligned
       const nextStage = stageForCascadeAdvancement(nextMilestone.sortOrder);
       if (nextStage) {
-        await tx.candidate.update({
-          where: { id: candidateId },
-          data: { stage: nextStage }
-        });
+        await tx.candidate.update({ where: { id: candidateId }, data: { stage: nextStage } });
+      }
+    } else {
+      // Nothing left to advance — stage stays at this step's level (e.g. advanced_review
+      // while waiting for the final hire/reject decision on the finalized milestone).
+      const stage = stageForCascadeAdvancement(currentMilestone.sortOrder);
+      if (stage) {
+        await tx.candidate.update({ where: { id: candidateId }, data: { stage } });
       }
     }
   }
