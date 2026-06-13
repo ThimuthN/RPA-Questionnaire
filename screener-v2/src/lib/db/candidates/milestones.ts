@@ -63,9 +63,15 @@ export async function syncCandidateStageFromMilestones(
     where: { candidateId },
     select: { sortOrder: true, status: true }
   });
+  const derivedStage = deriveStageFromMilestones(milestones);
   await tx.candidate.update({
     where: { id: candidateId },
-    data: { stage: deriveStageFromMilestones(milestones) }
+    data: {
+      stage: derivedStage,
+      // Completing the finalized milestone means the org has made a final decision;
+      // keep orgStage in sync so the Final tab list and count both reflect the change.
+      ...(derivedStage === "finalized" ? { orgStage: "finalized" } : { orgStage: "active" })
+    }
   });
 }
 

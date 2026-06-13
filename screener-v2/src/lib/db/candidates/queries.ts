@@ -482,6 +482,10 @@ export async function getCandidateStageCounts(departmentId?: string): Promise<Ca
   for (const group of stageCounts) {
     if (group.stage === "new") {
       counts.pipeline += group._count;
+    } else if (group.stage === "finalized") {
+      // Candidates with stage="finalized" but orgStage="active" are a data inconsistency;
+      // add to the separately-computed finalizedCount instead of overwriting it.
+      counts.finalized += group._count;
     } else if (group.stage in counts) {
       counts[group.stage as keyof CandidateStageCounts] = group._count;
     }
