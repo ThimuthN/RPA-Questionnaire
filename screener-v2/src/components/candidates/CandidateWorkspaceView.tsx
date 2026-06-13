@@ -213,20 +213,22 @@ export async function CandidateWorkspaceView({
         {params.error ? <NoticeBanner tone="error">{params.error}</NoticeBanner> : null}
 
         <div className="space-y-4">
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <h2 className="text-2xl text-[color:var(--app-heading)]">Candidate database</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">
-                Use this view for active pipeline tracking. Open the profile for resume, notes, assessments, and decisions.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusPill label={`${page.total} candidates`} tone="neutral" />
-              <StatusPill label={`${page.summary.readyForReview} ready for review`} tone="amber" />
-              <StatusPill label={`${page.summary.stalled} stalled`} tone={page.summary.stalled > 0 ? "red" : "neutral"} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-2">
+              <div className="space-y-0.5">
+                <h2 className="text-2xl text-[color:var(--app-heading)]">Candidates</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  Pipeline candidates across all active stages.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusPill label={`${page.total} total`} tone="neutral" />
+                <StatusPill label={`${page.summary.readyForReview} to review`} tone="amber" />
+                <StatusPill label={`${page.summary.stalled} stalled`} tone={page.summary.stalled > 0 ? "red" : "neutral"} />
+              </div>
             </div>
             {canManageCandidates ? (
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-shrink-0 flex-wrap items-center gap-3">
                 <Link href={
                   (scope === "department" && departmentId
                     ? `/departments/${departmentId}/candidates/new`
@@ -338,14 +340,12 @@ export async function CandidateWorkspaceView({
         </div>
 
         {page.rows.length === 0 ? (
-          <StagePanel className="space-y-3">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">
-              {scope === "department" ? "No candidates in this workspace yet" : "No candidates in this view"}
-            </h2>
+          <StagePanel tone="open" className="space-y-3">
+            <h2 className="text-2xl text-[color:var(--app-heading)]">No candidates</h2>
             <p className="text-sm text-[color:var(--app-muted)]">
               {scope === "department"
-                ? "Add or import candidates for this workspace to start tracking the hiring journey."
-                : "Candidates appear here after applications are reviewed or records are created."}
+                ? "Add or import candidates to start tracking the hiring pipeline for this department."
+                : "Candidates appear here after applications are reviewed or records are added."}
             </p>
             <div className="flex flex-wrap gap-3">
               {canManageCandidates ? (

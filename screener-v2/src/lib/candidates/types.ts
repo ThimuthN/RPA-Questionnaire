@@ -53,11 +53,11 @@ export const candidateAssessmentStatusValues = [
 export type CandidateAssessmentStatus = (typeof candidateAssessmentStatusValues)[number];
 
 export const candidateStageLabels: Record<CandidateStage, string> = {
-  applicant: "Applicants",
+  applicant: "Applied",
   pipeline: "Pipeline",
-  screening: "Screener",
+  screening: "Screening",
   interview: "Interview",
-  advanced_review: "Advanced Review",
+  advanced_review: "Review",
   finalized: "Finalized"
 };
 

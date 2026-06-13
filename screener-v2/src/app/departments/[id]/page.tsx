@@ -35,21 +35,20 @@ export default async function DepartmentDetailPage({
 
   const cards = [
     { label: "Team", value: userCount, href: `/departments/${id}/users` as Route },
-    { label: "Job Designations", value: designationCount, href: `/departments/${id}/designations` as Route },
+    { label: "Roles", value: designationCount, href: `/departments/${id}/designations` as Route },
     { label: "Open jobs", value: openJobCount, href: `/departments/${id}/jobs` as Route },
     { label: "Applicants", value: applicantCount, href: `/departments/${id}/applicants` as Route },
-    { label: "Active candidates", value: activeCandidateCount, href: `/departments/${id}/candidates` as Route },
+    { label: "Candidates", value: activeCandidateCount, href: `/departments/${id}/candidates` as Route },
     { label: "Finalized", value: finalizedCandidateCount, href: `/departments/${id}/candidates?stage=finalized` as Route },
     { label: "Assessments", value: assessmentCount, href: `/departments/${id}/assessments` as Route }
   ];
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Quick links</p>
-        <h2 className="text-2xl text-[color:var(--app-heading)]">Workspace overview</h2>
+      <div className="space-y-0.5">
+        <h2 className="text-2xl text-[color:var(--app-heading)]">Overview</h2>
         <p className="text-sm text-[color:var(--app-muted)]">
-          Workspace summary. Select a section to manage it.
+          Select a section to manage it.
         </p>
       </div>
 

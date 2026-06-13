@@ -6,6 +6,7 @@ import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMil
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
 import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySkeleton";
 import { CandidateSidebar } from "@/components/candidates/CandidateSidebar";
+import { CandidatePipelineProgress } from "@/components/candidates/CandidatePipelineProgress";
 import { CandidateOfferPanel } from "@/components/candidates/CandidateOfferPanel";
 import { EmailComposerModal } from "@/components/candidates/EmailComposerModal";
 import { EmailLogPanel } from "@/components/candidates/EmailLogPanel";
@@ -391,9 +392,22 @@ export default async function CandidateDetailPage({
         <div className="min-w-0 flex-1 space-y-4">
           {(!hasLinkedJourney || !hasResponsibleTeam) ? (
             <div className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 space-y-1">
-              {!hasLinkedJourney ? <p>Link this profile to a job application or department pipeline to begin the hiring workflow.</p> : null}
-              {!hasResponsibleTeam ? <p>Assign a responsible team before advancing interviews or decisions.</p> : null}
+              {!hasLinkedJourney ? <p>No active pipeline — link a job application or candidacy to start the hiring workflow.</p> : null}
+              {!hasResponsibleTeam ? <p>Assign a hiring team to proceed with this candidate.</p> : null}
             </div>
+          ) : null}
+
+          {hasLinkedJourney && candidate.milestones.length > 0 ? (
+            <CandidatePipelineProgress
+              milestones={candidate.milestones.map((m) => ({
+                id: m.id,
+                type: m.type,
+                title: m.title,
+                status: m.status,
+                sortOrder: m.sortOrder,
+              }))}
+              pipelineHref={buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "pipeline") as Route}
+            />
           ) : null}
 
           <ProfileTabs
@@ -405,11 +419,10 @@ export default async function CandidateDetailPage({
 
           {/* Pipeline tab */}
           {currentTab === "pipeline" ? (
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-              <StagePanel className="space-y-4">
-                <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Pipeline</h2>
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+              <div>
                 {candidate.milestones.length === 0 ? (
-                  <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
+                  <div className="rounded-[16px] bg-[color:var(--app-surface-soft)] p-6">
                     <DefaultJourneySkeleton hasHiringJourney={hasActiveHiringJourney} />
                   </div>
                 ) : (
@@ -424,18 +437,15 @@ export default async function CandidateDetailPage({
                     availableInterviewers={availableInterviewers}
                   />
                 )}
-              </StagePanel>
+              </div>
 
-              <div className="space-y-5">
-                <StagePanel className="space-y-4">
-                  <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Decision</h2>
-                  <FinalizeActionBar
-                    candidateId={candidate.id}
-                    orgStage={candidate.orgStage}
-                    finalizedAs={candidate.finalizedAs}
-                    permissions={session.permissions}
-                  />
-                </StagePanel>
+              <div className="space-y-4">
+                <FinalizeActionBar
+                  candidateId={candidate.id}
+                  orgStage={candidate.orgStage}
+                  finalizedAs={candidate.finalizedAs}
+                  permissions={session.permissions}
+                />
 
                 {(activeApplication || teamCount > 0) ? (
                   <ResponsibleTeamCard
@@ -453,7 +463,7 @@ export default async function CandidateDetailPage({
 
           {/* Notes tab */}
           {currentTab === "notes" ? (
-            <StagePanel className="space-y-4">
+            <div className="space-y-5">
               <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Notes</h2>
               <CandidateNotesModal
                 candidateId={candidate.id}
@@ -465,22 +475,22 @@ export default async function CandidateDetailPage({
                   author: note.createdByName || note.createdByEmail,
                 }))}
               />
-            </StagePanel>
+            </div>
           ) : null}
 
           {/* Activity tab */}
           {currentTab === "activity" ? (
-            <StagePanel className="space-y-4">
+            <div className="space-y-5">
               <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Activity</h2>
               <CandidateActivityModal items={activityFeed} />
-            </StagePanel>
+            </div>
           ) : null}
 
           {/* Files tab */}
           {currentTab === "files" ? (
-            <StagePanel id="resume" className="space-y-4">
-              <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Resume</h2>
-              <div className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+            <div id="resume" className="space-y-5">
+              <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Files</h2>
+              <StagePanel tone="flat" className="space-y-4">
                 {currentResume ? (
                   <>
                     <div className="space-y-1">
@@ -509,7 +519,7 @@ export default async function CandidateDetailPage({
                     <p className="text-xs text-[color:var(--app-muted)]">Upload one below.</p>
                   </div>
                 )}
-                <details open={!currentResume} className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
+                <details open={!currentResume} className="rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
                   <summary className="cursor-pointer list-none text-sm font-medium text-[color:var(--app-heading)] [&::-webkit-details-marker]:hidden">
                     {currentResume ? "Replace resume" : "Upload resume"}
                   </summary>
@@ -517,27 +527,23 @@ export default async function CandidateDetailPage({
                     <ResumeUploader candidateId={candidate.id} hasResume={Boolean(currentResume)} />
                   </div>
                 </details>
-              </div>
+              </StagePanel>
 
               {safeExternalUrl(candidate.candidateFolderUrl) ? (
                 <div className="space-y-2">
                   <h3 className="text-sm font-medium text-[color:var(--app-heading)]">Shared folder</h3>
-                  <a
-                    href={safeExternalUrl(candidate.candidateFolderUrl)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <a href={safeExternalUrl(candidate.candidateFolderUrl)} target="_blank" rel="noreferrer">
                     <Button type="button" variant="secondary">Open shared folder</Button>
                   </a>
                 </div>
               ) : null}
-            </StagePanel>
+            </div>
           ) : null}
 
           {/* Emails tab */}
           {currentTab === "emails" ? (
-            <StagePanel className="space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="space-y-5">
+              <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Emails</h2>
                   <p className="text-sm text-[color:var(--app-muted)]">
@@ -555,12 +561,12 @@ export default async function CandidateDetailPage({
                 candidateId={candidate.id}
                 initialLogs={serializedEmailLogs}
               />
-            </StagePanel>
+            </div>
           ) : null}
 
           {/* Offer tab */}
           {currentTab === "offer" ? (
-            <StagePanel className="space-y-4">
+            <div className="space-y-5">
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Offer</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
@@ -572,7 +578,7 @@ export default async function CandidateDetailPage({
                 initialOffer={offerForPanel}
                 canManage={canManageCandidate}
               />
-            </StagePanel>
+            </div>
           ) : null}
         </div>
       </div>

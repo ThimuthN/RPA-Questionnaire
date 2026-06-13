@@ -8,7 +8,7 @@ describe("getCandidateStageLabel", () => {
   });
 
   it("keeps the screening label aligned across table and profile views", () => {
-    expect(getCandidateStageLabel("screening")).toBe("Screening assessment");
+    expect(getCandidateStageLabel("screening")).toBe("Screening");
   });
 
   it("normalizes the legacy new stage to the pipeline label", () => {

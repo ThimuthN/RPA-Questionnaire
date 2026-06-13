@@ -10,7 +10,7 @@ import {
   Users2,
   Users,
   Lock,
-  LogOut
+  FileCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,10 +19,10 @@ const WORKSPACE_SUBITEMS = [
   { key: "jobs", label: "Jobs", icon: BriefcaseBusiness, href: "/departments/{id}/jobs" },
   { key: "applicants", label: "Applicants", icon: ClipboardList, href: "/departments/{id}/applicants" },
   { key: "candidates", label: "Candidates", icon: Users2, href: "/departments/{id}/candidates" },
-  { key: "assessments", label: "Assessments", icon: LogOut, href: "/departments/{id}/assessments" },
+  { key: "assessments", label: "Assessments", icon: FileCheck, href: "/departments/{id}/assessments" },
   { key: "team", label: "Team", icon: Users, href: "/departments/{id}/users" },
   { key: "access", label: "Access", icon: Lock, href: "/departments/{id}/access" },
-  { key: "designations", label: "Job Designations", icon: BriefcaseBusiness, href: "/departments/{id}/designations" }
+  { key: "designations", label: "Roles", icon: BriefcaseBusiness, href: "/departments/{id}/designations" }
 ];
 
 function isAssessmentWorkspacePath(pathname: string, departmentId: string, workspaceId?: string | null) {
@@ -33,6 +33,24 @@ function isAssessmentWorkspacePath(pathname: string, departmentId: string, works
       pathname.startsWith("/addons") ||
       pathname.startsWith("/results"))
   );
+}
+
+// Cross-route pages: /people/candidates/* with ?workspaceId matching this department
+// These pages live outside /departments/[id]/ but should still highlight the correct subnav item
+function isCrossRouteActive(itemKey: string, pathname: string, departmentId: string, workspaceId?: string | null) {
+  if (workspaceId !== departmentId) return false;
+
+  if (itemKey === "applicants" && pathname.startsWith("/people/candidates/applicants")) return true;
+  if (itemKey === "jobs" && pathname.startsWith("/people/candidates/jobs")) return true;
+  if (
+    itemKey === "candidates" &&
+    pathname.startsWith("/people/candidates") &&
+    !pathname.startsWith("/people/candidates/applicants") &&
+    !pathname.startsWith("/people/candidates/jobs")
+  ) {
+    return true;
+  }
+  return false;
 }
 
 export function isWorkspaceSubnavItemActive({
@@ -49,6 +67,10 @@ export function isWorkspaceSubnavItemActive({
   workspaceId?: string | null;
 }) {
   if (pathname === href || pathname.startsWith(`${href}/`)) {
+    return true;
+  }
+
+  if (isCrossRouteActive(itemKey, pathname, departmentId, workspaceId)) {
     return true;
   }
 

@@ -148,29 +148,18 @@ export async function ApplicantWorkspaceView({
       {params.updated ? <NoticeBanner tone="success">Application updated.</NoticeBanner> : null}
       {params.error ? <NoticeBanner tone="error">{params.error}</NoticeBanner> : null}
 
-      <div className="space-y-1">
-        <h2 className="text-2xl text-[color:var(--app-heading)]">Application queue</h2>
-        <p className="text-sm text-[color:var(--app-muted)]">
-          Applicants are people attached to a submitted job application. Move only qualified applications into the candidate pipeline.
-        </p>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Applicants</p>
-          <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{page.summary.total}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-0.5">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Applications</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">
+            Submitted applications awaiting review.
+          </p>
         </div>
-        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Submitted</p>
-          <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{page.summary.submitted}</p>
-        </div>
-        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Under review</p>
-          <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{page.summary.underReview}</p>
-        </div>
-        <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-          <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Resume missing</p>
-          <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{page.summary.resumeMissing}</p>
+        <div className="flex flex-shrink-0 items-center divide-x divide-[color:var(--app-border)] rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
+          <StatCell label="Total" value={page.summary.total} />
+          <StatCell label="Applied" value={page.summary.submitted} />
+          <StatCell label="In review" value={page.summary.underReview} />
+          <StatCell label="No resume" value={page.summary.resumeMissing} highlight={page.summary.resumeMissing > 0} />
         </div>
       </div>
 
@@ -191,10 +180,10 @@ export async function ApplicantWorkspaceView({
           ))}
         </select>
         <select name="status" defaultValue={params.status ?? ""} className={filterFieldClassName()}>
-          <option value="">All application statuses</option>
-          <option value="submitted">Submitted</option>
+          <option value="">All statuses</option>
+          <option value="submitted">Applied</option>
           <option value="under_review">Under review</option>
-          <option value="closed">Closed</option>
+          <option value="closed">Archived</option>
         </select>
         <Button>Apply</Button>
         <Link href={basePath}>
@@ -205,12 +194,12 @@ export async function ApplicantWorkspaceView({
       </form>
 
       {page.total === 0 ? (
-        <StagePanel className="space-y-3">
-          <h2 className="text-2xl text-[color:var(--app-heading)]">No applicants in this view</h2>
+        <StagePanel tone="open" className="space-y-3">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">No applications yet</h2>
           <p className="text-sm text-[color:var(--app-muted)]">
             {hasFilters
-              ? "No applicants match the current filters. Clear the filters or choose a different job or status."
-              : "Published jobs will fill this queue when candidates apply."}
+              ? "No applications match the current filters. Try adjusting your search."
+              : "Applications will appear here once candidates apply to a published job."}
           </p>
         </StagePanel>
       ) : (
@@ -229,6 +218,19 @@ export async function ApplicantWorkspaceView({
           />
         </>
       )}
+    </div>
+  );
+}
+
+function StatCell({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <div className="flex flex-col items-center px-4 py-2.5">
+      <span className={`text-xl font-semibold leading-none ${highlight ? "text-amber-400" : "text-[color:var(--app-heading)]"}`}>
+        {value}
+      </span>
+      <span className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+        {label}
+      </span>
     </div>
   );
 }

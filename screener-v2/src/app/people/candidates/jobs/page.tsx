@@ -75,26 +75,16 @@ export default async function CandidateJobsPage({
         ) : null}
 
         <div className="space-y-4">
-          <h2 className="text-2xl text-[color:var(--app-heading)]">Jobs</h2>
-          <p className="text-sm text-[color:var(--app-muted)]">
-            Keep openings publishable, confirm whether applications are open, and review the applicant queue by job.
-          </p>
-          <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Total jobs</p>
-            <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.length}</p>
-          </div>
-          <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Published jobs</p>
-            <p className="mt-2 text-3xl text-[color:var(--app-heading)]">{jobs.filter((job) => job.isPublished).length}</p>
-          </div>
-          <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
-            <p className="text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Open applicants</p>
-            <p className="mt-2 text-3xl text-[color:var(--app-heading)]">
-              {jobs.reduce((sum, job) => sum + job.applicantCount, 0)}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <p className="text-sm text-[color:var(--app-muted)]">
+              Open positions and their applicant queues.
             </p>
+            <div className="flex flex-shrink-0 items-center divide-x divide-[color:var(--app-border)] rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
+              <JobStatCell label="Total" value={jobs.length} />
+              <JobStatCell label="Published" value={jobs.filter((job) => job.isPublished).length} />
+              <JobStatCell label="Applicants" value={jobs.reduce((sum, job) => sum + job.applicantCount, 0)} />
+            </div>
           </div>
-        </div>
 
         <DataTable
           columns={[
@@ -104,7 +94,7 @@ export default async function CandidateJobsPage({
               render: (job) => (
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
-                  <p className="text-xs text-[color:var(--app-muted)]">{job.roleLabel || "No role linked"}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">{job.roleLabel || "No role"}</p>
                 </div>
               )
             },
@@ -199,5 +189,14 @@ export default async function CandidateJobsPage({
         </div>
       </div>
     </SceneShell>
+  );
+}
+
+function JobStatCell({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex flex-col items-center px-4 py-2.5">
+      <span className="text-xl font-semibold leading-none text-[color:var(--app-heading)]">{value}</span>
+      <span className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">{label}</span>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 import type {
-  CandidateAssessmentStatus,
-  CandidateNextAction
+  CandidateAssessmentStatus
 } from "@/lib/candidates/types";
 import type { CandidateDetail, CandidateListItem, CandidateNoteRecord } from "@/lib/db/candidates";
 
@@ -76,19 +75,17 @@ function openWorkBucket(args: {
   stage: string;
   staleDays: number;
   assessmentStatus: CandidateAssessmentStatus;
-  nextAction: CandidateNextAction;
 }) {
   if (!args.hasResume) return "needs_resume" as const;
   if (args.assessmentStatus === "none") return "test_not_sent" as const;
   if (
     args.assessmentStatus === "passed" ||
     args.assessmentStatus === "review" ||
-    args.assessmentStatus === "failed" ||
-    args.nextAction === "review_result"
+    args.assessmentStatus === "failed"
   ) {
     return "ready_for_review" as const;
   }
-  if (args.staleDays >= 7 && args.stage !== "finalized" && args.stage !== "finalized") {
+  if (args.staleDays >= 7 && args.stage !== "finalized") {
     return "stalled" as const;
   }
   if (args.stage === "finalized") return "moved_forward" as const;
@@ -109,8 +106,7 @@ export function toCandidateWorkspaceItem(candidate: CandidateListItem): Candidat
       hasResume: candidate.hasResume,
       stage: candidate.stage,
       staleDays,
-      assessmentStatus,
-      nextAction: candidate.nextAction
+      assessmentStatus
     })
   };
 }

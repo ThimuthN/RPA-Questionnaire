@@ -30,8 +30,8 @@ export default async function NewCandidatePage({
     <SceneShell
       variant="create"
       eyebrow="Candidates"
-      title="Register candidate"
-      subtitle="Add the basics first."
+      title="Add candidate"
+      subtitle="Fill in the basics to create a candidate record."
       utility={
         <Link href={"/people/candidates" as Route}>
           <Button variant="secondary">Back</Button>
@@ -39,7 +39,7 @@ export default async function NewCandidatePage({
       }
     >
       <div className="max-w-2xl">
-        <StagePanel className="space-y-5">
+        <StagePanel tone="flat" className="space-y-5">
           {params.existingId ? (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"

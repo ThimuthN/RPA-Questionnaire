@@ -3,7 +3,6 @@ import type { Route } from "next";
 import { notFound } from "next/navigation";
 import { NewCandidateForm } from "@/components/candidates/NewCandidateForm";
 import { Button } from "@/components/primitives/Button";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession } from "@/lib/auth/guards";
 import { getDepartment, listDepartments } from "@/lib/db/departments";
@@ -32,19 +31,18 @@ export default async function DepartmentNewCandidatePage({
   }
 
   return (
-    <SceneShell
-      variant="create"
-      eyebrow={department.name}
-      title="Register candidate"
-      subtitle="Add the basics first."
-      utility={
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Add candidate</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">Fill in the basics to create a candidate record.</p>
+        </div>
         <Link href={`/departments/${id}/candidates` as Route}>
           <Button variant="secondary">Back</Button>
         </Link>
-      }
-    >
+      </div>
       <div className="max-w-2xl">
-        <StagePanel className="space-y-5">
+        <StagePanel tone="flat" className="space-y-5">
           {pageState.existingId ? (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
@@ -94,6 +92,6 @@ export default async function DepartmentNewCandidatePage({
           />
         </StagePanel>
       </div>
-    </SceneShell>
+    </div>
   );
 }

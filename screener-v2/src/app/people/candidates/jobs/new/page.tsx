@@ -40,7 +40,7 @@ export default async function NewJobPostingPage({
     >
       <div className="space-y-5">
         <CandidatesViewSwitch current="jobs" />
-        <StagePanel className="max-w-3xl space-y-5">
+        <StagePanel tone="flat" className="max-w-3xl space-y-5">
           <div className="space-y-1">
             <h2 className="text-2xl text-[color:var(--app-heading)]">Create a job</h2>
             <p className="text-sm text-[color:var(--app-muted)]">This creates the internal record and the public page when published.</p>

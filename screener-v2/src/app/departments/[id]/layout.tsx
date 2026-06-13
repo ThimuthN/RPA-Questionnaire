@@ -1,5 +1,4 @@
 import { SceneShell } from "@/components/scene/SceneShell";
-import { StagePanel } from "@/components/scene/StagePanel";
 import { requirePageSession, requireDepartmentWorkspaceAccess } from "@/lib/auth/guards";
 import { getDepartment } from "@/lib/db/departments";
 import { notFound } from "next/navigation";
@@ -31,9 +30,9 @@ export default async function DepartmentWorkspaceLayout({ children, params }: La
       title={`${department.name}${!department.isActive ? " (Inactive)" : ""}`}
       subtitle="Hiring workspace"
     >
-      <StagePanel className="space-y-5">
+      <div className="space-y-5">
         {children}
-      </StagePanel>
+      </div>
     </SceneShell>
   );
 }

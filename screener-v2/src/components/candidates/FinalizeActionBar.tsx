@@ -54,16 +54,14 @@ export function FinalizeActionBar({
     "recorded";
 
   return (
-    <div className="space-y-2 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-[color:var(--app-heading)]">
-          {isFinalized ? `Final decision: ${finalDecisionLabel}` : "Final decision"}
+    <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      <div className="space-y-0.5">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+          Hiring decision
         </p>
-        {!isFinalized ? (
-          <p className="text-xs text-[color:var(--app-muted)]">
-            Mark the final hiring outcome for this candidate.
-          </p>
-        ) : null}
+        <p className="text-sm font-semibold text-[color:var(--app-heading)]">
+          {isFinalized ? `Marked as ${finalDecisionLabel}` : "No decision recorded"}
+        </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {!isFinalized && permissions.includes("manage_candidates") ? (

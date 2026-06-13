@@ -13,10 +13,10 @@ export const candidateApplicationStatusValues = [
 export type CandidateApplicationStatus = (typeof candidateApplicationStatusValues)[number];
 
 export const candidateApplicationStatusLabels: Record<CandidateApplicationStatus, string> = {
-  submitted: "Submitted",
+  submitted: "Applied",
   under_review: "Under review",
-  moved_to_pipeline: "Moved to pipeline",
-  closed: "Closed"
+  moved_to_pipeline: "In pipeline",
+  closed: "Archived"
 };
 
 export function isCandidateApplicationStatus(value: string): value is CandidateApplicationStatus {

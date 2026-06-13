@@ -132,7 +132,7 @@ export function ApplicantsTable({
                   />
                 </th>
                 <th scope="col" className="w-[22%] px-4 py-3 font-medium">Person</th>
-                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Applied job</th>
+                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Position</th>
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Applied</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
@@ -190,7 +190,7 @@ export function ApplicantsTable({
 
       <AssignmentModal
         isOpen={isModalOpen}
-        title="Assign responsible team"
+        title="Assign hiring team"
         description={`${selectedIds.length} applications selected`}
         users={users}
         availableRoles={[...applicationAssignmentRoles]}

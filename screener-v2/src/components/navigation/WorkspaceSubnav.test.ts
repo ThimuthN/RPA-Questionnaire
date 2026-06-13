@@ -36,4 +36,52 @@ describe("isWorkspaceSubnavItemActive", () => {
 
     expect(isActive).toBe(true);
   });
+
+  it("activates candidates item when on cross-route candidate profile with matching workspaceId", () => {
+    const isActive = isWorkspaceSubnavItemActive({
+      itemKey: "candidates",
+      href: "/departments/dept-1/candidates",
+      pathname: "/people/candidates/cand-123",
+      departmentId: "dept-1",
+      workspaceId: "dept-1"
+    });
+
+    expect(isActive).toBe(true);
+  });
+
+  it("does not activate candidates item on cross-route profile with mismatched workspaceId", () => {
+    const isActive = isWorkspaceSubnavItemActive({
+      itemKey: "candidates",
+      href: "/departments/dept-1/candidates",
+      pathname: "/people/candidates/cand-123",
+      departmentId: "dept-1",
+      workspaceId: "dept-2"
+    });
+
+    expect(isActive).toBe(false);
+  });
+
+  it("activates applicants item on cross-route applicant page with matching workspaceId", () => {
+    const isActive = isWorkspaceSubnavItemActive({
+      itemKey: "applicants",
+      href: "/departments/dept-1/applicants",
+      pathname: "/people/candidates/applicants/app-456",
+      departmentId: "dept-1",
+      workspaceId: "dept-1"
+    });
+
+    expect(isActive).toBe(true);
+  });
+
+  it("does not activate candidates item for applicants cross-route page", () => {
+    const isActive = isWorkspaceSubnavItemActive({
+      itemKey: "candidates",
+      href: "/departments/dept-1/candidates",
+      pathname: "/people/candidates/applicants/app-456",
+      departmentId: "dept-1",
+      workspaceId: "dept-1"
+    });
+
+    expect(isActive).toBe(false);
+  });
 });

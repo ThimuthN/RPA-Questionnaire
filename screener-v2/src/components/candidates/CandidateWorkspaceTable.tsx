@@ -54,7 +54,7 @@ function contextualAction(candidate: CandidateWorkspaceItem, workspaceId?: strin
   }
 
   if (candidate.latestAssessmentStatus === "none") {
-    const href = buildCandidateProfileHref(candidate.id, workspaceId, returnTo) + "&tab=progress";
+    const href = buildCandidateProfileHref(candidate.id, workspaceId, returnTo) + "&tab=pipeline";
     return {
       href: href as Route,
       label: "Assign assessment",
@@ -66,7 +66,6 @@ function contextualAction(candidate: CandidateWorkspaceItem, workspaceId?: strin
 }
 
 function displayStageActionLabel(stage: CandidateStage) {
-  if (stage === "screening") return "Move to Screening";
   return `Move to ${getCandidateStageLabel(stage)}`;
 }
 
@@ -211,10 +210,10 @@ export function CandidateWorkspaceTable({
                 </th>
                 <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Owner</th>
-                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Pipeline</th>
+                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Stage</th>
                 <th scope="col" className="w-[15%] px-4 py-3 font-medium">Role / department</th>
                 <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
-                <th scope="col" className="w-[22%] px-4 py-3 font-medium text-right">Quick access</th>
+                <th scope="col" className="w-[22%] px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -222,9 +221,12 @@ export function CandidateWorkspaceTable({
                 const isSelected = selectedCandidateIds.includes(candidate.id);
                 const stage = normalizeCandidateStage(candidate.stage);
                 const decision = finalDecisionLabel(candidate);
-                const action = contextualAction(candidate, workspaceId, currentPathAndQuery);
+                // Use explicit workspace prop, falling back to the candidate's own department
+                // so the sidebar stays in department context when navigating from a global view
+                const effectiveWorkspaceId = workspaceId ?? candidate.departmentId;
+                const action = contextualAction(candidate, effectiveWorkspaceId, currentPathAndQuery);
                 const candidateResumeHref = resumeHref(candidate);
-                const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
+                const profileHref = buildCandidateProfileHref(candidate.id, effectiveWorkspaceId, currentPathAndQuery);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
@@ -248,7 +250,7 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span className="truncate">{candidate.teamOwnerSummary || "No owner assigned."}</span>
+                      <span className="truncate">{candidate.teamOwnerSummary || "Unassigned"}</span>
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
@@ -265,10 +267,10 @@ export function CandidateWorkspaceTable({
                     <td className={tableCellClassName}>
                       <div className="space-y-1">
                         <p className="truncate text-sm text-[color:var(--app-text)]">
-                          {candidate.roleLabel || candidate.positionAppliedFor || "Role not set"}
+                          {candidate.roleLabel || candidate.positionAppliedFor || "No role"}
                         </p>
                         <p className="truncate text-xs text-[color:var(--app-muted)]">
-                          {candidate.departmentName || candidate.roleDepartment || "Department not assigned"}
+                          {candidate.departmentName || candidate.roleDepartment || "No department"}
                         </p>
                       </div>
                     </td>

@@ -81,13 +81,8 @@ export function JobPostingEditorContent({
       ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <StagePanel className="space-y-5">
-          <div className="space-y-1">
-            <h2 className="text-2xl text-[color:var(--app-heading)]">Job details</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">
-              Keep the public listing clear and easy to scan.
-            </p>
-          </div>
+        <StagePanel tone="flat" className="space-y-5">
+          <h2 className="text-2xl text-[color:var(--app-heading)]">Job details</h2>
           <JobPostingForm
             action={`/api/jobs/${job.id}`}
             submitLabel="Save job"
@@ -175,13 +170,8 @@ export function JobPostingEditorContent({
             </div>
           </StagePanel>
 
-          <StagePanel className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl text-[color:var(--app-heading)]">Recent applicants</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">
-                Keep the latest intake close to the job instead of jumping back to the queue.
-              </p>
-            </div>
+          <StagePanel tone="flat" className="space-y-4">
+            <h2 className="text-xl text-[color:var(--app-heading)]">Recent applicants</h2>
 
             {job.recentApplications.length === 0 ? (
               <p className="text-sm text-[color:var(--app-muted)]">
@@ -236,13 +226,8 @@ export function JobPostingEditorContent({
             )}
           </StagePanel>
 
-          <StagePanel className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-xl text-[color:var(--app-heading)]">Public description</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">
-                Preview the formatted description exactly as applicants will read it.
-              </p>
-            </div>
+          <StagePanel tone="flat" className="space-y-4">
+            <h2 className="text-xl text-[color:var(--app-heading)]">Public description</h2>
             <JobDescriptionContent html={job.description} />
           </StagePanel>
         </div>
