@@ -95,6 +95,10 @@ export function WorkspaceRail({
     visibleDepartments
   });
 
+  const currentDeptName = currentWorkspace && currentWorkspace !== "admin"
+    ? visibleDepartments.find((d) => d.id === currentWorkspace)?.name
+    : undefined;
+
   // Get nav items for current workspace
   const items = getNavItems(viewer, currentWorkspace);
 
@@ -159,13 +163,14 @@ export function WorkspaceRail({
                 <WorkspaceSubnav
                   departmentId={currentWorkspace}
                   collapsed={collapsed}
+                  departmentName={currentDeptName}
                 />
               </div>
             )}
 
             {/* Main Navigation - global items */}
             <nav className={cn(
-              "flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1",
+              "flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pr-1",
               viewer?.departmentId ? "mt-4 pt-4 border-t border-[color:var(--app-border)]" : "mt-2"
             )}>
               {items.map((item, index) => {
@@ -177,27 +182,40 @@ export function WorkspaceRail({
                 return (
                   <div key={`${item.href}-group`}>
                     {showSectionLabel && (
-                      <p className="px-4 pt-4 pb-1 text-[11px] uppercase tracking-[0.2em] text-[color:var(--app-muted)] font-semibold">
+                      <p className={cn(
+                        "px-3 pb-1.5 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-scene-text)]/50",
+                        index === 0 ? "pt-0.5" : "pt-4"
+                      )}>
                         {item.section}
                       </p>
                     )}
-                    <Link
-                      href={item.href}
-                      aria-label={collapsed ? item.label : undefined}
-                      title={collapsed ? item.label : undefined}
-                      className={cn(
-                        "group flex items-center rounded-[20px] border transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
-                        collapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
-                        active
-                          ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
-                          : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/18 hover:bg-white/10 hover:text-white"
+                    {/* Tooltip wrapper for collapsed state */}
+                    <div className="group/tip relative">
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "group flex items-center rounded-[14px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
+                          collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
+                          active
+                            ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
+                            : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/12 hover:bg-white/8 hover:text-white"
+                        )}
+                      >
+                        <Icon className="h-5 w-5 shrink-0" />
+                        <span className={cn("text-sm font-medium transition-all duration-200", collapsed ? "hidden" : "block")}>
+                          {item.label}
+                        </span>
+                      </Link>
+                      {/* CSS tooltip — only shown in collapsed mode */}
+                      {collapsed && (
+                        <div
+                          role="tooltip"
+                          className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
+                        >
+                          {item.label}
+                        </div>
                       )}
-                    >
-                      <Icon className="h-5 w-5 shrink-0" />
-                      <span className={cn("text-sm font-medium transition-all duration-300", collapsed ? "hidden" : "block")}>
-                        {item.label}
-                      </span>
-                    </Link>
+                    </div>
                   </div>
                 );
               })}
@@ -208,49 +226,82 @@ export function WorkspaceRail({
                 <div className="space-y-2">
                   <div
                     className={cn(
-                      "rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] transition-all duration-300",
-                      collapsed ? "p-3" : "p-4"
+                      "rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)] transition-all duration-300",
+                      collapsed ? "p-3" : "p-3.5"
                     )}
                   >
                     {collapsed ? (
-                      <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-brand)]">
-                        {viewer.name?.slice(0, 1) || viewer.email.slice(0, 1)}
-                      </p>
+                      <div className="group/tip relative flex justify-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--app-brand)]/15 text-sm font-semibold text-[color:var(--app-brand)]">
+                          {viewer.name?.slice(0, 1).toUpperCase() || viewer.email.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div
+                          role="tooltip"
+                          className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
+                        >
+                          {viewer.name || viewer.email}
+                        </div>
+                      </div>
                     ) : (
-                      <div className="space-y-1 transition-all duration-300">
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--app-brand)]">Workspace user</p>
-                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{viewer.name || viewer.email}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--app-brand)]/15 text-sm font-semibold text-[color:var(--app-brand)]">
+                          {viewer.name?.slice(0, 1).toUpperCase() || viewer.email.slice(0, 1).toUpperCase()}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium leading-tight text-[color:var(--app-heading)]">
+                            {viewer.name || viewer.email}
+                          </p>
+                          <p className="text-[11px] text-[color:var(--app-muted)] leading-tight mt-0.5">
+                            {isAdmin ? "Administrator" : "Member"}
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <form action="/api/auth/logout" method="post">
-                    <button
-                      type="submit"
-                      aria-label={collapsed ? "Log out" : undefined}
-                      title={collapsed ? "Log out" : undefined}
-                      className={cn(
-                        "inline-flex w-full items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)] transition-all duration-300 hover:bg-[color:var(--app-surface-soft)]",
-                        collapsed ? "justify-center p-3" : "gap-2 px-4 py-3"
-                      )}
-                    >
-                      <LogOut className="h-4 w-4 shrink-0" />
-                      <span className={cn("transition-all duration-300", collapsed ? "hidden" : "block")}>Log out</span>
-                    </button>
-                  </form>
+                  <div className="group/tip relative">
+                    <form action="/api/auth/logout" method="post">
+                      <button
+                        type="submit"
+                        className={cn(
+                          "inline-flex w-full items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)] transition-all duration-200 hover:bg-[color:var(--app-surface-soft)]",
+                          collapsed ? "justify-center p-3" : "gap-2 px-4 py-2.5"
+                        )}
+                      >
+                        <LogOut className="h-4 w-4 shrink-0" />
+                        <span className={cn("transition-all duration-200", collapsed ? "hidden" : "block")}>Log out</span>
+                      </button>
+                    </form>
+                    {collapsed && (
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
+                      >
+                        Log out
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  aria-label={collapsed ? "Log in" : undefined}
-                  title={collapsed ? "Log in" : undefined}
-                  className={cn(
-                    "inline-flex w-full items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)] transition-all duration-300 hover:bg-[color:var(--app-surface-soft)]",
-                    collapsed ? "justify-center p-3" : "gap-2 px-4 py-3"
+                <div className="group/tip relative">
+                  <Link
+                    href="/login"
+                    className={cn(
+                      "inline-flex w-full items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)] transition-all duration-200 hover:bg-[color:var(--app-surface-soft)]",
+                      collapsed ? "justify-center p-3" : "gap-2 px-4 py-2.5"
+                    )}
+                  >
+                    <LogIn className="h-4 w-4 shrink-0" />
+                    <span className={cn("transition-all duration-200", collapsed ? "hidden" : "block")}>Log in</span>
+                  </Link>
+                  {collapsed && (
+                    <div
+                      role="tooltip"
+                      className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
+                    >
+                      Log in
+                    </div>
                   )}
-                >
-                  <LogIn className="h-4 w-4 shrink-0" />
-                  <span className={cn("transition-all duration-300", collapsed ? "hidden" : "block")}>Log in</span>
-                </Link>
+                </div>
               )}
             </div>
           </div>

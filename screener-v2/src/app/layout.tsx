@@ -83,6 +83,7 @@ export default async function RootLayout({
                 </Link>
                 <MainNav
                   viewer={session ? { email: session.email, name: session.name, permissions: session.permissions, departmentId: session.departmentId } : null}
+                  departments={departments}
                 />
               </nav>
             </header>
