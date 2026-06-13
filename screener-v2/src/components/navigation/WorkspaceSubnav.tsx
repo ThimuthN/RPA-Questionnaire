@@ -111,11 +111,8 @@ export function WorkspaceSubnav({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  if (!departmentId) return null;
-
-  const candidatesBaseHref = `/departments/${departmentId}/candidates`;
-  const isOnCandidatesPath = pathname.startsWith(candidatesBaseHref);
+  const candidatesBaseHref = departmentId ? `/departments/${departmentId}/candidates` : "";
+  const isOnCandidatesPath = departmentId ? pathname.startsWith(candidatesBaseHref) : false;
   const currentStage = searchParams?.get("stage");
   const workspaceId = searchParams?.get("workspaceId");
 
@@ -124,6 +121,8 @@ export function WorkspaceSubnav({
   useEffect(() => {
     if (isOnCandidatesPath) setCandidatesExpanded(true);
   }, [isOnCandidatesPath]);
+
+  if (!departmentId) return null;
 
   return (
     <nav className="space-y-0.5">
