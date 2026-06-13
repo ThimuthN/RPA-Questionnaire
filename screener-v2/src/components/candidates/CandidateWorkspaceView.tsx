@@ -168,9 +168,9 @@ export async function CandidateWorkspaceView({
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
       departmentId: effectiveDepartmentId,
-      stage: isFinalizedView || selectedStageValues ? undefined : selectedStage,
+      stage: isFinalizedView ? "finalized" : selectedStageValues ? undefined : selectedStage,
       stageValues: selectedStageValues,
-      orgStage: isFinalizedView ? "finalized" : "active",
+      orgStage: isFinalizedView ? undefined : "active",
       finalizedAs: params.finalizedAs === "hired" || params.finalizedAs === "rejected"
         ? params.finalizedAs
         : undefined,

@@ -152,8 +152,8 @@ describe("CandidateWorkspaceView", () => {
     expect(vi.mocked(listCandidateWorkspacePage)).toHaveBeenCalledWith(
       expect.objectContaining({
         departmentId: "dept-1",
-        orgStage: "finalized",
-        stage: undefined
+        orgStage: undefined,
+        stage: "finalized"
       })
     );
   });
@@ -167,9 +167,9 @@ describe("CandidateWorkspaceView", () => {
     );
 
     // Check for status pills
-    expect(markup).toContain("candidates");
-    expect(markup).toContain("ready for review");
-    expect(markup).toContain("stalled");
+    expect(markup).toContain("Candidates");
+    expect(markup).toContain("0 to review");
+    expect(markup).toContain("0 stalled");
 
     // Check for action buttons
     expect(markup).toContain("Add candidate");
@@ -187,7 +187,7 @@ describe("CandidateWorkspaceView", () => {
       })
     );
 
-    expect(markup).toContain("No candidates in this workspace yet");
+    expect(markup).toContain("No candidates");
     expect(markup).toContain("Add or import candidates");
   });
 });

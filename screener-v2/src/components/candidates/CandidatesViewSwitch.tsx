@@ -46,10 +46,15 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
     { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath }
   ];
 
-  // Department scope: only show candidate lifecycle tabs
+  const departmentItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
+    { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath },
+    ...lifecycleItems
+  ];
+
+  // Department scope: keep Applicants visible alongside lifecycle tabs
   // Global scope: show both hiring switch (Jobs, Applicants) and lifecycle tabs
   return scope === "department"
-    ? lifecycleItems
+    ? departmentItems
     : [...hiringSwitchItems, ...lifecycleItems];
 }
 

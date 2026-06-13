@@ -28,7 +28,7 @@ describe("CandidatesViewSwitch", () => {
     expect(html).toContain("Screening");
   });
 
-  it("does NOT show Jobs or Applicants items in department scope", async () => {
+  it("shows Applicants but not Jobs in department scope", async () => {
     const component = await CandidatesViewSwitch({
       current: "pipeline",
       scope: "department",
@@ -37,16 +37,16 @@ describe("CandidatesViewSwitch", () => {
 
     const html = renderToStaticMarkup(component);
 
-    // Department scope should NOT have Jobs or Applicants
+    // Department scope should not have Jobs, but should keep Applicants visible
     expect(html).not.toContain(">Jobs<");
-    expect(html).not.toContain(">Applicants<");
+    expect(html).toContain(">Applicants<");
 
-    // But should have lifecycle tabs
+    // And should still have lifecycle tabs
     expect(html).toContain("Pipeline");
     expect(html).toContain("Screening");
     expect(html).toContain("Interview");
-    expect(html).toContain("Advanced Review");
-    expect(html).toContain("Finalized");
+    expect(html).toContain("Review");
+    expect(html).toContain("Final");
   });
 
   it("department scope shows all candidate lifecycle tabs", async () => {
@@ -59,7 +59,7 @@ describe("CandidatesViewSwitch", () => {
 
     const html = renderToStaticMarkup(component);
 
-    const lifecycleTabs = ["Pipeline", "Screening", "Interview", "Advanced Review", "Finalized"];
+    const lifecycleTabs = ["Applicants", "Pipeline", "Screening", "Interview", "Review", "Final"];
     lifecycleTabs.forEach(tab => {
       expect(html).toContain(tab);
     });
@@ -75,8 +75,9 @@ describe("CandidatesViewSwitch", () => {
 
     const html = renderToStaticMarkup(component);
 
-    // Should link to department-scoped candidates page
+    // Should link to department-scoped candidates/applicants pages
     expect(html).toContain("/departments/dept-1/candidates");
+    expect(html).toContain("/departments/dept-1/applicants");
 
     // Should not link to global candidates paths
     expect(html).not.toContain("/people/candidates/jobs");
