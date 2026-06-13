@@ -14,15 +14,59 @@ import { cuidLike } from "@/lib/tokens/token-service";
 import { mapMilestone } from "./mappers";
 import { logActivityEvent } from "./activity";
 
-// Derive candidate.stage from the next milestone's sortOrder, not its type.
-// This prevents custom interview-type substeps inserted at sortOrder >= 40
-// (inside the advanced_review group) from reverting stage back to "interview".
-function stageForCascadeAdvancement(sortOrder: number): string | null {
-  if (sortOrder < 20) return null; // pre-screener zone, no stage change
+// ─── Stage / milestone sync ───────────────────────────────────────────────────
+// candidate.stage is always *derived* from the milestone set — never assigned
+// per-transition. This eliminates edge-case bugs and keeps both sources of
+// truth permanently in sync regardless of how a milestone was updated.
+
+function stageFromSortOrder(sortOrder: number): string {
+  if (sortOrder < 20) return "pipeline";
   if (sortOrder < 30) return "screening";
   if (sortOrder < 40) return "interview";
   if (sortOrder < 9999) return "advanced_review";
-  return null; // finalized excluded by the sortOrder < 9999 filter upstream
+  return "finalized";
+}
+
+export function deriveStageFromMilestones(
+  milestones: ReadonlyArray<{ sortOrder: number; status: string }>
+): string {
+  const sorted = [...milestones].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  // Finalized milestone done → candidate decision recorded
+  const finalStep = sorted.find((m) => m.sortOrder >= 9999);
+  if (finalStep?.status === "done") return "finalized";
+
+  // In-progress step drives the current stage
+  const active = sorted.find((m) => m.status === "in_progress");
+  if (active) return stageFromSortOrder(active.sortOrder);
+
+  // No active step — next pending step is the upcoming stage
+  const nextPending = sorted.find(
+    (m) => m.status === "not_started" && m.sortOrder < 9999
+  );
+  if (nextPending) return stageFromSortOrder(nextPending.sortOrder);
+
+  // Everything before finalized is done/skipped — hold at last completed level
+  const lastCompleted = [...sorted]
+    .reverse()
+    .find((m) => m.status === "done" && m.sortOrder < 9999);
+  if (lastCompleted) return stageFromSortOrder(lastCompleted.sortOrder);
+
+  return "pipeline";
+}
+
+export async function syncCandidateStageFromMilestones(
+  candidateId: string,
+  tx: Prisma.TransactionClient
+): Promise<void> {
+  const milestones = await tx.candidateMilestone.findMany({
+    where: { candidateId },
+    select: { sortOrder: true, status: true }
+  });
+  await tx.candidate.update({
+    where: { id: candidateId },
+    data: { stage: deriveStageFromMilestones(milestones) }
+  });
 }
 
 async function applyMilestoneCascade(
@@ -30,20 +74,18 @@ async function applyMilestoneCascade(
   savedMilestoneId: string,
   newStatus: CandidateMilestoneStatus,
   tx: Prisma.TransactionClient
-) {
+): Promise<void> {
   const allMilestones = await tx.candidateMilestone.findMany({
     where: { candidateId },
-    select: { id: true, sortOrder: true, status: true, type: true },
+    select: { id: true, sortOrder: true, status: true },
     orderBy: { sortOrder: "asc" }
   });
 
   const savedIndex = allMilestones.findIndex((m) => m.id === savedMilestoneId);
   if (savedIndex === -1) return;
 
-  const currentMilestone = allMilestones[savedIndex];
-
-  // Any not_started step before this one gets skipped — including when re-activating
-  // a previously skipped step by jumping back to it.
+  // Skip any not_started steps before the saved one (handles forward jumps and
+  // re-activating a previously skipped step)
   const earlierNotStartedIds = allMilestones
     .slice(0, savedIndex)
     .filter((m) => m.status === "not_started")
@@ -56,38 +98,23 @@ async function applyMilestoneCascade(
     });
   }
 
-  // When a step becomes active, stage immediately reflects where the candidate is.
-  if (newStatus === "in_progress") {
-    const stage = stageForCascadeAdvancement(currentMilestone.sortOrder);
-    if (stage) {
-      await tx.candidate.update({ where: { id: candidateId }, data: { stage } });
-    }
-  }
-
+  // Completing a step auto-advances the next pending one to in_progress
   if (newStatus === "done") {
-    const nextMilestone = allMilestones
+    const nextPending = allMilestones
       .slice(savedIndex + 1)
       .find((m) => m.status === "not_started" && m.sortOrder < 9999);
 
-    if (nextMilestone) {
-      // Advance the next pending step and sync stage to it.
+    if (nextPending) {
       await tx.candidateMilestone.update({
-        where: { id: nextMilestone.id },
+        where: { id: nextPending.id },
         data: { status: "in_progress" }
       });
-      const nextStage = stageForCascadeAdvancement(nextMilestone.sortOrder);
-      if (nextStage) {
-        await tx.candidate.update({ where: { id: candidateId }, data: { stage: nextStage } });
-      }
-    } else {
-      // Nothing left to advance — stage stays at this step's level (e.g. advanced_review
-      // while waiting for the final hire/reject decision on the finalized milestone).
-      const stage = stageForCascadeAdvancement(currentMilestone.sortOrder);
-      if (stage) {
-        await tx.candidate.update({ where: { id: candidateId }, data: { stage } });
-      }
     }
   }
+
+  // Derive stage from the full (now-updated) milestone set — no per-transition
+  // stage logic, no null-return edge cases, always converges to the correct value
+  await syncCandidateStageFromMilestones(candidateId, tx);
 }
 
 export async function updateCandidateMilestone(

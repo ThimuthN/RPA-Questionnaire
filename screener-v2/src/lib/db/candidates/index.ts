@@ -18,6 +18,8 @@ export {
   initOrUpdateMilestoneCheck,
   upsertInterviewPanelForMilestone,
   linkCandidateAssessmentToMilestone,
-  attachExistingAssessmentToMilestone
+  attachExistingAssessmentToMilestone,
+  deriveStageFromMilestones,
+  syncCandidateStageFromMilestones
 } from "./milestones";
 export { listCandidates, listCandidateWorkspacePage, getCandidateStageCounts, getCandidateDetail } from "./queries";
