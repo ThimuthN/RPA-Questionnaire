@@ -7,6 +7,8 @@ import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal
 import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySkeleton";
 import { CandidateSidebar } from "@/components/candidates/CandidateSidebar";
 import { CandidateOfferPanel } from "@/components/candidates/CandidateOfferPanel";
+import { EmailComposerModal } from "@/components/candidates/EmailComposerModal";
+import { EmailLogPanel } from "@/components/candidates/EmailLogPanel";
 import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
 import { ResponsibleTeamCard } from "@/components/candidates/ResponsibleTeamCard";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
@@ -37,6 +39,7 @@ const profileTabs = [
   { key: "notes", label: "Notes" },
   { key: "activity", label: "Activity" },
   { key: "files", label: "Files" },
+  { key: "emails", label: "Emails" },
   { key: "offer", label: "Offer" },
 ] as const;
 
@@ -221,7 +224,7 @@ export default async function CandidateDetailPage({
     returnTo,
   });
 
-  const [assignments, departmentCandidacy, offer] = await Promise.all([
+  const [assignments, departmentCandidacy, offer, emailLogs] = await Promise.all([
     activeApplication ? getApplicationAssignments(activeApplication.id) : Promise.resolve([]),
     prisma.departmentCandidacy.findFirst({
       where: { candidateId: candidate.id, status: "active" },
@@ -234,6 +237,22 @@ export default async function CandidateDetailPage({
       },
     }).catch(() => null),
     prisma.candidateOffer.findUnique({ where: { candidateId: candidate.id } }).catch(() => null),
+    prisma.emailLog.findMany({
+      where: { candidateId: candidate.id },
+      orderBy: { sentAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        to: true,
+        cc: true,
+        subject: true,
+        template: true,
+        status: true,
+        errorMsg: true,
+        sentAt: true,
+        sentBy: { select: { id: true, name: true, email: true } },
+      },
+    }).catch(() => [] as Array<{ id: string; to: string; cc: string | null; subject: string; template: string; status: string; errorMsg: string | null; sentAt: Date; sentBy: { id: string; name: string | null; email: string } | null }>),
   ]);
 
   const scopeDepartmentId =
@@ -290,6 +309,15 @@ export default async function CandidateDetailPage({
 
   const currentDetailPath = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, currentTab);
   const departmentName = departmentCandidacy?.department.name;
+
+  const hiringTeamForEmail = teamAssignments.map((a) => ({ email: a.user.email, name: a.user.name ?? undefined }));
+  const serializedEmailLogs = (emailLogs ?? []).map((l) => ({
+    ...l,
+    cc: l.cc ?? null,
+    errorMsg: l.errorMsg ?? null,
+    sentAt: l.sentAt instanceof Date ? l.sentAt.toISOString() : String(l.sentAt),
+    sentBy: l.sentBy ? { id: l.sentBy.id, name: l.sentBy.name ?? null, email: l.sentBy.email } : null,
+  }));
 
   // Map offer to a safe serializable shape
   const offerForPanel = offer
@@ -503,6 +531,30 @@ export default async function CandidateDetailPage({
                   </a>
                 </div>
               ) : null}
+            </StagePanel>
+          ) : null}
+
+          {/* Emails tab */}
+          {currentTab === "emails" ? (
+            <StagePanel className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Emails</h2>
+                  <p className="text-sm text-[color:var(--app-muted)]">
+                    Send emails to the candidate and loop in the hiring team.
+                  </p>
+                </div>
+                <EmailComposerModal
+                  candidateId={candidate.id}
+                  candidateEmail={candidate.email}
+                  candidateName={candidate.fullName}
+                  hiringTeam={hiringTeamForEmail}
+                />
+              </div>
+              <EmailLogPanel
+                candidateId={candidate.id}
+                initialLogs={serializedEmailLogs}
+              />
             </StagePanel>
           ) : null}
 

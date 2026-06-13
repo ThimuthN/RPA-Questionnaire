@@ -17,6 +17,7 @@ import {
   setRuntimeSessionCookie
 } from "@/lib/auth/runtime-session";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
+import { sendEmailSafe, applicationReceivedEmail, getOrgName } from "@/lib/email";
 
 const publicApplySchema = z.object({
   fullName: z.string().min(2),
@@ -133,6 +134,15 @@ export async function POST(
         return response;
       }
     }
+
+    // Fire application received confirmation to candidate
+    const { subject, html } = applicationReceivedEmail({
+      orgName: getOrgName(),
+      candidateName: body.fullName,
+      roleTitle: submission.jobTitle ?? slug,
+      applicationDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+    });
+    void sendEmailSafe({ to: body.email, subject, html, template: "application_received", candidateId: submission.candidateId });
 
     url.searchParams.set("submitted", "1");
     url.searchParams.set("applicationId", submission.applicationId);

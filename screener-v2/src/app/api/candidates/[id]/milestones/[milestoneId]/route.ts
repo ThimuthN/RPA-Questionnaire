@@ -4,6 +4,7 @@ import { requireApiSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
+import { sendEmailSafe, interviewInviteEmail, getOrgName, generateIcsEvent } from "@/lib/email";
 import {
   candidateMilestoneResultValues,
   candidateMilestoneModeValues,
@@ -157,6 +158,91 @@ export async function POST(
         actorId: session.userId ?? undefined,
         actorName: session.name || session.email || "System"
       });
+
+      // Fire interview invite email when a scheduled time is set
+      if (body.interviewScheduledAt) {
+        void (async () => {
+          try {
+            const candidateWithContext = await prisma.candidate.findUnique({
+              where: { id },
+              select: {
+                fullName: true,
+                email: true,
+                positionAppliedFor: true,
+                departmentCandidacies: {
+                  where: { status: "active" },
+                  take: 1,
+                  select: {
+                    teamAssignments: {
+                      where: { isActive: true },
+                      select: { user: { select: { email: true } } },
+                    },
+                  },
+                },
+              },
+            });
+            if (!candidateWithContext) return;
+
+            const milestone = await prisma.candidateMilestone.findUnique({
+              where: { id: milestoneId },
+              select: {
+                title: true,
+                interviewPanel: {
+                  select: {
+                    id: true,
+                    roundName: true,
+                    scheduledAt: true,
+                    durationMin: true,
+                    format: true,
+                    members: { select: { user: { select: { name: true, email: true } } } },
+                  },
+                },
+              },
+            });
+            const panel = milestone?.interviewPanel;
+            if (!panel?.scheduledAt) return;
+
+            const interviewerNames = panel.members.map((m) => m.user.name ?? m.user.email);
+            const interviewerEmails = panel.members.map((m) => m.user.email);
+            const teamEmails = candidateWithContext.departmentCandidacies[0]?.teamAssignments.map((a) => a.user.email) ?? [];
+            const ccEmails = [...new Set([...interviewerEmails, ...teamEmails])].filter((e) => e !== candidateWithContext.email);
+
+            const { subject, html } = interviewInviteEmail({
+              orgName: getOrgName(),
+              candidateName: candidateWithContext.fullName,
+              roleTitle: candidateWithContext.positionAppliedFor ?? "the position",
+              roundName: panel.roundName,
+              scheduledAt: panel.scheduledAt,
+              durationMin: panel.durationMin,
+              format: panel.format,
+              interviewerNames,
+            });
+
+            const icsContent = generateIcsEvent({
+              uid: panel.id,
+              summary: `Interview: ${candidateWithContext.fullName} — ${panel.roundName}`,
+              startAt: panel.scheduledAt,
+              durationMin: panel.durationMin,
+              organizerEmail: session.email ?? getOrgName(),
+              organizerName: session.name ?? undefined,
+              attendeeEmails: [candidateWithContext.email, ...interviewerEmails],
+            });
+
+            await sendEmailSafe({
+              to: candidateWithContext.email,
+              cc: ccEmails,
+              subject,
+              html,
+              template: "interview_invite",
+              candidateId: id,
+              sentById: session.userId ?? undefined,
+              attachments: [{ filename: "interview.ics", content: icsContent, contentType: "text/calendar" }],
+            });
+          } catch {
+            // fire-and-forget — never blocks the response
+          }
+        })();
+      }
     }
 
     return redirectToPath(request, id, returnTo, "updated");

@@ -96,6 +96,7 @@ model User {
   hiringTeamTemplateMemberships HiringTeamTemplateMember[]
   candidacyTeamAssignments      DepartmentCandidacyTeamAssignment[]
   addedCandidacyTeamAssignments DepartmentCandidacyTeamAssignment[] @relation("AddedByTeam")
+  sentEmails                    EmailLog[]
 
   @@index([departmentId])
   @@index([roleId])
@@ -403,6 +404,7 @@ model Candidate {
   offer              CandidateOffer?
   employee           Employee?
   departmentCandidacies DepartmentCandidacy[]
+  emailLogs          EmailLog[]
   @@index([roleId])
   @@index([departmentId])
   @@index([hrOwnerId])
@@ -923,4 +925,22 @@ model DepartmentCandidacyTeamAssignment {
   @@index([candidacyId])
   @@index([userId])
   @@index([isActive])
+}
+
+model EmailLog {
+  id           String    @id @default(cuid())
+  to           String
+  cc           String?
+  subject      String
+  template     String
+  candidateId  String?
+  sentById     String?
+  status       String    @default("sent")
+  errorMsg     String?
+  sentAt       DateTime  @default(now())
+  candidate    Candidate? @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  sentBy       User?      @relation(fields: [sentById], references: [id], onDelete: SetNull)
+
+  @@index([candidateId, sentAt])
+  @@index([status])
 }
