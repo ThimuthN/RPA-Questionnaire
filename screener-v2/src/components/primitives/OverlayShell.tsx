@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
  * Shared shell for all ATS overlays (modals, drawers, slideovers).
- * Provides: portal to document.body, scroll-lock, and a standardized
- * z-[999] stacking context.
+ * Provides: portal to document.body, scroll-lock, SSR safety, and a
+ * standardized z-[999] stacking context.
  *
  * Each consuming modal keeps its own AnimatePresence + motion so that
  * enter/exit animations remain under its control. This shell only
@@ -19,6 +19,9 @@ export function OverlayShell({
   isOpen: boolean;
   children: React.ReactNode;
 }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -28,6 +31,7 @@ export function OverlayShell({
     };
   }, [isOpen]);
 
+  if (!mounted) return null;
   return createPortal(<>{children}</>, document.body);
 }
 
