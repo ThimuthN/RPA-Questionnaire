@@ -49,36 +49,37 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Candidate is already finalized.' }, { status: 400 });
     }
 
-    // Update candidate record to mark as hired
-    const updated = await prisma.candidate.update({
-      where: { id },
-      data: {
-        stage: 'finalized',
-        orgStage: 'finalized',
-        finalizedAs: 'hired',
-        orgStatus: 'active',
-        nextAction: 'none',
-        updatedAt: new Date()
-      },
-    });
+    const updated = await prisma.$transaction(async (tx) => {
+      const result = await tx.candidate.update({
+        where: { id },
+        data: {
+          stage: 'finalized',
+          orgStage: 'finalized',
+          finalizedAs: 'hired',
+          orgStatus: 'active',
+          nextAction: 'none',
+          updatedAt: new Date()
+        },
+      });
 
-    // Sync finalized milestone to done
-    await prisma.candidateMilestone.updateMany({
-      where: { candidateId: id, type: 'finalized', status: { not: 'done' } },
-      data: { status: 'done' }
-    });
+      await tx.candidateMilestone.updateMany({
+        where: { candidateId: id, type: 'finalized', status: { not: 'done' } },
+        data: { status: 'done' }
+      });
 
-    // Log activity
-    await prisma.candidateActivityEvent.create({
-      data: {
-        id: cuidLike(),
-        candidateId: id,
-        actorId: auth.session.userId,
-        actorName: auth.session.name || auth.session.email || 'System',
-        event: 'hired',
-        detail: parsed.data.note?.trim() || 'Marked as hired',
-        createdAt: new Date()
-      },
+      await tx.candidateActivityEvent.create({
+        data: {
+          id: cuidLike(),
+          candidateId: id,
+          actorId: auth.session.userId,
+          actorName: auth.session.name || auth.session.email || 'System',
+          event: 'hired',
+          detail: parsed.data.note?.trim() || 'Marked as hired',
+          createdAt: new Date()
+        },
+      });
+
+      return result;
     });
 
     return NextResponse.json({

@@ -17,7 +17,14 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     candidateActivityEvent: {
       create: vi.fn()
-    }
+    },
+    $transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        candidate: { update: vi.fn().mockImplementation((...args: unknown[]) => (vi.mocked as unknown as (m: unknown) => { mockResolvedValue: (v: unknown) => unknown })(prisma.candidate.update)(...args)) },
+        candidateMilestone: { updateMany: vi.fn().mockResolvedValue(undefined) },
+        candidateActivityEvent: { create: vi.fn().mockResolvedValue(undefined) },
+      })
+    ),
   }
 }));
 
