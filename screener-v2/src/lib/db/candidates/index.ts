@@ -29,4 +29,4 @@ export {
   deriveStageFromMilestones,
   syncCandidateStageFromMilestones
 } from "./milestones";
-export { listCandidates, listCandidateWorkspacePage, getCandidateStageCounts, getCandidateDetail } from "./queries";
+export { listCandidates, listCandidateWorkspacePage, getCandidateStageCounts, getCandidateDetail, listTalentPool } from "./queries";

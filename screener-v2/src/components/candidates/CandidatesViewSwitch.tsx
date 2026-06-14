@@ -10,7 +10,8 @@ export type CandidatesView =
   | "screener"
   | "interview"
   | "advanced_review"
-  | "finalized";
+  | "finalized"
+  | "pool";
 
 type StageCounts = Awaited<ReturnType<typeof getCandidateStageCounts>>;
 
@@ -41,21 +42,28 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
     { key: "finalized", label: "Final", countKey: "finalized", href: `${baseCandidatesPath}?stage=finalized` as Route }
   ];
 
+  const poolPath =
+    scope === "department" && departmentId
+      ? (`/departments/${departmentId}/pool` as Route)
+      : ("/people/candidates/pool" as Route);
+
   const hiringSwitchItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
     { key: "jobs", label: "Jobs", countKey: null, href: jobsPath },
     { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath }
   ];
 
+  const poolItem: { key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route } =
+    { key: "pool", label: "Pool", countKey: "pool", href: poolPath };
+
   const departmentItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
     { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath },
-    ...lifecycleItems
+    ...lifecycleItems,
+    poolItem
   ];
 
-  // Department scope: keep Applicants visible alongside lifecycle tabs
-  // Global scope: show both hiring switch (Jobs, Applicants) and lifecycle tabs
   return scope === "department"
     ? departmentItems
-    : [...hiringSwitchItems, ...lifecycleItems];
+    : [...hiringSwitchItems, ...lifecycleItems, poolItem];
 }
 
 export async function CandidatesViewSwitch({

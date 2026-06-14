@@ -6,6 +6,7 @@ import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { TransferCandidateAction } from "@/components/candidates/TransferCandidateAction";
 import { AnonymizeDataAction } from "@/components/candidates/AnonymizeDataAction";
+import { TalentPoolToggleAction } from "@/components/candidates/TalentPoolToggleAction";
 import type { CandidateDetail } from "@/lib/db/candidates";
 import type { CandidateStage } from "@/lib/candidates/types";
 import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
@@ -232,6 +233,14 @@ export function CandidateSidebar({
                 <ExternalLink size={12} />
                 Open shared folder
               </a>
+            ) : null}
+
+            {canManage && candidate.orgStage !== "finalized" ? (
+              <TalentPoolToggleAction
+                candidateId={candidate.id}
+                candidateName={candidate.fullName}
+                isInPool={candidate.orgStatus === "talent_pool"}
+              />
             ) : null}
 
             {canManage && candidate.orgStage !== "finalized" ? (

@@ -40,6 +40,7 @@ export type CandidateStageCounts = {
   interview: number;
   advanced_review: number;
   finalized: number;
+  pool: number;
 };
 
 type TeamAssignmentRow = {
@@ -467,13 +468,19 @@ export async function getCandidateStageCounts(departmentId?: string): Promise<Ca
     ...(departmentId ? { departmentId } : {})
   };
 
-  const [stageCounts, finalizedCount] = await Promise.all([
+  const poolWhere = {
+    orgStatus: "talent_pool" as const,
+    ...(departmentId ? { departmentId } : {})
+  };
+
+  const [stageCounts, finalizedCount, poolCount] = await Promise.all([
     prisma.candidate.groupBy({
       by: ["stage"],
       where: activeWhere,
       _count: true
     }),
-    prisma.candidate.count({ where: finalizedWhere })
+    prisma.candidate.count({ where: finalizedWhere }),
+    prisma.candidate.count({ where: poolWhere })
   ]);
 
   const counts: CandidateStageCounts = {
@@ -482,7 +489,8 @@ export async function getCandidateStageCounts(departmentId?: string): Promise<Ca
     screening: 0,
     interview: 0,
     advanced_review: 0,
-    finalized: finalizedCount
+    finalized: finalizedCount,
+    pool: poolCount
   };
 
   for (const group of stageCounts) {
@@ -498,6 +506,37 @@ export async function getCandidateStageCounts(departmentId?: string): Promise<Ca
   }
 
   return counts;
+}
+
+export async function listTalentPool(departmentId?: string) {
+  const where = {
+    orgStatus: "talent_pool" as const,
+    ...(departmentId ? { departmentId } : {})
+  };
+  const rows = await prisma.candidate.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      stage: true,
+      positionAppliedFor: true,
+      updatedAt: true,
+      hrOwner: true,
+      hrOwnerId: true,
+    }
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    fullName: r.fullName,
+    email: r.email,
+    stage: r.stage,
+    positionAppliedFor: r.positionAppliedFor,
+    updatedAt: r.updatedAt.toISOString(),
+    hrOwner: r.hrOwner,
+    hrOwnerId: r.hrOwnerId,
+  }));
 }
 
 export async function getCandidateDetail(candidateId: string): Promise<CandidateDetail | null> {
