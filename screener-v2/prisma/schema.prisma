@@ -31,6 +31,8 @@ enum CandidateMilestoneStatus {
 
 enum CandidateOfferStatus {
   draft
+  submitted_for_approval
+  approved
   sent
   accepted
   rejected
@@ -72,6 +74,7 @@ model Department {
   integrationConnections DepartmentIntegrationConnection[]
   candidateEmailThreads CandidateEmailThread[]
   interviewKits InterviewKit[]
+  offerApprovalChains OfferApprovalChain[]
 
   @@index([isActive, sortOrder])
 }
@@ -101,6 +104,8 @@ model User {
   addedCandidacyTeamAssignments DepartmentCandidacyTeamAssignment[] @relation("AddedByTeam")
   sentEmails                    EmailLog[]
   createdInterviewKits          InterviewKit[] @relation("InterviewKitCreatedBy")
+  offerApprovalChainSteps       OfferApprovalChainStep[] @relation("OfferApprovalChainStepApprover")
+  offerApprovalSteps            OfferApprovalStep[] @relation("OfferApprovalStepApprover")
 
   @@index([departmentId])
   @@index([roleId])
@@ -620,6 +625,7 @@ model JobPosting {
   screenerPreset AssessmentPreset? @relation(fields: [screenerPresetId], references: [id], onDelete: SetNull)
   applications CandidateApplication[]
   interviewKits JobPostingInterviewKit[]
+  offerApprovalChains OfferApprovalChain[]
 
   @@index([roleId])
   @@index([departmentId])
@@ -843,9 +849,53 @@ model CandidateOffer {
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
   candidate          Candidate             @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  approvalSteps      OfferApprovalStep[]
 
   @@index([status, updatedAt])
   @@index([candidateId])
+}
+
+model OfferApprovalChain {
+  id           String   @id @default(cuid())
+  departmentId String?
+  jobPostingId String?
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  jobPosting   JobPosting?  @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  steps        OfferApprovalChainStep[]
+
+  @@index([departmentId])
+  @@index([jobPostingId])
+}
+
+model OfferApprovalChainStep {
+  id         String   @id @default(cuid())
+  chainId    String
+  approverId String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  chain      OfferApprovalChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
+  approver   User     @relation("OfferApprovalChainStepApprover", fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([chainId, sortOrder])
+}
+
+model OfferApprovalStep {
+  id         String    @id @default(cuid())
+  offerId    String
+  approverId String
+  sortOrder  Int       @default(0)
+  status     String    @default("pending")
+  note       String?
+  decidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  offer      CandidateOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  approver   User      @relation("OfferApprovalStepApprover", fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, sortOrder])
+  @@index([approverId, status])
 }
 
 model InterviewPanel {

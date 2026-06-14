@@ -349,7 +349,7 @@ export default async function CandidateDetailPage({
   const offerForPanel = offer
     ? {
         id: offer.id,
-        status: (isOfferExpired ? "expired" : offer.status) as "draft" | "sent" | "accepted" | "rejected" | "expired",
+        status: (isOfferExpired ? "expired" : offer.status) as "draft" | "submitted_for_approval" | "approved" | "sent" | "accepted" | "rejected" | "expired",
         compensationType: offer.compensationType,
         compensationAmount: offer.compensationAmount,
         currency: offer.currency,

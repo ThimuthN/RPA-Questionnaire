@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 
-type OfferStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+type OfferStatus = "draft" | "submitted_for_approval" | "approved" | "sent" | "accepted" | "rejected" | "expired";
 
 interface OfferRecord {
   id: string;
@@ -22,6 +22,8 @@ interface OfferRecord {
 
 const offerStatusTone: Record<OfferStatus, "neutral" | "blue" | "amber" | "emerald" | "red"> = {
   draft: "neutral",
+  submitted_for_approval: "amber",
+  approved: "emerald",
   sent: "blue",
   accepted: "emerald",
   rejected: "red",
@@ -30,6 +32,8 @@ const offerStatusTone: Record<OfferStatus, "neutral" | "blue" | "amber" | "emera
 
 const offerStatusLabel: Record<OfferStatus, string> = {
   draft: "Draft",
+  submitted_for_approval: "Pending approval",
+  approved: "Approved",
   sent: "Offer sent",
   accepted: "Accepted",
   rejected: "Declined",
@@ -79,7 +83,7 @@ export function CandidateOfferPanel({
     offerNotes: initialOffer?.offerNotes ?? "",
   });
 
-  async function saveOffer(action: "upsert" | "send" | "revoke") {
+  async function saveOffer(action: "upsert" | "send" | "revoke" | "submit_for_approval") {
     setSaving(true);
     setError(null);
     try {
@@ -158,11 +162,24 @@ export function CandidateOfferPanel({
           {canManage ? (
             <div className="flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-4">
               {offer.status === "draft" ? (
+                <>
+                  <Button type="button" onClick={() => void saveOffer("submit_for_approval")} disabled={saving}>
+                    {saving ? "Submitting..." : "Submit for approval"}
+                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => void saveOffer("send")} disabled={saving}>
+                    {saving ? "Sending..." : "Mark as sent (skip approval)"}
+                  </Button>
+                </>
+              ) : null}
+              {offer.status === "approved" ? (
                 <Button type="button" onClick={() => void saveOffer("send")} disabled={saving}>
                   {saving ? "Sending..." : "Mark as sent"}
                 </Button>
               ) : null}
-              {(offer.status === "draft" || offer.status === "sent") ? (
+              {offer.status === "submitted_for_approval" ? (
+                <p className="text-xs text-amber-400">Waiting for approver sign-off before the offer can be sent.</p>
+              ) : null}
+              {(offer.status === "draft" || offer.status === "sent" || offer.status === "submitted_for_approval") ? (
                 <Button type="button" variant="secondary" onClick={() => void saveOffer("revoke")} disabled={saving}>
                   Revoke offer
                 </Button>

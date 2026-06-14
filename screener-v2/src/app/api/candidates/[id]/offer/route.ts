@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
-import { sendEmailSafe, offerSentEmail, getOrgName } from "@/lib/email";
+import { sendEmailSafe, offerSentEmail, adHocEmail, getOrgName } from "@/lib/email";
 
 const offerSchema = z.object({
-  action: z.enum(["upsert", "send", "revoke"]),
+  action: z.enum(["upsert", "send", "revoke", "submit_for_approval"]),
   compensationType: z.string().optional(),
   compensationAmount: z.string().optional(),
   currency: z.string().optional(),
@@ -90,6 +90,68 @@ export async function POST(
 
     const perm = await requirePermissionForDepartment(auth.session, "manage_candidates", candidate.departmentId);
     if (!perm.ok) return perm.response;
+
+    if (body.action === "submit_for_approval") {
+      const existing = await prisma.candidateOffer.findUnique({
+        where: { candidateId: id },
+        include: { approvalSteps: true },
+      });
+      if (!existing) {
+        return NextResponse.json({ ok: false, message: "Create an offer before submitting for approval" }, { status: 400 });
+      }
+      if (existing.status !== "draft") {
+        return NextResponse.json({ ok: false, message: "Only draft offers can be submitted for approval" }, { status: 400 });
+      }
+
+      // Find approval chain for this offer's department
+      const chain = await prisma.offerApprovalChain.findFirst({
+        where: { departmentId: candidate.departmentId },
+        include: { steps: { orderBy: { sortOrder: "asc" }, include: { approver: { select: { id: true, name: true, email: true } } } } },
+      });
+
+      if (!chain || chain.steps.length === 0) {
+        // No approval chain configured — auto-approve
+        const updated = await prisma.candidateOffer.update({
+          where: { candidateId: id },
+          data: { status: "approved" },
+        });
+        return NextResponse.json({ ok: true, offer: mapOffer(updated), autoApproved: true });
+      }
+
+      // Create per-offer approval steps from chain template
+      await prisma.$transaction(async (tx) => {
+        await tx.offerApprovalStep.deleteMany({ where: { offerId: existing.id } });
+        await tx.offerApprovalStep.createMany({
+          data: chain.steps.map((s) => ({
+            id: `${existing.id}_${s.sortOrder}`,
+            offerId: existing.id,
+            approverId: s.approverId,
+            sortOrder: s.sortOrder,
+            status: "pending",
+          })),
+        });
+        await tx.candidateOffer.update({
+          where: { id: existing.id },
+          data: { status: "submitted_for_approval" },
+        });
+      });
+
+      // Email first approver
+      const firstApprover = chain.steps[0]?.approver;
+      if (firstApprover?.email) {
+        const approvalEmailSubject = `Offer approval required — ${candidate.fullName}`;
+        const { subject, html } = adHocEmail({
+          orgName: getOrgName(),
+          candidateName: firstApprover.name ?? firstApprover.email,
+          bodyHtml: `An offer for <strong>${candidate.fullName}</strong> has been submitted for your approval. Please log in to review and approve or reject it.`,
+          subject: approvalEmailSubject,
+        });
+        void sendEmailSafe({ to: firstApprover.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined });
+      }
+
+      const updated = await prisma.candidateOffer.findUnique({ where: { candidateId: id } });
+      return NextResponse.json({ ok: true, offer: updated ? mapOffer(updated) : null });
+    }
 
     if (body.action === "send") {
       const existing = await prisma.candidateOffer.findUnique({ where: { candidateId: id } });
