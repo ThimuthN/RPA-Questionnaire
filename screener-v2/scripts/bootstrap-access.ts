@@ -76,7 +76,7 @@ async function bootstrap() {
     console.log(`\n📝 Admin user details:`);
     console.log(`   Email: ${email}`);
     console.log(`   Name: ${name}`);
-    console.log(`   Permissions: manage_users, manage_roles, manage_candidates, view_candidates, manage_addons, create_job, edit_job, create_invite, view_results`);
+    console.log(`   Permissions: manage_users, manage_candidates, view_candidates, manage_addons, manage_integrations, create_job, edit_job, create_role, edit_role, delete_role, create_invite, view_results, promote_candidate, delete_candidate, hire_candidate`);
   } catch (err) {
     console.error("❌ Bootstrap failed:", (err as Error).message);
     process.exit(1);
