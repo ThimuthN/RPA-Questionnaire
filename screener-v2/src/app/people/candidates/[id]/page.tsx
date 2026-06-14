@@ -48,10 +48,10 @@ const profileTabs = [
   { key: "pipeline", label: "Overview" },
   { key: "assessments", label: "Assessments" },
   { key: "notes", label: "Notes" },
-  { key: "activity", label: "Activity" },
   { key: "files", label: "Files" },
   { key: "emails", label: "Emails" },
   { key: "offer", label: "Offer" },
+  { key: "activity", label: "Activity" },
 ] as const;
 
 type CandidateProfileTab = (typeof profileTabs)[number]["key"];
