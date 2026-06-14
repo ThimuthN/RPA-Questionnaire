@@ -36,14 +36,14 @@ import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/gu
 import { prisma } from "@/lib/db/prisma";
 
 describe("POST /api/candidates/[id]/hire", () => {
-  const mockSession = { userId: "user-1", name: "Test User", permissions: ["manage_candidates"] };
+  const mockSession = { userId: "user-1", name: "Test User", permissions: ["hire_candidate"] };
   const mockCandidate = { id: "cand-1", fullName: "John Doe", email: "john@example.com", phone: "555-0001", roleId: "role-1", departmentId: "dept-1", orgStage: "active" };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("hires candidate with manage_candidates permission", async () => {
+  it("hires candidate with hire_candidate permission", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as any);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as any);
     vi.mocked(prisma.candidate.findUnique).mockResolvedValue(mockCandidate as any);
@@ -54,7 +54,7 @@ describe("POST /api/candidates/[id]/hire", () => {
     });
 
     expect(response.status).toBe(200);
-    expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(mockSession, "manage_candidates", "dept-1");
+    expect(vi.mocked(requirePermissionForDepartment)).toHaveBeenCalledWith(mockSession, "hire_candidate", "dept-1");
   });
 
 

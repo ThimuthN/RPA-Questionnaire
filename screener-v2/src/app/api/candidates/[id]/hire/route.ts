@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: false, message: 'Candidate not found' }, { status: 404 });
     }
 
-    const scopedPermission = await requirePermissionForDepartment(auth.session, 'manage_candidates', candidate.departmentId);
+    const scopedPermission = await requirePermissionForDepartment(auth.session, 'hire_candidate', candidate.departmentId);
     if (!scopedPermission.ok) return scopedPermission.response;
 
     // Check if already finalized (after permission check to avoid state leak)

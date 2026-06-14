@@ -29,7 +29,7 @@ import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/gu
 import { prisma } from "@/lib/db/prisma";
 
 describe("POST /api/candidates/[id]/reject", () => {
-  const mockSession = { userId: "user-1", name: "Test User", permissions: ["manage_candidates"] };
+  const mockSession = { userId: "user-1", name: "Test User", permissions: ["hire_candidate"] };
   const mockCandidate = { id: "cand-1", departmentId: "dept-1", orgStage: "active" };
 
   beforeEach(() => {

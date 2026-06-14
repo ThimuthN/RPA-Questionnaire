@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { Route } from "next";
 import { cn } from "@/lib/utils";
 
-type PeopleView = "candidates" | "employees";
+type PeopleView = "candidates" | "employees" | "analytics";
 
 const items: Array<{ key: PeopleView; label: string; href: Route }> = [
-  { key: "candidates", label: "Candidates", href: "/people/candidates" as Route }
+  { key: "candidates", label: "Candidates", href: "/people/candidates" as Route },
+  { key: "analytics", label: "Analytics", href: "/people/analytics" as Route },
 ];
 
 export function PeopleViewSwitch({ current }: { current: PeopleView }) {
