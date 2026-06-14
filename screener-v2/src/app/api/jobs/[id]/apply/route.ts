@@ -21,6 +21,8 @@ import { checkPublicApplicationRateLimit } from "@/lib/server/rate-limit";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 import { CANDIDATE_PRIVACY_POLICY_VERSION } from "@/lib/legal/site-policy";
 import { sendEmailSafe, applicationReceivedEmail, getOrgName } from "@/lib/email";
+import { createNotificationForMany } from "@/lib/notifications/service";
+import { prisma } from "@/lib/db/prisma";
 
 const SOURCE_VALUES: PublicApplicationSource[] = [
   "direct", "linkedin", "job_board", "referral", "agency", "other"
@@ -165,6 +167,42 @@ export async function POST(
       template: "application_received",
       candidateId: submission.candidateId
     });
+
+    // Notify hiring team members in the job's department
+    if (submission.departmentId) {
+      void (async () => {
+        try {
+          const grants = await prisma.accessGrant.findMany({
+            where: {
+              departmentId: submission.departmentId!,
+              scope: "department",
+              status: "active",
+            },
+            select: {
+              userId: true,
+              role: { select: { permissions: { select: { permission: true } } } },
+            },
+          });
+          const recipientIds = grants
+            .filter((g) =>
+              g.role.permissions.some((p) => p.permission === "manage_candidates")
+            )
+            .map((g) => g.userId);
+          if (recipientIds.length > 0) {
+            await createNotificationForMany(recipientIds, {
+              type: "new_applicant",
+              title: `New applicant: ${body.fullName}`,
+              body: `Applied for ${submission.jobTitle}`,
+              entityType: "candidate",
+              entityId: submission.candidateId,
+              entityHref: `/people/candidates/${submission.candidateId}`,
+            });
+          }
+        } catch {
+          // fire-and-forget: never block the redirect on notification failure
+        }
+      })();
+    }
 
     if (submission.requiresScreening) {
       const screeningFlow = await beginPublicApplicationScreeningFlow({

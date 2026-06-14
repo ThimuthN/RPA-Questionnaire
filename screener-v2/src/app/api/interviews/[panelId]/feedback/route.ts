@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getKitForPanel } from "@/lib/db/interview-kits";
+import { createNotification } from "@/lib/notifications/service";
 
 const competencyRatingSchema = z.object({
   id: z.string(),
@@ -82,7 +83,11 @@ export async function POST(
 
     const panel = await prisma.interviewPanel.findUnique({
       where: { id: panelId },
-      select: { id: true, candidateId: true },
+      select: {
+        id: true,
+        candidateId: true,
+        candidate: { select: { fullName: true, hrOwnerId: true } },
+      },
     });
     if (!panel) {
       return NextResponse.json({ ok: false, message: "Interview panel not found" }, { status: 404 });
@@ -115,6 +120,20 @@ export async function POST(
         submittedAt: new Date(),
       },
     });
+
+    // Notify the candidate's HR owner that a scorecard was submitted (skip if submitter is owner)
+    const hrOwnerId = panel.candidate?.hrOwnerId ?? null;
+    if (hrOwnerId && hrOwnerId !== auth.session.userId) {
+      void createNotification({
+        userId: hrOwnerId,
+        type: "scorecard_submitted",
+        title: `Scorecard submitted for ${panel.candidate?.fullName ?? "candidate"}`,
+        body: `An interviewer submitted feedback for the panel interview.`,
+        entityType: "candidate",
+        entityId: panel.candidateId,
+        entityHref: `/people/candidates/${panel.candidateId}`,
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json({ ok: true, feedbackId: feedback.id });
   } catch (error) {

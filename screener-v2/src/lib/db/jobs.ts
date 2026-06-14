@@ -1013,6 +1013,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
       slug: true,
       title: true,
       roleId: true,
+      departmentId: true,
       role: {
         select: { departmentId: true }
       },
@@ -1193,6 +1194,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
     applicationId: application.id,
     jobId: job.id,
     jobTitle: job.title,
+    departmentId: job.departmentId ?? job.role?.departmentId ?? null,
     screenerPreset: job.screenerPreset,
     requiresScreening: screeningEvaluation.addonResults.length > 0
   };

@@ -30,10 +30,24 @@ vi.mock("@/lib/jobs/public-access", () => ({
   PUBLIC_JOBS_ENABLED: true
 }));
 
+vi.mock("@/lib/server/rate-limit", () => ({
+  checkPublicApplicationRateLimit: vi.fn()
+}));
+
 vi.mock("@/lib/email", () => ({
   sendEmailSafe: vi.fn(),
   applicationReceivedEmail: vi.fn(),
   getOrgName: vi.fn()
+}));
+
+vi.mock("@/lib/notifications/service", () => ({
+  createNotificationForMany: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    accessGrant: { findMany: vi.fn().mockResolvedValue([]) },
+  },
 }));
 
 import { POST } from "./route";
@@ -51,6 +65,8 @@ import {
   getOrgName,
   sendEmailSafe
 } from "@/lib/email";
+import { checkPublicApplicationRateLimit } from "@/lib/server/rate-limit";
+import { CANDIDATE_PRIVACY_POLICY_VERSION } from "@/lib/legal/site-policy";
 
 describe("POST /api/jobs/[id]/apply", () => {
   beforeEach(() => {
@@ -60,6 +76,7 @@ describe("POST /api/jobs/[id]/apply", () => {
       subject: "We received your application",
       html: "<p>Received</p>"
     });
+    vi.mocked(checkPublicApplicationRateLimit).mockResolvedValue({ ok: true });
   });
 
   it("sends application confirmation before redirecting screening-required submissions", async () => {
@@ -69,6 +86,7 @@ describe("POST /api/jobs/[id]/apply", () => {
       applicationId: "app-1",
       jobId: "job-1",
       jobTitle: "RPA Engineer",
+      departmentId: null,
       screenerPreset: null,
       requiresScreening: true
     });
@@ -107,10 +125,41 @@ describe("POST /api/jobs/[id]/apply", () => {
       template: "application_received",
       candidateId: "cand-1"
     });
+    expect(vi.mocked(createCandidateApplicationFromPublicSubmission)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        consentVersion: CANDIDATE_PRIVACY_POLICY_VERSION
+      })
+    );
     expect(vi.mocked(createRuntimeSessionToken)).toHaveBeenCalledWith({
       attemptId: "attempt-1",
       slug: "application-screening-app-1"
     });
     expect(vi.mocked(setRuntimeSessionCookie)).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects repeated submissions with a rate-limit error message", async () => {
+    vi.mocked(checkPublicApplicationRateLimit).mockResolvedValue({
+      ok: false,
+      message: "Please wait a minute before submitting this application again."
+    });
+
+    const formData = new FormData();
+    formData.set("fullName", "Alice Applicant");
+    formData.set("email", "alice@example.com");
+    formData.set("consentGiven", "on");
+
+    const response = await POST(
+      new Request("http://localhost/api/jobs/rpa-engineer/apply", {
+        method: "POST",
+        body: formData
+      }),
+      { params: Promise.resolve({ id: "rpa-engineer" }) }
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toContain(
+      "error=Please+wait+a+minute+before+submitting+this+application+again."
+    );
+    expect(vi.mocked(createCandidateApplicationFromPublicSubmission)).not.toHaveBeenCalled();
   });
 });

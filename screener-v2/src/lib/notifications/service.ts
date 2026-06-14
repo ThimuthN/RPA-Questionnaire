@@ -6,6 +6,8 @@ function cuidLike() {
 
 export type NotificationType =
   | "candidate_stage_advanced"
+  | "new_applicant"
+  | "scorecard_submitted"
   | "offer_submitted_for_approval"
   | "offer_approved"
   | "offer_rejected"
