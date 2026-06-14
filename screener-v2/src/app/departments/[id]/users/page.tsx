@@ -4,6 +4,7 @@ import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
 import { HiringTeamsManagement } from "@/components/departments/HiringTeamsManagement";
+import { OfferApprovalChainManagement } from "@/components/departments/OfferApprovalChainManagement";
 import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
@@ -25,7 +26,7 @@ export default async function DepartmentUsersPage({
   }
 
   // Load team members via AccessGrant (new model)
-  const [department, accessGrantTeam, roles, hiringTeamTemplates] = await Promise.all([
+  const [department, accessGrantTeam, roles, hiringTeamTemplates, offerApprovalChain] = await Promise.all([
     getDepartment(id),
     prisma.accessGrant.findMany({
       where: {
@@ -69,6 +70,15 @@ export default async function DepartmentUsersPage({
         }
       },
       orderBy: { sortOrder: "asc" }
+    }),
+    prisma.offerApprovalChain.findFirst({
+      where: { departmentId: id },
+      include: {
+        steps: {
+          orderBy: { sortOrder: "asc" },
+          include: { approver: { select: { id: true, name: true, email: true } } }
+        }
+      }
     })
   ]);
 
@@ -199,6 +209,18 @@ export default async function DepartmentUsersPage({
             name: u.name,
             email: u.email
           }))}
+        />
+      </div>
+
+      <div className="mt-8 border-t border-[color:var(--app-border)] pt-8">
+        <OfferApprovalChainManagement
+          departmentId={id}
+          initialSteps={(offerApprovalChain?.steps ?? []).map((s) => ({
+            id: s.id,
+            sortOrder: s.sortOrder,
+            approver: { id: s.approver.id, name: s.approver.name, email: s.approver.email }
+          }))}
+          teamUsers={users.map((u) => ({ id: u.id, name: u.name, email: u.email }))}
         />
       </div>
     </div>
