@@ -955,6 +955,8 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   email: string;
   phone?: string;
   coverNote?: string;
+  consentGivenAt?: Date;
+  consentVersion?: string;
   screeningAnswers?: ApplicationScreeningAnswerMap | Record<string, unknown>;
 }) {
   const job = await prisma.jobPosting.findFirst({
@@ -1112,7 +1114,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         candidateId: existingCandidate.id,
         jobPostingId: job.id,
         status: "submitted",
-        coverNote: input.coverNote?.trim() || null
+        coverNote: input.coverNote?.trim() || null,
+        consentGivenAt: input.consentGivenAt ?? null,
+        consentVersion: input.consentVersion ?? null
       }
     });
 

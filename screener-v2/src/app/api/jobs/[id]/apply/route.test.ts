@@ -86,6 +86,7 @@ describe("POST /api/jobs/[id]/apply", () => {
     formData.set("email", "alice@example.com");
     formData.set("phone", "+1 555 0100");
     formData.set("coverNote", "Interested in the role.");
+    formData.set("consentGiven", "on");
 
     const response = await POST(
       new Request("http://localhost/api/jobs/rpa-engineer/apply", {

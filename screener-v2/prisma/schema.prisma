@@ -75,6 +75,7 @@ model Department {
   candidateEmailThreads CandidateEmailThread[]
   interviewKits InterviewKit[]
   offerApprovalChains OfferApprovalChain[]
+  dataRetentionPolicies DataRetentionPolicy[]
 
   @@index([isActive, sortOrder])
 }
@@ -634,16 +635,18 @@ model JobPosting {
 }
 
 model CandidateApplication {
-  id           String   @id @default(cuid())
-  candidateId  String
-  jobPostingId String
+  id              String   @id @default(cuid())
+  candidateId     String
+  jobPostingId    String
   screeningAttemptId String? @unique
-  status       String
-  source       String?
-  referredBy   String?
-  coverNote    String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status          String
+  source          String?
+  referredBy      String?
+  coverNote       String?
+  consentGivenAt  DateTime?
+  consentVersion  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
   screeningAttempt Attempt? @relation("CandidateApplicationScreeningAttempt", fields: [screeningAttemptId], references: [id], onDelete: SetNull)
@@ -1243,4 +1246,18 @@ model JobPostingInterviewKit {
   @@unique([jobPostingId, kitId, milestoneType])
   @@index([jobPostingId])
   @@index([kitId])
+}
+
+model DataRetentionPolicy {
+  id             String    @id @default(cuid())
+  departmentId   String?
+  retentionDays  Int
+  actionOnExpiry String    @default("notify")
+  appliesTo      String    @default("rejected_candidates")
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  department     Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@index([departmentId])
 }

@@ -121,6 +121,7 @@ export function JobApplicationForm({
   });
   const [stepError, setStepError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
   const [draftSaved, setDraftSaved] = useState(false);
   const [resumeFileName, setResumeFileName] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -220,7 +221,14 @@ export function JobApplicationForm({
       method="post"
       encType="multipart/form-data"
       className="space-y-6"
-      onSubmit={() => setIsSubmitting(true)}
+      onSubmit={(e) => {
+      if (!consentGiven) {
+        e.preventDefault();
+        setStepError("You must agree to data processing before submitting your application.");
+        return;
+      }
+      setIsSubmitting(true);
+    }}
     >
       <div className="space-y-3">
         <StepIndicator current={step} />
@@ -393,9 +401,30 @@ export function JobApplicationForm({
                 : "No additional questions required"
             }
           />
-          <p className="pt-3 text-xs text-[color:var(--app-muted)]">
-            By submitting, you are sharing this information with the hiring team for review on this role.
-          </p>
+          <label className="mt-3 flex cursor-pointer items-start gap-3 border-t border-[color:var(--app-border)] pt-4">
+            <input
+              type="checkbox"
+              name="consentGiven"
+              checked={consentGiven}
+              onChange={(e) => setConsentGiven(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-brand-400"
+              required
+            />
+            <span className="text-sm leading-5 text-[color:var(--app-text)]">
+              I agree to my personal data being processed for recruitment purposes in accordance with the{" "}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="underline hover:text-[color:var(--app-heading)]"
+              >
+                Privacy Policy
+              </a>
+              .{" "}
+              <span className="text-[color:var(--app-danger)]">*</span>
+            </span>
+          </label>
         </div>
       ) : null}
 

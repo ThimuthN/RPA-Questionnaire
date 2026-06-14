@@ -23,7 +23,10 @@ const publicApplySchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   phone: z.string().optional(),
-  coverNote: z.string().optional()
+  coverNote: z.string().optional(),
+  consentGiven: z.literal("on", {
+    errorMap: () => ({ message: "You must agree to data processing before submitting." })
+  })
 });
 
 export async function POST(
@@ -42,7 +45,8 @@ export async function POST(
       fullName: formData.get("fullName"),
       email: formData.get("email"),
       phone: formData.get("phone"),
-      coverNote: formData.get("coverNote")
+      coverNote: formData.get("coverNote"),
+      consentGiven: formData.get("consentGiven")
     });
     const file = formData.get("resume");
 
@@ -56,7 +60,9 @@ export async function POST(
       fullName: body.fullName,
       email: body.email,
       phone: body.phone,
-      coverNote: body.coverNote
+      coverNote: body.coverNote,
+      consentGivenAt: new Date(),
+      consentVersion: "1.0"
     });
 
     const url = new URL(`/jobs/${slug}/apply`, request.url);
