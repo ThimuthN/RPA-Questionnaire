@@ -19,6 +19,7 @@ import { CandidateAssessmentBuilderOverlay } from "@/components/candidates/Candi
 import { TestSubmissionModal } from "@/components/candidates/TestSubmissionModal";
 import { InterviewSchedulingModal } from "@/components/candidates/InterviewSchedulingModal";
 import { InterviewScorecardModal } from "@/components/candidates/InterviewScorecardModal";
+import { SelfSchedulingDrawer } from "@/components/candidates/SelfSchedulingDrawer";
 import {
   candidateMilestoneResultLabels,
   candidateMilestoneStatusLabels,
@@ -644,6 +645,7 @@ function InterviewMilestoneCard({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [scorecardOpen, setScorecardOpen] = useState(false);
+  const [selfScheduleOpen, setSelfScheduleOpen] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -707,6 +709,11 @@ function InterviewMilestoneCard({
               Scorecard
             </Button>
           ) : null}
+          {milestone.interviewPanel ? (
+            <Button type="button" variant="secondary" onClick={() => setSelfScheduleOpen(true)}>
+              Send scheduling link
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -730,6 +737,16 @@ function InterviewMilestoneCard({
         availableInterviewers={availableInterviewers}
         onSuccess={() => { setOpen(false); router.refresh(); }}
       />
+
+      {milestone.interviewPanel ? (
+        <SelfSchedulingDrawer
+          isOpen={selfScheduleOpen}
+          onClose={() => setSelfScheduleOpen(false)}
+          panelId={milestone.interviewPanel.id}
+          roundName={milestone.interviewPanel.roundName}
+          durationMin={milestone.interviewPanel.durationMin}
+        />
+      ) : null}
     </div>
   );
 }

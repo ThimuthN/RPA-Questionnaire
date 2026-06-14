@@ -917,9 +917,11 @@ model InterviewPanel {
   updatedAt   DateTime @updatedAt
   candidate   Candidate            @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   milestone   CandidateMilestone?  @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
-  members     InterviewPanelMember[]
-  feedbacks   InterviewFeedback[]
-  eventSync   InterviewEventSync?
+  members             InterviewPanelMember[]
+  feedbacks           InterviewFeedback[]
+  eventSync           InterviewEventSync?
+  schedulingTokens    SchedulingToken[]
+  availabilityWindows AvailabilityWindow[]
 
   @@index([candidateId, roundNumber])
   @@index([status, scheduledAt])
@@ -1246,6 +1248,30 @@ model JobPostingInterviewKit {
   @@unique([jobPostingId, kitId, milestoneType])
   @@index([jobPostingId])
   @@index([kitId])
+}
+
+model SchedulingToken {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  panelId     String
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+  panel       InterviewPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([panelId])
+}
+
+model AvailabilityWindow {
+  id        String   @id @default(cuid())
+  panelId   String
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+  panel     InterviewPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, startsAt])
 }
 
 model DataRetentionPolicy {
