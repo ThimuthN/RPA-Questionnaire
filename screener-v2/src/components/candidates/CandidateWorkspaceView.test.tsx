@@ -168,7 +168,7 @@ describe("CandidateWorkspaceView", () => {
 
     // Check for status pills
     expect(markup).toContain("Candidates");
-    expect(markup).toContain("0 to review");
+    expect(markup).toContain("0 awaiting review");
     expect(markup).toContain("0 stalled");
 
     // Check for action buttons

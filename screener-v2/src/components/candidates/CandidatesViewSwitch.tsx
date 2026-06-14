@@ -53,7 +53,7 @@ function buildItems(scope: "global" | "department", departmentId?: string) {
   ];
 
   const poolItem: { key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route } =
-    { key: "pool", label: "Pool", countKey: "pool", href: poolPath };
+    { key: "pool", label: "Talent Pool", countKey: "pool", href: poolPath };
 
   const departmentItems: Array<{ key: CandidatesView; label: string; countKey: keyof StageCounts | null; href: Route }> = [
     { key: "applicants", label: "Applicants", countKey: "applicant", href: applicantsPath },

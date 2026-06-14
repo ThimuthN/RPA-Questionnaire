@@ -11,8 +11,8 @@ describe("nav-config", () => {
       } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer, "admin");
       const labels = items.map((item) => item.label);
-      expect(labels).toContain("Manage Workspaces");
-      expect(labels).toContain("App Integrations");
+      expect(labels).toContain("Workspaces");
+      expect(labels).toContain("Integrations");
       expect(labels).toContain("All Jobs");
       expect(labels).toContain("All Applicants");
       expect(labels).toContain("All Candidates");
@@ -26,9 +26,9 @@ describe("nav-config", () => {
 
       const labels = getNavItems(viewer, "admin").map((item) => item.label);
 
-      expect(labels).toContain("App Integrations");
-      expect(labels).not.toContain("Manage Workspaces");
-      expect(labels).not.toContain("User Management");
+      expect(labels).toContain("Integrations");
+      expect(labels).not.toContain("Workspaces");
+      expect(labels).not.toContain("Users");
       expect(labels).not.toContain("All Jobs");
     });
 
@@ -61,7 +61,7 @@ describe("nav-config", () => {
       const labels = items.map((item) => item.label);
       expect(labels).not.toContain("All Jobs");
       expect(labels).not.toContain("All Candidates");
-      expect(labels).not.toContain("Manage Workspaces");
+      expect(labels).not.toContain("Workspaces");
     });
 
     it("includes Careers for unauthenticated users at /jobs", () => {

@@ -218,12 +218,12 @@ export async function CandidateWorkspaceView({
               <div className="space-y-0.5">
                 <h2 className="text-2xl text-[color:var(--app-heading)]">Candidates</h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Pipeline candidates across all active stages.
+                  Active hiring pipeline
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusPill label={`${page.total} total`} tone="neutral" />
-                <StatusPill label={`${page.summary.readyForReview} to review`} tone="amber" />
+                <StatusPill label={`${page.summary.readyForReview} awaiting review`} tone="amber" />
                 <StatusPill label={`${page.summary.stalled} stalled`} tone={page.summary.stalled > 0 ? "red" : "neutral"} />
               </div>
             </div>
@@ -316,10 +316,10 @@ export async function CandidateWorkspaceView({
               className={filterFieldClassName()}
             >
               <option value="inbox">Sort by</option>
-              <option value="updated_desc">Newest activity</option>
-              <option value="updated_asc">Oldest activity</option>
-              <option value="stale_desc">Most stale</option>
-              <option value="name_asc">Name A-Z</option>
+              <option value="updated_desc">Recently updated</option>
+              <option value="updated_asc">Least recently updated</option>
+              <option value="stale_desc">Longest inactive</option>
+              <option value="name_asc">Name (A–Z)</option>
             </select>
             <Button>Apply</Button>
             <Link href={`${basePath}?clearView=1` as Route}>
@@ -331,10 +331,10 @@ export async function CandidateWorkspaceView({
 
           <div className="flex flex-wrap gap-2">
             <Link href={buildHref(basePath, query, { assessmentStatus: "none", sort: "inbox", page: "1" })}>
-              <Button variant="ghost">Needs assessment</Button>
+              <Button variant="ghost">No assessment</Button>
             </Link>
             <Link href={buildHref(basePath, query, { sort: "stale_desc", page: "1" })}>
-              <Button variant="ghost">Most stale</Button>
+              <Button variant="ghost">Longest inactive</Button>
             </Link>
           </div>
         </div>

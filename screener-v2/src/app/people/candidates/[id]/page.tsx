@@ -40,7 +40,7 @@ export const dynamic = "force-dynamic";
 type CandidateData = NonNullable<Awaited<ReturnType<typeof getCandidateDetail>>>;
 
 const profileTabs = [
-  { key: "pipeline", label: "Pipeline" },
+  { key: "pipeline", label: "Overview" },
   { key: "assessments", label: "Assessments" },
   { key: "notes", label: "Notes" },
   { key: "activity", label: "Activity" },
@@ -52,8 +52,8 @@ const profileTabs = [
 type CandidateProfileTab = (typeof profileTabs)[number]["key"];
 
 function parseProfileTab(value?: string | null): CandidateProfileTab {
-  // migrate old tab keys
-  if (value === "overview" || value === "progress") return "pipeline";
+  // migrate old tab keys (overview was renamed to pipeline internally)
+  if (value === "progress") return "pipeline";
   return profileTabs.some((t) => t.key === value) ? (value as CandidateProfileTab) : "pipeline";
 }
 
@@ -438,7 +438,7 @@ export default async function CandidateDetailPage({
 
           {(!hasLinkedJourney || !hasResponsibleTeam) ? (
             <div className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 space-y-1">
-              {!hasLinkedJourney ? <p>No active pipeline — link a job application or candidacy to start the hiring workflow.</p> : null}
+              {!hasLinkedJourney ? <p>No linked role — add an application or candidacy to begin the hiring process.</p> : null}
               {!hasResponsibleTeam ? <p>Assign a hiring team to proceed with this candidate.</p> : null}
             </div>
           ) : null}
@@ -515,7 +515,7 @@ export default async function CandidateDetailPage({
                   Assessments
                 </h2>
                 <p className="text-sm text-[color:var(--app-muted)]">
-                  Track assigned platform tests and application screening evidence in one place.
+                  Assessments and screening results
                 </p>
               </div>
               <CandidateAssessmentsPanel

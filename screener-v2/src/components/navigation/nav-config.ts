@@ -40,14 +40,14 @@ export function getNavItems(
 
     if (canManageUsers) {
       items.push(
-        { href: "/departments" as Route, label: "Manage Workspaces", icon: Building2, section: "Admin" },
-        { href: "/users" as Route, label: "User Management", icon: Users, section: "Admin" },
+        { href: "/departments" as Route, label: "Workspaces", icon: Building2, section: "Admin" },
+        { href: "/users" as Route, label: "Users", icon: Users, section: "Admin" },
         { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" }
       );
     }
 
     if (canManageIntegrations) {
-      items.push({ href: "/integrations" as Route, label: "App Integrations", icon: PlugZap, section: "Admin" });
+      items.push({ href: "/integrations" as Route, label: "Integrations", icon: PlugZap, section: "Admin" });
     }
 
     if (canManageUsers) {

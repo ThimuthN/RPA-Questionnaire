@@ -260,7 +260,7 @@ describe("Candidate Detail Page", () => {
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("No active pipeline");
+    expect(markup).toContain("No linked role");
     expect(markup).toContain("Assign a hiring team to proceed with this candidate.");
   });
 
@@ -332,7 +332,7 @@ describe("Candidate Detail Page", () => {
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("Pipeline");
+    expect(markup).toContain("Overview");
     expect(markup).toContain("Assessments");
     expect(markup).toContain("Notes");
     expect(markup).toContain("Activity");

@@ -32,9 +32,9 @@ export default async function PeopleAnalyticsPage() {
       where: { stage: "finalized" },
       _count: { id: true },
     }),
-    // avg days: get createdAt for non-finalized, non-new candidates
+    // avg days: get createdAt for active (non-finalized) candidates
     prisma.candidate.findMany({
-      where: { stage: { notIn: ["finalized", "new"] } },
+      where: { stage: { notIn: ["finalized"] } },
       select: { createdAt: true },
     }),
     prisma.candidateApplication.count({
@@ -97,7 +97,7 @@ export default async function PeopleAnalyticsPage() {
         tone="page"
         eyebrow="Hiring"
         title="Analytics"
-        subtitle="Hiring pipeline overview"
+        subtitle="Pipeline health and hiring metrics"
         utility={<PeopleViewSwitch current="analytics" />}
       >
         <div className="space-y-8">

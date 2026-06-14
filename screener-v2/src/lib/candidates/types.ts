@@ -73,14 +73,14 @@ export const candidateStageLabels: Record<CandidateStage, string> = {
 };
 
 export const candidateNextActionLabels: Record<CandidateNextAction, string> = {
-  schedule_interview: "Schedule 1st Interview",
-  send_test: "Send Technical Test",
-  review_result: "Evaluate Test",
-  schedule_final: "Schedule Final Interview",
-  prepare_offer: "Prepare Offer",
-  close_profile: "Close Profile",
-  follow_up: "Follow Up",
-  none: "N/A"
+  schedule_interview: "Schedule interview",
+  send_test: "Send assessment",
+  review_result: "Review results",
+  schedule_final: "Schedule final interview",
+  prepare_offer: "Prepare offer",
+  close_profile: "Archive",
+  follow_up: "Follow up",
+  none: "—"
 };
 
 export const candidateScreeningStatusLabels: Record<CandidateScreeningStatus, string> = {
