@@ -28,7 +28,7 @@ function redirectUrl(request: Request, returnTo?: string) {
   if (returnTo?.startsWith("/")) {
     return new URL(returnTo, request.url);
   }
-  return new URL("/candidates", request.url);
+  return new URL("/people/candidates", request.url);
 }
 
 export async function POST(request: Request) {

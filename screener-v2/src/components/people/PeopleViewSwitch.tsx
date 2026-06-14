@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { cn } from "@/lib/utils";
 
-type PeopleView = "candidates" | "employees" | "analytics";
+type PeopleView = "candidates" | "analytics";
 
 const items: Array<{ key: PeopleView; label: string; href: Route }> = [
   { key: "candidates", label: "Candidates", href: "/people/candidates" as Route },

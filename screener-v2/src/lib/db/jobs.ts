@@ -50,8 +50,13 @@ type JobPostingRow = {
   updatedAt: Date;
   role: { label: string; department: string | null; departmentId?: string | null } | null;
   screenerPreset: { id: string; label: string } | null;
-  applications: Array<{ status: string }>;
+  applications?: Array<{ status: string }>;
+  _count?: { applications?: number };
 };
+
+function activeApplicantCount(rows: Array<{ status: string }>) {
+  return rows.filter((row) => candidateApplicationStatusValues.includes(row.status as CandidateApplicationStatus) && isActiveApplicationStatus(row.status as CandidateApplicationStatus)).length;
+}
 
 function slugifyJobTitle(value: string) {
   return value
@@ -60,10 +65,6 @@ function slugifyJobTitle(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 64);
-}
-
-function activeApplicantCount(rows: Array<{ status: string }>) {
-  return rows.filter((row) => candidateApplicationStatusValues.includes(row.status as CandidateApplicationStatus) && isActiveApplicationStatus(row.status as CandidateApplicationStatus)).length;
 }
 
 export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
@@ -88,7 +89,7 @@ export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     isOpen: row.isOpen,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    applicantCount: activeApplicantCount(row.applications)
+    applicantCount: row._count?.applications ?? (row.applications ? activeApplicantCount(row.applications) : 0)
   };
 }
 
@@ -434,9 +435,11 @@ export async function listJobPostings(departmentId?: string) {
           label: true
         }
       },
-      applications: {
+      _count: {
         select: {
-          status: true
+          applications: {
+            where: { status: { in: ["submitted", "under_review"] } }
+          }
         }
       }
     }

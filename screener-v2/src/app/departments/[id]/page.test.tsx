@@ -26,8 +26,8 @@ describe("Department Overview Page", () => {
       { label: "Job Designations", href: "/designations" },
       { label: "Open jobs", href: "/jobs" },
       { label: "Applicants", href: "/applicants" },
-      { label: "Active candidates", href: "/candidates" },
-      { label: "Finalized", href: "/candidates?stage=finalized" },
+      { label: "Candidates", href: "/departments/{id}/candidates" },
+      { label: "Finalized", href: "/departments/{id}/candidates?stage=finalized" },
       { label: "Assessments", href: "/assessments" }
     ];
 
