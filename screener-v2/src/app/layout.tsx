@@ -6,6 +6,7 @@ import { MainNav } from "@/components/navigation/MainNav";
 import { WorkspaceRail } from "@/components/navigation/WorkspaceRail";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { CommandPalette, CommandPaletteTrigger } from "@/components/search/CommandPalette";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getAppSession } from "@/lib/auth/app-session";
 import { listDepartments } from "@/lib/db/departments";
 import "./globals.css";
@@ -82,7 +83,10 @@ export default async function RootLayout({
                 <Link href="/" className="transition hover:opacity-95">
                   <AppLogo compact />
                 </Link>
-                {session ? <CommandPaletteTrigger /> : null}
+                <div className="flex items-center gap-2">
+                  {session ? <NotificationBell /> : null}
+                  {session ? <CommandPaletteTrigger /> : null}
+                </div>
                 <MainNav
                   viewer={session ? { email: session.email, name: session.name, permissions: session.permissions, departmentId: session.departmentId } : null}
                   departments={departments}

@@ -8,6 +8,7 @@ import {
 } from "@/lib/candidates/stage-workflow";
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
+import { createNotification } from "@/lib/notifications/service";
 
 export async function POST(
   request: Request,
@@ -148,6 +149,23 @@ export async function POST(
       }
     });
   });
+
+  // Notify the HR owner if different from the acting user
+  const fullCandidate = await prisma.candidate.findUnique({
+    where: { id: candidateId },
+    select: { fullName: true, hrOwnerId: true },
+  });
+  if (fullCandidate?.hrOwnerId && fullCandidate.hrOwnerId !== session.userId) {
+    void createNotification({
+      userId: fullCandidate.hrOwnerId,
+      type: "candidate_stage_advanced",
+      title: `${fullCandidate.fullName} advanced to ${next}`,
+      body: `Stage moved from ${candidate.stage} to ${next}.`,
+      entityType: "candidate",
+      entityId: candidateId,
+      entityHref: `/people/candidates/${candidateId}`,
+    }).catch(() => undefined);
+  }
 
   return Response.json({ success: true, stage: next });
 }

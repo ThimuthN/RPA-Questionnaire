@@ -107,6 +107,7 @@ model User {
   createdInterviewKits          InterviewKit[] @relation("InterviewKitCreatedBy")
   offerApprovalChainSteps       OfferApprovalChainStep[] @relation("OfferApprovalChainStepApprover")
   offerApprovalSteps            OfferApprovalStep[] @relation("OfferApprovalStepApprover")
+  notifications                 AppNotification[]
 
   @@index([departmentId])
   @@index([roleId])
@@ -1272,6 +1273,22 @@ model AvailabilityWindow {
   panel     InterviewPanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
 
   @@index([panelId, startsAt])
+}
+
+model AppNotification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  title       String
+  body        String?
+  entityType  String?
+  entityId    String?
+  entityHref  String?
+  readAt      DateTime?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
 }
 
 model DataRetentionPolicy {

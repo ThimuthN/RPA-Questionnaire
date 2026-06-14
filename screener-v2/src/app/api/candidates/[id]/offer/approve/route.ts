@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { sendEmailSafe, adHocEmail, getOrgName } from "@/lib/email";
+import { createNotification } from "@/lib/notifications/service";
 
 const schema = z.object({ note: z.string().optional() });
 
@@ -65,7 +66,24 @@ export async function POST(
   const updated = await prisma.candidateOffer.update({
     where: { id: offer.id },
     data: { status: "approved" },
+    select: { id: true, status: true },
   });
+
+  // Notify all approvers that the offer is fully approved
+  const approverIds = [...new Set(offer.approvalSteps.map((s) => s.approverId).filter(Boolean))] as string[];
+  void Promise.all(
+    approverIds.map((userId) =>
+      createNotification({
+        userId,
+        type: "offer_approved",
+        title: `Offer approved — ${offer.candidate.fullName}`,
+        body: "All approval steps completed. The offer is ready to send.",
+        entityType: "candidate",
+        entityId: id,
+        entityHref: `/people/candidates/${id}`,
+      })
+    )
+  ).catch(() => undefined);
 
   return NextResponse.json({ ok: true, status: updated.status });
 }
