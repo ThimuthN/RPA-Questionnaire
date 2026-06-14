@@ -207,4 +207,35 @@ describe("listApplicantWorkspacePage", () => {
       underReview: 9
     });
   });
+
+  it("supports the missing resume workspace filter in the base where clause", async () => {
+    vi.mocked(prisma.candidateApplication.count)
+      .mockResolvedValueOnce(2 as never)
+      .mockResolvedValueOnce(2 as never)
+      .mockResolvedValueOnce(1 as never)
+      .mockResolvedValueOnce(1 as never);
+    vi.mocked(prisma.candidateApplication.findMany).mockResolvedValue([
+      applicantRow({
+        candidate: {
+          id: "cand-2",
+          fullName: "Resume Missing",
+          email: "missing@example.com",
+          hrOwner: null,
+          _count: { resumes: 0 }
+        }
+      })
+    ] as never);
+    vi.mocked(prisma.jobPosting.findMany).mockResolvedValue([] as never);
+
+    await listApplicantWorkspacePage({ resumeMissing: true });
+
+    const where = vi.mocked(prisma.candidateApplication.findMany).mock.calls[0]?.[0]?.where as any;
+    expect(where).toMatchObject({
+      candidate: {
+        resumes: {
+          none: {}
+        }
+      }
+    });
+  });
 });

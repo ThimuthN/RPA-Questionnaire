@@ -30,6 +30,7 @@ import {
 } from "@/lib/integrations/providers/zoom";
 import type {
   ConnectionHealthResult,
+  DepartmentWorkflowChannelState,
   DepartmentIntegrationSummary,
   DiscoveredIntegrationResource,
   IntegrationConnectionStatus,
@@ -744,5 +745,58 @@ export async function runDepartmentProviderHealthCheck(departmentId: string, pro
     message:
       result.lastError ??
       `${getIntegrationProviderDescriptor(provider).label} connection is healthy.`
+  };
+}
+
+export async function getDepartmentWorkflowChannelState(
+  departmentId: string
+): Promise<DepartmentWorkflowChannelState> {
+  const connections = await prisma.departmentIntegrationConnection.findMany({
+    where: {
+      departmentId,
+      status: "connected"
+    },
+    include: {
+      resources: {
+        where: { isDefault: true },
+        orderBy: [{ resourceType: "asc" }, { displayLabel: "asc" }]
+      }
+    }
+  });
+
+  const microsoft = connections.find((connection) => connection.provider === "microsoft");
+  const mailbox = microsoft?.resources.find((resource) => resource.resourceType === "send_mailbox");
+  const calendar = microsoft?.resources.find((resource) => resource.resourceType === "calendar");
+
+  return {
+    departmentId,
+    email: mailbox
+      ? {
+          mode: "department_mailbox",
+          label: "Department mailbox connected",
+          description: "Candidate email sends through the department's connected Microsoft 365 mailbox before any fallback provider is used.",
+          provider: "microsoft",
+          accountLabel: microsoft?.connectedAccountLabel ?? undefined,
+          resourceLabel: mailbox.displayLabel
+        }
+      : {
+          mode: "manual_fallback",
+          label: "Fallback delivery active",
+          description: "No department mailbox is active in the ATS send flow. Candidate email will fall back to the shared delivery provider until Microsoft 365 is connected for this department."
+        },
+    scheduling: calendar
+      ? {
+          mode: "calendar_backed",
+          label: "Calendar-backed scheduling active",
+          description: "Interview scheduling can create a Microsoft calendar event and attempt a Teams-backed meeting link for this department.",
+          provider: "microsoft",
+          accountLabel: microsoft?.connectedAccountLabel ?? undefined,
+          resourceLabel: calendar.displayLabel
+        }
+      : {
+          mode: "manual_fallback",
+          label: "Manual scheduling fallback",
+          description: "No department scheduling calendar is active in the ATS workflow. Interviews can still be saved manually, but meeting creation and event sync stay manual."
+        }
   };
 }

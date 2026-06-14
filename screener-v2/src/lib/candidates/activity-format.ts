@@ -59,17 +59,16 @@ function labelStatus(s: string): string {
 }
 
 function parseArrow(detail: string): { before: string; after: string } | null {
-  const match = detail.match(/^([\s\S]+?)\s*(?:→|->)\s*([\s\S]+)$/);
+  const match = detail.match(/^([\s\S]+?)\s*(?:->|→)\s*([\s\S]+)$/);
   if (!match) return null;
   return { before: match[1].trim(), after: match[2].trim() };
 }
 
 function truncate(s: string, max = 150): string {
   if (!s) return "";
-  return s.length > max ? s.slice(0, max) + "…" : s;
+  return s.length > max ? `${s.slice(0, max)}...` : s;
 }
 
-// Determine color from status string
 function statusColorKey(statusStr: string): ActivityColorKey {
   if (statusStr === "done" || statusStr === "passed" || statusStr === "hired") return "green";
   if (statusStr === "failed" || statusStr === "rejected") return "red";
@@ -99,7 +98,6 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
       }
 
       case "milestone_status_changed": {
-        // "Resume Review: not_started → done"
         const colonIdx = detail.indexOf(":");
         if (colonIdx > -1) {
           const msTitle = detail.slice(0, colonIdx).trim();
@@ -121,7 +119,6 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
       }
 
       case "check_updated": {
-        // "resume_review: passed - Great experience"
         const colonIdx = detail.indexOf(":");
         if (colonIdx > -1) {
           const checkType = detail.slice(0, colonIdx).trim().replace(/_/g, " ");
@@ -157,7 +154,6 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
       }
 
       case "milestone_updated": {
-        // "Resume Review: notes, status"
         const colonIdx = detail.indexOf(":");
         if (colonIdx > -1) {
           const msTitle = detail.slice(0, colonIdx).trim();
@@ -182,7 +178,6 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
       }
 
       case "interview_panel_scheduled": {
-        // "Technical Interview scheduled for 6/15/2026, 2:00 PM"
         const forIdx = detail.toLowerCase().indexOf(" scheduled for ");
         if (forIdx > -1) {
           const panelTitle = detail.slice(0, forIdx).trim();
@@ -197,9 +192,8 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
         return { iconName: "CalendarCheck", colorKey: "teal", headline: detail };
       }
 
-      case "interview_panel_updated": {
+      case "interview_panel_updated":
         return { iconName: "CalendarClock", colorKey: "teal", headline: detail || "Interview panel updated" };
-      }
 
       case "assessment_linked": {
         const isGeneric = detail === "Assessment linked to milestone" || detail === "Assessment linked";
@@ -211,9 +205,8 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
         };
       }
 
-      case "assessment_unlinked": {
+      case "assessment_unlinked":
         return { iconName: "Unlink", colorKey: "amber", headline: "Assessment unlinked from step" };
-      }
 
       case "hired": {
         const isGeneric = !detail || detail === "Marked as hired";
@@ -244,34 +237,102 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
         };
       }
 
-      case "note_updated": {
+      case "email_sent":
+        return {
+          iconName: "Mail",
+          colorKey: "blue",
+          headline: "Email sent",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_saved":
+        return {
+          iconName: "FileText",
+          colorKey: "gray",
+          headline: "Offer draft updated",
+          body: detail ? truncate(detail) : undefined
+        };
+
+      case "offer_submitted_for_approval":
+        return {
+          iconName: "Send",
+          colorKey: "amber",
+          headline: "Offer submitted for approval",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_approval_step_approved":
+        return {
+          iconName: "BadgeCheck",
+          colorKey: "blue",
+          headline: "Offer approval advanced",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_auto_approved":
+        return {
+          iconName: "BadgeCheck",
+          colorKey: "green",
+          headline: "Offer auto-approved",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_approved":
+        return {
+          iconName: "BadgeCheck",
+          colorKey: "green",
+          headline: "Offer approved",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_sent":
+        return {
+          iconName: "MailCheck",
+          colorKey: "green",
+          headline: "Offer sent",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_revoked":
+        return {
+          iconName: "RotateCcw",
+          colorKey: "amber",
+          headline: "Offer returned to draft",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "offer_rejected":
+        return {
+          iconName: "XCircle",
+          colorKey: "red",
+          headline: "Offer approval rejected",
+          body: detail ? truncate(detail, 220) : undefined
+        };
+
+      case "note_updated":
         return {
           iconName: "FileText",
           colorKey: "gray",
           headline: "Note edited",
           body: detail ? truncate(detail) : undefined
         };
-      }
 
-      case "note_deleted": {
+      case "note_deleted":
         return {
           iconName: "Trash2",
           colorKey: "red",
           headline: "Note deleted",
           body: detail ? truncate(detail) : undefined
         };
-      }
 
-      case "department_transferred": {
+      case "department_transferred":
         return {
           iconName: "ArrowRightLeft",
           colorKey: "purple",
           headline: detail || "Transferred to another department"
         };
-      }
 
       case "candidacy_status_changed": {
-        // "Engineering: active"
         const colonIdx = detail.indexOf(":");
         if (colonIdx > -1) {
           const dept = detail.slice(0, colonIdx).trim();
@@ -294,18 +355,16 @@ export function formatActivity(item: CandidateActivityItem): FormattedActivityIt
         };
       }
 
-      default: {
+      default:
         return {
           iconName: "Activity",
           colorKey: "gray",
           headline: title || toTitle(rawEvent),
           body: detail && detail !== title ? truncate(detail) : undefined
         };
-      }
     }
   }
 
-  // Non-activity kinds
   switch (kind) {
     case "resume":
       return {

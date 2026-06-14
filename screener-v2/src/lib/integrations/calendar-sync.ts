@@ -74,7 +74,19 @@ async function getPanelWithCandidate(panelId: string) {
   return prisma.interviewPanel.findUnique({
     where: { id: panelId },
     include: {
-      candidate: { select: { departmentId: true, fullName: true, email: true } },
+      candidate: {
+        select: {
+          departmentId: true,
+          fullName: true,
+          email: true,
+          departmentCandidacies: {
+            where: { status: "active" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { departmentId: true },
+          },
+        },
+      },
       milestone: { select: { title: true } },
       members: {
         include: { user: { select: { email: true, name: true } } },
@@ -86,9 +98,13 @@ async function getPanelWithCandidate(panelId: string) {
 
 export async function syncPanelToCalendar(panelId: string): Promise<void> {
   const panel = await getPanelWithCandidate(panelId);
-  if (!panel?.scheduledAt || !panel.candidate.departmentId) return;
+  const departmentId =
+    panel?.candidate.departmentCandidacies[0]?.departmentId ??
+    panel?.candidate.departmentId ??
+    null;
+  if (!panel?.scheduledAt || !departmentId) return;
 
-  const conn = await getMicrosoftAccessToken(panel.candidate.departmentId);
+  const conn = await getMicrosoftAccessToken(departmentId);
   if (!conn) return;
 
   const startTime = panel.scheduledAt.toISOString();

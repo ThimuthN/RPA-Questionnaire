@@ -29,6 +29,7 @@ import {
   type CheckType
 } from "@/lib/candidates/milestones";
 import type { CandidateMilestoneRecord } from "@/lib/db/candidates";
+import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 import { cn } from "@/lib/utils";
 
 type TimelineNode =
@@ -636,11 +637,13 @@ function TestMilestoneCard({
 function InterviewMilestoneCard({
   candidateId,
   milestone,
-  availableInterviewers
+  availableInterviewers,
+  schedulingChannel
 }: {
   candidateId: string;
   milestone: CandidateMilestoneRecord;
   availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
+  schedulingChannel?: WorkflowChannelSummary;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -735,6 +738,7 @@ function InterviewMilestoneCard({
         milestone={{ date: milestone.date, result: milestone.result, notes: milestone.notes }}
         interviewPanel={milestone.interviewPanel ?? null}
         availableInterviewers={availableInterviewers}
+        schedulingChannel={schedulingChannel}
         onSuccess={() => { setOpen(false); router.refresh(); }}
       />
 
@@ -833,7 +837,8 @@ function AdvancedReviewCard({
   assessmentAddons,
   assessmentPresets,
   assessmentWorkspaceLabel,
-  availableInterviewers
+  availableInterviewers,
+  schedulingChannel
 }: {
   candidateId: string;
   groupedMilestones: CandidateMilestoneRecord[];
@@ -841,6 +846,7 @@ function AdvancedReviewCard({
   assessmentPresets: AssessmentPresetEntry[];
   assessmentWorkspaceLabel?: string;
   availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
+  schedulingChannel?: WorkflowChannelSummary;
 }) {
   const router = useRouter();
   const [isCreatingTest, setIsCreatingTest] = useState(false);
@@ -1020,6 +1026,7 @@ function AdvancedReviewCard({
             } : undefined}
             interviewPanel={editingMilestone?.interviewPanel ?? null}
             availableInterviewers={availableInterviewers}
+            schedulingChannel={schedulingChannel}
             onSuccess={handleModalSuccess}
           />
         </>
@@ -1036,7 +1043,8 @@ function MilestonePanelContent({
   assessmentAddons,
   assessmentPresets,
   assessmentWorkspaceLabel,
-  availableInterviewers
+  availableInterviewers,
+  schedulingChannel
 }: {
   candidateId: string;
   node: TimelineNode;
@@ -1046,6 +1054,7 @@ function MilestonePanelContent({
   assessmentPresets: AssessmentPresetEntry[];
   assessmentWorkspaceLabel?: string;
   availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
+  schedulingChannel?: WorkflowChannelSummary;
 }) {
   if (isAdvancedReviewGroup(node)) {
     return (
@@ -1056,13 +1065,14 @@ function MilestonePanelContent({
         assessmentPresets={assessmentPresets}
         assessmentWorkspaceLabel={assessmentWorkspaceLabel}
         availableInterviewers={availableInterviewers}
+        schedulingChannel={schedulingChannel}
       />
     );
   }
 
   if (node.type === "registration") return <RegistrationMilestoneCard milestone={node} hasResume={hasResume} detailHref={detailHref} />;
   if (node.type === "screener") return <ScreenerMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} assessmentAddons={assessmentAddons} assessmentPresets={assessmentPresets} assessmentWorkspaceLabel={assessmentWorkspaceLabel} />;
-  if (node.type === "interview") return <InterviewMilestoneCard candidateId={candidateId} milestone={node} availableInterviewers={availableInterviewers} />;
+  if (node.type === "interview") return <InterviewMilestoneCard candidateId={candidateId} milestone={node} availableInterviewers={availableInterviewers} schedulingChannel={schedulingChannel} />;
   if (node.type === "advanced_review" || node.type === "review_round") return <TestMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} assessmentAddons={assessmentAddons} assessmentPresets={assessmentPresets} assessmentWorkspaceLabel={assessmentWorkspaceLabel} />;
   return <DocumentationMilestoneCard candidateId={candidateId} milestone={node} detailHref={detailHref} />;
 }
@@ -1077,7 +1087,8 @@ export function CandidateMilestoneTimeline({
   assessmentAddons,
   assessmentPresets,
   assessmentWorkspaceLabel,
-  availableInterviewers
+  availableInterviewers,
+  schedulingChannel
 }: {
   candidateId: string;
   milestones: CandidateMilestoneRecord[];
@@ -1087,6 +1098,7 @@ export function CandidateMilestoneTimeline({
   assessmentPresets: AssessmentPresetEntry[];
   assessmentWorkspaceLabel?: string;
   availableInterviewers: Array<{ id: string; name: string | null; email: string }>;
+  schedulingChannel?: WorkflowChannelSummary;
 }) {
   const reduceMotion = useReducedMotion();
   const timelineNodes = groupMilestonesForTimeline(milestones);
@@ -1274,6 +1286,7 @@ export function CandidateMilestoneTimeline({
                 assessmentPresets={assessmentPresets}
                 assessmentWorkspaceLabel={assessmentWorkspaceLabel}
                 availableInterviewers={availableInterviewers}
+                schedulingChannel={schedulingChannel}
               />
             </motion.div>
           </AnimatePresence>

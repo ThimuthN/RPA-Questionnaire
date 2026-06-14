@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
@@ -39,14 +40,14 @@ export function AnonymizeDataAction({
         Anonymize data
       </Button>
 
-      {open ? (
+      {open ? createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[1200] flex items-center justify-center bg-[rgba(3,8,20,0.78)] p-4 backdrop-blur-md"
           onClick={(e) => {
             if (e.target === e.currentTarget && !busy) setOpen(false);
           }}
         >
-          <div className="w-full max-w-md space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 shadow-2xl">
+          <div className="w-full max-w-md space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 shadow-[var(--app-modal-shadow)]">
             <div className="space-y-1">
               <h2 className="text-base font-semibold text-[color:var(--app-heading)]">
                 Anonymize personal data
@@ -90,7 +91,8 @@ export function AnonymizeDataAction({
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       ) : null}
     </>
   );

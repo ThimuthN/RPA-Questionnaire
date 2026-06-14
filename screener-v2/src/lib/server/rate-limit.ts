@@ -5,6 +5,10 @@ interface RateLimitEntry {
   expiresAt: number;
 }
 
+type PublicApplicationRateLimitResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
 // Use in-memory cache for local development, Redis for distributed deployments
 const isRedisAvailable = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
@@ -78,4 +82,37 @@ export async function checkAutosaveRateLimit(userId: string): Promise<boolean> {
 export async function checkBulkOpRateLimit(userId: string): Promise<boolean> {
   // Allow 1 bulk operation per 30 seconds
   return checkRateLimit(`bulk:${userId}`, 30000);
+}
+
+function requestIp(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (forwarded) return forwarded;
+
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  return "unknown";
+}
+
+export async function checkPublicApplicationRateLimit(args: {
+  request: Request;
+  jobSlug: string;
+  email: string;
+}): Promise<PublicApplicationRateLimitResult> {
+  const ip = requestIp(args.request);
+  const normalizedEmail = args.email.trim().toLowerCase();
+
+  const [ipAllowed, emailAllowed] = await Promise.all([
+    checkRateLimit(`public-apply:ip:${args.jobSlug}:${ip}`, 60_000),
+    checkRateLimit(`public-apply:email:${args.jobSlug}:${normalizedEmail}`, 60_000)
+  ]);
+
+  if (!ipAllowed || !emailAllowed) {
+    return {
+      ok: false,
+      message: "Please wait a minute before submitting this application again."
+    };
+  }
+
+  return { ok: true };
 }

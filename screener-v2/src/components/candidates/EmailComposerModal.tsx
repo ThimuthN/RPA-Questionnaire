@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Mail, ChevronDown, Eye, EyeOff, Send, AlertCircle, CheckCircle2, Users } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
 type EmailTemplate =
   | "ad_hoc"
@@ -84,6 +85,7 @@ interface EmailComposerModalProps {
   candidateEmail: string;
   candidateName: string;
   hiringTeam?: TeamMember[];
+  deliveryChannel?: WorkflowChannelSummary;
   defaultTemplate?: EmailTemplate;
   defaultParams?: Record<string, string>;
   onSuccess?: () => void;
@@ -102,11 +104,19 @@ function Badge({ label, className }: { label: string; className: string }) {
   );
 }
 
+function channelTone(mode?: WorkflowChannelSummary["mode"]) {
+  if (mode === "department_mailbox") {
+    return "border-emerald-400/20 bg-emerald-500/8 text-emerald-100";
+  }
+  return "border-amber-400/20 bg-amber-500/8 text-amber-100";
+}
+
 export function EmailComposerModal({
   candidateId,
   candidateEmail,
   candidateName,
   hiringTeam = [],
+  deliveryChannel,
   defaultTemplate = "ad_hoc",
   defaultParams = {},
   onSuccess,
@@ -274,6 +284,26 @@ export function EmailComposerModal({
               ) : (
                 <div className="flex flex-1 flex-col overflow-hidden">
                   <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+                    {deliveryChannel ? (
+                      <div className={`rounded-[16px] border px-4 py-3 ${channelTone(deliveryChannel.mode)}`}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-sm font-semibold">{deliveryChannel.label}</p>
+                          {deliveryChannel.provider ? (
+                            <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/75">
+                              {deliveryChannel.provider}
+                            </span>
+                          ) : null}
+                        </div>
+                        <p className="mt-1 text-xs text-white/70">{deliveryChannel.description}</p>
+                        {deliveryChannel.accountLabel || deliveryChannel.resourceLabel ? (
+                          <p className="mt-2 text-xs text-white/75">
+                            {deliveryChannel.accountLabel ? `Account: ${deliveryChannel.accountLabel}` : null}
+                            {deliveryChannel.accountLabel && deliveryChannel.resourceLabel ? " • " : null}
+                            {deliveryChannel.resourceLabel ? `Mailbox: ${deliveryChannel.resourceLabel}` : null}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {/* Template selector */}
                     <div className="space-y-1.5">

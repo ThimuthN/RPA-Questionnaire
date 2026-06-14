@@ -25,6 +25,19 @@ function mapOffer(row: {
   offerNotes: string | null;
   sentAt: Date | null;
   respondedAt: Date | null;
+  approvalSteps?: Array<{
+    id: string;
+    approverId: string;
+    sortOrder: number;
+    status: string;
+    note: string | null;
+    decidedAt: Date | null;
+    approver: {
+      id: string;
+      name: string | null;
+      email: string;
+    };
+  }>;
 }) {
   return {
     id: row.id,
@@ -37,7 +50,47 @@ function mapOffer(row: {
     offerNotes: row.offerNotes,
     sentAt: row.sentAt?.toISOString() ?? null,
     respondedAt: row.respondedAt?.toISOString() ?? null,
+    approvalSteps: row.approvalSteps?.map((step) => ({
+      id: step.id,
+      approverId: step.approverId,
+      sortOrder: step.sortOrder,
+      status: step.status,
+      note: step.note,
+      decidedAt: step.decidedAt?.toISOString() ?? null,
+      approver: {
+        id: step.approver.id,
+        name: step.approver.name,
+        email: step.approver.email
+      }
+    })) ?? []
   };
+}
+
+async function logOfferActivity(args: {
+  candidateId: string;
+  actorId?: string;
+  actorName?: string | null;
+  event: string;
+  detail: string;
+}) {
+  await prisma.candidateActivityEvent.create({
+    data: {
+      candidateId: args.candidateId,
+      actorId: args.actorId ?? null,
+      actorName: args.actorName ?? null,
+      event: args.event,
+      entityType: "offer",
+      entityId: args.candidateId,
+      detail: args.detail
+    }
+  }).catch(() => undefined);
+}
+
+function resolveCandidateDepartmentId(candidate: {
+  departmentId: string | null;
+  departmentCandidacies?: Array<{ departmentId?: string | null }>;
+}) {
+  return candidate.departmentCandidacies?.[0]?.departmentId ?? candidate.departmentId ?? null;
 }
 
 export async function GET(
@@ -49,7 +102,19 @@ export async function GET(
 
   const { id } = await params;
 
-  const offer = await prisma.candidateOffer.findUnique({ where: { candidateId: id } });
+  const offer = await prisma.candidateOffer.findUnique({
+    where: { candidateId: id },
+    include: {
+      approvalSteps: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          approver: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      }
+    }
+  });
   return NextResponse.json({ offer: offer ? mapOffer(offer) : null });
 }
 
@@ -74,8 +139,10 @@ export async function POST(
         positionAppliedFor: true,
         departmentCandidacies: {
           where: { status: "active" },
+          orderBy: { createdAt: "desc" },
           take: 1,
           select: {
+            departmentId: true,
             teamAssignments: {
               where: { isActive: true },
               select: { user: { select: { email: true } } },
@@ -88,7 +155,8 @@ export async function POST(
       return NextResponse.json({ ok: false, message: "Candidate not found" }, { status: 404 });
     }
 
-    const perm = await requirePermissionForDepartment(auth.session, "manage_candidates", candidate.departmentId);
+    const effectiveDepartmentId = resolveCandidateDepartmentId(candidate);
+    const perm = await requirePermissionForDepartment(auth.session, "manage_candidates", effectiveDepartmentId);
     if (!perm.ok) return perm.response;
 
     if (body.action === "submit_for_approval") {
@@ -105,7 +173,7 @@ export async function POST(
 
       // Find approval chain for this offer's department
       const chain = await prisma.offerApprovalChain.findFirst({
-        where: { departmentId: candidate.departmentId },
+        where: { departmentId: effectiveDepartmentId },
         include: { steps: { orderBy: { sortOrder: "asc" }, include: { approver: { select: { id: true, name: true, email: true } } } } },
       });
 
@@ -114,6 +182,13 @@ export async function POST(
         const updated = await prisma.candidateOffer.update({
           where: { candidateId: id },
           data: { status: "approved" },
+        });
+        await logOfferActivity({
+          candidateId: id,
+          actorId: auth.session.userId ?? undefined,
+          actorName: auth.session.name ?? null,
+          event: "offer_auto_approved",
+          detail: "Offer auto-approved because no approval chain is configured for this department."
         });
         return NextResponse.json({ ok: true, offer: mapOffer(updated), autoApproved: true });
       }
@@ -149,14 +224,46 @@ export async function POST(
         void sendEmailSafe({ to: firstApprover.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined });
       }
 
-      const updated = await prisma.candidateOffer.findUnique({ where: { candidateId: id } });
+      const updated = await prisma.candidateOffer.findUnique({
+        where: { candidateId: id },
+        include: {
+          approvalSteps: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              approver: { select: { id: true, name: true, email: true } }
+            }
+          }
+        }
+      });
+      await logOfferActivity({
+        candidateId: id,
+        actorId: auth.session.userId ?? undefined,
+        actorName: auth.session.name ?? null,
+        event: "offer_submitted_for_approval",
+        detail: firstApprover?.email
+          ? `Offer submitted for approval. First approver: ${firstApprover.email}.`
+          : "Offer submitted for approval."
+      });
       return NextResponse.json({ ok: true, offer: updated ? mapOffer(updated) : null });
     }
 
     if (body.action === "send") {
-      const existing = await prisma.candidateOffer.findUnique({ where: { candidateId: id } });
+      const existing = await prisma.candidateOffer.findUnique({
+        where: { candidateId: id },
+        include: {
+          approvalSteps: {
+            where: { status: { in: ["pending", "approved"] } }
+          }
+        }
+      });
       if (!existing) {
         return NextResponse.json({ ok: false, message: "Create an offer before marking it sent" }, { status: 400 });
+      }
+      if (existing.status !== "approved") {
+        return NextResponse.json(
+          { ok: false, message: "Only approved offers can be sent. Submit the offer for approval first." },
+          { status: 400 }
+        );
       }
       const updated = await prisma.candidateOffer.update({
         where: { candidateId: id },
@@ -183,8 +290,24 @@ export async function POST(
         recruiterName: auth.session.name ?? undefined,
         recruiterEmail: auth.session.email ?? undefined,
       });
-      void sendEmailSafe({ to: candidate.email, cc: ccEmails, subject, html, template: "offer_sent", candidateId: id, sentById: auth.session.userId ?? undefined });
+      void sendEmailSafe({
+        to: candidate.email,
+        cc: ccEmails,
+        subject,
+        html,
+        template: "offer_sent",
+        candidateId: id,
+        sentById: auth.session.userId ?? undefined,
+        departmentId: effectiveDepartmentId ?? undefined
+      });
 
+      await logOfferActivity({
+        candidateId: id,
+        actorId: auth.session.userId ?? undefined,
+        actorName: auth.session.name ?? null,
+        event: "offer_sent",
+        detail: `Offer marked as sent to ${candidate.email}.`
+      });
       return NextResponse.json({ ok: true, offer: mapOffer(updated) });
     }
 
@@ -196,6 +319,13 @@ export async function POST(
       const updated = await prisma.candidateOffer.update({
         where: { candidateId: id },
         data: { status: "draft", sentAt: null },
+      });
+      await logOfferActivity({
+        candidateId: id,
+        actorId: auth.session.userId ?? undefined,
+        actorName: auth.session.name ?? null,
+        event: "offer_revoked",
+        detail: "Offer reverted to draft."
       });
       return NextResponse.json({ ok: true, offer: mapOffer(updated) });
     }
@@ -225,6 +355,13 @@ export async function POST(
       },
     });
 
+    await logOfferActivity({
+      candidateId: id,
+      actorId: auth.session.userId ?? undefined,
+      actorName: auth.session.name ?? null,
+      event: "offer_saved",
+      detail: "Offer details saved."
+    });
     return NextResponse.json({ ok: true, offer: mapOffer(offer) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save offer";

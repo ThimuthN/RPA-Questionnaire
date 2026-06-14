@@ -59,6 +59,26 @@ export async function POST(
       subject: nextApproverEmailSubject,
     });
     void sendEmailSafe({ to: next.approver.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined });
+    await prisma.candidateActivityEvent.create({
+      data: {
+        candidateId: id,
+        actorId: auth.session.userId ?? null,
+        actorName: auth.session.name ?? null,
+        event: "offer_approval_step_approved",
+        entityType: "offer",
+        entityId: id,
+        detail: `${auth.session.name ?? auth.session.email ?? "An approver"} approved this step. Next approver: ${next.approver.email}.`
+      }
+    }).catch(() => undefined);
+    void createNotification({
+      userId: next.approver.id,
+      type: "offer_submitted_for_approval",
+      title: `Offer approval required â€” ${offer.candidate.fullName}`,
+      body: "You are the current approver for this offer.",
+      entityType: "candidate",
+      entityId: id,
+      entityHref: `/people/candidates/${id}`,
+    }).catch(() => undefined);
     return NextResponse.json({ ok: true, status: "submitted_for_approval" });
   }
 
@@ -68,6 +88,18 @@ export async function POST(
     data: { status: "approved" },
     select: { id: true, status: true },
   });
+
+  await prisma.candidateActivityEvent.create({
+    data: {
+      candidateId: id,
+      actorId: auth.session.userId ?? null,
+      actorName: auth.session.name ?? null,
+      event: "offer_approved",
+      entityType: "offer",
+      entityId: id,
+      detail: `${auth.session.name ?? auth.session.email ?? "An approver"} completed the final approval step.`
+    }
+  }).catch(() => undefined);
 
   // Notify all approvers that the offer is fully approved
   const approverIds = [...new Set(offer.approvalSteps.map((s) => s.approverId).filter(Boolean))] as string[];

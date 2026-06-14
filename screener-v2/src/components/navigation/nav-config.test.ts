@@ -55,6 +55,12 @@ describe("nav-config", () => {
       expect(jobsItem?.section).toBe("All hiring");
     });
 
+    it("keeps integrations visible for admin workspace users who manage users", () => {
+      const viewer = { permissions: ["manage_users"], departmentId: null } as Pick<AppSession, "permissions" | "departmentId">;
+      const labels = getNavItems(viewer, "admin").map((item) => item.label);
+      expect(labels).toContain("Integrations");
+    });
+
     it("department workspace has no global items", () => {
       const viewer = { permissions: [], departmentId: "dept-1" } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer, "dept-1");

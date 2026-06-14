@@ -14,6 +14,12 @@ vi.mock("@/components/candidates/CandidatesViewSwitch", () => ({
   CandidatesViewSwitch: () => <div data-testid="candidate-view-switch" />
 }));
 
+vi.mock("@/components/workspace/ActiveFilterChips", () => ({
+  ActiveFilterChips: ({ items }: { items: Array<{ label: string }> }) => (
+    <div data-testid="applicant-active-filters">{items.map((item) => item.label).join(" | ")}</div>
+  )
+}));
+
 vi.mock("@/components/workspace/PaginationBar", () => ({
   PaginationBar: () => <div data-testid="applicant-pagination" />
 }));
@@ -128,5 +134,33 @@ describe("ApplicantWorkspaceView", () => {
         status: "submitted"
       })
     );
+  });
+
+  it("surfaces active applicant filters and passes the missing resume filter to the loader", async () => {
+    const markup = renderToStaticMarkup(
+      await ApplicantWorkspaceView({
+        scope: "global",
+        searchParams: {
+          q: "alice",
+          jobId: "job-1",
+          status: "under_review",
+          resume: "missing"
+        }
+      })
+    );
+
+    expect(vi.mocked(listApplicantWorkspacePage)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        q: "alice",
+        jobId: "job-1",
+        status: "under_review",
+        resumeMissing: true
+      })
+    );
+    expect(markup).toContain('data-testid="applicant-active-filters"');
+    expect(markup).toContain("Search: alice");
+    expect(markup).toContain("Job: RPA Engineer");
+    expect(markup).toContain("Status: Under review");
+    expect(markup).toContain("Resume: Missing");
   });
 });

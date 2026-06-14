@@ -3,6 +3,7 @@ import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { DataTable } from "@/components/primitives/DataTable";
+import { JobRowActions } from "@/components/jobs/JobRowActions";
 import { listJobPostings } from "@/lib/db/jobs";
 import type { JobPostingListItem } from "@/lib/jobs/types";
 
@@ -30,6 +31,7 @@ export async function JobsWorkspaceView({
   createJobHref,
   applicantsBasePath,
   editJobBasePath,
+  jobsBasePath,
   notice,
 }: {
   scope: "global" | "department";
@@ -39,6 +41,7 @@ export async function JobsWorkspaceView({
   createJobHref: Route;
   applicantsBasePath: string;
   editJobBasePath: string;
+  jobsBasePath: string;
   notice?: React.ReactNode;
 }) {
   const jobs = await listJobPostings(departmentId);
@@ -91,7 +94,12 @@ export async function JobsWorkspaceView({
               width: "w-[28%]",
               render: (job) => (
                 <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-[color:var(--app-heading)]">{job.title}</p>
+                  <Link
+                    href={`${editJobBasePath}/${job.id}` as Route}
+                    className="text-sm font-medium text-[color:var(--app-heading)] hover:underline"
+                  >
+                    {job.title}
+                  </Link>
                   <p className="text-xs text-[color:var(--app-muted)]">{job.roleLabel || "No role assigned"}</p>
                 </div>
               )
@@ -122,7 +130,16 @@ export async function JobsWorkspaceView({
               header: "Next action",
               width: "w-[20%]",
               render: (job) => (
-                <p className="text-sm text-[color:var(--app-muted)]">{nextJobAction(job)}</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-[color:var(--app-text)]">{nextJobAction(job)}</p>
+                  <p className="text-xs text-[color:var(--app-muted)]">
+                    {job.applicantCount > 0
+                      ? "Applicant intake requires attention"
+                      : job.isPublished && job.isOpen
+                        ? "Ready for inbound applicants"
+                        : "Admin action required before intake"}
+                  </p>
+                </div>
               )
             },
             {
@@ -136,35 +153,17 @@ export async function JobsWorkspaceView({
               header: "Actions",
               width: "w-[14%]",
               render: (job) => (
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Link href={`${applicantsBasePath}?jobId=${job.id}` as Route}>
-                    <Button type="button">Review</Button>
-                  </Link>
-                  {job.isPublished ? (
-                    <Link href={`/jobs/${job.slug}` as Route}>
-                      <Button type="button" variant="secondary">Public page</Button>
-                    </Link>
-                  ) : null}
-                  {canEditJob ? (
-                    <>
-                      <form action={`/api/jobs/${job.id}`} method="post">
-                        <input type="hidden" name="action" value="toggle_published" />
-                        <Button type="submit" variant="ghost">
-                          {job.isPublished ? "Unpublish" : "Publish"}
-                        </Button>
-                      </form>
-                      <form action={`/api/jobs/${job.id}`} method="post">
-                        <input type="hidden" name="action" value="toggle_open" />
-                        <Button type="submit" variant="ghost">
-                          {job.isOpen ? "Close" : "Open"}
-                        </Button>
-                      </form>
-                      <Link href={`${editJobBasePath}/${job.id}` as Route}>
-                        <Button type="button" variant="secondary">Edit</Button>
-                      </Link>
-                    </>
-                  ) : null}
-                </div>
+                <JobRowActions
+                  jobId={job.id}
+                  isPublished={job.isPublished}
+                  isOpen={job.isOpen}
+                  applicantCount={job.applicantCount}
+                  canEditJob={canEditJob}
+                  applicantsHref={`${applicantsBasePath}?jobId=${job.id}` as Route}
+                  publicHref={job.isPublished ? (`/jobs/${job.slug}` as Route) : undefined}
+                  editHref={`${editJobBasePath}/${job.id}` as Route}
+                  returnTo={jobsBasePath}
+                />
               )
             }
           ]}

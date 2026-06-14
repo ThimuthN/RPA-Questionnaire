@@ -1,5 +1,7 @@
 # Master Release Plan — Northstar ATS
 
+> ⚠️ **Status superseded (2026-06-15).** Batches A–L are now implemented. For the *current* "what is left to do" — verified against the actual code — read **`docs/RELEASE_READINESS_BACKLOG.md`**, not the batch list below. This document remains valid as **design rationale** (why each feature looks the way it does), but its status claims are out of date. When the two conflict, the backlog wins.
+
 **Last updated:** 2026-06-14  
 **Branch:** staging-dev  
 **Current test baseline:** 96 test files / 544 tests passing  

@@ -8,6 +8,10 @@ import {
 } from "@/components/candidates/CandidateAssessmentsPanel";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
+import {
+  CandidateApplicationHistoryPanel,
+  CandidateLifecycleSummaryCard
+} from "@/components/candidates/CandidateLifecycleOverview";
 import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySkeleton";
 import { CandidateSidebar } from "@/components/candidates/CandidateSidebar";
 import { CandidatePipelineProgress } from "@/components/candidates/CandidatePipelineProgress";
@@ -32,6 +36,7 @@ import { ensureCandidateMilestones, getCandidateDetail } from "@/lib/db/candidat
 import { getDepartment } from "@/lib/db/departments";
 import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates";
 import { prisma } from "@/lib/db/prisma";
+import { getDepartmentWorkflowChannelState } from "@/lib/integrations/service";
 import { isActiveApplicationStatus } from "@/lib/jobs/types";
 import { cn } from "@/lib/utils";
 
@@ -257,7 +262,17 @@ export default async function CandidateDetailPage({
         },
       },
     }).catch(() => null),
-    prisma.candidateOffer.findUnique({ where: { candidateId: candidate.id } }).catch(() => null),
+    prisma.candidateOffer.findUnique({
+      where: { candidateId: candidate.id },
+      include: {
+        approvalSteps: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            approver: { select: { id: true, name: true, email: true } }
+          }
+        }
+      }
+    }).catch(() => null),
     prisma.emailLog.findMany({
       where: { candidateId: candidate.id },
       orderBy: { sentAt: "desc" },
@@ -306,9 +321,28 @@ export default async function CandidateDetailPage({
     activeApplication
       ? candidate.departmentId ?? departmentCandidacy?.department.id ?? requestedWorkspaceId
       : departmentCandidacy?.department.id ?? candidate.departmentId ?? requestedWorkspaceId;
+  const offerWorkflowDepartmentId =
+    departmentCandidacy?.department.id ??
+    candidate.departmentCandidacies?.find((c) => c.status === "active")?.departmentId ??
+    candidate.departmentId ??
+    requestedWorkspaceId ??
+    null;
   const teamOptions = teamDepartmentId
     ? await listDepartmentHiringTeamOptions(teamDepartmentId)
     : { templates: [], users: [] };
+  const approvalRoute = offerWorkflowDepartmentId
+    ? await prisma.offerApprovalChain.findFirst({
+        where: { departmentId: offerWorkflowDepartmentId },
+        include: {
+          steps: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              approver: { select: { id: true, name: true, email: true } }
+            }
+          }
+        }
+      }).catch(() => null)
+    : null;
 
   const teamAssignments = activeApplication
     ? assignments
@@ -320,6 +354,16 @@ export default async function CandidateDetailPage({
         role: a.role,
         source: a.source as "template" | "manual" | "job_default",
       })) ?? [];
+
+  const workflowDepartmentId =
+    departmentCandidacy?.department.id ??
+    candidate.departmentCandidacies?.find((c) => c.status === "active")?.departmentId ??
+    candidate.departmentId ??
+    requestedWorkspaceId ??
+    null;
+  const workflowChannels = workflowDepartmentId
+    ? await getDepartmentWorkflowChannelState(workflowDepartmentId).catch(() => null)
+    : null;
 
   const teamNames = teamAssignments.map((a) => a.user.name ?? a.user.email);
   const teamCount = teamAssignments.length;
@@ -358,11 +402,28 @@ export default async function CandidateDetailPage({
         offerNotes: offer.offerNotes,
         sentAt: offer.sentAt?.toISOString() ?? null,
         respondedAt: offer.respondedAt?.toISOString() ?? null,
+        approvalSteps: offer.approvalSteps.map((step) => ({
+          id: step.id,
+          approverId: step.approverId,
+          sortOrder: step.sortOrder,
+          status: step.status,
+          note: step.note,
+          decidedAt: step.decidedAt?.toISOString() ?? null,
+          approver: {
+            id: step.approver.id,
+            name: step.approver.name,
+            email: step.approver.email
+          }
+        }))
       }
     : null;
 
   const hasResponsibleTeam = teamCount > 0;
   const hasLinkedJourney = hasActiveHiringJourney;
+  const pipelineHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "pipeline") as Route;
+  const assessmentsHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "assessments") as Route;
+  const filesHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "files") as Route;
+  const emailsHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "emails") as Route;
 
   return (
     <SceneShell
@@ -466,7 +527,12 @@ export default async function CandidateDetailPage({
           {/* Pipeline tab */}
           {currentTab === "pipeline" ? (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
-              <div>
+              <div className="space-y-4">
+                <CandidateApplicationHistoryPanel
+                  applications={candidate.applications}
+                  applicationAssessments={candidate.applicationAssessments}
+                />
+
                 {candidate.milestones.length === 0 ? (
                   <div className="rounded-[16px] bg-[color:var(--app-surface-soft)] p-6">
                     <DefaultJourneySkeleton hasHiringJourney={hasActiveHiringJourney} />
@@ -481,11 +547,30 @@ export default async function CandidateDetailPage({
                     assessmentPresets={assessmentPresets}
                     assessmentWorkspaceLabel={requestedWorkspaceId ? workspaceContext.label : undefined}
                     availableInterviewers={availableInterviewers}
+                    schedulingChannel={workflowChannels?.scheduling}
                   />
                 )}
               </div>
 
               <div className="space-y-4">
+                <CandidateLifecycleSummaryCard
+                  applications={candidate.applications}
+                  platformAssessments={platformAssessments}
+                  applicationAssessments={candidate.applicationAssessments}
+                  externalAssessments={candidate.externalAssessments}
+                  emailLogs={serializedEmailLogs.map((log) => ({
+                    id: log.id,
+                    status: log.status,
+                    sentAt: log.sentAt,
+                    subject: log.subject
+                  }))}
+                  hasResume={Boolean(currentResume)}
+                  filesHref={filesHref}
+                  assessmentsHref={assessmentsHref}
+                  emailsHref={emailsHref}
+                  pipelineHref={pipelineHref}
+                />
+
                 <FinalizeActionBar
                   candidateId={candidate.id}
                   orgStage={candidate.orgStage}
@@ -622,11 +707,13 @@ export default async function CandidateDetailPage({
                   candidateEmail={candidate.email}
                   candidateName={candidate.fullName}
                   hiringTeam={hiringTeamForEmail}
+                  deliveryChannel={workflowChannels?.email}
                 />
               </div>
               <EmailLogPanel
                 candidateId={candidate.id}
                 initialLogs={serializedEmailLogs}
+                deliveryChannel={workflowChannels?.email}
               />
             </div>
           ) : null}
@@ -644,6 +731,15 @@ export default async function CandidateDetailPage({
                 candidateId={candidate.id}
                 initialOffer={offerForPanel}
                 canManage={canManageCandidate}
+                currentUserId={session.userId ?? null}
+                approvalRoute={
+                  approvalRoute?.steps.map((step) => ({
+                    approverId: step.approverId,
+                    sortOrder: step.sortOrder,
+                    approverName: step.approver.name,
+                    approverEmail: step.approver.email
+                  })) ?? []
+                }
               />
             </div>
           ) : null}

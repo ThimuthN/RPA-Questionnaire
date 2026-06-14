@@ -6,6 +6,7 @@ import { CalendarDays, Clock3, Link2, MessageSquare, Trash2, Users, X } from "lu
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import type { CandidateInterviewPanelRecord } from "@/lib/db/candidates";
+import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
 const fieldClassName =
   "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
@@ -22,7 +23,15 @@ interface InterviewSchedulingModalProps {
     name: string | null;
     email: string;
   }>;
+  schedulingChannel?: WorkflowChannelSummary;
   onSuccess?: () => void;
+}
+
+function channelTone(mode?: WorkflowChannelSummary["mode"]) {
+  if (mode === "calendar_backed") {
+    return "border-emerald-400/20 bg-emerald-500/8 text-emerald-100";
+  }
+  return "border-amber-400/20 bg-amber-500/8 text-amber-100";
 }
 
 function deriveMilestoneStatus(args: {
@@ -47,6 +56,7 @@ export function InterviewSchedulingModal({
   milestone,
   interviewPanel,
   availableInterviewers,
+  schedulingChannel,
   onSuccess
 }: InterviewSchedulingModalProps) {
   const [isPending, setIsPending] = useState(false);
@@ -232,6 +242,27 @@ export function InterviewSchedulingModal({
                   >
                     {error}
                   </motion.div>
+                ) : null}
+
+                {schedulingChannel ? (
+                  <div className={`rounded-[16px] border px-4 py-3 ${channelTone(schedulingChannel.mode)}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold">{schedulingChannel.label}</p>
+                      {schedulingChannel.provider ? (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/75">
+                          {schedulingChannel.provider}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-xs text-white/70">{schedulingChannel.description}</p>
+                    {schedulingChannel.accountLabel || schedulingChannel.resourceLabel ? (
+                      <p className="mt-2 text-xs text-white/75">
+                        {schedulingChannel.accountLabel ? `Account: ${schedulingChannel.accountLabel}` : null}
+                        {schedulingChannel.accountLabel && schedulingChannel.resourceLabel ? " • " : null}
+                        {schedulingChannel.resourceLabel ? `Calendar: ${schedulingChannel.resourceLabel}` : null}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
 
                 <label className="grid gap-2">

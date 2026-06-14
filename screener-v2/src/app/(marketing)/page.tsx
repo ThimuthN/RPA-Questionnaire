@@ -17,6 +17,7 @@ import { ViewportReveal } from "@/components/motion/ViewportReveal";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { SceneShell } from "@/components/scene/SceneShell";
+import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { candidateStageLabels } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
@@ -92,14 +93,15 @@ export default async function MarketingHomePage() {
 
   return (
     <SceneTransition>
-      <SceneShell
-        variant="create"
-        eyebrow="Northstar Hiring OS"
-        title={<span className="sr-only">Northstar Hiring OS</span>}
-        hideHeader
-        tone="page"
-      >
-        <StaggerGroup className="space-y-10">
+      <PublicSiteFrame current="home">
+        <SceneShell
+          variant="create"
+          eyebrow="Northstar Hiring OS"
+          title={<span className="sr-only">Northstar Hiring OS</span>}
+          hideHeader
+          tone="page"
+        >
+          <StaggerGroup className="space-y-10">
           <section className="relative overflow-hidden rounded-[34px] border border-[color:var(--app-border)] bg-[radial-gradient(circle_at_top_left,rgba(47,134,255,0.18),transparent_30%),radial-gradient(circle_at_78%_14%,rgba(157,140,255,0.10),transparent_22%),linear-gradient(180deg,rgba(16,39,73,0.84),rgba(5,11,22,0.96))] px-7 py-8 shadow-[var(--app-shadow)] md:px-10 md:py-10">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
@@ -402,8 +404,9 @@ export default async function MarketingHomePage() {
               </div>
             </StaggerGroup>
           ) : null}
-        </StaggerGroup>
-      </SceneShell>
+          </StaggerGroup>
+        </SceneShell>
+      </PublicSiteFrame>
     </SceneTransition>
   );
 }

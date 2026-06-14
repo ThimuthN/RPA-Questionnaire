@@ -63,6 +63,7 @@ export default async function CandidateJobsPage({
           createJobHref="/people/candidates/jobs/new"
           applicantsBasePath="/people/candidates/applicants"
           editJobBasePath="/people/candidates/jobs"
+          jobsBasePath="/people/candidates/jobs"
           notice={notice}
         />
       </div>

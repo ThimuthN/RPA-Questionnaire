@@ -146,6 +146,9 @@ vi.mock("@/lib/db/prisma", () => ({
     candidateOffer: {
       findUnique: vi.fn()
     },
+    offerApprovalChain: {
+      findFirst: vi.fn()
+    },
     emailLog: {
       findMany: vi.fn()
     }
@@ -182,6 +185,7 @@ const mockCandidate = {
   assessments: [],
   applications: [],
   applicationAssessments: [],
+  externalAssessments: [],
   milestones: [],
   notes: [],
   departmentCandidacies: [],
@@ -217,6 +221,7 @@ describe("Candidate Detail Page", () => {
     vi.mocked(getApplicationAssignments).mockResolvedValue([] as never);
     vi.mocked(prisma.departmentCandidacy.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.offerApprovalChain.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.emailLog.findMany).mockResolvedValue([] as never);
   });
 
@@ -251,6 +256,8 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="journey-skeleton"');
+    expect(markup).toContain("Lifecycle summary");
+    expect(markup).toContain("Application history");
   });
 
   it("shows hiring-journey and team warnings when both are missing", async () => {
@@ -270,11 +277,14 @@ describe("Candidate Detail Page", () => {
       applications: [
         {
           id: "app-1",
+          candidateId: "cand-1",
           status: "under_review",
+          jobSlug: "rpa-engineer",
           jobTitle: "RPA Engineer",
           roleLabel: "RPA Engineer",
           roleDepartment: "RPA SL",
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           jobPostingId: "job-1"
         }
       ]
@@ -287,6 +297,8 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="responsible-team-card"');
+    expect(markup).toContain("Application history");
+    expect(markup).toContain("RPA Engineer");
   });
 
   it("initializes milestones for candidates with an active hiring journey but no milestone records", async () => {

@@ -47,5 +47,17 @@ export async function POST(
     });
   });
 
+  await prisma.candidateActivityEvent.create({
+    data: {
+      candidateId: id,
+      actorId: auth.session.userId ?? null,
+      actorName: auth.session.name ?? null,
+      event: "offer_rejected",
+      entityType: "offer",
+      entityId: id,
+      detail: `${auth.session.name ?? auth.session.email ?? "An approver"} rejected the offer approval step and returned the offer to draft.`
+    }
+  }).catch(() => undefined);
+
   return NextResponse.json({ ok: true, status: "draft" });
 }

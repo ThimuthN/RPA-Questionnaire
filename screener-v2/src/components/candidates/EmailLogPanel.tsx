@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Mail, RefreshCw, ChevronDown, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
 interface EmailLogEntry {
   id: string;
@@ -112,9 +113,17 @@ function EmailRow({ log }: { log: EmailLogEntry }) {
 interface EmailLogPanelProps {
   candidateId: string;
   initialLogs?: EmailLogEntry[];
+  deliveryChannel?: WorkflowChannelSummary;
 }
 
-export function EmailLogPanel({ candidateId, initialLogs = [] }: EmailLogPanelProps) {
+function channelTone(mode?: WorkflowChannelSummary["mode"]) {
+  if (mode === "department_mailbox") {
+    return "border-emerald-400/20 bg-emerald-500/8 text-emerald-100";
+  }
+  return "border-amber-400/20 bg-amber-500/8 text-amber-100";
+}
+
+export function EmailLogPanel({ candidateId, initialLogs = [], deliveryChannel }: EmailLogPanelProps) {
   const [logs, setLogs] = useState<EmailLogEntry[]>(initialLogs);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -135,6 +144,20 @@ export function EmailLogPanel({ candidateId, initialLogs = [] }: EmailLogPanelPr
 
   return (
     <div className="space-y-4">
+      {deliveryChannel ? (
+        <div className={`rounded-[16px] border px-4 py-3 ${channelTone(deliveryChannel.mode)}`}>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-semibold">{deliveryChannel.label}</p>
+            {deliveryChannel.provider ? (
+              <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/75">
+                {deliveryChannel.provider}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-1 text-xs text-white/70">{deliveryChannel.description}</p>
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail size={15} className="text-[color:var(--app-muted)]" />

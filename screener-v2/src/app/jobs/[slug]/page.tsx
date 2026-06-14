@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Briefcase, CheckCircle2, DollarSign, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { ApplicationDraftCleaner } from "@/components/jobs/JobApplicationForm";
 import { SceneShell } from "@/components/scene/SceneShell";
@@ -51,14 +52,15 @@ export default async function PublicJobDetailPage({
         : null;
 
   return (
-    <SceneShell
-      variant="results"
-      tone="page"
-      eyebrow=""
-      title=""
-      hideHeader
-    >
-      {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
+    <PublicSiteFrame current="careers">
+      <SceneShell
+        variant="results"
+        tone="page"
+        eyebrow=""
+        title=""
+        hideHeader
+      >
+        {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
 
       {/* ── Job header card ── */}
       <div className="mb-8 rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 md:p-8 space-y-5">
@@ -235,6 +237,7 @@ export default async function PublicJobDetailPage({
           </StagePanel>
         </div>
       </div>
-    </SceneShell>
+      </SceneShell>
+    </PublicSiteFrame>
   );
 }

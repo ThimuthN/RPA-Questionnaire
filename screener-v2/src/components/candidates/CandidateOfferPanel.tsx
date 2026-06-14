@@ -18,6 +18,28 @@ interface OfferRecord {
   offerNotes: string | null;
   sentAt: string | null;
   respondedAt: string | null;
+  approvalSteps?: ApprovalStepRecord[];
+}
+
+interface ApprovalStepRecord {
+  id: string;
+  approverId: string;
+  sortOrder: number;
+  status: string;
+  note: string | null;
+  decidedAt: string | null;
+  approver: {
+    id: string;
+    name: string | null;
+    email: string;
+  };
+}
+
+interface ApprovalRouteStep {
+  approverId: string;
+  sortOrder: number;
+  approverName: string | null;
+  approverEmail: string;
 }
 
 const offerStatusTone: Record<OfferStatus, "neutral" | "blue" | "amber" | "emerald" | "red"> = {
@@ -59,20 +81,32 @@ function inputClass(extra?: string) {
   return `rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50 ${extra ?? ""}`;
 }
 
+function approverLabel(step: { approverName?: string | null; approverEmail: string } | ApprovalStepRecord) {
+  if ("approver" in step) {
+    return step.approver.name ?? step.approver.email;
+  }
+  return step.approverName ?? step.approverEmail;
+}
+
 export function CandidateOfferPanel({
   candidateId,
   initialOffer,
   canManage,
+  currentUserId,
+  approvalRoute = [],
 }: {
   candidateId: string;
   initialOffer: OfferRecord | null;
   canManage: boolean;
+  currentUserId?: string | null;
+  approvalRoute?: ApprovalRouteStep[];
 }) {
   const router = useRouter();
   const [offer, setOffer] = useState<OfferRecord | null>(initialOffer);
   const [editing, setEditing] = useState(!initialOffer && canManage);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvalNote, setApprovalNote] = useState("");
 
   const [form, setForm] = useState({
     compensationType: initialOffer?.compensationType ?? "salary",
@@ -82,6 +116,18 @@ export function CandidateOfferPanel({
     expiresAt: initialOffer?.expiresAt ? initialOffer.expiresAt.slice(0, 10) : "",
     offerNotes: initialOffer?.offerNotes ?? "",
   });
+
+  const approvalSteps = offer?.approvalSteps ?? [];
+  const currentPendingStep = approvalSteps.find((step) => step.status === "pending") ?? null;
+  const completedApprovalCount = approvalSteps.filter((step) => step.status === "approved").length;
+  const totalApprovalCount = approvalSteps.length;
+  const remainingApprovalCount = approvalSteps.filter((step) => step.status === "pending").length;
+  const canCurrentUserApprove = Boolean(
+    currentUserId &&
+      offer?.status === "submitted_for_approval" &&
+      currentPendingStep &&
+      currentPendingStep.approverId === currentUserId
+  );
 
   async function saveOffer(action: "upsert" | "send" | "revoke" | "submit_for_approval") {
     setSaving(true);
@@ -99,6 +145,47 @@ export function CandidateOfferPanel({
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleApprovalDecision(action: "approve" | "reject") {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/candidates/${candidateId}/offer/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          note: approvalNote.trim() || undefined,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; status?: OfferStatus };
+      if (!res.ok || data.ok === false) {
+        throw new Error(data.message ?? `Failed to ${action} offer`);
+      }
+      setOffer((current) => current ? {
+        ...current,
+        status: (data.status ?? current.status) as OfferStatus,
+        approvalSteps:
+          action === "approve" && currentPendingStep
+            ? current.approvalSteps?.map((step) =>
+                step.id === currentPendingStep.id
+                  ? {
+                      ...step,
+                      status: "approved",
+                      note: approvalNote.trim() || null,
+                      decidedAt: new Date().toISOString(),
+                    }
+                  : step
+              )
+            : current.approvalSteps
+      } : current);
+      setApprovalNote("");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to ${action} offer`);
     } finally {
       setSaving(false);
     }
@@ -128,6 +215,10 @@ export function CandidateOfferPanel({
             ) : null}
           </div>
 
+          {error ? (
+            <p className="rounded-[14px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">{error}</p>
+          ) : null}
+
           <div className="grid gap-3 sm:grid-cols-3 border-t border-[color:var(--app-border)] pt-4">
             <OfferFact label="Type" value={compensationTypes.find(c => c.value === offer.compensationType)?.label ?? offer.compensationType} />
             {offer.targetStartDate ? (
@@ -141,6 +232,53 @@ export function CandidateOfferPanel({
           {offer.offerNotes ? (
             <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-3 text-sm text-[color:var(--app-text)]">
               {offer.offerNotes}
+            </div>
+          ) : null}
+
+          {offer.status === "draft" ? (
+            <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Approval route</p>
+              {approvalRoute.length > 0 ? (
+                <div className="mt-2 space-y-2">
+                  <p className="text-sm text-[color:var(--app-heading)]">
+                    This offer must be approved before it can be sent.
+                  </p>
+                  <p className="text-xs text-[color:var(--app-muted)]">
+                    {approvalRoute
+                      .slice()
+                      .sort((a, b) => a.sortOrder - b.sortOrder)
+                      .map((step) => approverLabel(step))
+                      .join(" → ")}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-[color:var(--app-muted)]">
+                  No department approval route is configured. Submitting this offer will auto-approve it.
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {offer.status === "submitted_for_approval" ? (
+            <div className="rounded-[16px] border border-amber-400/20 bg-amber-500/8 p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/80">Decision owner</p>
+              <p className="mt-2 text-sm font-semibold text-amber-100">
+                {currentPendingStep ? approverLabel(currentPendingStep) : "Awaiting approval"}
+              </p>
+              <p className="mt-1 text-xs text-amber-100/75">
+                {completedApprovalCount} of {totalApprovalCount} approval step{totalApprovalCount === 1 ? "" : "s"} completed.
+                {remainingApprovalCount > 0 ? ` ${remainingApprovalCount} pending.` : ""}
+              </p>
+            </div>
+          ) : null}
+
+          {offer.status === "approved" ? (
+            <div className="rounded-[16px] border border-emerald-400/20 bg-emerald-500/8 p-4">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-200/80">Decision status</p>
+              <p className="mt-2 text-sm font-semibold text-emerald-100">All approvals complete</p>
+              <p className="mt-1 text-xs text-emerald-100/75">
+                This offer is ready to send from the ATS.
+              </p>
             </div>
           ) : null}
 
@@ -162,14 +300,9 @@ export function CandidateOfferPanel({
           {canManage ? (
             <div className="flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-4">
               {offer.status === "draft" ? (
-                <>
-                  <Button type="button" onClick={() => void saveOffer("submit_for_approval")} disabled={saving}>
-                    {saving ? "Submitting..." : "Submit for approval"}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => void saveOffer("send")} disabled={saving}>
-                    {saving ? "Sending..." : "Mark as sent (skip approval)"}
-                  </Button>
-                </>
+                <Button type="button" onClick={() => void saveOffer("submit_for_approval")} disabled={saving}>
+                  {saving ? "Submitting..." : "Submit for approval"}
+                </Button>
               ) : null}
               {offer.status === "approved" ? (
                 <Button type="button" onClick={() => void saveOffer("send")} disabled={saving}>
@@ -179,7 +312,7 @@ export function CandidateOfferPanel({
               {offer.status === "submitted_for_approval" ? (
                 <p className="text-xs text-amber-400">Waiting for approver sign-off before the offer can be sent.</p>
               ) : null}
-              {(offer.status === "draft" || offer.status === "sent" || offer.status === "submitted_for_approval") ? (
+              {(offer.status === "sent" || offer.status === "submitted_for_approval") ? (
                 <Button type="button" variant="secondary" onClick={() => void saveOffer("revoke")} disabled={saving}>
                   Revoke offer
                 </Button>
@@ -189,6 +322,36 @@ export function CandidateOfferPanel({
                   {saving ? "Removing..." : "Remove expired offer"}
                 </Button>
               ) : null}
+            </div>
+          ) : null}
+
+          {canCurrentUserApprove ? (
+            <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+              <div className="space-y-1">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Approver action</p>
+                <p className="text-sm text-[color:var(--app-heading)]">
+                  You are the current approver for this offer.
+                </p>
+              </div>
+              <label className="grid gap-1">
+                <span className="text-xs text-[color:var(--app-muted)]">Approval note</span>
+                <textarea
+                  value={approvalNote}
+                  onChange={(e) => setApprovalNote(e.target.value)}
+                  rows={3}
+                  disabled={saving}
+                  placeholder="Optional context for the hiring team"
+                  className={inputClass("min-h-[84px]")}
+                />
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" onClick={() => void handleApprovalDecision("approve")} disabled={saving}>
+                  {saving ? "Saving..." : "Approve offer"}
+                </Button>
+                <Button type="button" variant="secondary" onClick={() => void handleApprovalDecision("reject")} disabled={saving}>
+                  {saving ? "Saving..." : "Reject and return to draft"}
+                </Button>
+              </div>
             </div>
           ) : null}
         </div>
@@ -203,6 +366,10 @@ export function CandidateOfferPanel({
           {error ? (
             <p className="rounded-[14px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">{error}</p>
           ) : null}
+
+          <div className="rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2.5 text-xs leading-5 text-[color:var(--app-muted)]">
+            Submit for approval routes the offer through this department&apos;s approval chain. If no chain is configured, the offer is auto-approved and can be sent immediately.
+          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">

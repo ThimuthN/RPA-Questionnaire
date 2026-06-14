@@ -215,6 +215,7 @@ beforeEach(() => {
   );
 
   prismaMocks.txCandidateApplicationCreate.mockResolvedValue({ id: "application-1" });
+  prismaMocks.txCandidateUpdate.mockResolvedValue(null);
   prismaMocks.txAddonResultDeleteMany.mockResolvedValue({ count: 0 });
   prismaMocks.txResponseDeleteMany.mockResolvedValue({ count: 0 });
   prismaMocks.txAddonResultCreate.mockResolvedValue({ id: "addon-result-1" });
@@ -286,6 +287,13 @@ describe("createCandidateApplicationFromPublicSubmission", () => {
     });
 
     expect(result.status).toBe("created");
+    expect(prismaMocks.txCandidateUpdate).toHaveBeenCalledWith({
+      where: { id: "cand-1" },
+      data: {
+        location: "Colombo, Sri Lanka",
+        salaryExpectation: "LKR 150,000 / monthly"
+      }
+    });
     expect(prismaMocks.txAddonResultCreate).toHaveBeenCalledWith({
       data: expect.objectContaining({
         applicationId: "application-1",

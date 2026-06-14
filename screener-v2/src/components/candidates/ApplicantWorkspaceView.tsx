@@ -6,6 +6,7 @@ import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
+import { ActiveFilterChips, type ActiveFilterChipItem } from "@/components/workspace/ActiveFilterChips";
 import { requirePageSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import { prisma } from "@/lib/db/prisma";
@@ -17,6 +18,7 @@ type ApplicantWorkspacePageState = {
   q?: string;
   jobId?: string;
   status?: string;
+  resume?: string;
   page?: string;
   pageSize?: string;
   updated?: string;
@@ -48,6 +50,7 @@ function normalizeSearchParams(searchParams: RouteSearchParams): ApplicantWorksp
     q: readSearchParam(searchParams, "q"),
     jobId: readSearchParam(searchParams, "jobId"),
     status: readSearchParam(searchParams, "status"),
+    resume: readSearchParam(searchParams, "resume"),
     page: readSearchParam(searchParams, "page"),
     pageSize: readSearchParam(searchParams, "pageSize"),
     updated: readSearchParam(searchParams, "updated"),
@@ -115,7 +118,7 @@ export async function ApplicantWorkspaceView({
       : isGlobalViewCandidates
         ? undefined
         : session.departmentId ?? undefined;
-  const hasFilters = Boolean(params.q?.trim() || params.jobId?.trim() || params.status?.trim());
+  const hasFilters = Boolean(params.q?.trim() || params.jobId?.trim() || params.status?.trim() || params.resume === "missing");
 
   const [page, users] = await Promise.all([
     listApplicantWorkspacePage({
@@ -125,6 +128,7 @@ export async function ApplicantWorkspaceView({
         params.status === "submitted" || params.status === "under_review" || params.status === "closed"
           ? (params.status as CandidateApplicationStatus)
           : undefined,
+      resumeMissing: params.resume === "missing",
       departmentId: effectiveDepartmentId,
       page: Number(params.page ?? 1),
       pageSize: Number(params.pageSize ?? 12)
@@ -135,6 +139,47 @@ export async function ApplicantWorkspaceView({
       orderBy: { name: "asc" }
     })
   ]);
+
+  const activeFilters: ActiveFilterChipItem[] = [];
+  const selectedJob = params.jobId?.trim()
+    ? page.jobOptions.find((job) => job.id === params.jobId?.trim())?.label ?? params.jobId.trim()
+    : null;
+  const statusLabel =
+    params.status === "submitted"
+      ? "Applied"
+      : params.status === "under_review"
+        ? "Under review"
+        : params.status === "closed"
+          ? "Archived"
+          : null;
+
+  if (params.q?.trim()) {
+    activeFilters.push({
+      label: `Search: ${params.q.trim()}`,
+      clearHref: buildHref(basePath, query, { q: undefined, page: "1" })
+    });
+  }
+
+  if (selectedJob) {
+    activeFilters.push({
+      label: `Job: ${selectedJob}`,
+      clearHref: buildHref(basePath, query, { jobId: undefined, page: "1" })
+    });
+  }
+
+  if (statusLabel) {
+    activeFilters.push({
+      label: `Status: ${statusLabel}`,
+      clearHref: buildHref(basePath, query, { status: undefined, page: "1" })
+    });
+  }
+
+  if (params.resume === "missing") {
+    activeFilters.push({
+      label: "Resume: Missing",
+      clearHref: buildHref(basePath, query, { resume: undefined, page: "1" })
+    });
+  }
 
   return (
     <div className="space-y-5">
@@ -192,6 +237,20 @@ export async function ApplicantWorkspaceView({
           </Button>
         </Link>
       </form>
+
+      <ActiveFilterChips items={activeFilters} clearAllHref={basePath} />
+
+      <div className="flex flex-wrap gap-2">
+        <Link href={buildHref(basePath, query, { status: "submitted", page: "1" })}>
+          <Button variant="ghost">Applied {page.summary.submitted}</Button>
+        </Link>
+        <Link href={buildHref(basePath, query, { status: "under_review", page: "1" })}>
+          <Button variant="ghost">Under review {page.summary.underReview}</Button>
+        </Link>
+        <Link href={buildHref(basePath, query, { resume: "missing", page: "1" })}>
+          <Button variant="ghost">Missing resume {page.summary.resumeMissing}</Button>
+        </Link>
+      </div>
 
       {page.total === 0 ? (
         <StagePanel tone="open" className="space-y-3">

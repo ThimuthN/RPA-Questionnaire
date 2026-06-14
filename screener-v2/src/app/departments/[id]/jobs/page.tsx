@@ -40,6 +40,7 @@ export default async function DepartmentJobsPage({
         createJobHref={`/departments/${id}/jobs/new` as Route}
         applicantsBasePath={`/departments/${id}/applicants`}
         editJobBasePath={`/departments/${id}/jobs`}
+        jobsBasePath={`/departments/${id}/jobs`}
       />
     </div>
   );

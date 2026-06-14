@@ -4,10 +4,12 @@ import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ApplicationDraftCleaner, JobApplicationForm } from "@/components/jobs/JobApplicationForm";
+import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobApplicationContextBySlug } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
+import { publicSupportEmail } from "@/lib/legal/site-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -41,21 +43,23 @@ export default async function ApplyPage({
   const subtitle = job.roleDepartment ?? job.roleLabel ?? orgName;
   const hasConfirmation = Boolean(pageState.submitted || pageState.alreadyApplied);
   const backToRole = `/jobs/${slug}` as Route;
+  const supportEmail = publicSupportEmail();
 
   return (
-    <SceneShell
-      variant="results"
-      tone="page"
-      eyebrow="Application"
-      title={`Apply to ${job.title}`}
-      subtitle={`${orgName} - ${subtitle}`}
-      utility={
-        <Link href={backToRole}>
-          <Button variant="secondary">Back to role</Button>
-        </Link>
-      }
-    >
-      <div className="max-w-3xl space-y-6">
+    <PublicSiteFrame current="careers">
+      <SceneShell
+        variant="results"
+        tone="page"
+        eyebrow="Application"
+        title={`Apply to ${job.title}`}
+        subtitle={`${orgName} - ${subtitle}`}
+        utility={
+          <Link href={backToRole}>
+            <Button variant="secondary">Back to role</Button>
+          </Link>
+        }
+      >
+        <div className="max-w-3xl space-y-6">
         {pageState.submitted ? (
           <>
             <ApplicationDraftCleaner slug={slug} />
@@ -93,6 +97,9 @@ export default async function ApplyPage({
                   <Button variant="ghost">View open roles</Button>
                 </Link>
               </div>
+              <p className="text-xs text-[color:var(--app-muted)]">
+                Questions about your submission or data handling can be directed to {supportEmail}.
+              </p>
             </StagePanel>
           </>
         ) : null}
@@ -121,6 +128,9 @@ export default async function ApplyPage({
             {pageState.error ? (
               <div className="rounded-[18px] border border-red-400/30 bg-red-500/10 p-5 text-sm text-red-100">
                 {pageState.error}
+                <p className="mt-2 text-xs text-red-100/80">
+                  If the issue continues, contact {supportEmail}.
+                </p>
               </div>
             ) : null}
             <StagePanel className="space-y-5">
@@ -134,7 +144,8 @@ export default async function ApplyPage({
             </StagePanel>
           </>
         ) : null}
-      </div>
-    </SceneShell>
+        </div>
+      </SceneShell>
+    </PublicSiteFrame>
   );
 }

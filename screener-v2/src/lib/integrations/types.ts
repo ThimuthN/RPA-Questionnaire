@@ -118,3 +118,20 @@ export type ConnectionHealthResult = {
   resources?: DiscoveredIntegrationResource[];
   tokenSet?: ProviderTokenSet;
 };
+
+export type WorkflowChannelMode = "department_mailbox" | "calendar_backed" | "manual_fallback";
+
+export type WorkflowChannelSummary = {
+  mode: WorkflowChannelMode;
+  label: string;
+  description: string;
+  provider?: IntegrationProvider;
+  accountLabel?: string;
+  resourceLabel?: string;
+};
+
+export type DepartmentWorkflowChannelState = {
+  departmentId: string;
+  email: WorkflowChannelSummary;
+  scheduling: WorkflowChannelSummary;
+};

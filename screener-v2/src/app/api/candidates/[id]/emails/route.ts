@@ -91,11 +91,13 @@ export async function POST(
         id: true,
         fullName: true,
         email: true,
+        departmentId: true,
         departmentCandidacies: {
           where: { status: "active" },
           orderBy: { createdAt: "desc" },
           take: 1,
           select: {
+            departmentId: true,
             teamAssignments: {
               where: { isActive: true },
               select: {
@@ -113,6 +115,10 @@ export async function POST(
 
     const orgName = getOrgName();
     const ccEmails: string[] = [...(body.ccEmails ?? [])];
+    const effectiveDepartmentId =
+      candidate.departmentCandidacies[0]?.departmentId ??
+      candidate.departmentId ??
+      undefined;
 
     // Auto-add active hiring team members as CC (excluding the primary recipient)
     const teamEmails = candidate.departmentCandidacies[0]?.teamAssignments.map((a) => a.user.email) ?? [];
@@ -244,7 +250,22 @@ export async function POST(
       template: body.template as EmailTemplate,
       candidateId: id,
       sentById: auth.session.userId ?? undefined,
+      departmentId: effectiveDepartmentId,
     });
+
+    if (result.ok) {
+      await prisma.candidateActivityEvent.create({
+        data: {
+          candidateId: id,
+          actorId: auth.session.userId ?? null,
+          actorName: auth.session.name ?? null,
+          event: "email_sent",
+          entityType: "email",
+          entityId: id,
+          detail: `${body.template} email sent to ${body.to}.`
+        }
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json({ ok: result.ok, messageId: result.messageId, error: result.error });
   } catch (err) {

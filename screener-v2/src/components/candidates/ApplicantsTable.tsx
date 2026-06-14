@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -16,6 +17,7 @@ type ApplicantRow = {
   jobTitle: string;
   roleLabel?: string | null;
   appliedAt: string;
+  updatedAt: string;
   hasResume: boolean;
   status: CandidateApplicationStatus;
   candidateOwner?: string | null;
@@ -61,12 +63,34 @@ function statusTone(status: CandidateApplicationStatus): "neutral" | "blue" | "a
   return "blue";
 }
 
+function nextStepLabel(status: CandidateApplicationStatus) {
+  if (status === "submitted") return "Start review";
+  if (status === "under_review") return "Continue review";
+  if (status === "moved_to_pipeline") return "Open record";
+  return "Review details";
+}
+
+function statusHint(status: CandidateApplicationStatus) {
+  if (status === "submitted") return "Needs first pass";
+  if (status === "under_review") return "Awaiting decision";
+  if (status === "moved_to_pipeline") return "Candidate created";
+  return "Closed application";
+}
+
+function dayLabel(isoDate: string, prefix?: string) {
+  const diff = Date.now() - Date.parse(isoDate);
+  const days = Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+  const base = days === 0 ? "Today" : `${days}d ago`;
+  return prefix ? `${prefix} ${base.toLowerCase()}` : base;
+}
+
 export function ApplicantsTable({
   rows,
   users,
   scope = "global",
   departmentId
 }: Props) {
+  const router = useRouter();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -133,9 +157,9 @@ export function ApplicantsTable({
                 </th>
                 <th scope="col" className="w-[22%] px-4 py-3 font-medium">Person</th>
                 <th scope="col" className="w-[20%] px-4 py-3 font-medium">Position</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Applied</th>
+                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Queue age</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Review status</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium">Owner</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium text-right">Next step</th>
               </tr>
@@ -164,19 +188,27 @@ export function ApplicantsTable({
                       <p className="text-xs text-[color:var(--app-muted)]">{row.roleLabel || "No role linked"}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{new Date(row.appliedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-4">
+                    <div className="space-y-1 text-sm text-[color:var(--app-text)]">
+                      <p>{dayLabel(row.appliedAt)}</p>
+                      <p className="text-xs text-[color:var(--app-muted)]">{dayLabel(row.updatedAt, "Updated")}</p>
+                    </div>
+                  </td>
                   <td className="px-4 py-4">
                     <StatusPill label={row.hasResume ? "Attached" : "Missing"} tone={row.hasResume ? "emerald" : "amber"} />
                   </td>
                   <td className="px-4 py-4">
-                    <StatusPill label={candidateApplicationStatusLabels[row.status]} tone={statusTone(row.status)} />
+                    <div className="space-y-1">
+                      <StatusPill label={candidateApplicationStatusLabels[row.status]} tone={statusTone(row.status)} />
+                      <p className="text-xs text-[color:var(--app-muted)]">{statusHint(row.status)}</p>
+                    </div>
                   </td>
                   <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{row.candidateOwner || "Unassigned"}</td>
                   <td className="px-4 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <Link href={reviewHref(row.id)}>
                         <Button type="button" className="px-3 py-2 text-xs">
-                          Review application
+                          {nextStepLabel(row.status)}
                         </Button>
                       </Link>
                     </div>
@@ -216,7 +248,7 @@ export function ApplicantsTable({
           }
           setIsModalOpen(false);
           setSelectedIds([]);
-          window.location.reload();
+          router.refresh();
         }}
       />
     </>

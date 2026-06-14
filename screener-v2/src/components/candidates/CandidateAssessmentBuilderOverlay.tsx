@@ -68,10 +68,10 @@ export function CandidateAssessmentBuilderOverlay({
     <AnimatePresence>
       {isOpen ? (
         <motion.div
-          className="fixed inset-0 z-[999] flex items-center justify-center p-3 md:p-6"
+          className="fixed inset-0 z-[1200] flex items-center justify-center p-3 md:p-6"
           style={{
             background:
-              "radial-gradient(circle at top, color-mix(in srgb, var(--app-brand) 12%, transparent), transparent 24%), var(--app-modal-overlay)"
+              "radial-gradient(circle at top, color-mix(in srgb, var(--app-brand) 14%, transparent), transparent 24%), rgba(3,8,20,0.82)"
           }}
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, backdropFilter: "blur(0px)" }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, backdropFilter: "blur(10px)" }}

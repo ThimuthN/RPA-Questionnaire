@@ -16,6 +16,7 @@ type Stage = {
   isComplete: boolean;
   isActive: boolean;
   isFailed: boolean;
+  kind: string;
 };
 
 function buildStages(milestones: Milestone[]): Stage[] {
@@ -23,38 +24,47 @@ function buildStages(milestones: Milestone[]): Stage[] {
   const stages: Stage[] = [];
   let advGroupAdded = false;
 
-  for (const m of sorted) {
-    const isAdvExtra = m.type === "advanced_review" && m.sortOrder >= 40 && m.sortOrder < 9999;
+  for (const milestone of sorted) {
+    const isAdvancedExtra =
+      milestone.type === "advanced_review" &&
+      milestone.sortOrder >= 40 &&
+      milestone.sortOrder < 9999;
 
-    if (isAdvExtra) {
+    if (isAdvancedExtra) {
       if (!advGroupAdded) {
         advGroupAdded = true;
         const group = sorted.filter(
-          (x) => x.type === "advanced_review" && x.sortOrder >= 40 && x.sortOrder < 9999
+          (item) => item.type === "advanced_review" && item.sortOrder >= 40 && item.sortOrder < 9999
         );
         stages.push({
           key: "adv_review_group",
           title: "Review",
-          isComplete: group.every((x) => x.status === "done" || x.status === "skipped"),
-          isActive: group.some((x) => x.status === "in_progress"),
-          isFailed: group.some((x) => x.status === "failed"),
+          isComplete: group.every((item) => item.status === "done" || item.status === "skipped"),
+          isActive: group.some((item) => item.status === "in_progress"),
+          isFailed: group.some((item) => item.status === "failed"),
+          kind: "advanced_review"
         });
       }
-    } else {
-      const title =
-        m.type === "registration" ? "Applied"
-        : m.type === "screener" ? "Screening"
-        : m.type === "finalized" ? "Final"
-        : m.title;
-
-      stages.push({
-        key: m.id,
-        title,
-        isComplete: m.status === "done" || m.status === "skipped",
-        isActive: m.status === "in_progress",
-        isFailed: m.status === "failed",
-      });
+      continue;
     }
+
+    const title =
+      milestone.type === "registration"
+        ? "Applied"
+        : milestone.type === "screener"
+          ? "Screening"
+          : milestone.type === "finalized"
+            ? "Final"
+            : milestone.title;
+
+    stages.push({
+      key: milestone.id,
+      title,
+      isComplete: milestone.status === "done" || milestone.status === "skipped",
+      isActive: milestone.status === "in_progress",
+      isFailed: milestone.status === "failed",
+      kind: milestone.type
+    });
   }
 
   return stages;
@@ -62,7 +72,7 @@ function buildStages(milestones: Milestone[]): Stage[] {
 
 export function CandidatePipelineProgress({
   milestones,
-  pipelineHref,
+  pipelineHref
 }: {
   milestones: Milestone[];
   pipelineHref: Route;
@@ -70,19 +80,23 @@ export function CandidatePipelineProgress({
   if (milestones.length === 0) return null;
 
   const stages = buildStages(milestones);
+  const finalStage = stages.find((stage) => stage.kind === "finalized");
+  const hasCompletedFinalStage = Boolean(finalStage?.isComplete);
+  const hasPendingEarlierStages = hasCompletedFinalStage
+    ? stages.some((stage) => stage.kind !== "finalized" && !stage.isComplete && !stage.isFailed)
+    : false;
   const activeStage =
-    stages.find((s) => s.isActive) ??
-    stages.find((s) => !s.isComplete && !s.isFailed) ??
+    (hasCompletedFinalStage ? finalStage : null) ??
+    stages.find((stage) => stage.isActive) ??
+    stages.find((stage) => !stage.isComplete && !stage.isFailed) ??
     null;
-
-  const allComplete = stages.every((s) => s.isComplete);
+  const allComplete = stages.every((stage) => stage.isComplete);
 
   return (
     <Link
       href={pipelineHref}
       className="group flex items-center gap-4 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-2.5 transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface)]"
     >
-      {/* Mini dot rail */}
       <div className="flex flex-shrink-0 items-center">
         {stages.map((stage, index) => {
           const isLast = index === stages.length - 1;
@@ -102,20 +116,19 @@ export function CandidatePipelineProgress({
                     "bg-[color:var(--app-border)]"
                 )}
               />
-              {!isLast && (
+              {!isLast ? (
                 <div
                   className={cn(
                     "h-px w-4 transition-colors",
                     stage.isComplete ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-border)]"
                   )}
                 />
-              )}
+              ) : null}
             </div>
           );
         })}
       </div>
 
-      {/* Current stage label */}
       <span className="min-w-0 text-xs">
         {allComplete ? (
           <span className="font-medium text-[color:var(--app-brand)]">Pipeline complete</span>
@@ -123,17 +136,28 @@ export function CandidatePipelineProgress({
           <>
             <span className="font-medium text-[color:var(--app-heading)]">{activeStage.title}</span>
             <span className="ml-1.5 text-[color:var(--app-muted)]">
-              {activeStage.isActive ? "· In progress" : "· Up next"}
+              {hasCompletedFinalStage
+                ? "- Finalized"
+                : activeStage.isActive
+                  ? "- In progress"
+                  : "- Up next"}
             </span>
+            {hasPendingEarlierStages ? (
+              <span
+                className="ml-2 inline-flex items-center rounded-full border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300"
+                title="The final decision is recorded, but earlier milestones still have pending work or incomplete status."
+              >
+                Pending items
+              </span>
+            ) : null}
           </>
         ) : (
           <span className="text-[color:var(--app-muted)]">View pipeline</span>
         )}
       </span>
 
-      {/* View label — appears on hover */}
       <span className="ml-auto flex-shrink-0 text-[11px] text-[color:var(--app-muted)] opacity-0 transition group-hover:opacity-100">
-        Pipeline →
+        Pipeline {"->"}
       </span>
     </Link>
   );

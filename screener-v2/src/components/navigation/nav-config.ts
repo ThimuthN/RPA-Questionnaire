@@ -25,7 +25,8 @@ export function getNavItems(
   }
 
   const canManageUsers = viewer.permissions.includes("manage_users");
-  const canManageIntegrations = viewer.permissions.includes("manage_integrations");
+  const canManageIntegrations =
+    viewer.permissions.includes("manage_integrations") || viewer.permissions.includes("manage_users");
   const isAdminWorkspace = workspace === "admin";
 
   // Department workspace: WorkspaceSubnav handles all navigation

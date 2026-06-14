@@ -2,6 +2,7 @@ import type { Route } from "next";
 import Link from "next/link";
 import { DollarSign, Search } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { listPublicJobPostings } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
@@ -62,14 +63,15 @@ export default async function PublicJobsPage({
     : `${allJobs.length} open ${allJobs.length === 1 ? "role" : "roles"}`;
 
   return (
-    <SceneShell
-      variant="results"
-      tone="page"
-      eyebrow={`${orgName} careers`}
-      title="Find your next role"
-      subtitle="Browse open roles and apply online."
-    >
-      <div className="space-y-8">
+    <PublicSiteFrame current="careers">
+      <SceneShell
+        variant="results"
+        tone="page"
+        eyebrow={`${orgName} careers`}
+        title="Find your next role"
+        subtitle="Browse open roles and apply online."
+      >
+        <div className="space-y-8">
 
         {/* ── Search + filter bar ── */}
         <div className="space-y-4">
@@ -217,7 +219,8 @@ export default async function PublicJobsPage({
             })}
           </div>
         )}
-      </div>
-    </SceneShell>
+        </div>
+      </SceneShell>
+    </PublicSiteFrame>
   );
 }

@@ -99,6 +99,14 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
                 select: {
                   id: true,
                   departmentId: true,
+                  departmentCandidacies: {
+                    where: { status: "active" },
+                    orderBy: { updatedAt: "desc" },
+                    take: 1,
+                    select: {
+                      departmentId: true
+                    }
+                  },
                   roleId: true,
                   positionAppliedFor: true,
                   hrOwner: true,
@@ -141,7 +149,10 @@ async function listWorkspaceResultRows(attemptIdFilter?: string[]) {
         reviewState: summary.reviewState,
         submittedAt,
         candidateId: candidate?.id,
-        candidateDepartmentId: candidate?.departmentId ?? undefined,
+        candidateDepartmentId:
+          candidate?.departmentId ??
+          candidate?.departmentCandidacies[0]?.departmentId ??
+          undefined,
         candidateRoleId: candidate?.roleId ?? undefined,
         candidateRoleLabel: candidate?.role?.label ?? candidate?.positionAppliedFor ?? undefined,
         candidateOwner: candidate?.hrOwner ?? undefined,
