@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Mail, ChevronDown, Eye, EyeOff, Send, AlertCircle, CheckCircle2, Users } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import { OverlayShell, OverlayBackdrop, OverlayContent } from "@/components/primitives/OverlayShell";
 import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
 type EmailTemplate =
@@ -231,28 +232,27 @@ export function EmailComposerModal({
         )}
       </div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4"
-          >
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={() => !sending && setOpen(false)}
-            />
-
+      <OverlayShell isOpen={open}>
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div
+                key="email-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[999] backdrop-blur-sm"
+                style={{ background: "var(--app-modal-overlay, rgba(0,0,0,0.5))" }}
+                onClick={() => !sending && setOpen(false)}
+                aria-hidden="true"
+              />
+              <OverlayContent align="bottom">
             <motion.div
               initial={{ opacity: 0, y: 24, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 16, scale: 0.97 }}
               transition={{ type: "spring", stiffness: 340, damping: 30 }}
-              className="relative z-10 w-full max-w-2xl rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl flex flex-col max-h-[90vh]"
+              className="w-full max-w-2xl rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl flex flex-col max-h-[90vh]"
             >
               {/* Header */}
               <div className="flex items-center justify-between border-b border-[color:var(--app-border)] px-5 py-4">
@@ -521,9 +521,11 @@ export function EmailComposerModal({
                 </div>
               )}
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </OverlayContent>
+            </>
+          )}
+        </AnimatePresence>
+      </OverlayShell>
     </>
   );
 }
