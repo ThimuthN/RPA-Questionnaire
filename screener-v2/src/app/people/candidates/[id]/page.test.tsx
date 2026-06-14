@@ -18,6 +18,10 @@ vi.mock("@/components/candidates/CandidateActivityModal", () => ({
   CandidateActivityModal: () => <div data-testid="activity-card" />
 }));
 
+vi.mock("@/components/candidates/CandidateAssessmentsPanel", () => ({
+  CandidateAssessmentsPanel: () => <div data-testid="assessments-panel" />
+}));
+
 vi.mock("@/components/candidates/CandidateMilestoneTimeline", () => ({
   CandidateMilestoneTimeline: () => <div data-testid="milestone-timeline" />
 }));
@@ -141,6 +145,9 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     candidateOffer: {
       findUnique: vi.fn()
+    },
+    emailLog: {
+      findMany: vi.fn()
     }
   }
 }));
@@ -174,6 +181,7 @@ const mockCandidate = {
   resumes: [],
   assessments: [],
   applications: [],
+  applicationAssessments: [],
   milestones: [],
   notes: [],
   departmentCandidacies: [],
@@ -209,6 +217,7 @@ describe("Candidate Detail Page", () => {
     vi.mocked(getApplicationAssignments).mockResolvedValue([] as never);
     vi.mocked(prisma.departmentCandidacy.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue(null as never);
+    vi.mocked(prisma.emailLog.findMany).mockResolvedValue([] as never);
   });
 
   it("renders candidate sidebar", async () => {
@@ -251,8 +260,8 @@ describe("Candidate Detail Page", () => {
     });
 
     const markup = renderToStaticMarkup(result);
-    expect(markup).toContain("Link this profile to a job application or department pipeline");
-    expect(markup).toContain("Assign a responsible team before advancing interviews");
+    expect(markup).toContain("No active pipeline");
+    expect(markup).toContain("Assign a hiring team to proceed with this candidate.");
   });
 
   it("shows responsible team card when an application exists", async () => {
@@ -324,6 +333,7 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain("Pipeline");
+    expect(markup).toContain("Assessments");
     expect(markup).toContain("Notes");
     expect(markup).toContain("Activity");
     expect(markup).toContain("Files");
@@ -340,6 +350,16 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="offer-panel"');
+  });
+
+  it("renders assessments panel when assessments tab is active", async () => {
+    const result = await CandidateDetailPage({
+      params: Promise.resolve({ id: "cand-1" }),
+      searchParams: Promise.resolve({ tab: "assessments" })
+    });
+
+    const markup = renderToStaticMarkup(result);
+    expect(markup).toContain('data-testid="assessments-panel"');
   });
 
   it("migrates legacy 'progress' tab to 'pipeline'", async () => {

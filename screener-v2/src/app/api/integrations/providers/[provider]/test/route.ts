@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requireGlobalPermission } from "@/lib/auth/guards";
 import { parseIntegrationProvider } from "@/lib/integrations/http";
 import { testProviderAppConfiguration } from "@/lib/integrations/service";
 
@@ -12,9 +12,13 @@ export async function POST(
   _request: Request,
   { params }: { params: Promise<{ provider: string }> }
 ) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = await requireGlobalPermission(auth.session, "manage_integrations");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {

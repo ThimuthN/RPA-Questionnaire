@@ -19,7 +19,7 @@ export default async function DepartmentAccessPage({
   const pageState = await searchParams;
 
   const session = await requirePageSession(`/departments/${id}/access`);
-  const permResult = await requirePermissionForDepartment(session, "manage_users", id);
+  const permResult = await requirePermissionForDepartment(session, "manage_integrations", id);
   if (!permResult.ok) {
     notFound();
   }

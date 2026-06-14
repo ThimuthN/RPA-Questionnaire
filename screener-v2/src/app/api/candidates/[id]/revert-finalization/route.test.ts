@@ -13,6 +13,7 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     $transaction: vi.fn((cb: any) => cb({
       candidate: { update: vi.fn() },
+      candidateMilestone: { updateMany: vi.fn() },
       candidateActivityEvent: { create: vi.fn() }
     }))
   }

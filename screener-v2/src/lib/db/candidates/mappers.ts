@@ -17,6 +17,8 @@ import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import type {
   CandidateApplicationRecord,
   CandidateAssessmentRecord,
+  CandidateExternalAssessmentAttachmentRecord,
+  CandidateExternalAssessmentRecord,
   CandidateInterviewPanelRecord,
   CandidateMilestoneRecord,
   CandidateNoteRecord,
@@ -397,4 +399,70 @@ export async function loadUsersById(userIds: string[]) {
   });
 
   return new Map(rows.map((row) => [row.id, { name: row.name, email: row.email }]));
+}
+
+export function mapCandidateExternalAssessmentAttachment(row: {
+  id: string;
+  externalAssessmentId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageKey: string;
+  storageUrl: string;
+  uploadedById: string | null;
+  uploadedAt: Date;
+}): CandidateExternalAssessmentAttachmentRecord {
+  return {
+    id: row.id,
+    externalAssessmentId: row.externalAssessmentId,
+    fileName: row.fileName,
+    mimeType: row.mimeType,
+    sizeBytes: row.sizeBytes,
+    storageKey: row.storageKey,
+    storageUrl: row.storageUrl,
+    uploadedById: row.uploadedById ?? undefined,
+    uploadedAt: row.uploadedAt.toISOString()
+  };
+}
+
+export function mapCandidateExternalAssessment(row: {
+  id: string;
+  candidateId: string;
+  title: string;
+  sourceLabel: string | null;
+  status: string;
+  scorePercent: number | null;
+  scoreLabel: string | null;
+  summary: string | null;
+  completedAt: Date | null;
+  recordedById: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  attachments: Array<{
+    id: string;
+    externalAssessmentId: string;
+    fileName: string;
+    mimeType: string;
+    sizeBytes: number;
+    storageKey: string;
+    storageUrl: string;
+    uploadedById: string | null;
+    uploadedAt: Date;
+  }>;
+}): CandidateExternalAssessmentRecord {
+  return {
+    id: row.id,
+    candidateId: row.candidateId,
+    title: row.title,
+    sourceLabel: row.sourceLabel ?? undefined,
+    status: row.status,
+    scorePercent: row.scorePercent ?? undefined,
+    scoreLabel: row.scoreLabel ?? undefined,
+    summary: row.summary ?? undefined,
+    completedAt: row.completedAt?.toISOString(),
+    recordedById: row.recordedById ?? undefined,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    attachments: row.attachments.map(mapCandidateExternalAssessmentAttachment)
+  };
 }

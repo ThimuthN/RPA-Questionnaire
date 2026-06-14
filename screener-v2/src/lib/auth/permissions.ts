@@ -1,5 +1,6 @@
 export type AppAction =
   | "manage_users"
+  | "manage_integrations"
   | "create_role"
   | "edit_role"
   | "delete_role"
@@ -16,6 +17,7 @@ export type AppAction =
 
 export const APP_ACTIONS: AppAction[] = [
   "manage_users",
+  "manage_integrations",
   "create_role",
   "edit_role",
   "delete_role",
@@ -33,6 +35,7 @@ export const APP_ACTIONS: AppAction[] = [
 
 export const APP_ACTION_LABELS: Record<AppAction, string> = {
   manage_users: "Manage users",
+  manage_integrations: "Manage integrations",
   create_role: "Create roles",
   edit_role: "Edit roles",
   delete_role: "Delete roles",
@@ -53,6 +56,7 @@ export const APP_ACTION_LABELS: Record<AppAction, string> = {
 // This mapping is kept for documentation purposes
 export const DEFAULT_PERMISSIONS: Record<AppAction, string> = {
   manage_users: "manage_users",
+  manage_integrations: "manage_integrations",
   create_role: "create_role",
   edit_role: "edit_role",
   delete_role: "delete_role",

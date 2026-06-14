@@ -11,6 +11,12 @@ export {
 } from "./crud";
 export { addCandidateNote, updateCandidateNote, deleteCandidateNote } from "./notes";
 export { addCandidateResume, getLatestCandidateResume, getCandidateResumeByStorageKey } from "./resumes";
+export {
+  createCandidateExternalAssessment,
+  addCandidateExternalAssessmentAttachment,
+  getCandidateExternalAssessmentAttachmentById,
+  deleteCandidateExternalAssessment
+} from "./external-assessments";
 export { bulkUpdateCandidates } from "./bulk";
 export {
   updateCandidateMilestone,

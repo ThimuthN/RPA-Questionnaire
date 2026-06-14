@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAdminApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requireGlobalPermission } from "@/lib/auth/guards";
 import { providerAppBodySchema } from "@/lib/integrations/http";
 import { listProviderAppSummaries, saveProviderAppConfiguration } from "@/lib/integrations/service";
 
@@ -9,9 +9,13 @@ function jsonError(message: string, status = 400) {
 }
 
 export async function GET() {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = await requireGlobalPermission(auth.session, "manage_integrations");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   return NextResponse.json({
@@ -21,9 +25,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAdminApiSession();
+  const auth = await requireApiSession();
   if (!auth.ok) {
     return auth.response;
+  }
+  const permission = await requireGlobalPermission(auth.session, "manage_integrations");
+  if (!permission.ok) {
+    return permission.response;
   }
 
   try {

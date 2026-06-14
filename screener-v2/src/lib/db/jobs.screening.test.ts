@@ -245,6 +245,13 @@ describe("createCandidateApplicationFromPublicSubmission", () => {
       candidateId: "cand-1",
       applicationId: "application-1"
     });
+    expect(candidateMocks.createCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "alice@example.com",
+        stage: "applicant",
+        resumeSource: "Company Website"
+      })
+    );
     expect(prismaMocks.txCandidateApplicationCreate).toHaveBeenCalledTimes(1);
     expect(prismaMocks.txAddonResultCreate).not.toHaveBeenCalled();
     expect(prismaMocks.txResponseCreateMany).not.toHaveBeenCalled();

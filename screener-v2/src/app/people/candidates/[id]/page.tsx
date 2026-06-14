@@ -2,6 +2,10 @@ import Link from "next/link";
 import type { Route } from "next";
 import { notFound, redirect } from "next/navigation";
 import { CandidateActivityModal } from "@/components/candidates/CandidateActivityModal";
+import {
+  CandidateAssessmentsPanel,
+  type CandidateProfilePlatformAssessment
+} from "@/components/candidates/CandidateAssessmentsPanel";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
 import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySkeleton";
@@ -37,6 +41,7 @@ type CandidateData = NonNullable<Awaited<ReturnType<typeof getCandidateDetail>>>
 
 const profileTabs = [
   { key: "pipeline", label: "Pipeline" },
+  { key: "assessments", label: "Assessments" },
   { key: "notes", label: "Notes" },
   { key: "activity", label: "Activity" },
   { key: "files", label: "Files" },
@@ -81,6 +86,20 @@ function fallbackWorkspaceDepartmentId(candidate: CandidateData) {
     candidate.departmentCandidacies?.find((c) => c.status === "active")?.departmentId ??
     candidate.departmentId
   );
+}
+
+function buildPlatformAssessments(candidate: CandidateData): CandidateProfilePlatformAssessment[] {
+  const milestoneTitleByAssessmentId = new Map(
+    candidate.milestones
+      .filter((milestone) => milestone.candidateAssessmentId)
+      .map((milestone) => [milestone.candidateAssessmentId as string, milestone.title])
+  );
+
+  return candidate.assessments.map((assessment) => ({
+    ...assessment,
+    title: milestoneTitleByAssessmentId.get(assessment.id) ?? "Assessment invite",
+    resultHref: assessment.attemptId ? (`/results/${assessment.attemptId}` as Route) : undefined
+  }));
 }
 
 async function resolveWorkspaceContext({
@@ -211,6 +230,7 @@ export default async function CandidateDetailPage({
   }
 
   const activeApplication = primaryApplication(candidate);
+  const platformAssessments = buildPlatformAssessments(candidate);
   const currentResume = candidate.resumes[0] ?? null;
   const resumePreviewUrl = currentResume
     ? `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(currentResume.storageKey)}`
@@ -458,6 +478,27 @@ export default async function CandidateDetailPage({
                   />
                 ) : null}
               </div>
+            </div>
+          ) : null}
+
+          {/* Assessments tab */}
+          {currentTab === "assessments" ? (
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">
+                  Assessments
+                </h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  Track assigned platform tests and application screening evidence in one place.
+                </p>
+              </div>
+              <CandidateAssessmentsPanel
+                candidateId={candidate.id}
+                platformAssessments={platformAssessments}
+                applicationAssessments={candidate.applicationAssessments}
+                externalAssessments={candidate.externalAssessments}
+                canManage={canManageCandidate}
+              />
             </div>
           ) : null}
 

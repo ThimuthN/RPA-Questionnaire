@@ -12,6 +12,9 @@ vi.mock("@/lib/db/prisma", () => ({
       findUnique: vi.fn(),
       update: vi.fn()
     },
+    candidateMilestone: {
+      updateMany: vi.fn()
+    },
     candidateActivityEvent: {
       create: vi.fn()
     }

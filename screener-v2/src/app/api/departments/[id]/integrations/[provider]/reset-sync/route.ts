@@ -19,7 +19,7 @@ export async function POST(
 
   try {
     const { id, provider: providerRaw } = await params;
-    const permission = await requirePermissionForDepartment(auth.session, "manage_users", id);
+    const permission = await requirePermissionForDepartment(auth.session, "manage_integrations", id);
     if (!permission.ok) {
       return permission.response;
     }

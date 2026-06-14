@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
+    exclude: ["src/**/*.db.test.ts"],
     setupFiles: ["./src/test/setup-unit-env.ts"],
     fileParallelism: false,
     maxWorkers: 1

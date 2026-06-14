@@ -4,8 +4,11 @@ import type { AppSession } from "@/lib/auth/session";
 
 describe("nav-config", () => {
   describe("getNavItems", () => {
-    it("admin workspace shows Manage Workspaces and global items", () => {
-      const viewer = { permissions: ["manage_users"], departmentId: null } as Pick<AppSession, "permissions" | "departmentId">;
+    it("full admin workspace shows workspaces, integrations, and global hiring items", () => {
+      const viewer = {
+        permissions: ["manage_users", "manage_integrations"],
+        departmentId: null
+      } as Pick<AppSession, "permissions" | "departmentId">;
       const items = getNavItems(viewer, "admin");
       const labels = items.map((item) => item.label);
       expect(labels).toContain("Manage Workspaces");
@@ -13,6 +16,20 @@ describe("nav-config", () => {
       expect(labels).toContain("All Jobs");
       expect(labels).toContain("All Applicants");
       expect(labels).toContain("All Candidates");
+    });
+
+    it("integrations-only admin workspace shows App Integrations without user-management items", () => {
+      const viewer = {
+        permissions: ["manage_integrations"],
+        departmentId: null
+      } as Pick<AppSession, "permissions" | "departmentId">;
+
+      const labels = getNavItems(viewer, "admin").map((item) => item.label);
+
+      expect(labels).toContain("App Integrations");
+      expect(labels).not.toContain("Manage Workspaces");
+      expect(labels).not.toContain("User Management");
+      expect(labels).not.toContain("All Jobs");
     });
 
     it("department workspace returns empty items (WorkspaceSubnav is sole source)", () => {

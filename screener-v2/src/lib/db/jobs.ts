@@ -25,6 +25,10 @@ import {
   type ApplicationScreeningAnswerMap,
   type ApplicationScreeningResponseDraft
 } from "@/lib/jobs/application-screening";
+import {
+  deriveApplicationScreeningStatus,
+  mapApplicationScreeningAddonResult
+} from "@/lib/jobs/screening-results";
 import { cuidLike } from "@/lib/tokens/token-service";
 
 type JobPostingRow = {
@@ -124,72 +128,6 @@ function mapApplication(row: {
     appliedAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     status: row.status as CandidateApplicationStatus
-  };
-}
-
-function deriveApplicationScreeningStatus(
-  rows: Array<{ status: string; isMandatory: boolean }>
-): ApplicationScreeningStatus | null {
-  if (rows.length === 0) {
-    return null;
-  }
-
-  if (rows.some((row) => row.isMandatory && row.status === "failed")) {
-    return "failed";
-  }
-
-  if (rows.some((row) => row.status === "needs_review")) {
-    return "needs_review";
-  }
-
-  return "passed";
-}
-
-function mapApplicationScreeningAddonResult(row: {
-  addonId: string | null;
-  addonLabel: string;
-  requiredPercent: number;
-  weight: number;
-  isMandatory: boolean;
-  inlineSupported: boolean;
-  status: string;
-  applicantPercent: number | null;
-  pointsEarned: number;
-  pointsPossible: number;
-  responses: Array<{
-    questionKey: string;
-    questionLabel: string;
-    formatLabel: string;
-    answerText: string | null;
-    pointsEarned: number;
-    pointsPossible: number;
-    sortOrder: number;
-  }>;
-}): ApplicationScreeningAddonResultItem {
-  return {
-    addonId: row.addonId ?? undefined,
-    addonLabel: row.addonLabel,
-    requiredPercent: row.requiredPercent,
-    weight: row.weight,
-    isMandatory: row.isMandatory,
-    inlineSupported: row.inlineSupported,
-    status: row.status as ApplicationScreeningStatus,
-    applicantPercent: row.applicantPercent,
-    pointsEarned: row.pointsEarned,
-    pointsPossible: row.pointsPossible,
-    responses: row.responses
-      .slice()
-      .sort((left, right) => left.sortOrder - right.sortOrder)
-      .map((response) => ({
-        addonLabel: row.addonLabel,
-        questionKey: response.questionKey,
-        questionLabel: response.questionLabel,
-        formatLabel: response.formatLabel,
-        answerText: response.answerText,
-        pointsEarned: response.pointsEarned,
-        pointsPossible: response.pointsPossible,
-        sortOrder: response.sortOrder
-      }))
   };
 }
 
@@ -1082,7 +1020,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
         resumeSource: "Company Website",
-        stage: "pipeline"
+        stage: "applicant"
       });
       existingCandidate = {
         id: created.id,

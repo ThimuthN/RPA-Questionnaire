@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth/runtime-session";
 import type { AppAction } from "@/lib/auth/permissions";
 import type { AppSession } from "@/lib/auth/session";
+import { getViewerAccessContext } from "@/lib/auth/viewer-access-context";
 import { canUsePermissionForDepartment, hasGlobalPermission, isSystemAdmin } from "@/lib/auth/permission-evaluator";
 
 type ApiAuthSuccess = { ok: true; session: AppSession };
@@ -82,6 +83,18 @@ export async function requireGlobalPermission(session: AppSession, action: AppAc
   return { ok: true as const };
 }
 
+export async function requireGlobalPagePermission(
+  session: AppSession,
+  action: AppAction,
+  fallbackPath: Route = "/"
+) {
+  const permission = await requireGlobalPermission(session, action);
+  if (!permission.ok) {
+    redirect(fallbackPath);
+  }
+  return session;
+}
+
 /**
  * Auth check for role-catalog mutations.
  * System Admin bypasses permission templates — their platform grant is sufficient.
@@ -122,6 +135,11 @@ export async function canAccessDepartmentWorkspace(
     return true;
   }
 
+  const viewerAccess = await getViewerAccessContext(session.userId);
+  if (viewerAccess.accessibleDepartmentIds.has(departmentId)) {
+    return true;
+  }
+
   // System admins can access any department
   if (await isSystemAdmin(session.userId)) {
     return true;
@@ -129,7 +147,14 @@ export async function canAccessDepartmentWorkspace(
 
   // Check if user has global scope for common workspace permissions
   // (admin/manager can access any department)
-  const globalPermissions = ["manage_users", "create_job", "edit_job", "view_candidates", "manage_candidates"];
+  const globalPermissions = [
+    "manage_users",
+    "manage_integrations",
+    "create_job",
+    "edit_job",
+    "view_candidates",
+    "manage_candidates"
+  ] satisfies AppAction[];
   for (const permission of globalPermissions) {
     if (await hasGlobalPermission(session.userId, permission)) {
       return true;

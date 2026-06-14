@@ -6,10 +6,11 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "scripts/**/*.test.ts"],
+    include: ["src/**/*.db.test.ts"],
     globalSetup: ["./src/test/setup-env.ts"],
     fileParallelism: false,
-    maxWorkers: 1
+    maxWorkers: 1,
+    testTimeout: 30000
   },
   resolve: {
     alias: {

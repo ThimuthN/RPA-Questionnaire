@@ -40,7 +40,10 @@ export function MobileNavDrawer({
 
   if (!open) return null;
 
-  const isAdmin = viewer?.permissions.includes("manage_users") ?? false;
+  const hasAdminWorkspace =
+    viewer?.permissions.includes("manage_users") ||
+    viewer?.permissions.includes("manage_integrations") ||
+    false;
 
   return (
     <div className="fixed inset-0 z-50 md:hidden">
@@ -62,7 +65,7 @@ export function MobileNavDrawer({
             {viewer && (
               <div>
                 <p className="text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-brand)]">
-                  {departmentName ?? (isAdmin ? "Admin Workspace" : "Workspace")}
+                  {departmentName ?? (hasAdminWorkspace ? "Admin Workspace" : "Workspace")}
                 </p>
                 <p className="text-sm font-medium text-[color:var(--app-heading)]">{viewer.name || viewer.email}</p>
               </div>

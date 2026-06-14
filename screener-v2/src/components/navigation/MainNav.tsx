@@ -20,8 +20,11 @@ export function MainNav({
   const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const isAdmin = viewer?.permissions.includes("manage_users") ?? false;
-  const visibleDepartments = isAdmin
+  const hasAdminWorkspace =
+    viewer?.permissions.includes("manage_users") ||
+    viewer?.permissions.includes("manage_integrations") ||
+    false;
+  const visibleDepartments = hasAdminWorkspace
     ? departments
     : viewer?.departmentId
       ? departments.filter((d) => d.id === viewer.departmentId)
@@ -30,7 +33,7 @@ export function MainNav({
   const currentWorkspace = resolveCurrentWorkspace({
     pathname,
     searchParams,
-    isAdmin,
+    isAdmin: hasAdminWorkspace,
     visibleDepartments
   });
 

@@ -40,9 +40,35 @@ function databaseIdentity(rawUrl) {
 
   try {
     const url = new URL(rawUrl);
+    const schema = url.searchParams.get("schema") || "public";
+    return `${url.hostname}${url.pathname}?schema=${schema}`;
+  } catch {
+    return "unparseable";
+  }
+}
+
+function databaseBaseIdentity(rawUrl) {
+  if (!rawUrl) {
+    return null;
+  }
+
+  try {
+    const url = new URL(rawUrl);
     return `${url.hostname}${url.pathname}`;
   } catch {
     return "unparseable";
+  }
+}
+
+function databaseSchema(rawUrl) {
+  if (!rawUrl) {
+    return null;
+  }
+
+  try {
+    return new URL(rawUrl).searchParams.get("schema") || "public";
+  } catch {
+    return null;
   }
 }
 
@@ -60,14 +86,30 @@ if (!testDatabaseUrl) {
   process.exit(1);
 }
 
-const testIdentity = databaseIdentity(testDatabaseUrl);
-const unsafeIdentities = [parseEnvFile(".env"), parseEnvFile(".env.local")]
-  .map((env) => databaseIdentity(env.DATABASE_URL))
+const testSchema = databaseSchema(testDatabaseUrl);
+if (!testSchema || testSchema === "public") {
+  console.error(
+    "Refusing to run DB tests because TEST_DATABASE_URL must target a non-public schema, for example ?schema=codex_test."
+  );
+  process.exit(1);
+}
+
+const testBaseIdentity = databaseBaseIdentity(testDatabaseUrl);
+const unsafeDatabaseUrls = [parseEnvFile(".env"), parseEnvFile(".env.local")]
+  .map((env) => env.DATABASE_URL)
   .filter(Boolean);
 
-if (unsafeIdentities.includes(testIdentity)) {
+const exactMatch = unsafeDatabaseUrls.some((url) => databaseIdentity(url) === databaseIdentity(testDatabaseUrl));
+if (exactMatch) {
   console.error(
     "Refusing to run DB tests because TEST_DATABASE_URL matches .env or .env.local DATABASE_URL."
   );
   process.exit(1);
+}
+
+const sharedBaseWithProduction = unsafeDatabaseUrls.some((url) => databaseBaseIdentity(url) === testBaseIdentity);
+if (sharedBaseWithProduction) {
+  console.log(
+    `DB tests will reuse the same database host/path as staging, but isolated to schema "${testSchema}".`
+  );
 }

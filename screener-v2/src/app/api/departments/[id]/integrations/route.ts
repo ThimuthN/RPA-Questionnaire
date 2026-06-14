@@ -12,7 +12,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const permission = await requirePermissionForDepartment(auth.session, "manage_users", id);
+  const permission = await requirePermissionForDepartment(auth.session, "manage_integrations", id);
   if (!permission.ok) {
     return permission.response;
   }

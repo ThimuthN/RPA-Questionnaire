@@ -24,7 +24,8 @@ export function getNavItems(
     return [{ href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness }];
   }
 
-  const isAdmin = viewer.permissions.includes("manage_users");
+  const canManageUsers = viewer.permissions.includes("manage_users");
+  const canManageIntegrations = viewer.permissions.includes("manage_integrations");
   const isAdminWorkspace = workspace === "admin";
 
   // Department workspace: WorkspaceSubnav handles all navigation
@@ -34,17 +35,31 @@ export function getNavItems(
   }
 
   // Admin workspace: show admin/global items
-  if (isAdminWorkspace && isAdmin) {
-    return [
-      { href: "/departments" as Route, label: "Manage Workspaces", icon: Building2, section: "Admin" },
-      { href: "/users" as Route, label: "User Management", icon: Users, section: "Admin" },
-      { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" },
-      { href: "/integrations" as Route, label: "App Integrations", icon: PlugZap, section: "Admin" },
-      { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
-      { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
-      { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2 },
-      { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList }
-    ];
+  if (isAdminWorkspace && (canManageUsers || canManageIntegrations)) {
+    const items: NavItem[] = [];
+
+    if (canManageUsers) {
+      items.push(
+        { href: "/departments" as Route, label: "Manage Workspaces", icon: Building2, section: "Admin" },
+        { href: "/users" as Route, label: "User Management", icon: Users, section: "Admin" },
+        { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" }
+      );
+    }
+
+    if (canManageIntegrations) {
+      items.push({ href: "/integrations" as Route, label: "App Integrations", icon: PlugZap, section: "Admin" });
+    }
+
+    if (canManageUsers) {
+      items.push(
+        { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
+        { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
+        { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2 },
+        { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList }
+      );
+    }
+
+    return items;
   }
 
   // Default fallback (no workspace selected yet): show minimal items

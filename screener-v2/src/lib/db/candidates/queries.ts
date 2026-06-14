@@ -13,6 +13,7 @@ import {
   mapResume,
   mapNote,
   mapAssessment,
+  mapCandidateExternalAssessment,
   mapMilestone,
   mapInterviewPanel,
   sortCandidateAssessmentsByLatestActivity,
@@ -20,6 +21,11 @@ import {
   loadResultsByAttemptId,
   loadUsersById
 } from "./mappers";
+import {
+  deriveApplicationScreeningStatus,
+  mapApplicationScreeningAddonResult
+} from "@/lib/jobs/screening-results";
+import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import type {
   CandidateDetail,
   CandidateListItem,
@@ -514,6 +520,28 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
                   label: true,
                   department: true
                 }
+              },
+              screenerPreset: {
+                select: {
+                  label: true
+                }
+              }
+            }
+          },
+          screeningAddonResults: {
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            include: {
+              responses: {
+                orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+                select: {
+                  questionKey: true,
+                  questionLabel: true,
+                  formatLabel: true,
+                  answerText: true,
+                  pointsEarned: true,
+                  pointsPossible: true,
+                  sortOrder: true
+                }
               }
             }
           }
@@ -595,6 +623,14 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
           }
         }
       },
+      externalAssessments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          attachments: {
+            orderBy: { uploadedAt: "desc" }
+          }
+        }
+      },
       activityEvents: {
         orderBy: { createdAt: "desc" }
       }
@@ -645,6 +681,25 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       )
     )
   );
+  const applicationAssessments = row.applications
+    .filter((application) => application.screeningAddonResults.length > 0)
+    .map((application) => ({
+      id: application.id,
+      candidateId: application.candidateId,
+      jobPostingId: application.jobPostingId,
+      jobSlug: application.jobPosting.slug,
+      jobTitle: application.jobPosting.title,
+      roleLabel: application.jobPosting.role?.label ?? undefined,
+      roleDepartment: application.jobPosting.role?.department ?? undefined,
+      status: application.status as CandidateApplicationStatus,
+      screenerPresetLabel: application.jobPosting.screenerPreset?.label ?? undefined,
+      screeningStatus: deriveApplicationScreeningStatus(application.screeningAddonResults),
+      screeningAddonResults: application.screeningAddonResults.map(
+        mapApplicationScreeningAddonResult
+      ),
+      createdAt: application.createdAt.toISOString(),
+      updatedAt: application.updatedAt.toISOString()
+    }));
 
   return {
     ...mapCandidate(row),
@@ -652,6 +707,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
     notes: row.notes.map((note) => mapNote(note, note.createdById ? authorsById.get(note.createdById) ?? null : null)),
     assessments,
     applications: row.applications.map(mapApplication),
+    applicationAssessments,
     milestones,
     departmentCandidacies: row.departmentCandidacies?.map((dc) => ({
       id: dc.id,
@@ -675,6 +731,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       createdAt: dc.createdAt.toISOString(),
       updatedAt: dc.updatedAt.toISOString()
     })) ?? undefined,
+    externalAssessments: row.externalAssessments.map(mapCandidateExternalAssessment),
     activityEvents: row.activityEvents.map((event) => ({
       id: event.id,
       actorId: event.actorId ?? undefined,

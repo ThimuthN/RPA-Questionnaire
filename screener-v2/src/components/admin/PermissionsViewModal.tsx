@@ -6,6 +6,7 @@ import { APP_ACTION_LABELS } from '@/lib/auth/permissions';
 
 const PERMISSION_GROUPS = {
   'Users & Access': ['manage_users', 'create_role', 'edit_role', 'delete_role'],
+  Integrations: ['manage_integrations'],
   Jobs: ['create_job', 'edit_job'],
   Candidates: ['view_candidates', 'manage_candidates', 'promote_candidate', 'delete_candidate', 'hire_candidate'],
   'Assessments / Results': ['create_invite', 'view_results'],

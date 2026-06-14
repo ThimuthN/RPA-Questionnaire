@@ -2,10 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { canAccessDepartmentWorkspace, requireDepartmentWorkspaceAccess } from "./guards";
 import { hasGlobalPermission } from "@/lib/auth/permission-evaluator";
 import type { AppSession } from "@/lib/auth/session";
+import { getViewerAccessContext } from "@/lib/auth/viewer-access-context";
 
 vi.mock("@/lib/auth/permission-evaluator", () => ({
   hasGlobalPermission: vi.fn(),
   isSystemAdmin: vi.fn()
+}));
+
+vi.mock("@/lib/auth/viewer-access-context", () => ({
+  getViewerAccessContext: vi.fn()
 }));
 
 describe("Department Workspace Authorization", () => {
@@ -14,6 +19,22 @@ describe("Department Workspace Authorization", () => {
   });
 
   const mockHasGlobalPermission = vi.mocked(hasGlobalPermission);
+  const mockGetViewerAccessContext = vi.mocked(getViewerAccessContext);
+
+  function makeViewerAccessContext(overrides: Partial<Awaited<ReturnType<typeof getViewerAccessContext>>> = {}) {
+    return {
+      userId: "user-1",
+      isSystemAdmin: false,
+      systemPermissions: [],
+      accessibleDepartmentIds: new Set<string>(),
+      canAccessAllDepartments: false,
+      ...overrides
+    };
+  }
+
+  beforeEach(() => {
+    mockGetViewerAccessContext.mockResolvedValue(makeViewerAccessContext());
+  });
 
   describe("canAccessDepartmentWorkspace", () => {
     it("returns false for unauthenticated session (null userId)", async () => {
@@ -58,6 +79,26 @@ describe("Department Workspace Authorization", () => {
 
       const result = await canAccessDepartmentWorkspace(session, "dept-2");
       expect(result).toBe(false);
+    });
+
+    it("returns true when the user has an active access grant for the target department", async () => {
+      const session: AppSession = {
+        userId: "user-1",
+        email: "user@example.com",
+        departmentId: "dept-1",
+        roleId: "role-1",
+        permissions: ["view_candidates"],
+        exp: 9999999999
+      };
+
+      mockGetViewerAccessContext.mockResolvedValue(
+        makeViewerAccessContext({
+          accessibleDepartmentIds: new Set(["dept-2"])
+        })
+      );
+
+      const result = await canAccessDepartmentWorkspace(session, "dept-2");
+      expect(result).toBe(true);
     });
 
     it("returns true for global admin with manage_users permission", async () => {
@@ -109,6 +150,24 @@ describe("Department Workspace Authorization", () => {
 
       mockHasGlobalPermission.mockImplementation(async (_userId, permission) => {
         return permission === "view_candidates";
+      });
+
+      const result = await canAccessDepartmentWorkspace(session, "dept-1");
+      expect(result).toBe(true);
+    });
+
+    it("returns true for global user with manage_integrations permission", async () => {
+      const session: AppSession = {
+        userId: "integrations-admin-1",
+        email: "integrations@example.com",
+        departmentId: null,
+        roleId: "role-1",
+        permissions: ["manage_integrations"],
+        exp: 9999999999
+      };
+
+      mockHasGlobalPermission.mockImplementation(async (_userId, permission) => {
+        return permission === "manage_integrations";
       });
 
       const result = await canAccessDepartmentWorkspace(session, "dept-1");
@@ -184,6 +243,26 @@ describe("Department Workspace Authorization", () => {
       if (!result.ok) {
         expect(result.response.status).toBe(403);
       }
+    });
+
+    it("allows a user with an active access grant for the target department", async () => {
+      const session: AppSession = {
+        userId: "user-1",
+        email: "user@example.com",
+        departmentId: "dept-1",
+        roleId: "role-1",
+        permissions: ["view_candidates"],
+        exp: 9999999999
+      };
+
+      mockGetViewerAccessContext.mockResolvedValue(
+        makeViewerAccessContext({
+          accessibleDepartmentIds: new Set(["dept-2"])
+        })
+      );
+
+      const result = await requireDepartmentWorkspaceAccess(session, "dept-2");
+      expect(result.ok).toBe(true);
     });
 
     it("allows global admin accessing different department", async () => {

@@ -17,7 +17,11 @@ import type {
   CandidateOpenWorkSummary,
   CandidateWorkspaceItem
 } from "@/lib/candidates/workspace";
-import type { CandidateApplicationStatus } from "@/lib/jobs/types";
+import type {
+  ApplicationScreeningAddonResultItem,
+  ApplicationScreeningStatus,
+  CandidateApplicationStatus
+} from "@/lib/jobs/types";
 
 export interface CandidateRecord {
   id: string;
@@ -98,6 +102,50 @@ export interface CandidateApplicationRecord {
   roleLabel?: string;
   roleDepartment?: string;
   status: CandidateApplicationStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CandidateExternalAssessmentAttachmentRecord {
+  id: string;
+  externalAssessmentId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageKey: string;
+  storageUrl: string;
+  uploadedById?: string;
+  uploadedAt: string;
+}
+
+export interface CandidateExternalAssessmentRecord {
+  id: string;
+  candidateId: string;
+  title: string;
+  sourceLabel?: string;
+  status: string;
+  scorePercent?: number;
+  scoreLabel?: string;
+  summary?: string;
+  completedAt?: string;
+  recordedById?: string;
+  createdAt: string;
+  updatedAt: string;
+  attachments: CandidateExternalAssessmentAttachmentRecord[];
+}
+
+export interface CandidateApplicationAssessmentRecord {
+  id: string;
+  candidateId: string;
+  jobPostingId: string;
+  jobSlug: string;
+  jobTitle: string;
+  roleLabel?: string;
+  roleDepartment?: string;
+  status: CandidateApplicationStatus;
+  screenerPresetLabel?: string;
+  screeningStatus: ApplicationScreeningStatus | null;
+  screeningAddonResults: ApplicationScreeningAddonResultItem[];
   createdAt: string;
   updatedAt: string;
 }
@@ -208,6 +256,8 @@ export interface CandidateDetail extends CandidateRecord {
   notes: CandidateNoteRecord[];
   assessments: CandidateAssessmentRecord[];
   applications: CandidateApplicationRecord[];
+  applicationAssessments: CandidateApplicationAssessmentRecord[];
+  externalAssessments: CandidateExternalAssessmentRecord[];
   milestones: CandidateMilestoneRecord[];
   departmentCandidacies?: DepartmentCandidacyDetail[];
   activityEvents: CandidateActivityEventRecord[];

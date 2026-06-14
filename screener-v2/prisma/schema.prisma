@@ -398,6 +398,7 @@ model Candidate {
   hrOwnerUser        User? @relation("HROwner", fields: [hrOwnerId], references: [id], onDelete: SetNull)
   resumes            CandidateResume[]
   assessments        CandidateAssessment[]
+  externalAssessments CandidateExternalAssessment[]
   notes              CandidateNote[]
   milestones         CandidateMilestone[]
   applications       CandidateApplication[]
@@ -484,6 +485,42 @@ model CandidateAssessmentAttempt {
 
   @@unique([candidateAssessmentId, attemptId])
   @@index([candidateAssessmentId, linkedAt])
+}
+
+model CandidateExternalAssessment {
+  id            String   @id @default(cuid())
+  candidateId    String
+  title         String
+  sourceLabel   String?
+  status        String   @default("completed")
+  scorePercent  Float?
+  scoreLabel    String?
+  summary       String?
+  completedAt   DateTime?
+  recordedById  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  candidate     Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  attachments   CandidateExternalAssessmentAttachment[]
+
+  @@index([candidateId, createdAt])
+  @@index([candidateId, completedAt])
+}
+
+model CandidateExternalAssessmentAttachment {
+  id                   String   @id @default(cuid())
+  externalAssessmentId String
+  fileName             String
+  mimeType             String
+  sizeBytes            Int
+  storageKey           String
+  storageUrl           String
+  uploadedById         String?
+  uploadedAt           DateTime @default(now())
+  externalAssessment   CandidateExternalAssessment @relation(fields: [externalAssessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([externalAssessmentId, storageKey])
+  @@index([externalAssessmentId, uploadedAt])
 }
 
 model CandidateNote {

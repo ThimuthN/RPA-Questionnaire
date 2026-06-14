@@ -1,11 +1,12 @@
 import { SystemIntegrationsClient } from "@/components/integrations/SystemIntegrationsClient";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { SceneShell } from "@/components/scene/SceneShell";
-import { requireAdminPageSession } from "@/lib/auth/guards";
+import { requireGlobalPagePermission, requirePageSession } from "@/lib/auth/guards";
 import { hasIntegrationEncryptionKey, listProviderAppSummaries } from "@/lib/integrations";
 
 export default async function IntegrationsPage() {
-  await requireAdminPageSession("/integrations");
+  const session = await requirePageSession("/integrations");
+  await requireGlobalPagePermission(session, "manage_integrations");
 
   const [providers, encryptionReady] = await Promise.all([
     listProviderAppSummaries(),

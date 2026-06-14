@@ -52,6 +52,17 @@ export const candidateAssessmentStatusValues = [
 
 export type CandidateAssessmentStatus = (typeof candidateAssessmentStatusValues)[number];
 
+export const candidateExternalAssessmentStatusValues = [
+  "pending",
+  "completed",
+  "passed",
+  "failed",
+  "needs_review"
+] as const;
+
+export type CandidateExternalAssessmentStatus =
+  (typeof candidateExternalAssessmentStatusValues)[number];
+
 export const candidateStageLabels: Record<CandidateStage, string> = {
   applicant: "Applied",
   pipeline: "Pipeline",
@@ -96,6 +107,17 @@ export const candidateAssessmentStatusLabels: Record<CandidateAssessmentStatus, 
   failed: "Failed"
 };
 
+export const candidateExternalAssessmentStatusLabels: Record<
+  CandidateExternalAssessmentStatus,
+  string
+> = {
+  pending: "Pending",
+  completed: "Completed",
+  passed: "Passed",
+  failed: "Failed",
+  needs_review: "Needs review"
+};
+
 export const resumeSourceOptions = [
   "LinkedIn",
   "Referral",
@@ -119,4 +141,10 @@ export function isCandidateScreeningStatus(value: string): value is CandidateScr
 
 export function isCandidateAssessmentStatus(value: string): value is CandidateAssessmentStatus {
   return (candidateAssessmentStatusValues as readonly string[]).includes(value);
+}
+
+export function isCandidateExternalAssessmentStatus(
+  value: string
+): value is CandidateExternalAssessmentStatus {
+  return (candidateExternalAssessmentStatusValues as readonly string[]).includes(value);
 }

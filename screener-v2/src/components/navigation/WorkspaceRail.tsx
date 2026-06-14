@@ -81,10 +81,13 @@ export function WorkspaceRail({
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
 
-  const isAdmin = viewer?.permissions.includes("manage_users") ?? false;
+  const hasAdminWorkspace =
+    viewer?.permissions.includes("manage_users") ||
+    viewer?.permissions.includes("manage_integrations") ||
+    false;
 
   // Filter departments: admins see all, department-scoped users see only their department
-  const visibleDepartments = isAdmin
+  const visibleDepartments = hasAdminWorkspace
     ? departments
     : viewer?.departmentId
       ? departments.filter((d) => d.id === viewer.departmentId)
@@ -92,7 +95,7 @@ export function WorkspaceRail({
   const currentWorkspace = resolveCurrentWorkspace({
     pathname,
     searchParams,
-    isAdmin,
+    isAdmin: hasAdminWorkspace,
     visibleDepartments
   });
 
@@ -153,7 +156,7 @@ export function WorkspaceRail({
               <WorkspaceSelector
                 currentWorkspace={currentWorkspace}
                 departments={visibleDepartments}
-                isAdmin={isAdmin}
+                isAdmin={hasAdminWorkspace}
                 collapsed={collapsed}
               />
             )}
@@ -253,7 +256,7 @@ export function WorkspaceRail({
                             {viewer.name || viewer.email}
                           </p>
                           <p className="text-[11px] text-[color:var(--app-muted)] leading-tight mt-0.5">
-                            {isAdmin ? "Administrator" : "Member"}
+                            {hasAdminWorkspace ? "Administrator" : "Member"}
                           </p>
                         </div>
                       </div>
