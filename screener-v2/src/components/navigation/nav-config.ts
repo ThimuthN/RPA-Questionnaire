@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { BriefcaseBusiness, Building2, ClipboardList, Users, Users2, Shield } from "lucide-react";
+import { BriefcaseBusiness, Building2, ClipboardList, PlugZap, Shield, Users, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -39,6 +39,7 @@ export function getNavItems(
       { href: "/departments" as Route, label: "Manage Workspaces", icon: Building2, section: "Admin" },
       { href: "/users" as Route, label: "User Management", icon: Users, section: "Admin" },
       { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" },
+      { href: "/integrations" as Route, label: "App Integrations", icon: PlugZap, section: "Admin" },
       { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
       { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
       { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2 },
@@ -56,6 +57,7 @@ export function isNavItemActive(pathname: string, href: string) {
     (href === "/jobs" && pathname === "/jobs") ||
     (href === "/users" && pathname === "/users") ||
     (href === "/access-roles" && pathname === "/access-roles") ||
+    (href === "/integrations" && pathname.startsWith("/integrations")) ||
     (href === "/people/candidates/jobs" && pathname.startsWith("/people/candidates/jobs")) ||
     (href === "/people/candidates/applicants" && pathname.startsWith("/people/candidates/applicants")) ||
     (href === "/people/candidates" && pathname === "/people/candidates") ||

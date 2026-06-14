@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import CreateRoleModal from '@/components/admin/CreateRoleModal';
-import DeleteRoleModal from '@/components/admin/DeleteRoleModal';
-import DuplicateRoleModal from '@/components/admin/DuplicateRoleModal';
-import EditRoleModal from '@/components/admin/EditRoleModal';
-import PermissionsViewModal from '@/components/admin/PermissionsViewModal';
+import { useState } from "react";
+import CreateRoleModal from "@/components/admin/CreateRoleModal";
+import DeleteRoleModal from "@/components/admin/DeleteRoleModal";
+import DuplicateRoleModal from "@/components/admin/DuplicateRoleModal";
+import EditRoleModal from "@/components/admin/EditRoleModal";
+import PermissionsViewModal from "@/components/admin/PermissionsViewModal";
 
 type AccessRoleRecord = {
   id: string;
@@ -17,7 +17,7 @@ type AccessRoleRecord = {
   accessGrantCount?: number;
 };
 
-export default function DepartmentAccessClient({
+export function DepartmentAccessRolesSection({
   departmentId,
   departmentName,
   initialRoles
@@ -33,7 +33,7 @@ export default function DepartmentAccessClient({
   const [deletingRole, setDeletingRole] = useState<AccessRoleRecord | null>(null);
   const [viewingRole, setViewingRole] = useState<AccessRoleRecord | null>(null);
 
-  const loadRoles = async () => {
+  async function loadRoles() {
     try {
       const response = await fetch(
         `/api/roles?kind=access_role&scope=department&departmentId=${encodeURIComponent(departmentId)}`
@@ -43,11 +43,11 @@ export default function DepartmentAccessClient({
         setRoles(data.roles);
       }
     } catch (error) {
-      console.error('Failed to reload roles:', error);
+      console.error("Failed to reload roles:", error);
     }
-  };
+  }
 
-  const RoleCard = ({ role }: { role: AccessRoleRecord }) => {
+  function RoleCard({ role }: { role: AccessRoleRecord }) {
     const grantCount = role.accessGrantCount || 0;
     const permissionCount = role.permissions?.length ?? 0;
 
@@ -62,14 +62,14 @@ export default function DepartmentAccessClient({
 
         <div className="flex flex-wrap gap-1">
           <span className="rounded bg-blue-500/10 px-2 py-1 text-xs text-blue-600">
-            {role.applicability === 'both' ? 'System & Department' : 'Department'}
+            {role.applicability === "both" ? "System & Department" : "Department"}
           </span>
           <span className="rounded bg-gray-500/10 px-2 py-1 text-xs text-gray-600">
-            {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
+            {permissionCount} permission{permissionCount !== 1 ? "s" : ""}
           </span>
           {grantCount > 0 ? (
             <span className="rounded bg-green-500/10 px-2 py-1 text-xs text-green-600">
-              {grantCount} user{grantCount !== 1 ? 's' : ''}
+              {grantCount} user{grantCount !== 1 ? "s" : ""}
             </span>
           ) : null}
         </div>
@@ -106,12 +106,17 @@ export default function DepartmentAccessClient({
         </div>
       </div>
     );
-  };
+  }
 
   return (
-    <div className="space-y-6">
+    <section className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-medium text-[color:var(--app-heading)]">{departmentName} access roles</h2>
+        <div className="space-y-1">
+          <h2 className="text-xl font-medium text-[color:var(--app-heading)]">Access Control</h2>
+          <p className="text-sm text-[color:var(--app-muted)]">
+            Manage workspace access roles for {departmentName}.
+          </p>
+        </div>
         <button
           onClick={() => setCreateModalOpen(true)}
           className="rounded-lg bg-[color:var(--app-primary)] px-4 py-2 text-white transition hover:bg-[color:var(--app-primary-hover)]"
@@ -119,6 +124,13 @@ export default function DepartmentAccessClient({
         >
           + Create Role
         </button>
+      </div>
+
+      <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-6">
+        <h3 className="mb-2 font-medium text-[color:var(--app-heading)]">Access roles</h3>
+        <p className="text-sm text-[color:var(--app-muted)]">
+          Access roles control what users can do in this workspace. Assign roles from Team or User Management.
+        </p>
       </div>
 
       {roles.length === 0 ? (
@@ -193,6 +205,6 @@ export default function DepartmentAccessClient({
           onClose={() => setViewingRole(null)}
         />
       ) : null}
-    </div>
+    </section>
   );
 }

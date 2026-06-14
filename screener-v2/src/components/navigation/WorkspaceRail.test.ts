@@ -128,6 +128,17 @@ describe("resolveCurrentWorkspace", () => {
     expect(workspace).toBe("admin");
   });
 
+  it("resolves /integrations to admin workspace for admin users", () => {
+    const workspace = resolveCurrentWorkspace({
+      pathname: "/integrations",
+      searchParams: new URLSearchParams(),
+      isAdmin: true,
+      visibleDepartments
+    });
+
+    expect(workspace).toBe("admin");
+  });
+
   it("resolves /create-test to admin workspace for admin users", () => {
     const workspace = resolveCurrentWorkspace({
       pathname: "/create-test",

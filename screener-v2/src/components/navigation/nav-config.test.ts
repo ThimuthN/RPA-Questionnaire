@@ -9,6 +9,7 @@ describe("nav-config", () => {
       const items = getNavItems(viewer, "admin");
       const labels = items.map((item) => item.label);
       expect(labels).toContain("Manage Workspaces");
+      expect(labels).toContain("App Integrations");
       expect(labels).toContain("All Jobs");
       expect(labels).toContain("All Applicants");
       expect(labels).toContain("All Candidates");
@@ -111,6 +112,11 @@ describe("nav-config", () => {
 
     it("marks /departments as active for Manage Workspaces item", () => {
       expect(isNavItemActive("/departments", "/departments")).toBe(true);
+    });
+
+    it("marks /integrations routes as active for App Integrations item", () => {
+      expect(isNavItemActive("/integrations", "/integrations")).toBe(true);
+      expect(isNavItemActive("/integrations/providers", "/integrations")).toBe(true);
     });
 
     it("does not mark department workspace detail routes active for Manage Workspaces item", () => {

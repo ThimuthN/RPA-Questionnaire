@@ -59,6 +59,7 @@ export function resolveCurrentWorkspace({
     pathname.startsWith("/assessments") ||
     pathname.startsWith("/results") ||
     pathname.startsWith("/access-roles") ||
+    pathname.startsWith("/integrations") ||
     pathname.startsWith("/users") ||
     pathname.startsWith("/create-test") ||
     pathname.startsWith("/addons");

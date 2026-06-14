@@ -69,6 +69,8 @@ model Department {
   accessGrants AccessGrant[]
   hiringTeamTemplates HiringTeamTemplate[]
   assessmentPresets AssessmentPreset[]
+  integrationConnections DepartmentIntegrationConnection[]
+  candidateEmailThreads CandidateEmailThread[]
 
   @@index([isActive, sortOrder])
 }
@@ -405,6 +407,8 @@ model Candidate {
   employee           Employee?
   departmentCandidacies DepartmentCandidacy[]
   emailLogs          EmailLog[]
+  emailThreads       CandidateEmailThread[]
+  emailMessages      CandidateEmailMessage[]
   @@index([roleId])
   @@index([departmentId])
   @@index([hrOwnerId])
@@ -820,6 +824,7 @@ model InterviewPanel {
   milestone   CandidateMilestone?  @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
   members     InterviewPanelMember[]
   feedbacks   InterviewFeedback[]
+  eventSync   InterviewEventSync?
 
   @@index([candidateId, roundNumber])
   @@index([status, scheduledAt])
@@ -944,4 +949,160 @@ model EmailLog {
 
   @@index([candidateId, sentAt])
   @@index([status])
+}
+
+model IntegrationProviderApp {
+  id                    String   @id @default(cuid())
+  provider              String   @unique
+  clientId              String?
+  clientSecretEncrypted String?
+  tenantId              String?
+  scopesJson            Json?
+  configJson            Json?
+  enabled               Boolean  @default(false)
+  lastHealthStatus      String   @default("not_configured")
+  lastHealthError       String?
+  lastCheckedAt         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model DepartmentIntegrationConnection {
+  id                    String   @id @default(cuid())
+  departmentId          String
+  provider              String
+  status                String   @default("not_connected")
+  connectedAccountId    String?
+  connectedAccountLabel String?
+  connectedTenantId     String?
+  scopesJson            Json?
+  accessTokenEncrypted  String?
+  refreshTokenEncrypted String?
+  tokenExpiresAt        DateTime?
+  lastSuccessAt         DateTime?
+  lastError             String?
+  lastCheckedAt         DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  department            Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  resources             DepartmentIntegrationResource[]
+  webhookSubscriptions  IntegrationWebhookSubscription[]
+  syncCursors           IntegrationSyncCursor[]
+  interviewEventSyncs   InterviewEventSync[]
+
+  @@unique([departmentId, provider])
+  @@index([departmentId, status])
+}
+
+model DepartmentIntegrationResource {
+  id                String   @id @default(cuid())
+  connectionId      String
+  resourceType      String
+  externalResourceId String
+  displayLabel      String
+  emailAddress      String?
+  isDefault         Boolean  @default(false)
+  metadataJson      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  connection        DepartmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, resourceType, externalResourceId])
+  @@index([connectionId, resourceType, isDefault])
+}
+
+model IntegrationWebhookSubscription {
+  id                     String   @id @default(cuid())
+  provider               String
+  connectionId           String?
+  resourceTarget         String
+  externalSubscriptionId String
+  expiresAt              DateTime?
+  status                 String   @default("inactive")
+  lastRenewedAt          DateTime?
+  lastError              String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  connection             DepartmentIntegrationConnection? @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, externalSubscriptionId])
+  @@index([connectionId, status])
+}
+
+model IntegrationSyncCursor {
+  id           String   @id @default(cuid())
+  connectionId String
+  domain       String
+  cursorValue  String?
+  lastSyncedAt DateTime?
+  lastError    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  connection   DepartmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, domain])
+}
+
+model CandidateEmailThread {
+  id               String   @id @default(cuid())
+  candidateId      String
+  departmentId     String
+  provider         String
+  externalThreadId String
+  subject          String
+  lastMessageAt    DateTime
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  candidate        Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  department       Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  messages         CandidateEmailMessage[]
+
+  @@unique([provider, externalThreadId])
+  @@index([candidateId, lastMessageAt])
+  @@index([departmentId, lastMessageAt])
+}
+
+model CandidateEmailMessage {
+  id             String   @id @default(cuid())
+  threadId       String
+  candidateId    String
+  provider       String
+  providerMessageId String
+  direction      String
+  sender         String
+  recipientsJson Json
+  bodyPreview    String?
+  sanitizedHtml  String?
+  sentAt         DateTime?
+  receivedAt     DateTime?
+  syncStatus     String   @default("synced")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  thread         CandidateEmailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  candidate      Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerMessageId])
+  @@index([threadId, createdAt])
+  @@index([candidateId, createdAt])
+}
+
+model InterviewEventSync {
+  id                    String   @id @default(cuid())
+  interviewPanelId      String   @unique
+  connectionId          String
+  provider              String
+  externalCalendarEventId String
+  externalMeetingId     String?
+  joinUrl               String?
+  organizerAccountId    String?
+  lastSyncedAt          DateTime?
+  lastSyncStatus        String   @default("pending")
+  lastError             String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  interviewPanel        InterviewPanel @relation(fields: [interviewPanelId], references: [id], onDelete: Cascade)
+  connection            DepartmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, provider])
 }
