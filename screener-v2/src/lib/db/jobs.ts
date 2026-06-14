@@ -98,6 +98,8 @@ function mapApplication(row: {
   candidateId: string;
   status: string;
   coverNote: string | null;
+  source: string | null;
+  referredBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   candidate: {
@@ -126,6 +128,8 @@ function mapApplication(row: {
     jobTitle: row.jobPosting.title,
     roleLabel: row.jobPosting.role?.label ?? undefined,
     coverNote: row.coverNote ?? undefined,
+    source: row.source ?? undefined,
+    referredBy: row.referredBy ?? undefined,
     appliedAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     status: row.status as CandidateApplicationStatus
@@ -159,6 +163,30 @@ function buildApplicationScreeningFinishHref(input: {
   }
 
   return `/jobs/${input.jobSlug}/apply?${params.toString()}`;
+}
+
+function firstAnsweredResponseText(
+  evaluation: ReturnType<typeof evaluateApplicationScreening>,
+  questionKey: string
+) {
+  for (const addonResult of evaluation.addonResults) {
+    const response = addonResult.responses.find((item) => item.questionKey === questionKey);
+    const answerText = response?.answerText?.trim();
+    if (answerText) {
+      return answerText;
+    }
+  }
+
+  return undefined;
+}
+
+function deriveCandidateProfileSeedFromScreening(
+  evaluation: ReturnType<typeof evaluateApplicationScreening>
+) {
+  return {
+    location: firstAnsweredResponseText(evaluation, "currentLocation"),
+    salaryExpectation: firstAnsweredResponseText(evaluation, "salaryExpectation")
+  };
 }
 
 async function replaceApplicationScreeningResultsInTx(args: {
@@ -221,6 +249,7 @@ function buildApplicantWorkspaceWhere(filters: {
   q?: string;
   jobId?: string;
   status?: CandidateApplicationStatus;
+  resumeMissing?: boolean;
   departmentId?: string | null;
 }): Prisma.CandidateApplicationWhereInput {
   const query = filters.q?.trim();
@@ -228,6 +257,7 @@ function buildApplicantWorkspaceWhere(filters: {
   return {
     ...(filters.jobId ? { jobPostingId: filters.jobId } : {}),
     ...(filters.departmentId ? { jobPosting: { role: { departmentId: filters.departmentId } } } : {}),
+    ...(filters.resumeMissing ? { candidate: { resumes: { none: {} } } } : {}),
     ...(filters.status
       ? { status: filters.status }
       : {
@@ -728,6 +758,7 @@ export async function listApplicantWorkspacePage(filters: {
   q?: string;
   jobId?: string;
   status?: CandidateApplicationStatus;
+  resumeMissing?: boolean;
   departmentId?: string | null;
   page?: number;
   pageSize?: number;
@@ -751,6 +782,8 @@ export async function listApplicantWorkspacePage(filters: {
         candidateId: true,
         status: true,
         coverNote: true,
+        source: true,
+        referredBy: true,
         createdAt: true,
         updatedAt: true,
         candidate: {
@@ -949,6 +982,14 @@ export async function getPublicApplicationStatus(applicationId: string, email: s
   };
 }
 
+export type PublicApplicationSource =
+  | "direct"
+  | "linkedin"
+  | "job_board"
+  | "referral"
+  | "agency"
+  | "other";
+
 export async function createCandidateApplicationFromPublicSubmission(input: {
   jobSlug: string;
   fullName: string;
@@ -958,6 +999,8 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   consentGivenAt?: Date;
   consentVersion?: string;
   screeningAnswers?: ApplicationScreeningAnswerMap | Record<string, unknown>;
+  source?: PublicApplicationSource;
+  referredBy?: string;
 }) {
   const job = await prisma.jobPosting.findFirst({
     where: {
@@ -1107,8 +1150,19 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   }
 
   const screeningEvaluation = evaluateApplicationScreening(screeningPackage, screeningAnswers);
+  const profileSeed = deriveCandidateProfileSeedFromScreening(screeningEvaluation);
 
   const application = await prisma.$transaction(async (tx) => {
+    if (profileSeed.location || profileSeed.salaryExpectation) {
+      await tx.candidate.update({
+        where: { id: existingCandidate.id },
+        data: {
+          location: profileSeed.location?.trim() || undefined,
+          salaryExpectation: profileSeed.salaryExpectation?.trim() || undefined
+        }
+      });
+    }
+
     const createdApplication = await tx.candidateApplication.create({
       data: {
         candidateId: existingCandidate.id,
@@ -1116,7 +1170,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         status: "submitted",
         coverNote: input.coverNote?.trim() || null,
         consentGivenAt: input.consentGivenAt ?? null,
-        consentVersion: input.consentVersion ?? null
+        consentVersion: input.consentVersion ?? null,
+        source: input.source ?? "direct",
+        referredBy: input.source === "referral" ? (input.referredBy?.trim() || null) : null,
       }
     });
 

@@ -7,6 +7,8 @@ export type ApplicationDraft = {
   email: string;
   phone: string;
   coverNote: string;
+  source?: string;
+  referredBy?: string;
   screeningAnswers: Record<string, Record<string, unknown>>;
   step: number;
 };

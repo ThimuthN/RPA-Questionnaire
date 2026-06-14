@@ -9,6 +9,7 @@ import {
   loadApplicationDraft,
   saveApplicationDraft
 } from "@/lib/jobs/public-application-draft";
+import { CANDIDATE_PRIVACY_POLICY_VERSION } from "@/lib/legal/site-policy";
 import {
   COVER_NOTE_MAX,
   EMAIL_MAX,
@@ -29,7 +30,19 @@ type FormValues = {
   email: string;
   phone: string;
   coverNote: string;
+  source: string;
+  referredBy: string;
 };
+
+const SOURCE_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "How did you hear about us? (optional)" },
+  { value: "direct", label: "Company website" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "job_board", label: "Job board" },
+  { value: "referral", label: "Referred by someone" },
+  { value: "agency", label: "Recruitment agency" },
+  { value: "other", label: "Other" },
+];
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -117,7 +130,9 @@ export function JobApplicationForm({
     fullName: "",
     email: "",
     phone: "",
-    coverNote: ""
+    coverNote: "",
+    source: "",
+    referredBy: "",
   });
   const [stepError, setStepError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -133,7 +148,9 @@ export function JobApplicationForm({
         fullName: draft.fullName,
         email: draft.email,
         phone: draft.phone,
-        coverNote: draft.coverNote
+        coverNote: draft.coverNote,
+        source: draft.source ?? "",
+        referredBy: draft.referredBy ?? "",
       });
       setStep(draft.step);
       setDraftSaved(true);
@@ -173,7 +190,9 @@ export function JobApplicationForm({
       fullName: "",
       email: "",
       phone: "",
-      coverNote: ""
+      coverNote: "",
+      source: "",
+      referredBy: "",
     });
     setStep(0);
     setStepError(null);
@@ -292,6 +311,32 @@ export function JobApplicationForm({
             className={inputClassName}
           />
         </label>
+        <div className="grid gap-1.5">
+          <label htmlFor="source-select" className="text-sm text-[color:var(--app-text)]">
+            How did you hear about us? (optional)
+          </label>
+          <select
+            id="source-select"
+            name="source"
+            value={values.source}
+            onChange={(e) => setValues((v) => ({ ...v, source: e.target.value, referredBy: e.target.value !== "referral" ? "" : v.referredBy }))}
+            className={inputClassName}
+          >
+            {SOURCE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {values.source === "referral" ? (
+            <input
+              name="referredBy"
+              value={values.referredBy}
+              onChange={updateValue("referredBy")}
+              placeholder="Who referred you? (optional)"
+              maxLength={120}
+              className={inputClassName}
+            />
+          ) : null}
+        </div>
       </div>
 
       <div className={step === 1 ? "space-y-4" : "hidden"}>
@@ -392,6 +437,15 @@ export function JobApplicationForm({
           <ReviewRow label="Email" value={values.email} />
           {values.phone ? <ReviewRow label="Phone" value={values.phone} /> : null}
           <ReviewRow label="Resume" value={resumeFileName ?? "No resume attached"} />
+          {values.source ? (
+            <ReviewRow
+              label="Heard about us via"
+              value={SOURCE_OPTIONS.find((o) => o.value === values.source)?.label ?? values.source}
+            />
+          ) : null}
+          {values.source === "referral" && values.referredBy ? (
+            <ReviewRow label="Referred by" value={values.referredBy} />
+          ) : null}
           {values.coverNote ? <ReviewRow label="Cover note" value={values.coverNote} /> : null}
           <ReviewRow
             label="Application screening"
@@ -421,6 +475,9 @@ export function JobApplicationForm({
               >
                 Privacy Policy
               </a>
+              <span className="ml-1 text-[color:var(--app-muted)]">
+                (version {CANDIDATE_PRIVACY_POLICY_VERSION})
+              </span>
               .{" "}
               <span className="text-[color:var(--app-danger)]">*</span>
             </span>

@@ -63,6 +63,8 @@ export type CandidateApplicationListItem = {
   jobTitle: string;
   roleLabel?: string;
   coverNote?: string;
+  source?: string;
+  referredBy?: string;
   appliedAt: string;
   updatedAt: string;
   status: CandidateApplicationStatus;

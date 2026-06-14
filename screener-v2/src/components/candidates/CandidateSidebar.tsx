@@ -49,6 +49,19 @@ function applicationStatusTone(
   return "neutral";
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  direct: "Company website",
+  linkedin: "LinkedIn",
+  job_board: "Job board",
+  referral: "Referral",
+  agency: "Agency",
+  other: "Other",
+};
+
+function applicationSourceLabel(source: string): string {
+  return SOURCE_LABELS[source] ?? source;
+}
+
 export function CandidateSidebar({
   candidate,
   currentDetailPath,
@@ -78,7 +91,7 @@ export function CandidateSidebar({
 }) {
   const folderHref = safeExternalUrl(candidate.candidateFolderUrl);
   const linkedInHref = safeExternalUrl(candidate.linkedInUrl);
-  const stage = candidate.stage as CandidateStage;
+  const stage = (candidate.orgStage === "finalized" ? "finalized" : candidate.stage) as CandidateStage;
 
   const showMoveToPipeline =
     candidate.stage === "applicant" && !!activeApplication && canPromote;
@@ -164,6 +177,12 @@ export function CandidateSidebar({
                 label={candidateApplicationStatusLabels[activeApplication.status]}
                 tone={applicationStatusTone(activeApplication.status)}
               />
+              {activeApplication.source ? (
+                <MetaRow label="Via" value={applicationSourceLabel(activeApplication.source)} />
+              ) : null}
+              {activeApplication.source === "referral" && activeApplication.referredBy ? (
+                <MetaRow label="Referred by" value={activeApplication.referredBy} />
+              ) : null}
             </div>
           ) : null}
 

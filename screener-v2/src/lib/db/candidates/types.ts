@@ -102,6 +102,9 @@ export interface CandidateApplicationRecord {
   jobTitle: string;
   roleLabel?: string;
   roleDepartment?: string;
+  coverNote?: string;
+  source?: string;
+  referredBy?: string;
   status: CandidateApplicationStatus;
   createdAt: string;
   updatedAt: string;

@@ -92,6 +92,9 @@ export function mapApplication(row: {
   id: string;
   candidateId: string;
   jobPostingId: string;
+  coverNote: string | null;
+  source: string | null;
+  referredBy: string | null;
   status: string;
   createdAt: Date;
   updatedAt: Date;
@@ -109,6 +112,9 @@ export function mapApplication(row: {
     jobTitle: row.jobPosting.title,
     roleLabel: row.jobPosting.role?.label ?? undefined,
     roleDepartment: row.jobPosting.role?.department ?? undefined,
+    coverNote: row.coverNote?.trim() || undefined,
+    source: row.source ?? undefined,
+    referredBy: row.referredBy ?? undefined,
     status: row.status as CandidateApplicationStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString()

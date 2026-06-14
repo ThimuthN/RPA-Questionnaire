@@ -10,24 +10,37 @@ import { normalizeResumeFileName } from "@/lib/candidates/resume-config";
 import {
   beginPublicApplicationScreeningFlow,
   createCandidateApplicationFromPublicSubmission,
-  publicApplicationScreeningSlug
+  publicApplicationScreeningSlug,
+  type PublicApplicationSource
 } from "@/lib/db/jobs";
 import {
   createRuntimeSessionToken,
   setRuntimeSessionCookie
 } from "@/lib/auth/runtime-session";
+import { checkPublicApplicationRateLimit } from "@/lib/server/rate-limit";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
+import { CANDIDATE_PRIVACY_POLICY_VERSION } from "@/lib/legal/site-policy";
 import { sendEmailSafe, applicationReceivedEmail, getOrgName } from "@/lib/email";
+
+const SOURCE_VALUES: PublicApplicationSource[] = [
+  "direct", "linkedin", "job_board", "referral", "agency", "other"
+];
 
 const publicApplySchema = z.object({
   fullName: z.string().min(2),
   email: z.string().email(),
   phone: z.string().optional(),
   coverNote: z.string().optional(),
+  source: z.string().optional(),
+  referredBy: z.string().optional(),
   consentGiven: z.literal("on", {
     errorMap: () => ({ message: "You must agree to data processing before submitting." })
   })
 });
+
+function optionalTextEntry(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value : undefined;
+}
 
 export async function POST(
   request: Request,
@@ -44,10 +57,26 @@ export async function POST(
     const body = publicApplySchema.parse({
       fullName: formData.get("fullName"),
       email: formData.get("email"),
-      phone: formData.get("phone"),
-      coverNote: formData.get("coverNote"),
+      phone: optionalTextEntry(formData.get("phone")),
+      coverNote: optionalTextEntry(formData.get("coverNote")),
+      source: optionalTextEntry(formData.get("source")),
+      referredBy: optionalTextEntry(formData.get("referredBy")),
       consentGiven: formData.get("consentGiven")
     });
+
+    const rawSource = body.source ?? new URL(request.url).searchParams.get("utm_source") ?? "";
+    const applicationSource: PublicApplicationSource =
+      SOURCE_VALUES.includes(rawSource as PublicApplicationSource)
+        ? (rawSource as PublicApplicationSource)
+        : "direct";
+    const publicRateLimit = await checkPublicApplicationRateLimit({
+      request,
+      jobSlug: slug,
+      email: body.email
+    });
+    if (!publicRateLimit.ok) {
+      throw new Error(publicRateLimit.message);
+    }
     const file = formData.get("resume");
 
     if (file instanceof File && file.size > 0) {
@@ -62,7 +91,9 @@ export async function POST(
       phone: body.phone,
       coverNote: body.coverNote,
       consentGivenAt: new Date(),
-      consentVersion: "1.0"
+      consentVersion: CANDIDATE_PRIVACY_POLICY_VERSION,
+      source: applicationSource,
+      referredBy: applicationSource === "referral" ? body.referredBy?.trim() || undefined : undefined,
     });
 
     const url = new URL(`/jobs/${slug}/apply`, request.url);
