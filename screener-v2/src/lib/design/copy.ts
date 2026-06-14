@@ -8,6 +8,96 @@ export const copy = {
     results: "Results",
     users: "Users"
   },
+
+  /** ATS domain vocabulary — canonical terms per the enterprise ATS convention.
+   * All user-facing labels for these concepts must source from here. */
+  ats: {
+    // People
+    applicant: "Applicant",
+    applicants: "Applicants",
+    candidate: "Candidate",
+    candidates: "Candidates",
+    prospect: "Prospect",
+    talentPool: "Talent Pool",
+    hiringTeam: "Hiring Team",
+    approver: "Approver",
+    approvers: "Approvers",
+    hrOwner: "HR Owner",
+    recruiter: "Recruiter",
+
+    // Job
+    job: "Job",
+    jobs: "Jobs",
+    requisition: "Requisition",
+    jobPosting: "Job Posting",
+    openRole: "Open Role",
+    department: "Department",
+
+    // Pipeline
+    stage: "Stage",
+    pipeline: "Pipeline",
+    application: "Application",
+    applications: "Applications",
+
+    // Evaluation
+    scorecard: "Scorecard",
+    scorecards: "Scorecards",
+    interviewKit: "Interview Kit",
+    interviewKits: "Interview Kits",
+    assessment: "Assessment",
+    assessments: "Assessments",
+
+    // Source
+    source: "Source",
+    sources: "Sources",
+
+    // Offer
+    offer: "Offer",
+    offers: "Offers",
+
+    // Actions
+    advance: "Advance",
+    reject: "Reject",
+    hire: "Hire",
+    scheduleInterview: "Schedule interview",
+    sendOffer: "Send offer",
+    requestApproval: "Request approval",
+
+    // States
+    active: "Active",
+    finalized: "Finalized",
+    hired: "Hired",
+    rejected: "Rejected",
+    pending: "Pending",
+    approved: "Approved",
+    declined: "Declined",
+    waitingOn: "Waiting on",
+    blockedBy: "Blocked by",
+    approvedBy: "Approved by",
+    pendingItems: "Pending items",
+    needsAttention: "Needs attention",
+    currentState: "Current state",
+
+    // Empty states
+    noApplicants: "No applicants",
+    noCandidates: "No candidates",
+    noJobs: "No open jobs",
+    noScorecard: "No scorecard submitted",
+    noOffer: "No offer on file",
+    noHiringTeam: "No hiring team assigned",
+    addOrImport: "Add or import candidates",
+
+    // Milestone labels
+    milestones: {
+      applicationReceived: "Application received",
+      screeningCall: "Screening call",
+      technicalAssessment: "Technical assessment",
+      interview: "Interview",
+      advancedReview: "Advanced review",
+      offerExtended: "Offer extended",
+      hired: "Hired",
+    },
+  },
   landing: {
     headline: "Manage jobs, applicants, assessments, and hiring decisions in one place.",
     subtext: "Northstar helps hiring teams keep candidate work, review context, and final decisions connected.",
