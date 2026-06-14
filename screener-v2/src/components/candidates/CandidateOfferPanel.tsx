@@ -140,6 +140,12 @@ export function CandidateOfferPanel({
             </div>
           ) : null}
 
+          {offer.status === "expired" ? (
+            <div className="rounded-[14px] border border-amber-400/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-300">
+              This offer expired on {offer.expiresAt ? new Date(offer.expiresAt).toLocaleDateString() : "an unknown date"}. Create a new offer to re-engage the candidate.
+            </div>
+          ) : null}
+
           {offer.sentAt ? (
             <p className="text-xs text-[color:var(--app-muted)]">Sent {new Date(offer.sentAt).toLocaleDateString()}</p>
           ) : null}
@@ -159,6 +165,11 @@ export function CandidateOfferPanel({
               {(offer.status === "draft" || offer.status === "sent") ? (
                 <Button type="button" variant="secondary" onClick={() => void saveOffer("revoke")} disabled={saving}>
                   Revoke offer
+                </Button>
+              ) : null}
+              {offer.status === "expired" ? (
+                <Button type="button" variant="secondary" onClick={() => void saveOffer("revoke")} disabled={saving}>
+                  {saving ? "Removing..." : "Remove expired offer"}
                 </Button>
               ) : null}
             </div>

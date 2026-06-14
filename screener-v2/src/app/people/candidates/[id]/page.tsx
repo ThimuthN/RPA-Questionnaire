@@ -340,11 +340,16 @@ export default async function CandidateDetailPage({
     sentBy: l.sentBy ? { id: l.sentBy.id, name: l.sentBy.name ?? null, email: l.sentBy.email } : null,
   }));
 
-  // Map offer to a safe serializable shape
+  // Map offer to a safe serializable shape; enforce expiry on the server
+  const isOfferExpired =
+    offer?.status === "sent" &&
+    offer.expiresAt != null &&
+    offer.expiresAt < new Date();
+
   const offerForPanel = offer
     ? {
         id: offer.id,
-        status: offer.status as "draft" | "sent" | "accepted" | "rejected" | "expired",
+        status: (isOfferExpired ? "expired" : offer.status) as "draft" | "sent" | "accepted" | "rejected" | "expired",
         compensationType: offer.compensationType,
         compensationAmount: offer.compensationAmount,
         currency: offer.currency,

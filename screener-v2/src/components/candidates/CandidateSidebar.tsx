@@ -5,6 +5,7 @@ import { Button } from "@/components/primitives/Button";
 import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
 import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
 import { TransferCandidateAction } from "@/components/candidates/TransferCandidateAction";
+import { AnonymizeDataAction } from "@/components/candidates/AnonymizeDataAction";
 import type { CandidateDetail } from "@/lib/db/candidates";
 import type { CandidateStage } from "@/lib/candidates/types";
 import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
@@ -238,15 +239,22 @@ export function CandidateSidebar({
             ) : null}
 
             {canDelete ? (
-              <form action={`/api/candidates/${candidate.id}/delete`} method="post">
-                <input type="hidden" name="returnTo" value={backHref} />
-                <ConfirmSubmitButton
-                  variant="secondary"
-                  confirmMessage={`Delete ${candidate.fullName}? This removes the candidate and all linked lifecycle data.`}
-                >
-                  Delete record
-                </ConfirmSubmitButton>
-              </form>
+              <>
+                <AnonymizeDataAction
+                  candidateId={candidate.id}
+                  candidateName={candidate.fullName}
+                  backHref={String(backHref)}
+                />
+                <form action={`/api/candidates/${candidate.id}/delete`} method="post">
+                  <input type="hidden" name="returnTo" value={backHref} />
+                  <ConfirmSubmitButton
+                    variant="secondary"
+                    confirmMessage={`Delete ${candidate.fullName}? This permanently removes the candidate and all linked lifecycle data. Use "Anonymize data" instead to preserve pipeline history.`}
+                  >
+                    Delete record
+                  </ConfirmSubmitButton>
+                </form>
+              </>
             ) : null}
           </div>
         ) : null}
