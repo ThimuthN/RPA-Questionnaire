@@ -5,6 +5,7 @@ import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
 import { WorkspaceRail } from "@/components/navigation/WorkspaceRail";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { CommandPalette, CommandPaletteTrigger } from "@/components/search/CommandPalette";
 import { getAppSession } from "@/lib/auth/app-session";
 import { listDepartments } from "@/lib/db/departments";
 import "./globals.css";
@@ -81,6 +82,7 @@ export default async function RootLayout({
                 <Link href="/" className="transition hover:opacity-95">
                   <AppLogo compact />
                 </Link>
+                {session ? <CommandPaletteTrigger /> : null}
                 <MainNav
                   viewer={session ? { email: session.email, name: session.name, permissions: session.permissions, departmentId: session.departmentId } : null}
                   departments={departments}
@@ -90,6 +92,7 @@ export default async function RootLayout({
             <main id="main-content" className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-10">{children}</main>
           </div>
           <ThemeToggle />
+          {session ? <CommandPalette /> : null}
         </div>
       </body>
     </html>
