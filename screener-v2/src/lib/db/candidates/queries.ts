@@ -663,7 +663,7 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
         }
       },
       externalAssessments: {
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ completedAt: "desc" }, { createdAt: "desc" }],
         include: {
           attachments: {
             orderBy: { uploadedAt: "desc" }

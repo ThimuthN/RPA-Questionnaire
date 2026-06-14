@@ -28,6 +28,71 @@ function inputClassName() {
   return "w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3.5 py-2.5 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60 focus-visible:ring-2 focus-visible:ring-brand-300/80";
 }
 
+function fieldHelp(
+  provider: ProviderAppSummary,
+  field: "clientId" | "tenantId" | "scopes" | "secret"
+) {
+  if (provider.provider === "microsoft") {
+    if (field === "clientId") {
+      return "Paste the Application (client) ID from the Azure / Entra app registration.";
+    }
+    if (field === "tenantId") {
+      return "Use the Microsoft Entra tenant GUID for the organization that owns this app registration.";
+    }
+    if (field === "scopes") {
+      return "One Microsoft Graph delegated permission per line. Use the recommended list unless you are deliberately changing the permission model.";
+    }
+    return provider.secretConfigured
+      ? "Enter a new client secret only when rotating it. Saved secrets are never shown again."
+      : "Paste the client secret value generated in the app registration. It is stored once and never shown again.";
+  }
+
+  if (provider.provider === "google") {
+    if (field === "clientId") {
+      return "Paste the OAuth client ID from the Google Cloud OAuth client.";
+    }
+    if (field === "scopes") {
+      return "One Google OAuth scope per line. Use the recommended list unless you intentionally need a different permission set.";
+    }
+    return provider.secretConfigured
+      ? "Enter a new client secret only when rotating it."
+      : "Paste the Google OAuth client secret value.";
+  }
+
+  if (field === "clientId") {
+    return "Paste the Zoom OAuth app client ID.";
+  }
+  if (field === "scopes") {
+    return "One Zoom OAuth scope per line.";
+  }
+  return provider.secretConfigured
+    ? "Enter a new client secret only when rotating it."
+    : "Paste the Zoom OAuth client secret value.";
+}
+
+function scopeExamples(provider: ProviderAppSummary) {
+  return provider.recommendedScopes.slice(0, Math.min(provider.recommendedScopes.length, 4));
+}
+
+function shouldConfirmProviderAction(action: "disable" | "rotate", provider: ProviderAppSummary) {
+  if (action === "disable") {
+    return window.confirm(
+      `Disable ${provider.label} for new department connections? Existing department mappings remain stored, but teams will not be able to reconnect until the provider is enabled again.`
+    );
+  }
+
+  return window.confirm(
+    `Rotate the ${provider.label} client secret now? Departments using this provider may need to reconnect if the new secret does not match the app registration.`
+  );
+}
+
+function tenantPlaceholder(provider: ProviderAppSummary) {
+  if (provider.provider === "microsoft") {
+    return "Azure / Entra tenant GUID";
+  }
+  return "";
+}
+
 export function SystemIntegrationsClient({
   initialProviders
 }: {
@@ -95,6 +160,7 @@ export function SystemIntegrationsClient({
     const provider = providerMap[providerKey];
     const draft = drafts[providerKey];
     if (!provider || !draft?.rotateSecret.trim()) return;
+    if (!shouldConfirmProviderAction("rotate", provider)) return;
 
     setPendingAction(`rotate:${providerKey}`);
     setBanner(null);
@@ -150,6 +216,7 @@ export function SystemIntegrationsClient({
   async function disableProvider(providerKey: string) {
     const provider = providerMap[providerKey];
     if (!provider) return;
+    if (!shouldConfirmProviderAction("disable", provider)) return;
 
     setPendingAction(`disable:${providerKey}`);
     setBanner(null);
@@ -195,6 +262,7 @@ export function SystemIntegrationsClient({
                 <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-xs text-[color:var(--app-muted)]">
                   <p>Redirect URI</p>
                   <p className="mt-1 break-all text-[color:var(--app-heading)]">{provider.redirectUri}</p>
+                  <p className="mt-2">Add this exact callback URL to the provider app registration.</p>
                 </div>
 
                 {provider.lastHealthError ? (
@@ -218,6 +286,9 @@ export function SystemIntegrationsClient({
                     className={inputClassName()}
                     placeholder={`${provider.label} client ID`}
                   />
+                  <span className="text-xs text-[color:var(--app-muted)]">
+                    {fieldHelp(provider, "clientId")}
+                  </span>
                 </label>
 
                 {provider.provider === "microsoft" ? (
@@ -232,13 +303,33 @@ export function SystemIntegrationsClient({
                         }))
                       }
                       className={inputClassName()}
-                      placeholder="common or tenant GUID"
+                      placeholder={tenantPlaceholder(provider)}
                     />
+                    <span className="text-xs text-[color:var(--app-muted)]">
+                      {fieldHelp(provider, "tenantId")}
+                    </span>
                   </label>
                 ) : null}
 
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Scopes</span>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Scopes (one per line)</span>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-[color:var(--app-brand)] hover:text-[color:var(--app-brand-strong)]"
+                      onClick={() =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [provider.provider]: {
+                            ...current[provider.provider],
+                            scopesText: provider.recommendedScopes.join("\n")
+                          }
+                        }))
+                      }
+                    >
+                      Use recommended scopes
+                    </button>
+                  </div>
                   <textarea
                     value={draft.scopesText}
                     onChange={(event) =>
@@ -249,7 +340,22 @@ export function SystemIntegrationsClient({
                     }
                     rows={6}
                     className={`${inputClassName()} min-h-[144px] resize-y`}
+                    placeholder={provider.recommendedScopes.join("\n")}
+                    spellCheck={false}
                   />
+                  <span className="text-xs text-[color:var(--app-muted)]">
+                    {fieldHelp(provider, "scopes")}
+                  </span>
+                  <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-xs text-[color:var(--app-muted)]">
+                    <p className="font-medium text-[color:var(--app-heading)]">Expected input</p>
+                    <p className="mt-1">Enter one OAuth scope value per line, exactly as defined by {provider.label}.</p>
+                    <p className="mt-2 font-medium text-[color:var(--app-heading)]">Examples</p>
+                    <div className="mt-1 space-y-1 font-mono text-[11px] text-[color:var(--app-text)]">
+                      {scopeExamples(provider).map((scope) => (
+                        <p key={scope}>{scope}</p>
+                      ))}
+                    </div>
+                  </div>
                 </label>
 
                 <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
@@ -276,8 +382,16 @@ export function SystemIntegrationsClient({
                   </div>
                 </div>
 
+                <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-xs text-[color:var(--app-muted)]">
+                  <p className="font-medium text-[color:var(--app-heading)]">Setup check</p>
+                  <p className="mt-1">
+                    Validate setup checks the provider metadata endpoint and confirms the required fields are present.
+                    It does not prove department OAuth consent, mailbox access, or calendar access until a department connects.
+                  </p>
+                </div>
+
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Rotate secret</span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Client secret</span>
                   <input
                     type="password"
                     value={draft.rotateSecret}
@@ -288,8 +402,15 @@ export function SystemIntegrationsClient({
                       }))
                     }
                     className={inputClassName()}
-                    placeholder={`New ${provider.label} client secret`}
+                    placeholder={
+                      provider.secretConfigured
+                        ? `Paste a new ${provider.label} client secret to rotate`
+                        : `Paste the ${provider.label} client secret`
+                    }
                   />
+                  <span className="text-xs text-[color:var(--app-muted)]">
+                    {fieldHelp(provider, "secret")}
+                  </span>
                 </label>
               </div>
 
@@ -298,7 +419,7 @@ export function SystemIntegrationsClient({
                   {pendingAction === `save:${provider.provider}` ? "Saving..." : "Save"}
                 </Button>
                 <Button type="button" variant="secondary" onClick={() => testProvider(provider.provider)} disabled={Boolean(pendingAction)}>
-                  {pendingAction === `test:${provider.provider}` ? "Testing..." : "Test configuration"}
+                  {pendingAction === `test:${provider.provider}` ? "Checking..." : "Validate setup"}
                 </Button>
                 <Button
                   type="button"

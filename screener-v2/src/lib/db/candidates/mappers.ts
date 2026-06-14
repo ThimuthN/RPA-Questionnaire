@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import type {
   CandidateAssessmentStatus,
+  CandidateExternalAssessmentStatus,
   CandidateNextAction,
   CandidateNoteType,
   CandidateScreeningStatus,

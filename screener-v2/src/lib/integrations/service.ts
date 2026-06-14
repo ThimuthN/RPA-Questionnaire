@@ -408,6 +408,7 @@ export async function listProviderAppSummaries(): Promise<ProviderAppSummary[]> 
       clientId: row?.clientId ?? "",
       tenantId: row?.tenantId ?? "",
       scopes: normalizeScopes(asStringArray(row?.scopesJson), descriptor.provider),
+      recommendedScopes: descriptor.defaultScopes,
       secretConfigured: Boolean(row?.clientSecretEncrypted),
       lastHealthStatus: row?.lastHealthStatus ?? "not_configured",
       lastHealthError: row?.lastHealthError ?? undefined,
@@ -493,7 +494,9 @@ export async function testProviderAppConfiguration(provider: IntegrationProvider
 
   return {
     status: discovery.status,
-    message: discovery.error ?? `${getIntegrationProviderDescriptor(provider).label} configuration is reachable.`
+    message:
+      discovery.error ??
+      `${getIntegrationProviderDescriptor(provider).label} metadata endpoint is reachable. Department OAuth consent and resource access are validated when a department connects.`
   };
 }
 

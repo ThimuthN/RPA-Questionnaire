@@ -1,4 +1,4 @@
-// Microsoft Graph API client — calendar events, Teams meetings, mailbox send
+// Microsoft Graph API client for calendar events, Teams meetings, and mailbox send.
 
 const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
@@ -12,12 +12,12 @@ async function graphFetch(
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
-      ...(options.headers as Record<string, string> | undefined),
-    },
+      ...(options.headers as Record<string, string> | undefined)
+    }
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "(no body)");
-    throw new Error(`Graph ${options.method ?? "GET"} ${path} → ${res.status}: ${body.slice(0, 300)}`);
+    throw new Error(`Graph ${options.method ?? "GET"} ${path} -> ${res.status}: ${body.slice(0, 300)}`);
   }
   if (res.status === 204) return null;
   return res.json();
@@ -55,16 +55,16 @@ export async function createCalendarEvent(
     end: { dateTime: event.end, timeZone: "UTC" },
     attendees: (event.attendees ?? []).map((a) => ({
       emailAddress: { address: a.email, name: a.name ?? a.email },
-      type: "required",
+      type: "required"
     })),
     isOnlineMeeting: event.isOnlineMeeting ?? false,
     onlineMeetingProvider: event.onlineMeetingProvider ?? "unknown",
-    allowNewTimeProposals: false,
+    allowNewTimeProposals: false
   };
 
   const result = await graphFetch(accessToken, `/me/calendars/${calendarId}/events`, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
   return result as GraphCalendarEvent;
 }
@@ -87,12 +87,12 @@ export async function updateCalendarEvent(
   if (patch.attendees) {
     body.attendees = patch.attendees.map((a) => ({
       emailAddress: { address: a.email, name: a.name ?? a.email },
-      type: "required",
+      type: "required"
     }));
   }
   await graphFetch(accessToken, `/me/calendars/${calendarId}/events/${eventId}`, {
     method: "PATCH",
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
 }
 
@@ -102,7 +102,7 @@ export async function deleteCalendarEvent(
   eventId: string
 ): Promise<void> {
   await graphFetch(accessToken, `/me/calendars/${calendarId}/events/${eventId}`, {
-    method: "DELETE",
+    method: "DELETE"
   });
 }
 
@@ -115,11 +115,11 @@ export async function createOnlineMeeting(
   const body = {
     subject,
     startDateTime: startTime,
-    endDateTime: endTime,
+    endDateTime: endTime
   };
   const result = await graphFetch(accessToken, "/me/onlineMeetings", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   });
   return result as GraphOnlineMeeting;
 }
@@ -132,18 +132,15 @@ export type GraphSendMailInput = {
   saveToSentItems?: boolean;
 };
 
-export async function sendViaMailbox(
-  accessToken: string,
-  input: GraphSendMailInput
-): Promise<void> {
+export async function sendViaMailbox(accessToken: string, input: GraphSendMailInput): Promise<void> {
   const message = {
     subject: input.subject,
     body: { contentType: "HTML", content: input.html },
     toRecipients: input.to.map((addr) => ({ emailAddress: { address: addr } })),
-    ccRecipients: (input.cc ?? []).map((addr) => ({ emailAddress: { address: addr } })),
+    ccRecipients: (input.cc ?? []).map((addr) => ({ emailAddress: { address: addr } }))
   };
   await graphFetch(accessToken, "/me/sendMail", {
     method: "POST",
-    body: JSON.stringify({ message, saveToSentItems: input.saveToSentItems ?? true }),
+    body: JSON.stringify({ message, saveToSentItems: input.saveToSentItems ?? true })
   });
 }

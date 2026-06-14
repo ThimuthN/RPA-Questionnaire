@@ -1,11 +1,11 @@
 import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
-import { requirePermissionForDepartment } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 import { DepartmentAccessRolesSection } from "@/components/departments/DepartmentAccessRolesSection";
 import { DepartmentIntegrationsSection } from "@/components/integrations/DepartmentIntegrationsSection";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { listDepartmentIntegrationSummaries } from "@/lib/integrations";
+import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { listAccessRoles } from "@/lib/roles/catalog";
 
 export default async function DepartmentAccessPage({
@@ -19,18 +19,24 @@ export default async function DepartmentAccessPage({
   const pageState = await searchParams;
 
   const session = await requirePageSession(`/departments/${id}/access`);
-  const permResult = await requirePermissionForDepartment(session, "manage_integrations", id);
-  if (!permResult.ok) {
+  const [canManageAccess, canManageIntegrations] = await Promise.all([
+    canUsePermissionForDepartment(session, "manage_users", id),
+    canUsePermissionForDepartment(session, "manage_integrations", id)
+  ]);
+
+  if (!canManageAccess && !canManageIntegrations) {
     notFound();
   }
 
   const [department, accessRoles, integrations] = await Promise.all([
     getDepartment(id),
-    listAccessRoles({
-      departmentId: id,
-      scope: "department"
-    }),
-    listDepartmentIntegrationSummaries(id)
+    canManageAccess
+      ? listAccessRoles({
+          departmentId: id,
+          scope: "department"
+        })
+      : Promise.resolve([]),
+    canManageIntegrations ? listDepartmentIntegrationSummaries(id) : Promise.resolve([])
   ]);
 
   if (!department) {
@@ -64,15 +70,23 @@ export default async function DepartmentAccessPage({
         </p>
       </div>
 
-      <DepartmentAccessRolesSection
-        departmentId={id}
-        departmentName={department.name}
-        initialRoles={accessRoles}
-      />
+      {canManageAccess ? (
+        <DepartmentAccessRolesSection
+          departmentId={id}
+          departmentName={department.name}
+          initialRoles={accessRoles}
+        />
+      ) : null}
 
-      <div className="border-t border-[color:var(--app-border)] pt-6">
+      {canManageAccess && canManageIntegrations ? (
+        <div className="border-t border-[color:var(--app-border)] pt-6">
+          <DepartmentIntegrationsSection departmentId={id} initialIntegrations={integrations} />
+        </div>
+      ) : null}
+
+      {!canManageAccess && canManageIntegrations ? (
         <DepartmentIntegrationsSection departmentId={id} initialIntegrations={integrations} />
-      </div>
+      ) : null}
     </div>
   );
 }

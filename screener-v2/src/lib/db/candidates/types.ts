@@ -1,5 +1,6 @@
 import type {
   CandidateAssessmentStatus,
+  CandidateExternalAssessmentStatus,
   CandidateNextAction,
   CandidateNoteType,
   CandidateScreeningStatus,

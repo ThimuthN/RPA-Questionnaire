@@ -34,6 +34,18 @@ const functionLabels: Record<IntegrationResourceType, string> = {
   meeting_host: "Meeting provider"
 };
 
+function confirmDepartmentAction(providerLabel: string, action: "disconnect" | "reset-sync") {
+  if (action === "disconnect") {
+    return window.confirm(
+      `Disconnect ${providerLabel} from this department? Stored defaults and sync state will be cleared, and recruiting workflows will fall back to manual setup until it is reconnected.`
+    );
+  }
+
+  return window.confirm(
+    `Reset sync state for ${providerLabel}? Existing connection details stay in place, but webhook subscriptions and sync cursors will be cleared and must be rebuilt by later workflow phases.`
+  );
+}
+
 export function DepartmentIntegrationsSection({
   departmentId,
   initialIntegrations
@@ -81,6 +93,15 @@ export function DepartmentIntegrationsSection({
   }
 
   async function postAction(provider: string, action: string, body?: unknown, successMessage?: string) {
+    const integration = integrations.find((entry) => entry.provider === provider);
+    if (
+      integration &&
+      (action === "disconnect" || action === "reset-sync") &&
+      !confirmDepartmentAction(integration.label, action)
+    ) {
+      return;
+    }
+
     setPendingAction(`${action}:${provider}`);
     setBanner(null);
     try {
@@ -161,6 +182,14 @@ export function DepartmentIntegrationsSection({
                     <p className="mt-2 text-xs text-[color:var(--app-muted)]">Last successful sync: {formatTimestamp(integration.lastSuccessAt)}</p>
                   )}
                 </div>
+              </div>
+
+              <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-xs text-[color:var(--app-muted)]">
+                <p className="font-medium text-[color:var(--app-heading)]">Phase 1 scope</p>
+                <p className="mt-1">
+                  This setup controls department defaults and connection health. Inbound reply sync, threaded conversations,
+                  and provider-backed scheduling are separate rollout phases.
+                </p>
               </div>
 
               {integration.resources.length > 0 ? (

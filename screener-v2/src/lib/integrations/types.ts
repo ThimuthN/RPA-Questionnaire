@@ -48,6 +48,7 @@ export type ProviderAppSummary = {
   clientId: string;
   tenantId: string;
   scopes: string[];
+  recommendedScopes: string[];
   secretConfigured: boolean;
   lastHealthStatus: string;
   lastHealthError?: string;

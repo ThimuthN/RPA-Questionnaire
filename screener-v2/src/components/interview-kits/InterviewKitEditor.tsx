@@ -10,7 +10,7 @@ import type { InterviewKitDetail, InterviewKitCompetency, KitCompetencyAnchor } 
 function CompetencyCard({
   competency,
   onDelete,
-  onUpdate,
+  onUpdate
 }: {
   competency: InterviewKitCompetency;
   onDelete: () => void;
@@ -33,39 +33,54 @@ function CompetencyCard({
         body: JSON.stringify({
           name: name.trim(),
           description: description.trim() || null,
-          anchors: { "1": anchor1.trim() || undefined, "3": anchor3.trim() || undefined, "5": anchor5.trim() || undefined },
-        }),
+          anchors: {
+            "1": anchor1.trim() || undefined,
+            "3": anchor3.trim() || undefined,
+            "5": anchor5.trim() || undefined
+          }
+        })
       });
-      onUpdate({ name, description: description || null, anchors: { "1": anchor1 || undefined, "3": anchor3 || undefined, "5": anchor5 || undefined } });
+      onUpdate({
+        name,
+        description: description || null,
+        anchors: {
+          "1": anchor1 || undefined,
+          "3": anchor3 || undefined,
+          "5": anchor5 || undefined
+        }
+      });
     } finally {
       setSaving(false);
     }
   }
 
-  const inputClass = "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
+  const inputClass =
+    "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
   return (
-    <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 space-y-3">
+    <div className="space-y-3 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4">
       <div className="flex items-center gap-3">
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onBlur={() => { if (name !== competency.name) void save(); }}
+          onBlur={() => {
+            if (name !== competency.name) void save();
+          }}
           placeholder="Competency name"
           className="flex-1 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm font-medium text-[color:var(--app-heading)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
         />
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-[color:var(--app-muted)] hover:text-[color:var(--app-text)] transition"
+          className="text-xs text-[color:var(--app-muted)] transition hover:text-[color:var(--app-text)]"
         >
           {expanded ? "Collapse" : "Anchors"}
         </button>
         <button
           type="button"
           onClick={onDelete}
-          className="text-[color:var(--app-muted)] hover:text-[color:var(--app-danger)] transition"
+          className="text-[color:var(--app-muted)] transition hover:text-[color:var(--app-danger)]"
           aria-label="Delete competency"
         >
           <Trash2 size={16} />
@@ -76,18 +91,22 @@ function CompetencyCard({
         type="text"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        onBlur={() => { if (description !== (competency.description ?? "")) void save(); }}
+        onBlur={() => {
+          if (description !== (competency.description ?? "")) void save();
+        }}
         placeholder="What this competency covers (optional)"
         className={inputClass}
       />
 
       {expanded ? (
         <div className="space-y-2 rounded-[14px] bg-[color:var(--app-surface-soft)] p-3">
-          <p className="text-xs font-medium text-[color:var(--app-muted)] uppercase tracking-wider">Behavioral anchors</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-[color:var(--app-muted)]">
+            Behavioral anchors
+          </p>
           {[
-            { key: "1" as const, label: "1 — Below expectations", value: anchor1, set: setAnchor1 },
-            { key: "3" as const, label: "3 — Meets expectations", value: anchor3, set: setAnchor3 },
-            { key: "5" as const, label: "5 — Exceeds expectations", value: anchor5, set: setAnchor5 },
+            { key: "1" as const, label: "1 - Below expectations", value: anchor1, set: setAnchor1 },
+            { key: "3" as const, label: "3 - Meets expectations", value: anchor3, set: setAnchor3 },
+            { key: "5" as const, label: "5 - Exceeds expectations", value: anchor5, set: setAnchor5 }
           ].map(({ key, label, value, set }) => (
             <label key={key} className="grid gap-1">
               <span className="text-xs text-[color:var(--app-muted)]">{label}</span>
@@ -104,7 +123,7 @@ function CompetencyCard({
         </div>
       ) : null}
 
-      {saving ? <p className="text-xs text-[color:var(--app-muted)]">Saving…</p> : null}
+      {saving ? <p className="text-xs text-[color:var(--app-muted)]">Saving...</p> : null}
     </div>
   );
 }
@@ -126,7 +145,7 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
       await fetch(`/api/interview-kits/${kit.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: title.trim(), description: description.trim() || null }),
+        body: JSON.stringify({ title: title.trim(), description: description.trim() || null })
       });
       setKit((k) => ({ ...k, title: title.trim(), description: description.trim() || null }));
     } finally {
@@ -140,7 +159,7 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
       const res = await fetch(`/api/interview-kits/${kit.id}/competencies`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCompName.trim() }),
+        body: JSON.stringify({ name: newCompName.trim() })
       });
       const data = (await res.json().catch(() => ({}))) as { competency?: InterviewKitCompetency };
       if (data.competency) {
@@ -150,7 +169,7 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
           name: data.competency.name,
           description: null,
           anchors: {},
-          sortOrder: kit.competencies.length,
+          sortOrder: kit.competencies.length
         };
         setKit((k) => ({ ...k, competencies: [...k.competencies, mapped] }));
         setNewCompName("");
@@ -173,16 +192,17 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
     router.push("/assessments/kits" as never);
   }
 
-  const inputClass = "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
+  const inputClass =
+    "w-full rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80";
 
   return (
-    <div className="space-y-8 max-w-2xl">
+    <div className="max-w-2xl space-y-8">
       {/* Kit metadata */}
       <div className="space-y-4 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-5">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-[color:var(--app-heading)] flex-1">Kit details</h3>
+          <h3 className="flex-1 text-sm font-semibold text-[color:var(--app-heading)]">Kit details</h3>
           <StatusPill label={kit.isGlobal ? "Global" : "Department"} tone={kit.isGlobal ? "blue" : "neutral"} />
-          {savingMeta ? <span className="text-xs text-[color:var(--app-muted)]">Saving…</span> : null}
+          {savingMeta ? <span className="text-xs text-[color:var(--app-muted)]">Saving...</span> : null}
         </div>
         <label className="grid gap-1.5">
           <span className="text-sm font-medium text-[color:var(--app-heading)]">Title</span>
@@ -226,13 +246,33 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
               type="text"
               value={newCompName}
               onChange={(e) => setNewCompName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addCompetency(); } if (e.key === "Escape") { setAddingCompetency(false); setNewCompName(""); } }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void addCompetency();
+                }
+                if (e.key === "Escape") {
+                  setAddingCompetency(false);
+                  setNewCompName("");
+                }
+              }}
               placeholder="Competency name, e.g. Problem Solving"
               autoFocus
               className="flex-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-2.5 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
             />
-            <Button type="button" onClick={() => void addCompetency()} disabled={!newCompName.trim()}>Add</Button>
-            <Button type="button" variant="ghost" onClick={() => { setAddingCompetency(false); setNewCompName(""); }}>Cancel</Button>
+            <Button type="button" onClick={() => void addCompetency()} disabled={!newCompName.trim()}>
+              Add
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setAddingCompetency(false);
+                setNewCompName("");
+              }}
+            >
+              Cancel
+            </Button>
           </div>
         ) : null}
 
@@ -253,7 +293,7 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
                   ...k,
                   competencies: k.competencies.map((c) =>
                     c.id === comp.id ? { ...c, ...data, anchors: (data.anchors as KitCompetencyAnchor) ?? c.anchors } : c
-                  ),
+                  )
                 }))
               }
             />
@@ -262,11 +302,11 @@ export function InterviewKitEditor({ kit: initialKit }: { kit: InterviewKitDetai
       </div>
 
       {/* Danger zone */}
-      <div className="rounded-[18px] border border-red-400/20 bg-red-500/5 p-4 space-y-3">
+      <div className="space-y-3 rounded-[18px] border border-red-400/20 bg-red-500/5 p-4">
         <p className="text-sm font-medium text-red-300">Danger zone</p>
-        <p className="text-xs text-[color:var(--app-muted)]">Deleting this kit removes it from all job postings it's attached to.</p>
+        <p className="text-xs text-[color:var(--app-muted)]">Deleting this kit removes it from all attached job postings.</p>
         <Button type="button" variant="secondary" onClick={() => void deleteKit()} disabled={deleting}>
-          {deleting ? "Deleting…" : "Delete kit"}
+          {deleting ? "Deleting..." : "Delete kit"}
         </Button>
       </div>
     </div>
