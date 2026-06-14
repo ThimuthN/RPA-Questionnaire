@@ -538,6 +538,14 @@ export async function upsertInterviewPanelForMilestone(input: {
         }
       }
     });
+  }).then(async (result) => {
+    // Fire-and-forget calendar sync — never blocks or throws
+    if (scheduledAt) {
+      import("@/lib/integrations/calendar-sync")
+        .then(({ syncPanelToCalendar }) => syncPanelToCalendar(result.id))
+        .catch(() => undefined);
+    }
+    return result;
   });
 }
 
