@@ -5,6 +5,7 @@ import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { PersistedTableState } from "@/components/workspace/PersistedTableState";
+import { ActiveFilterChips, type ActiveFilterChipItem } from "@/components/workspace/ActiveFilterChips";
 import { CandidateWorkspaceTable } from "@/components/candidates/CandidateWorkspaceTable";
 import { CandidateCsvImportModal } from "@/components/candidates/CandidateCsvImportModal";
 import { CandidatesViewSwitch, type CandidatesView } from "@/components/candidates/CandidatesViewSwitch";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listDepartments } from "@/lib/db/departments";
+import { prisma } from "@/lib/db/prisma";
 import { type RouteSearchParams, readSearchParam, toSearchParamEntries } from "@/lib/http/search-params";
 
 type CandidateWorkspacePageState = {
@@ -89,6 +91,24 @@ function currentCandidatesView(stage?: string): CandidatesView {
   if (stage === "advanced_review") return "advanced_review";
   if (stage === "finalized") return "finalized";
   return "pipeline";
+}
+
+const candidateSortLabels = {
+  inbox: "Queue priority",
+  updated_desc: "Recently updated",
+  updated_asc: "Least recently updated",
+  stale_desc: "Longest inactive",
+  name_asc: "Name (A-Z)"
+} as const;
+
+function findOptionLabel(
+  options: Array<{ id: string; label: string }> | Array<{ id: string; name: string }>,
+  id?: string
+) {
+  if (!id) return null;
+  const option = options.find((item) => item.id === id);
+  if (!option) return id;
+  return "label" in option ? option.label : option.name;
 }
 
 function normalizeSearchParams(searchParams: RouteSearchParams): CandidateWorkspacePageState {
@@ -163,7 +183,9 @@ export async function CandidateWorkspaceView({
   const selectedStageValues = !isFinalizedView && selectedStage === "pipeline" ? ["pipeline", "new"] : undefined;
   const shouldLoadDepartments = canManageCandidates || (scope === "global" && isGlobalViewCandidates);
 
-  const [page, departments] = await Promise.all([
+  const shouldLoadUsers = canManageCandidates && scope === "department" && !!departmentId;
+
+  const [page, departments, departmentUsers] = await Promise.all([
     listCandidateWorkspacePage({
       q: params.q?.trim() || undefined,
       roleId: params.roleId?.trim() || undefined,
@@ -182,10 +204,73 @@ export async function CandidateWorkspaceView({
       page: Number(params.page ?? 1),
       pageSize: Number(params.pageSize ?? 12)
     }),
-    shouldLoadDepartments ? listDepartments() : Promise.resolve([])
+    shouldLoadDepartments ? listDepartments() : Promise.resolve([]),
+    shouldLoadUsers
+      ? prisma.accessGrant.findMany({
+          where: { departmentId, scope: "department", status: "active" },
+          select: { user: { select: { id: true, name: true, email: true } } },
+          orderBy: { user: { name: "asc" } },
+        }).then((grants) => grants.map((g) => ({ id: g.user.id, name: g.user.name ?? "", email: g.user.email })))
+      : Promise.resolve([])
   ]);
 
   const currentPathAndQuery = nextPath;
+  const activeFilters: ActiveFilterChipItem[] = [];
+
+  if (params.q?.trim()) {
+    activeFilters.push({
+      label: `Search: ${params.q.trim()}`,
+      clearHref: buildHref(basePath, query, { q: undefined, page: "1" })
+    });
+  }
+
+  const roleLabel = findOptionLabel(page.roleOptions, params.roleId);
+  if (roleLabel) {
+    activeFilters.push({
+      label: `Role: ${roleLabel}`,
+      clearHref: buildHref(basePath, query, { roleId: undefined, page: "1" })
+    });
+  }
+
+  if (scope === "global" && isGlobalViewCandidates) {
+    const departmentLabel = findOptionLabel(departments, params.departmentId);
+    if (departmentLabel) {
+      activeFilters.push({
+        label: `Department: ${departmentLabel}`,
+        clearHref: buildHref(basePath, query, { departmentId: undefined, page: "1" })
+      });
+    }
+  }
+
+  const ownerLabel = findOptionLabel(page.ownerOptions, params.owner);
+  if (ownerLabel) {
+    activeFilters.push({
+      label: `Owner: ${ownerLabel}`,
+      clearHref: buildHref(basePath, query, { owner: undefined, page: "1" })
+    });
+  }
+
+  if (params.assessmentStatus && candidateAssessmentStatusValues.includes(params.assessmentStatus as CandidateAssessmentStatus)) {
+    activeFilters.push({
+      label: `Assessment: ${candidateAssessmentStatusLabels[params.assessmentStatus as CandidateAssessmentStatus]}`,
+      clearHref: buildHref(basePath, query, { assessmentStatus: undefined, page: "1" })
+    });
+  }
+
+  if (isFinalizedView && (params.finalizedAs === "hired" || params.finalizedAs === "rejected")) {
+    activeFilters.push({
+      label: `Decision: ${params.finalizedAs === "hired" ? "Hired" : "Rejected"}`,
+      clearHref: buildHref(basePath, query, { finalizedAs: undefined, page: "1" })
+    });
+  }
+
+  const sortLabel = candidateSortLabels[(params.sort as keyof typeof candidateSortLabels) ?? "inbox"];
+  if ((params.sort ?? "inbox") !== "inbox" && sortLabel) {
+    activeFilters.push({
+      label: `Sort: ${sortLabel}`,
+      clearHref: buildHref(basePath, query, { sort: undefined, page: "1" })
+    });
+  }
 
   return (
     <>
@@ -329,6 +414,8 @@ export async function CandidateWorkspaceView({
             </Link>
           </form>
 
+          <ActiveFilterChips items={activeFilters} clearAllHref={`${basePath}?clearView=1` as Route} />
+
           <div className="flex flex-wrap gap-2">
             <Link href={buildHref(basePath, query, { assessmentStatus: "none", sort: "inbox", page: "1" })}>
               <Button variant="ghost">No assessment</Button>
@@ -369,6 +456,7 @@ export async function CandidateWorkspaceView({
             workspaceId={scope === "department" ? departmentId : undefined}
             roleOptions={page.roleOptions}
             departmentOptions={departments.map((department) => ({ id: department.id, name: department.name }))}
+            userOptions={departmentUsers.length > 0 ? departmentUsers : undefined}
             permissions={session.permissions}
           />
         )}

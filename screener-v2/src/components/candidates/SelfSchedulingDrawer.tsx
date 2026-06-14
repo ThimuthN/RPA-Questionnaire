@@ -168,8 +168,13 @@ export function SelfSchedulingDrawer({
 
                 {/* Availability windows */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                    Availability windows
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
+                      Availability windows
+                    </p>
+                  </div>
+                  <p className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-xs text-[color:var(--app-muted)] leading-5">
+                    These windows are manually entered by the recruiter. They are not pulled automatically from a connected calendar. The candidate will only see time slots you add here.
                   </p>
                   {loading ? (
                     <p className="text-sm text-[color:var(--app-muted)]">Loading…</p>

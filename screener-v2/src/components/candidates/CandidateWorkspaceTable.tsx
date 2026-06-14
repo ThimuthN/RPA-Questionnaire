@@ -36,7 +36,7 @@ const quickAccessPrimaryLinkClassName =
   "inline-flex items-center justify-center rounded-full border border-transparent bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-3 py-2 text-xs font-medium text-white shadow-[0_12px_24px_color-mix(in_srgb,var(--app-brand)_24%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105";
 
 const stageActionSelectClassName =
-  "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] outline-none transition hover:border-[color:var(--app-border-strong)] focus:border-brand-300/50 disabled:opacity-50";
+  "w-full rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-left text-xs font-medium text-[color:var(--app-text)] outline-none transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)] disabled:opacity-50";
 
 const quickActionItemClassName =
   "block w-full rounded-[14px] px-3 py-2 text-left text-xs font-medium text-[color:var(--app-text)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]";
@@ -75,6 +75,14 @@ function finalDecisionLabel(candidate: CandidateWorkspaceItem) {
   return null;
 }
 
+function candidateDisplayStage(candidate: CandidateWorkspaceItem): CandidateStage {
+  if (candidate.orgStage === "finalized" || candidate.finalizedAs) {
+    return "finalized";
+  }
+
+  return normalizeCandidateStage(candidate.stage);
+}
+
 function resumeHref(candidate: CandidateWorkspaceItem) {
   if (!candidate.hasResume || !candidate.latestResumeStorageKey) return null;
   return `/api/candidates/${candidate.id}/resume/file?storageKey=${encodeURIComponent(candidate.latestResumeStorageKey)}`;
@@ -99,6 +107,7 @@ export function CandidateWorkspaceTable({
   workspaceId,
   roleOptions,
   departmentOptions,
+  userOptions,
   permissions = []
 }: {
   rows: CandidateWorkspaceItem[];
@@ -106,6 +115,7 @@ export function CandidateWorkspaceTable({
   workspaceId?: string;
   roleOptions?: Array<{ id: string; label: string; departmentId?: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
+  userOptions?: Array<{ id: string; name: string; email: string }>;
   permissions?: string[];
 }) {
   const router = useRouter();
@@ -115,8 +125,9 @@ export function CandidateWorkspaceTable({
   const [promoteError, setPromoteError] = useState<Record<string, string>>({});
   const [promoting, setPromoting] = useState<Record<string, boolean>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, maxHeight: 420 });
   const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+  const menuPanelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const validIds = new Set(rows.map((candidate) => candidate.id));
@@ -128,21 +139,20 @@ export function CandidateWorkspaceTable({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (menuBtnRef.current && !menuBtnRef.current.contains(target)) {
+      if (
+        menuBtnRef.current &&
+        !menuBtnRef.current.contains(target) &&
+        menuPanelRef.current &&
+        !menuPanelRef.current.contains(target)
+      ) {
         setOpenMenuId(null);
       }
     };
 
-    const handleScroll = () => {
-      setOpenMenuId(null);
-    };
-
     document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("scroll", handleScroll, true);
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("scroll", handleScroll, true);
     };
   }, [openMenuId]);
 
@@ -197,6 +207,7 @@ export function CandidateWorkspaceTable({
           onClearSelection={clearSelection}
           roleOptions={roleOptions}
           departmentOptions={departmentOptions}
+          userOptions={userOptions}
         />
       ) : null}
 
@@ -219,7 +230,7 @@ export function CandidateWorkspaceTable({
             <tbody>
               {rows.map((candidate) => {
                 const isSelected = selectedCandidateIds.includes(candidate.id);
-                const stage = normalizeCandidateStage(candidate.stage);
+                const stage = candidateDisplayStage(candidate);
                 const decision = finalDecisionLabel(candidate);
                 // Use explicit workspace prop, falling back to the candidate's own department
                 // so the sidebar stays in department context when navigating from a global view
@@ -250,7 +261,11 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span className="truncate">{candidate.teamOwnerSummary || "Unassigned"}</span>
+                      {candidate.teamOwnerSummary ? (
+                        <span className="truncate text-sm text-[color:var(--app-text)]">{candidate.teamOwnerSummary}</span>
+                      ) : (
+                        <StatusPill label="Unassigned" tone="amber" />
+                      )}
                     </td>
                     <td className={tableCellClassName}>
                       <div className="space-y-2">
@@ -307,10 +322,31 @@ export function CandidateWorkspaceTable({
                             } else {
                               const btn = e.currentTarget;
                               const rect = btn.getBoundingClientRect();
+                              const menuWidth = 256;
+                              const preferredHeight = 360;
+                              const viewportPadding = 12;
+                              const bottomSpace = window.innerHeight - rect.bottom - viewportPadding;
+                              const topSpace = rect.top - viewportPadding;
+                              const renderAbove = bottomSpace < preferredHeight && topSpace > bottomSpace;
+                              const nextTop = renderAbove
+                                ? Math.max(viewportPadding, rect.top - Math.min(preferredHeight, topSpace))
+                                : Math.max(viewportPadding, rect.bottom + 8);
+                              const unclampedLeft = rect.right - menuWidth;
+                              const nextLeft = Math.min(
+                                window.innerWidth - menuWidth - viewportPadding,
+                                Math.max(viewportPadding, unclampedLeft)
+                              );
                               menuBtnRef.current = btn;
                               setMenuPos({
-                                top: rect.bottom + 8,
-                                left: rect.right - 256,
+                                top: nextTop,
+                                left: nextLeft,
+                                maxHeight: Math.max(
+                                  220,
+                                  Math.min(
+                                    preferredHeight,
+                                    renderAbove ? topSpace : bottomSpace
+                                  )
+                                )
                               });
                               setOpenMenuId(candidate.id);
                             }
@@ -335,19 +371,22 @@ export function CandidateWorkspaceTable({
           onClick={() => setOpenMenuId(null)}
         >
           <div
-            className="absolute w-64 space-y-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-2 shadow-[var(--app-shadow-soft)]"
+            ref={menuPanelRef}
+            className="absolute w-64 space-y-1 overflow-y-auto rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-2 shadow-[var(--app-shadow-soft)]"
             style={{
               top: `${menuPos.top}px`,
               left: `${menuPos.left}px`,
+              maxHeight: `${menuPos.maxHeight}px`
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {rows.find((c) => c.id === openMenuId) && (() => {
               const candidate = rows.find((c) => c.id === openMenuId)!;
-              const profileHref = buildCandidateProfileHref(candidate.id, workspaceId, currentPathAndQuery);
+              const effectiveWorkspaceId = workspaceId ?? candidate.departmentId;
+              const profileHref = buildCandidateProfileHref(candidate.id, effectiveWorkspaceId, currentPathAndQuery);
               const candidateResumeHref = resumeHref(candidate);
-              const action = contextualAction(candidate, workspaceId, currentPathAndQuery);
-              const stage = normalizeCandidateStage(candidate.stage);
+              const action = contextualAction(candidate, effectiveWorkspaceId, currentPathAndQuery);
+              const stage = candidateDisplayStage(candidate);
               const forwardStages = getForwardCandidateStages(stage);
 
               return (
@@ -378,26 +417,22 @@ export function CandidateWorkspaceTable({
                       <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
                         Move stage
                       </span>
-                      <select
-                        aria-label={`Move ${candidate.fullName} to stage`}
-                        value=""
-                        disabled={promoting[candidate.id]}
-                        onChange={(event) => {
-                          const nextStage = event.target.value as CandidateStage;
-                          if (nextStage) {
-                            void moveCandidate(candidate.id, nextStage);
-                          }
-                          setOpenMenuId(null);
-                        }}
-                        className={stageActionSelectClassName}
-                      >
-                        <option value="">Choose stage...</option>
+                      <div className="space-y-2">
                         {forwardStages.map((targetStage) => (
-                          <option key={targetStage} value={targetStage}>
+                          <button
+                            key={targetStage}
+                            type="button"
+                            disabled={promoting[candidate.id]}
+                            onClick={() => {
+                              void moveCandidate(candidate.id, targetStage);
+                              setOpenMenuId(null);
+                            }}
+                            className={stageActionSelectClassName}
+                          >
                             {displayStageActionLabel(targetStage)}
-                          </option>
+                          </button>
                         ))}
-                      </select>
+                      </div>
                     </label>
                   ) : null}
 

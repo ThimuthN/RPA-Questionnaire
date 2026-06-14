@@ -22,6 +22,12 @@ vi.mock("@/components/workspace/PersistedTableState", () => ({
   PersistedTableState: () => null
 }));
 
+vi.mock("@/components/workspace/ActiveFilterChips", () => ({
+  ActiveFilterChips: ({ items }: { items: Array<{ label: string }> }) => (
+    <div data-testid="candidate-active-filters">{items.map((item) => item.label).join(" | ")}</div>
+  )
+}));
+
 vi.mock("@/components/workspace/PaginationBar", () => ({
   PaginationBar: () => <div data-testid="candidate-pagination" />
 }));
@@ -45,6 +51,12 @@ vi.mock("@/lib/db/candidates", () => ({
 
 vi.mock("@/lib/db/departments", () => ({
   listDepartments: vi.fn()
+}));
+
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: {
+    accessGrant: { findMany: vi.fn().mockResolvedValue([]) },
+  },
 }));
 
 const { requirePageSession, requirePermissionForDepartment } = await import("@/lib/auth/guards");
@@ -189,5 +201,27 @@ describe("CandidateWorkspaceView", () => {
 
     expect(markup).toContain("No candidates");
     expect(markup).toContain("Add or import candidates");
+  });
+
+  it("surfaces active candidate filters instead of hiding them in the form", async () => {
+    const markup = renderToStaticMarkup(
+      await CandidateWorkspaceView({
+        scope: "global",
+        searchParams: {
+          q: "alice",
+          roleId: "role-1",
+          owner: "owner-1",
+          assessmentStatus: "none",
+          sort: "stale_desc"
+        }
+      })
+    );
+
+    expect(markup).toContain('data-testid="candidate-active-filters"');
+    expect(markup).toContain("Search: alice");
+    expect(markup).toContain("Role: RPA Engineer");
+    expect(markup).toContain("Owner: Owner One");
+    expect(markup).toContain("Assessment: Not assigned");
+    expect(markup).toContain("Sort: Longest inactive");
   });
 });

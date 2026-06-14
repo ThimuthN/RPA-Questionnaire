@@ -8,13 +8,15 @@ export function CandidateBulkActionsBar({
   onClearSelection,
   onSelectAll,
   roleOptions,
-  departmentOptions
+  departmentOptions,
+  userOptions,
 }: {
   selectedCount: number;
   onClearSelection: () => void;
   onSelectAll: () => void;
   roleOptions?: Array<{ id: string; label: string; departmentId?: string }>;
   departmentOptions?: Array<{ id: string; name: string }>;
+  userOptions?: Array<{ id: string; name: string; email: string }>;
 }) {
   const [action, setAction] = useState<"assign_owner" | "add_note" | "nominate_to_dept">("assign_owner");
   const [targetDepartmentId, setTargetDepartmentId] = useState("");
@@ -66,11 +68,27 @@ export function CandidateBulkActionsBar({
         </select>
 
         {action === "assign_owner" ? (
-          <input
-            name="hrOwnerId"
-            placeholder="Owner ID"
-            className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
-          />
+          userOptions && userOptions.length > 0 ? (
+            <select
+              name="hrOwnerId"
+              defaultValue=""
+              required
+              className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+            >
+              <option value="" disabled>Select owner…</option>
+              {userOptions.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name || user.email}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              name="hrOwnerId"
+              placeholder="Owner ID"
+              className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]"
+            />
+          )
         ) : null}
 
         {action === "add_note" ? (
