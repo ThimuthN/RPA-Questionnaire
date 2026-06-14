@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
-import { BarChart3, Library, Zap } from "lucide-react";
+import { BarChart3, ClipboardList, Library, Zap } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { StagePanel } from "@/components/scene/StagePanel";
 
@@ -56,6 +56,13 @@ export function AssessmentHubView({
       href: buildWorkspaceHref("/results", workspaceId),
       icon: <BarChart3 className="h-6 w-6" />,
       label: "View results"
+    },
+    {
+      title: "Interview kits",
+      description: "Build structured scorecard templates with competencies and behavioral anchors for consistent interviews.",
+      href: "/assessments/kits" as Route,
+      icon: <ClipboardList className="h-6 w-6" />,
+      label: "Manage kits"
     }
   ];
 

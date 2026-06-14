@@ -10,6 +10,20 @@ import { StatusPill } from "@/components/primitives/StatusPill";
 
 type Recommendation = "strong_yes" | "yes" | "neutral" | "no" | "strong_no";
 
+type KitCompetency = {
+  id: string;
+  name: string;
+  description: string | null;
+  anchors: { "1"?: string; "3"?: string; "5"?: string };
+};
+
+type CompetencyRating = {
+  id: string;
+  name: string;
+  rating: number | null;
+  notes: string;
+};
+
 interface ScorecardData {
   id: string;
   overallRating: number | null;
@@ -17,6 +31,7 @@ interface ScorecardData {
   strengths: string | null;
   concerns: string | null;
   privateNotes: string | null;
+  competencyJson: CompetencyRating[] | null;
   submittedAt: string | null;
   interviewerName: string | null;
 }
@@ -51,6 +66,8 @@ export function InterviewScorecardModal({
   const [strengths, setStrengths] = useState("");
   const [concerns, setConcerns] = useState("");
   const [privateNotes, setPrivateNotes] = useState("");
+  const [competencyRatings, setCompetencyRatings] = useState<CompetencyRating[]>([]);
+  const [kitCompetencies, setKitCompetencies] = useState<KitCompetency[] | null>(null);
   const [existing, setExisting] = useState<ScorecardData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +83,15 @@ export function InterviewScorecardModal({
     setLoading(true);
     void fetch(`/api/interviews/${panelId}/feedback`)
       .then((r) => r.json())
-      .then((data: { feedback?: ScorecardData }) => {
+      .then((data: { feedback?: ScorecardData; kitCompetencies?: KitCompetency[] | null }) => {
+        if (data.kitCompetencies) {
+          setKitCompetencies(data.kitCompetencies);
+          if (!data.feedback?.competencyJson) {
+            setCompetencyRatings(
+              data.kitCompetencies.map((c) => ({ id: c.id, name: c.name, rating: null, notes: "" }))
+            );
+          }
+        }
         if (data.feedback) {
           setExisting(data.feedback);
           setRating(data.feedback.overallRating ?? 0);
@@ -74,6 +99,9 @@ export function InterviewScorecardModal({
           setStrengths(data.feedback.strengths ?? "");
           setConcerns(data.feedback.concerns ?? "");
           setPrivateNotes(data.feedback.privateNotes ?? "");
+          if (data.feedback.competencyJson) {
+            setCompetencyRatings(data.feedback.competencyJson);
+          }
         }
       })
       .catch(() => null)
@@ -92,10 +120,18 @@ export function InterviewScorecardModal({
     setIsSubmitting(true);
     setError(null);
     try {
+      const payload = {
+        overallRating: rating || null,
+        recommendation: recommendation || null,
+        strengths,
+        concerns,
+        privateNotes,
+        ...(competencyRatings.length > 0 ? { competencyJson: competencyRatings } : {}),
+      };
       const res = await fetch(`/api/interviews/${panelId}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ overallRating: rating || null, recommendation: recommendation || null, strengths, concerns, privateNotes }),
+        body: JSON.stringify(payload),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
       if (!res.ok || data.ok === false) throw new Error(data.message ?? "Failed to submit scorecard");
@@ -212,6 +248,67 @@ export function InterviewScorecardModal({
                         ))}
                       </div>
                     </div>
+
+                    {/* Kit competencies */}
+                    {kitCompetencies && kitCompetencies.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium text-[color:var(--app-heading)]">Competency ratings</p>
+                        {kitCompetencies.map((comp, idx) => {
+                          const cr = competencyRatings[idx];
+                          const compRating = cr?.rating ?? 0;
+                          const anchorKey = compRating >= 4 ? "5" : compRating >= 2 ? "3" : "1";
+                          const anchor = compRating > 0 ? comp.anchors[anchorKey as "1" | "3" | "5"] : null;
+                          return (
+                            <div key={comp.id} className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4 space-y-2.5">
+                              <div>
+                                <p className="text-sm font-medium text-[color:var(--app-heading)]">{comp.name}</p>
+                                {comp.description ? (
+                                  <p className="text-xs text-[color:var(--app-muted)]">{comp.description}</p>
+                                ) : null}
+                              </div>
+                              <div className="flex gap-1 items-center">
+                                {[1, 2, 3, 4, 5].map((n) => (
+                                  <button
+                                    key={n}
+                                    type="button"
+                                    onClick={() => {
+                                      setCompetencyRatings((prev) => {
+                                        const next = [...prev];
+                                        next[idx] = { ...next[idx], id: comp.id, name: comp.name, rating: compRating === n ? null : n };
+                                        return next;
+                                      });
+                                    }}
+                                    className="transition hover:scale-110"
+                                    aria-label={`${n} star`}
+                                  >
+                                    <Star
+                                      size={22}
+                                      className={compRating >= n ? "fill-amber-400 text-amber-400" : "text-[color:var(--app-border-strong)]"}
+                                    />
+                                  </button>
+                                ))}
+                                {compRating > 0 && anchor ? (
+                                  <span className="ml-2 text-xs text-[color:var(--app-muted)] italic">{anchor}</span>
+                                ) : null}
+                              </div>
+                              <textarea
+                                value={cr?.notes ?? ""}
+                                onChange={(e) => {
+                                  setCompetencyRatings((prev) => {
+                                    const next = [...prev];
+                                    next[idx] = { ...next[idx], id: comp.id, name: comp.name, notes: e.target.value };
+                                    return next;
+                                  });
+                                }}
+                                rows={2}
+                                placeholder={`Evidence or notes for ${comp.name}`}
+                                className="w-full min-h-[56px] rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] placeholder:text-[color:var(--app-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
 
                     {/* Strengths */}
                     <label className="grid gap-1.5">

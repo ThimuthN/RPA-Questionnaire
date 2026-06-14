@@ -71,6 +71,7 @@ model Department {
   assessmentPresets AssessmentPreset[]
   integrationConnections DepartmentIntegrationConnection[]
   candidateEmailThreads CandidateEmailThread[]
+  interviewKits InterviewKit[]
 
   @@index([isActive, sortOrder])
 }
@@ -99,6 +100,7 @@ model User {
   candidacyTeamAssignments      DepartmentCandidacyTeamAssignment[]
   addedCandidacyTeamAssignments DepartmentCandidacyTeamAssignment[] @relation("AddedByTeam")
   sentEmails                    EmailLog[]
+  createdInterviewKits          InterviewKit[] @relation("InterviewKitCreatedBy")
 
   @@index([departmentId])
   @@index([roleId])
@@ -617,6 +619,7 @@ model JobPosting {
   department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   screenerPreset AssessmentPreset? @relation(fields: [screenerPresetId], references: [id], onDelete: SetNull)
   applications CandidateApplication[]
+  interviewKits JobPostingInterviewKit[]
 
   @@index([roleId])
   @@index([departmentId])
@@ -1142,4 +1145,50 @@ model InterviewEventSync {
   connection            DepartmentIntegrationConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
   @@index([connectionId, provider])
+}
+
+model InterviewKit {
+  id           String   @id @default(cuid())
+  title        String
+  description  String?
+  departmentId String?
+  isGlobal     Boolean  @default(false)
+  createdById  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  department   Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdBy    User?        @relation("InterviewKitCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  competencies InterviewKitCompetency[]
+  jobPostings  JobPostingInterviewKit[]
+
+  @@index([departmentId])
+  @@index([isGlobal])
+}
+
+model InterviewKitCompetency {
+  id          String       @id @default(cuid())
+  kitId       String
+  name        String
+  description String?
+  anchors     Json         @default("{}")
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  kit         InterviewKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  @@index([kitId, sortOrder])
+}
+
+model JobPostingInterviewKit {
+  id            String       @id @default(cuid())
+  jobPostingId  String
+  kitId         String
+  milestoneType String       @default("interview")
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  jobPosting    JobPosting   @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  kit           InterviewKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostingId, kitId, milestoneType])
+  @@index([jobPostingId])
+  @@index([kitId])
 }
