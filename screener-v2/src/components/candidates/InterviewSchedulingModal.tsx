@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarDays, Clock3, Link2, MessageSquare, Trash2, Users, X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
+import { OverlayShell, OverlayContent } from "@/components/primitives/OverlayShell";
 import type { CandidateInterviewPanelRecord } from "@/lib/db/candidates";
 import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
@@ -196,25 +197,30 @@ export function InterviewSchedulingModal({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
-            <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl">
+    <OverlayShell isOpen={isOpen}>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              key="interview-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={onClose}
+              className="fixed inset-0 z-[999] backdrop-blur-sm"
+              style={{ background: "var(--app-modal-overlay, rgba(0,0,0,0.5))" }}
+              aria-hidden="true"
+            />
+            <OverlayContent>
+            <motion.div
+              key="interview-panel"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-md overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl"
+            >
               <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-gradient-to-r from-[color:var(--app-surface)] to-[color:var(--app-surface-soft)] p-6">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10">
@@ -489,10 +495,11 @@ export function InterviewSchedulingModal({
                   )}
                 </div>
               </form>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            </motion.div>
+            </OverlayContent>
+          </>
+        )}
+      </AnimatePresence>
+    </OverlayShell>
   );
 }
