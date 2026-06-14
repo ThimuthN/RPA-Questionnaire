@@ -300,7 +300,7 @@ function LinkedAssessmentSummary({ milestone }: { milestone: CandidateMilestoneR
 
 function CheckBadge({ status }: { status: string }) {
   const tone = status === "passed" ? ("emerald" as const) : status === "failed" ? ("red" as const) : ("neutral" as const);
-  const label = status === "passed" ? "Approved" : status === "failed" ? "Rejected" : "Pending";
+  const label = status === "passed" ? "Approved" : status === "failed" ? "Rejected" : "Needs attention";
   return <StatusPill tone={tone} label={label} />;
 }
 

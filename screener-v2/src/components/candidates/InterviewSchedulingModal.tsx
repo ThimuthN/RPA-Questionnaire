@@ -386,7 +386,7 @@ export function InterviewSchedulingModal({
                     </div>
                   ) : (
                     <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-muted)]">
-                      No responsible team members are assigned yet. Apply a hiring-team template first, then schedule the interview.
+                      No hiring team members assigned yet. Apply a hiring team template first, then schedule the interview.
                     </div>
                   )}
                 </div>

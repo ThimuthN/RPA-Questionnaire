@@ -162,7 +162,7 @@ export function ResponsibleTeamCard({
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-xl text-[color:var(--app-heading)]">Responsible team</h2>
+            <h2 className="text-xl text-[color:var(--app-heading)]">Hiring team</h2>
             <p className="text-sm text-[color:var(--app-muted)]">
               {mode === "application"
                 ? "Hiring team members assigned to this application."
@@ -273,7 +273,7 @@ export function ResponsibleTeamCard({
 
       <AssignmentModal
         isOpen={isModalOpen && allowEditing}
-        title="Edit responsible team"
+        title="Edit hiring team"
         availableRoles={[...availableRoles]}
         roleLabels={roleLabels as Record<
           "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver" | "coordinator" | "approver",

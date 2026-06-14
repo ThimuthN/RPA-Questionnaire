@@ -54,7 +54,7 @@ const offerStatusTone: Record<OfferStatus, "neutral" | "blue" | "amber" | "emera
 
 const offerStatusLabel: Record<OfferStatus, string> = {
   draft: "Draft",
-  submitted_for_approval: "Pending approval",
+  submitted_for_approval: "Approval pending",
   approved: "Approved",
   sent: "Offer sent",
   accepted: "Accepted",
@@ -263,7 +263,7 @@ export function CandidateOfferPanel({
             <div className="rounded-[16px] border border-amber-400/20 bg-amber-500/8 p-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-amber-200/80">Decision owner</p>
               <p className="mt-2 text-sm font-semibold text-amber-100">
-                {currentPendingStep ? approverLabel(currentPendingStep) : "Awaiting approval"}
+                {currentPendingStep ? `Waiting on ${approverLabel(currentPendingStep)}` : "Pending approver decision"}
               </p>
               <p className="mt-1 text-xs text-amber-100/75">
                 {completedApprovalCount} of {totalApprovalCount} approval step{totalApprovalCount === 1 ? "" : "s"} completed.
@@ -310,7 +310,7 @@ export function CandidateOfferPanel({
                 </Button>
               ) : null}
               {offer.status === "submitted_for_approval" ? (
-                <p className="text-xs text-amber-400">Waiting for approver sign-off before the offer can be sent.</p>
+                <p className="text-xs text-amber-400">Waiting on approver sign-off — offer cannot be sent until all approvals are complete.</p>
               ) : null}
               {(offer.status === "sent" || offer.status === "submitted_for_approval") ? (
                 <Button type="button" variant="secondary" onClick={() => void saveOffer("revoke")} disabled={saving}>
