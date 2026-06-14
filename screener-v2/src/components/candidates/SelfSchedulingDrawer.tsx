@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, Copy, Check, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import { OverlayShell } from "@/components/primitives/OverlayShell";
 
 type Window = { id: string; startsAt: string; endsAt: string };
 
@@ -119,24 +120,29 @@ export function SelfSchedulingDrawer({
   }
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          >
+    <OverlayShell isOpen={isOpen}>
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              key="scheduling-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              onClick={onClose}
+              className="fixed inset-0 z-[999] backdrop-blur-sm"
+              style={{ background: "var(--app-modal-overlay, rgba(0,0,0,0.5))" }}
+              aria-hidden="true"
+            />
+            <motion.div
+              key="scheduling-panel"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+            >
             <div className="w-full max-w-md overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl">
               {/* Header */}
               <div className="flex items-center justify-between border-b border-[color:var(--app-border)] p-6">
@@ -255,9 +261,10 @@ export function SelfSchedulingDrawer({
                 )}
               </div>
             </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </OverlayShell>
   );
 }
