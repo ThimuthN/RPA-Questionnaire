@@ -69,8 +69,8 @@ export async function POST(
     // Validate all approver IDs exist
     if (body.steps.length > 0) {
       const approverIds = body.steps.map((s) => s.approverId);
-      const users = await prisma.user.findMany({ where: { id: { in: approverIds } }, select: { id: true } });
-      if (users.length !== approverIds.length) {
+      const userCount = await prisma.user.count({ where: { id: { in: approverIds } } });
+      if (userCount !== approverIds.length) {
         return NextResponse.json({ ok: false, message: "One or more approvers not found" }, { status: 400 });
       }
     }

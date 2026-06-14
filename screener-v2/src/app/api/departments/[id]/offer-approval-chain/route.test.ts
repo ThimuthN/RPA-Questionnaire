@@ -29,7 +29,7 @@ vi.mock("@/lib/db/prisma", () => ({
       findUnique: vi.fn(),
     },
     user: {
-      findMany: vi.fn(),
+      count: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -99,10 +99,7 @@ describe("GET /api/departments/[id]/offer-approval-chain", () => {
 describe("POST /api/departments/[id]/offer-approval-chain", () => {
   beforeEach(() => {
     vi.mocked(prisma.department.findUnique).mockResolvedValue({ id: "dept-1" } as never);
-    vi.mocked(prisma.user.findMany).mockResolvedValue([
-      { id: "u1" },
-      { id: "u2" },
-    ] as never);
+    vi.mocked(prisma.user.count).mockResolvedValue(2 as never);
   });
 
   it("creates chain with ordered steps", async () => {
@@ -130,7 +127,7 @@ describe("POST /api/departments/[id]/offer-approval-chain", () => {
   });
 
   it("accepts empty steps (clears chain)", async () => {
-    vi.mocked(prisma.user.findMany).mockResolvedValue([] as never);
+    // No user.count call when steps is empty
     const resultChain = { id: "chain-1", steps: [] };
     vi.mocked(prisma.$transaction).mockImplementation(async (fn: (tx: typeof prisma) => Promise<unknown>) => {
       vi.mocked(prisma.offerApprovalChain.findFirst).mockResolvedValueOnce({ id: "chain-1" } as never);
@@ -149,7 +146,7 @@ describe("POST /api/departments/[id]/offer-approval-chain", () => {
   });
 
   it("rejects when approver ID not found", async () => {
-    vi.mocked(prisma.user.findMany).mockResolvedValue([{ id: "u1" }] as never);
+    vi.mocked(prisma.user.count).mockResolvedValue(1 as never); // only 1 of 2 approvers found
     const res = await POST(
       makeRequest({ steps: [{ approverId: "u1", sortOrder: 0 }, { approverId: "ghost", sortOrder: 1 }] }),
       { params }
