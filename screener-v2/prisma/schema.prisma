@@ -633,6 +633,8 @@ model CandidateApplication {
   jobPostingId String
   screeningAttemptId String? @unique
   status       String
+  source       String?
+  referredBy   String?
   coverNote    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

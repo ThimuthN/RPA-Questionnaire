@@ -262,6 +262,7 @@ export interface CandidateDetail extends CandidateRecord {
   departmentCandidacies?: DepartmentCandidacyDetail[];
   activityEvents: CandidateActivityEventRecord[];
   currentFocus?: string;
+  possibleDuplicates?: Array<{ id: string; fullName: string; email: string }>;
 }
 
 export interface CandidateWorkspaceFilters {

@@ -199,6 +199,27 @@ export default async function ApplicantReviewPage({
         </div>
 
         <div className="min-w-0 flex-1 space-y-4">
+          {candidate.possibleDuplicates && candidate.possibleDuplicates.length > 0 ? (
+            <div className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <p className="font-medium mb-1">Possible duplicate record</p>
+              <p className="text-amber-200/80 text-xs">
+                Another candidate shares the same phone number:{" "}
+                {candidate.possibleDuplicates.map((d, i) => (
+                  <span key={d.id}>
+                    {i > 0 ? ", " : ""}
+                    <Link
+                      href={`/people/candidates/${d.id}` as Route}
+                      className="underline hover:text-amber-100"
+                    >
+                      {d.fullName}
+                    </Link>
+                  </span>
+                ))}
+                . Review both records before proceeding.
+              </p>
+            </div>
+          ) : null}
+
           <ApplicantTabs applicationId={detail.id} currentTab={currentTab} />
 
           {currentTab === "application" ? (

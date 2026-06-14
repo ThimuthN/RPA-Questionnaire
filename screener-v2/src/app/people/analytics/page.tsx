@@ -1,8 +1,11 @@
+import Link from "next/link";
+import type { Route } from "next";
 import { requirePageSession } from "@/lib/auth/guards";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { PeopleViewSwitch } from "@/components/people/PeopleViewSwitch";
 import { prisma } from "@/lib/db/prisma";
+import { getRoleAging } from "@/lib/db/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +24,7 @@ export default async function PeopleAnalyticsPage() {
     activeJobs,
     offerGroups,
     recentApplications,
+    roleAging,
   ] = await Promise.all([
     prisma.candidate.groupBy({ by: ["stage"], _count: { id: true } }),
     prisma.candidate.groupBy({
@@ -43,6 +47,7 @@ export default async function PeopleAnalyticsPage() {
       select: { createdAt: true },
       orderBy: { createdAt: "asc" },
     }),
+    getRoleAging(),
   ]);
 
   // Compute avg days in pipeline
@@ -224,6 +229,128 @@ export default async function PeopleAnalyticsPage() {
               <StatCard label="Declined" value={offerCount("rejected")} />
             </div>
           </section>
+
+          {/* Deep-dive links */}
+          <section>
+            <h2
+              className="mb-4 text-sm font-semibold uppercase tracking-widest"
+              style={{ color: "var(--app-muted)" }}
+            >
+              Reports
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {(
+                [
+                  {
+                    href: "/people/analytics/pipeline",
+                    title: "Pipeline funnel",
+                    desc: "Stage conversion rates and time-in-stage averages",
+                  },
+                  {
+                    href: "/people/analytics/sourcing",
+                    title: "Sourcing",
+                    desc: "Applications by channel — referral, LinkedIn, job board",
+                  },
+                  {
+                    href: "/people/analytics/interviews",
+                    title: "Interviewer load",
+                    desc: "Panel counts and scorecard submission rates by user",
+                  },
+                ] as const
+              ).map((card) => (
+                <Link
+                  key={card.href}
+                  href={card.href as Route}
+                  className="block rounded-[20px] border p-5 transition hover:border-[color:var(--app-border-strong)]"
+                  style={{
+                    background: "var(--app-surface)",
+                    borderColor: "var(--app-border)",
+                  }}
+                >
+                  <p className="mb-1 font-semibold" style={{ color: "var(--app-heading)" }}>
+                    {card.title}
+                  </p>
+                  <p className="text-xs" style={{ color: "var(--app-muted)" }}>
+                    {card.desc}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* Role aging */}
+          {roleAging.length > 0 && (
+            <section>
+              <h2
+                className="mb-4 text-sm font-semibold uppercase tracking-widest"
+                style={{ color: "var(--app-muted)" }}
+              >
+                Open roles
+              </h2>
+              <div
+                className="rounded-[20px] border overflow-hidden"
+                style={{
+                  background: "var(--app-surface)",
+                  borderColor: "var(--app-border)",
+                }}
+              >
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr
+                      style={{
+                        borderBottom: "1px solid var(--app-border)",
+                        color: "var(--app-muted)",
+                      }}
+                    >
+                      <th className="px-5 py-3 text-left font-medium">Role</th>
+                      <th className="px-5 py-3 text-right font-medium">Days open</th>
+                      <th className="px-5 py-3 text-right font-medium">Applicants</th>
+                      <th className="px-5 py-3 text-right font-medium">Pipeline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {roleAging.map((row, i) => (
+                      <tr
+                        key={row.id}
+                        style={{
+                          borderBottom: i < roleAging.length - 1 ? "1px solid var(--app-border)" : undefined,
+                          color: "var(--app-text)",
+                        }}
+                      >
+                        <td className="px-5 py-3">
+                          <span style={{ color: "var(--app-heading)", fontWeight: 500 }}>
+                            {row.title}
+                          </span>
+                          {row.department ? (
+                            <span className="ml-2 text-xs" style={{ color: "var(--app-muted)" }}>
+                              {row.department}
+                            </span>
+                          ) : null}
+                          {row.isStalled ? (
+                            <span className="ml-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                              Stalled
+                            </span>
+                          ) : null}
+                        </td>
+                        <td
+                          className="px-5 py-3 text-right tabular-nums font-semibold"
+                          style={{ color: row.daysOpen >= 30 ? "var(--app-brand)" : "var(--app-heading)" }}
+                        >
+                          {row.daysOpen}
+                        </td>
+                        <td className="px-5 py-3 text-right tabular-nums" style={{ color: "var(--app-heading)" }}>
+                          {row.applicantCount}
+                        </td>
+                        <td className="px-5 py-3 text-right tabular-nums" style={{ color: "var(--app-heading)" }}>
+                          {row.pipelineCount}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
           {/* Recent applications sparkline (text) */}
           {appDayEntries.length > 0 && (

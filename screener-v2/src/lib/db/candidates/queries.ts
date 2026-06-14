@@ -781,6 +781,25 @@ export async function getCandidateDetail(candidateId: string): Promise<Candidate
       detail: event.detail ?? undefined,
       createdAt: event.createdAt.toISOString()
     })),
-    currentFocus: currentFocusFromMilestones(milestones)
+    currentFocus: currentFocusFromMilestones(milestones),
+    possibleDuplicates: await findPhoneDuplicates(candidateId, row.phone)
   };
+}
+
+async function findPhoneDuplicates(
+  excludeId: string,
+  phone: string | null
+): Promise<Array<{ id: string; fullName: string; email: string }>> {
+  if (!phone) return [];
+  const normalized = phone.replace(/\D/g, "").slice(-10);
+  if (normalized.length < 7) return [];
+  const matches = await prisma.candidate.findMany({
+    where: {
+      id: { not: excludeId },
+      phone: { endsWith: normalized.slice(-7) }
+    },
+    select: { id: true, fullName: true, email: true },
+    take: 3
+  });
+  return matches;
 }
