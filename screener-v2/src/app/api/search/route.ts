@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { createRequestLogContext, logRouteError } from "@/lib/server/logger";
 
 export type SearchResult = {
   candidates: Array<{ id: string; fullName: string; email: string; stage: string; roleLabel?: string }>;
@@ -16,33 +17,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ candidates: [], jobs: [], applicants: [] } satisfies SearchResult);
   }
 
+  const logContext = createRequestLogContext(request, "api.search");
   const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
   if (q.length < 2) {
     return NextResponse.json({ candidates: [], jobs: [], applicants: [] } satisfies SearchResult);
   }
 
   const like = `%${q.replace(/[%_]/g, "\\$&")}%`;
-  const tsQuery = q
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((w) => `${w}:*`)
-    .join(" & ");
 
   type CandidateRow = { id: string; fullName: string; email: string; stage: string; roleLabel: string | null };
   type JobRow = { id: string; title: string; isOpen: boolean; department: { name: string } | null };
   type ApplicantRow = { id: string; candidate: { fullName: string }; jobPosting: { title: string } };
 
   const [candidates, jobs, applicants] = await Promise.all([
+    // Case-insensitive match on name/email; the role label is joined from RoleCatalog
+    // (Candidate has no roleLabel column). Portable across any Postgres — no tsvector dependency.
     prisma.$queryRaw<CandidateRow[]>`
-      SELECT id, "fullName", email, stage, "roleLabel"
-      FROM "Candidate"
+      SELECT c.id, c."fullName", c.email, c.stage, r.label AS "roleLabel"
+      FROM "Candidate" c
+      LEFT JOIN "RoleCatalog" r ON r.id = c."roleId"
       WHERE (
-        "searchVector" @@ to_tsquery('simple', ${tsQuery})
-        OR LOWER("fullName") LIKE LOWER(${like})
-        OR LOWER(email) LIKE LOWER(${like})
+        LOWER(c."fullName") LIKE LOWER(${like})
+        OR LOWER(c.email) LIKE LOWER(${like})
       )
-      AND "orgStage" = 'active'
-      ORDER BY ts_rank("searchVector", to_tsquery('simple', ${tsQuery})) DESC
+      AND c."orgStage" = 'active'
+      ORDER BY c."updatedAt" DESC
       LIMIT 6
     `,
     prisma.jobPosting.findMany({
@@ -79,7 +78,11 @@ export async function GET(request: NextRequest) {
       take: 4,
       orderBy: { createdAt: "desc" },
     }) as Promise<ApplicantRow[]>,
-  ]).catch((): [CandidateRow[], JobRow[], ApplicantRow[]] => [[], [], []]);
+  ]).catch((error): [CandidateRow[], JobRow[], ApplicantRow[]] => {
+    // Stay resilient (Cmd+K should never 500) but surface the error instead of swallowing it silently.
+    logRouteError("search_failed", logContext, error);
+    return [[], [], []];
+  });
 
   const result: SearchResult = {
     candidates: candidates.map((c: CandidateRow) => ({
