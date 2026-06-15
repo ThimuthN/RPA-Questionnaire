@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { LogExternalAssessmentForm } from "@/components/candidates/LogExternalAssessmentForm";
@@ -286,18 +287,34 @@ export function CandidateAssessmentsPanel({
 
                 {ext.attachments.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--app-border)]/60 pt-3">
-                    {ext.attachments.map((file) => (
-                      <a
-                        key={file.id}
-                        href={file.storageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--app-surface)] px-3 py-1 text-xs font-medium text-[color:var(--app-heading)] transition hover:text-[color:var(--app-brand)]"
-                      >
-                        {file.fileName}
-                        <span className="text-[color:var(--app-muted)]">({(file.sizeBytes / 1024).toFixed(0)} KB)</span>
-                      </a>
-                    ))}
+                    {ext.attachments.map((file) => {
+                      const fileBase = `/api/candidates/${candidateId}/external-assessments/${ext.id}/attachments/${file.id}`;
+                      return (
+                        <span
+                          key={file.id}
+                          className="inline-flex items-center overflow-hidden rounded-full bg-[color:var(--app-surface)] text-xs font-medium text-[color:var(--app-heading)]"
+                        >
+                          <a
+                            href={fileBase}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 py-1 pl-3 pr-2 transition hover:text-[color:var(--app-brand)]"
+                            title={`View ${file.fileName}`}
+                          >
+                            {file.fileName}
+                            <span className="text-[color:var(--app-muted)]">({(file.sizeBytes / 1024).toFixed(0)} KB)</span>
+                          </a>
+                          <a
+                            href={`${fileBase}?download=1`}
+                            className="flex items-center border-l border-[color:var(--app-border)]/60 px-2 py-1 text-[color:var(--app-muted)] transition hover:text-[color:var(--app-brand)]"
+                            title={`Download ${file.fileName}`}
+                            aria-label={`Download ${file.fileName}`}
+                          >
+                            <Download size={13} />
+                          </a>
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
 

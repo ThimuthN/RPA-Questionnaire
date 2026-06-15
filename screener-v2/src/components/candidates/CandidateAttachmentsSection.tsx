@@ -2,7 +2,7 @@
 
 import { startTransition, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Paperclip, Trash2, ExternalLink } from "lucide-react";
+import { Paperclip, Trash2, ExternalLink, Download } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 
 type Attachment = {
@@ -138,13 +138,22 @@ export function CandidateAttachmentsSection({
               </div>
               <div className="flex shrink-0 items-center gap-1">
                 <a
-                  href={attachment.storageUrl}
+                  href={`/api/candidates/${candidateId}/attachments/${attachment.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface)] hover:text-[color:var(--app-heading)]"
                   aria-label="Open attachment"
+                  title="View"
                 >
                   <ExternalLink size={13} />
+                </a>
+                <a
+                  href={`/api/candidates/${candidateId}/attachments/${attachment.id}?download=1`}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[10px] text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface)] hover:text-[color:var(--app-heading)]"
+                  aria-label="Download attachment"
+                  title="Download"
+                >
+                  <Download size={13} />
                 </a>
                 {canManage && (
                   <button
