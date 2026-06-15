@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Button } from "@/components/primitives/Button";
 import { StagePanel } from "@/components/scene/StagePanel";
 
-export default function ResultsError({
+export default function CandidatesError({
   error,
   reset
 }: {
@@ -12,19 +12,18 @@ export default function ResultsError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Results route crashed", {
+    console.error("Candidates route crashed", {
       message: error.message,
       digest: error.digest,
-      stack: error.stack
     });
   }, [error]);
 
   return (
     <section className="space-y-4">
       <StagePanel className="space-y-3">
-        <h1 className="text-2xl text-[color:var(--app-heading)]">Results unavailable</h1>
+        <h1 className="text-2xl text-[color:var(--app-heading)]">Candidate data unavailable</h1>
         <p className="text-sm text-[color:var(--app-text)]">
-          The assessment results could not be loaded. This is usually a temporary issue — try again or contact your hiring admin if it persists.
+          The candidate profile could not be loaded. Try refreshing the page. If the problem persists, contact your system administrator.
         </p>
         <Button type="button" onClick={reset}>
           Try again
