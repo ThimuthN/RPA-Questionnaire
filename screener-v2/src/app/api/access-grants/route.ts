@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { grantSystemAccess, grantDepartmentAccess } from "@/lib/auth/access-grants";
 import { prisma } from "@/lib/db/prisma";
+import { apiError } from "@/lib/server/api-error";
 
 const grantSchema = z.object({
   userId: z.string(),
@@ -23,12 +24,8 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
-  // Require manage_users permission
   if (!auth.session.permissions.includes("manage_users")) {
-    return NextResponse.json(
-      { ok: false, message: "Permission denied: manage_users" },
-      { status: 403 }
-    );
+    return apiError("forbidden", "Permission denied: manage_users");
   }
 
   try {
@@ -36,10 +33,7 @@ export async function POST(request: Request) {
 
     if (body.grantType === "system") {
       if (!body.roleSlug) {
-        return NextResponse.json(
-          { ok: false, message: "roleSlug required for system grants" },
-          { status: 400 }
-        );
+        return apiError("validation_error", "roleSlug required for system grants");
       }
 
       const grant = await grantSystemAccess({
@@ -52,10 +46,7 @@ export async function POST(request: Request) {
 
     if (body.grantType === "department") {
       if (!body.roleId || !body.departmentId) {
-        return NextResponse.json(
-          { ok: false, message: "roleId and departmentId required for department grants" },
-          { status: 400 }
-        );
+        return apiError("validation_error", "roleId and departmentId required for department grants");
       }
 
       const grant = await grantDepartmentAccess({
@@ -67,16 +58,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, grant });
     }
 
-    return NextResponse.json(
-      { ok: false, message: "Invalid grantType" },
-      { status: 400 }
-    );
+    return apiError("validation_error", "Invalid grantType");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not create grant";
-    return NextResponse.json(
-      { ok: false, message },
-      { status: 400 }
-    );
+    return apiError("validation_error", message);
   }
 }
 
@@ -91,20 +76,14 @@ export async function GET(request: Request) {
   }
 
   if (!auth.session.permissions.includes("manage_users")) {
-    return NextResponse.json(
-      { ok: false, message: "Permission denied: manage_users" },
-      { status: 403 }
-    );
+    return apiError("forbidden", "Permission denied: manage_users");
   }
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("userId");
 
   if (!userId) {
-    return NextResponse.json(
-      { ok: false, message: "userId required" },
-      { status: 400 }
-    );
+    return apiError("validation_error", "userId required");
   }
 
   const grants = await prisma.accessGrant.findMany({
