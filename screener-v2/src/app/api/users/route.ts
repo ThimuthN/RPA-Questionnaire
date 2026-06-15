@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAppUser } from "@/lib/auth/app-auth";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import { hasGlobalPermission, isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { isFormRequest } from "@/lib/http/request";
 import { validateAssignableAccessRole } from "@/lib/auth/access-roles";
 import { prisma } from "@/lib/db/prisma";
@@ -63,8 +64,24 @@ export async function POST(request: Request) {
       : await request.json();
     const body = userSchema.parse(rawBody);
     const permissionDepartmentId = body.permissionDepartmentId || body.departmentId || null;
-    const permission = await requirePermissionForDepartment(auth.session, "manage_users", permissionDepartmentId);
-    if (!permission.ok) return permission.response;
+
+    if (!permissionDepartmentId) {
+      // Creating an unassigned/global user is a global action — require global manage_users
+      // (or system admin), not merely department-scoped manage_users (prevents escalation).
+      const actorId = auth.session.userId;
+      const globalOk =
+        Boolean(actorId) &&
+        ((await isSystemAdmin(actorId!)) || (await hasGlobalPermission(actorId!, "manage_users")));
+      if (!globalOk) {
+        return NextResponse.json(
+          { ok: false, message: "Creating an unassigned user requires global manage_users." },
+          { status: 403 }
+        );
+      }
+    } else {
+      const permission = await requirePermissionForDepartment(auth.session, "manage_users", permissionDepartmentId);
+      if (!permission.ok) return permission.response;
+    }
 
     if (body.roleId) {
       const validation = await validateAssignableAccessRole(body.roleId, body.departmentId, auth.session);

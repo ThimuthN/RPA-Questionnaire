@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import { isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { grantSystemAccess, grantDepartmentAccess } from "@/lib/auth/access-grants";
 import { prisma } from "@/lib/db/prisma";
 import { apiError } from "@/lib/server/api-error";
@@ -32,6 +33,12 @@ export async function POST(request: Request) {
     const body = grantSchema.parse(await request.json());
 
     if (body.grantType === "system") {
+      // Least-privilege: only a system admin may grant SYSTEM-scoped access.
+      // (Without this, any department-scoped manage_users holder could self-escalate.)
+      const actorId = auth.session.userId;
+      if (!actorId || !(await isSystemAdmin(actorId))) {
+        return apiError("forbidden", "Only system admins can grant system access.");
+      }
       if (!body.roleSlug) {
         return apiError("validation_error", "roleSlug required for system grants");
       }
@@ -47,6 +54,12 @@ export async function POST(request: Request) {
     if (body.grantType === "department") {
       if (!body.roleId || !body.departmentId) {
         return apiError("validation_error", "roleId and departmentId required for department grants");
+      }
+
+      // Must hold manage_users in the TARGET department (not just anywhere).
+      const deptPermission = await requirePermissionForDepartment(auth.session, "manage_users", body.departmentId);
+      if (!deptPermission.ok) {
+        return deptPermission.response;
       }
 
       const grant = await grantDepartmentAccess({
