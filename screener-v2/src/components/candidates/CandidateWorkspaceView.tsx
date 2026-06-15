@@ -51,8 +51,8 @@ function filterFieldClassName() {
 
 function messageTone(type: "success" | "error") {
   return type === "success"
-    ? "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100"
-    : "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
+    ? "rounded-[20px] border border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] p-4 text-sm text-[color:var(--app-success)]"
+    : "rounded-[20px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] p-4 text-sm text-[color:var(--app-danger)]";
 }
 
 function NoticeBanner({
