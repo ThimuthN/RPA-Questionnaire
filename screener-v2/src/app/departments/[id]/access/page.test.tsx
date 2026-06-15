@@ -2,24 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  notFound: vi.fn()
+  notFound: vi.fn(() => { throw new Error("notFound"); })
 }));
 
 vi.mock("@/components/departments/DepartmentAccessRolesSection", () => ({
   DepartmentAccessRolesSection: ({ departmentName }: { departmentName: string }) => (
     <div data-testid="access-roles">Roles for {departmentName}</div>
-  )
-}));
-
-vi.mock("@/components/integrations/DepartmentIntegrationsSection", () => ({
-  DepartmentIntegrationsSection: ({ departmentId }: { departmentId: string }) => (
-    <div data-testid="department-integrations">Integrations for {departmentId}</div>
-  )
-}));
-
-vi.mock("@/components/primitives/NotificationBanner", () => ({
-  NotificationBanner: ({ tone, children }: { tone: string; children: React.ReactNode }) => (
-    <div data-tone={tone}>{children}</div>
   )
 }));
 
@@ -35,10 +23,6 @@ vi.mock("@/lib/db/departments", () => ({
   getDepartment: vi.fn()
 }));
 
-vi.mock("@/lib/integrations", () => ({
-  listDepartmentIntegrationSummaries: vi.fn()
-}));
-
 vi.mock("@/lib/roles/catalog", () => ({
   listAccessRoles: vi.fn()
 }));
@@ -47,69 +31,37 @@ import DepartmentAccessPage from "./page";
 import { requirePageSession } from "@/lib/auth/guards";
 import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { getDepartment } from "@/lib/db/departments";
-import { listDepartmentIntegrationSummaries } from "@/lib/integrations";
 import { listAccessRoles } from "@/lib/roles/catalog";
 
-describe("Department Access Page", () => {
+describe("Department Access Control Page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requirePageSession).mockResolvedValue({
       userId: "user-1",
-      permissions: ["manage_users", "manage_integrations"],
+      permissions: ["manage_users"],
       departmentId: "dept-1"
-    } as any);
-    vi.mocked(getDepartment).mockResolvedValue({ id: "dept-1", name: "Automation" } as any);
-    vi.mocked(listAccessRoles).mockResolvedValue([] as any);
-    vi.mocked(listDepartmentIntegrationSummaries).mockResolvedValue([] as any);
+    } as never);
+    vi.mocked(canUsePermissionForDepartment).mockResolvedValue(true as never);
+    vi.mocked(getDepartment).mockResolvedValue({ id: "dept-1", name: "Automation" } as never);
+    vi.mocked(listAccessRoles).mockResolvedValue([] as never);
   });
 
-  it("renders both sections when the viewer can manage access and integrations", async () => {
-    vi.mocked(canUsePermissionForDepartment)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(true);
-
+  it("renders access roles section for users with manage_users permission", async () => {
     const markup = renderToStaticMarkup(
       await DepartmentAccessPage({
-        params: Promise.resolve({ id: "dept-1" }),
-        searchParams: Promise.resolve({})
+        params: Promise.resolve({ id: "dept-1" })
       })
     );
 
     expect(markup).toContain('data-testid="access-roles"');
-    expect(markup).toContain('data-testid="department-integrations"');
+    expect(markup).toContain("Access Control");
   });
 
-  it("renders only Access Control when integrations permission is absent", async () => {
-    vi.mocked(canUsePermissionForDepartment)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+  it("calls notFound when viewer lacks manage_users permission", async () => {
+    vi.mocked(canUsePermissionForDepartment).mockResolvedValue(false as never);
 
-    const markup = renderToStaticMarkup(
-      await DepartmentAccessPage({
-        params: Promise.resolve({ id: "dept-1" }),
-        searchParams: Promise.resolve({})
-      })
-    );
-
-    expect(markup).toContain('data-testid="access-roles"');
-    expect(markup).not.toContain('data-testid="department-integrations"');
-    expect(vi.mocked(listDepartmentIntegrationSummaries)).not.toHaveBeenCalled();
-  });
-
-  it("renders only App Integrations when access-role permission is absent", async () => {
-    vi.mocked(canUsePermissionForDepartment)
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(true);
-
-    const markup = renderToStaticMarkup(
-      await DepartmentAccessPage({
-        params: Promise.resolve({ id: "dept-1" }),
-        searchParams: Promise.resolve({})
-      })
-    );
-
-    expect(markup).not.toContain('data-testid="access-roles"');
-    expect(markup).toContain('data-testid="department-integrations"');
-    expect(vi.mocked(listAccessRoles)).not.toHaveBeenCalled();
+    await expect(
+      DepartmentAccessPage({ params: Promise.resolve({ id: "dept-1" }) })
+    ).rejects.toThrow("notFound");
   });
 });

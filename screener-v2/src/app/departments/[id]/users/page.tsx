@@ -3,8 +3,6 @@ import { UserAvatarInitials } from "@/components/users/UserAvatarInitials";
 import { AddUserModal } from "@/components/users/AddUserModal";
 import { AssignUserToDeptModal } from "@/components/departments/AssignUserToDeptModal";
 import { DepartmentUserActions } from "@/components/departments/DepartmentUserActions";
-import { HiringTeamsManagement } from "@/components/departments/HiringTeamsManagement";
-import { OfferApprovalChainManagement } from "@/components/departments/OfferApprovalChainManagement";
 import { getDepartment } from "@/lib/db/departments";
 import { requirePageSession } from "@/lib/auth/guards";
 import { requirePermissionForDepartment } from "@/lib/auth/guards";
@@ -25,8 +23,7 @@ export default async function DepartmentUsersPage({
     notFound();
   }
 
-  // Load team members via AccessGrant (new model)
-  const [department, accessGrantTeam, roles, hiringTeamTemplates, offerApprovalChain] = await Promise.all([
+  const [department, accessGrantTeam, roles] = await Promise.all([
     getDepartment(id),
     prisma.accessGrant.findMany({
       where: {
@@ -56,33 +53,9 @@ export default async function DepartmentUsersPage({
     listAccessRoles({
       departmentId: id,
       scope: "department"
-    }),
-    prisma.hiringTeamTemplate.findMany({
-      where: { departmentId: id, isActive: true },
-      include: {
-        members: {
-          include: {
-            user: {
-              select: { id: true, name: true, email: true }
-            }
-          },
-          orderBy: { role: "asc" }
-        }
-      },
-      orderBy: { sortOrder: "asc" }
-    }),
-    prisma.offerApprovalChain.findFirst({
-      where: { departmentId: id },
-      include: {
-        steps: {
-          orderBy: { sortOrder: "asc" },
-          include: { approver: { select: { id: true, name: true, email: true } } }
-        }
-      }
     })
   ]);
 
-  // Transform AccessGrant data into user list format
   const users = accessGrantTeam.map((grant) => ({
     id: grant.user.id,
     name: grant.user.name,
@@ -102,9 +75,9 @@ export default async function DepartmentUsersPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl text-[color:var(--app-heading)]">Team</h2>
+          <h2 className="text-2xl text-[color:var(--app-heading)]">My team</h2>
           <p className="text-sm text-[color:var(--app-muted)]">
-            Create users, assign access roles, and manage this workspace team.
+            Workspace members and their access roles.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -184,45 +157,6 @@ export default async function DepartmentUsersPage({
           </div>
         </div>
       )}
-
-      <div className="mt-8 border-t border-[color:var(--app-border)] pt-8">
-        <HiringTeamsManagement
-          departmentId={id}
-          departmentName={department.name}
-          templates={hiringTeamTemplates.map((template) => ({
-            id: template.id,
-            name: template.name,
-            description: template.description || undefined,
-            isActive: template.isActive,
-            members: template.members.map((member) => ({
-              id: member.id,
-              user: {
-                id: member.user.id,
-                name: member.user.name,
-                email: member.user.email
-              },
-              role: member.role
-            }))
-          }))}
-          teamUsers={users.map((u) => ({
-            id: u.id,
-            name: u.name,
-            email: u.email
-          }))}
-        />
-      </div>
-
-      <div className="mt-8 border-t border-[color:var(--app-border)] pt-8">
-        <OfferApprovalChainManagement
-          departmentId={id}
-          initialSteps={(offerApprovalChain?.steps ?? []).map((s) => ({
-            id: s.id,
-            sortOrder: s.sortOrder,
-            approver: { id: s.approver.id, name: s.approver.name, email: s.approver.email }
-          }))}
-          teamUsers={users.map((u) => ({ id: u.id, name: u.name, email: u.email }))}
-        />
-      </div>
     </div>
   );
 }

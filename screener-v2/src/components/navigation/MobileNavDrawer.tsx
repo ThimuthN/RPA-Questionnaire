@@ -8,7 +8,7 @@ import { useState } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { isNavItemActive } from "@/components/navigation/nav-config";
-import { WORKSPACE_SUBITEMS, CANDIDATE_STAGES, isWorkspaceSubnavItemActive } from "@/components/navigation/WorkspaceSubnav";
+import { WORKFLOW_ITEMS, SETTINGS_ITEMS, CANDIDATE_STAGES, isWorkspaceSubnavItemActive } from "@/components/navigation/WorkspaceSubnav";
 import type { AppSession } from "@/lib/auth/session";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,18 @@ export function MobileNavDrawer({
 
   const candidatesBaseHref = departmentId ? `/departments/${departmentId}/candidates` : "";
   const isOnCandidatesPath = departmentId ? currentPathname.startsWith(candidatesBaseHref) : false;
+  const isOnTeamPath = departmentId
+    ? currentPathname === `/departments/${departmentId}/users` ||
+      currentPathname === `/departments/${departmentId}/hiring-templates` ||
+      currentPathname.startsWith(`/departments/${departmentId}/offer-approval-chain`)
+    : false;
+  const isOnAccessPath = departmentId
+    ? currentPathname.startsWith(`/departments/${departmentId}/access`)
+    : false;
+
   const [candidatesExpanded, setCandidatesExpanded] = useState(isOnCandidatesPath);
+  const [teamExpanded, setTeamExpanded] = useState(isOnTeamPath);
+  const [accessExpanded, setAccessExpanded] = useState(isOnAccessPath);
 
   if (!open) return null;
 
@@ -115,15 +126,17 @@ export function MobileNavDrawer({
               <p className="px-2 pb-2 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-muted)]">
                 {departmentName ?? "Workspace"}
               </p>
-              {WORKSPACE_SUBITEMS.map((item) => {
+
+              {/* Workflow items */}
+              {WORKFLOW_ITEMS.map((item) => {
                 const Icon = item.icon;
                 const href = item.href.replace("{id}", departmentId) as Route;
                 const isExpandable = "expandable" in item && item.expandable;
-                const isActive = isExpandable
+                const isActive = item.key === "candidates"
                   ? isOnCandidatesPath
                   : isWorkspaceSubnavItemActive({ itemKey: item.key, href, pathname: currentPathname, departmentId, workspaceId });
 
-                if (isExpandable) {
+                if (isExpandable && item.key === "candidates") {
                   return (
                     <div key={item.key}>
                       <div
@@ -147,7 +160,6 @@ export function MobileNavDrawer({
                           <ChevronDown className={cn("h-3.5 w-3.5 opacity-50 transition-transform duration-200", candidatesExpanded ? "rotate-0" : "-rotate-90")} />
                         </button>
                       </div>
-
                       {candidatesExpanded && (
                         <div className="mt-0.5 ml-3 space-y-0.5 border-l border-[color:var(--app-border)] pl-3">
                           {CANDIDATE_STAGES.map((stage) => {
@@ -191,6 +203,98 @@ export function MobileNavDrawer({
                     <Icon className="h-4 w-4 shrink-0" />
                     {item.label}
                   </Link>
+                );
+              })}
+
+              {/* Settings divider */}
+              <p className="px-2 pb-1 pt-4 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-muted)]">
+                Settings
+              </p>
+
+              {/* Settings items */}
+              {SETTINGS_ITEMS.map((item) => {
+                const Icon = item.icon;
+                const href = item.href.replace("{id}", departmentId) as Route;
+                const hasSubs = item.subitems !== null && item.subitems.length > 0;
+
+                let isActive: boolean;
+                if (item.key === "team") isActive = isOnTeamPath;
+                else if (item.key === "access") isActive = isOnAccessPath;
+                else isActive = isWorkspaceSubnavItemActive({ itemKey: item.key, href, pathname: currentPathname, departmentId, workspaceId });
+
+                if (!hasSubs) {
+                  return (
+                    <Link
+                      key={item.key}
+                      href={href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center gap-3 rounded-[14px] border px-3.5 py-2.5 text-sm font-medium transition",
+                        isActive
+                          ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)]"
+                          : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-muted)]"
+                      )}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      {item.label}
+                    </Link>
+                  );
+                }
+
+                const isExpanded = item.key === "team" ? teamExpanded : accessExpanded;
+                const setExpanded = item.key === "team" ? setTeamExpanded : setAccessExpanded;
+
+                return (
+                  <div key={item.key}>
+                    <div
+                      className={cn(
+                        "flex items-center rounded-[14px] border transition",
+                        isActive
+                          ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)]"
+                          : "border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-text)]"
+                      )}
+                    >
+                      <Link href={href} onClick={onClose} className="flex flex-1 items-center gap-3 px-3.5 py-2.5 text-sm font-medium">
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {item.label}
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setExpanded((v) => !v)}
+                        className="flex items-center px-2.5 py-2.5"
+                        aria-label={isExpanded ? `Collapse ${item.label}` : `Expand ${item.label}`}
+                      >
+                        <ChevronDown className={cn("h-3.5 w-3.5 opacity-50 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90")} />
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <div className="mt-0.5 ml-3 space-y-0.5 border-l border-[color:var(--app-border)] pl-3">
+                        {item.subitems.map((sub) => {
+                          const subHref = sub.href.replace("{id}", departmentId) as Route;
+                          const exact = "exact" in sub && sub.exact;
+                          const isSubActive = exact
+                            ? currentPathname === subHref
+                            : currentPathname === subHref || currentPathname.startsWith(`${subHref}/`);
+                          return (
+                            <Link
+                              key={sub.key}
+                              href={subHref}
+                              onClick={onClose}
+                              className={cn(
+                                "flex items-center gap-2 rounded-[10px] px-2.5 py-1.5 text-[13px] font-medium transition",
+                                isSubActive
+                                  ? "bg-[color:var(--app-brand)]/10 text-[color:var(--app-brand)]"
+                                  : "text-[color:var(--app-muted)] hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-text)]"
+                              )}
+                            >
+                              <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", isSubActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-border)]")} />
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
