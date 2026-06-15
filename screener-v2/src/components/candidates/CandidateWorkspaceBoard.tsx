@@ -59,6 +59,11 @@ function CandidateCard({
           )}
         </div>
       </div>
+      {candidate.staleDays > 0 && (
+        <p className={`mt-2 text-[10px] font-medium ${candidate.staleDays > 14 ? "text-amber-400" : "text-[color:var(--app-muted)]"}`}>
+          {candidate.staleDays}d in stage{candidate.staleDays > 14 ? " — needs attention" : ""}
+        </p>
+      )}
     </div>
   );
 }

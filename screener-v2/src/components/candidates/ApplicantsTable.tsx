@@ -21,6 +21,7 @@ type ApplicantRow = {
   hasResume: boolean;
   status: CandidateApplicationStatus;
   candidateOwner?: string | null;
+  source?: string | null;
 };
 
 type User = {
@@ -75,6 +76,19 @@ function statusHint(status: CandidateApplicationStatus) {
   if (status === "under_review") return "Awaiting decision";
   if (status === "moved_to_pipeline") return "Candidate created";
   return "Closed application";
+}
+
+const SOURCE_LABELS: Record<string, string> = {
+  direct: "Direct",
+  referral: "Referral",
+  job_board: "Job board",
+  linkedin: "LinkedIn",
+  careers_page: "Careers page",
+};
+
+function sourceLabel(source: string | null | undefined): string | null {
+  if (!source) return null;
+  return SOURCE_LABELS[source] ?? source.replace(/_/g, " ");
 }
 
 function dayLabel(isoDate: string, prefix?: string) {
@@ -180,6 +194,9 @@ export function ApplicantsTable({
                     <div className="space-y-1">
                       <p className="text-sm font-medium text-[color:var(--app-heading)]">{row.candidateName}</p>
                       <p className="text-xs text-[color:var(--app-muted)]">{row.candidateEmail}</p>
+                      {sourceLabel(row.source) ? (
+                        <StatusPill label={sourceLabel(row.source)!} tone="neutral" />
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-4 py-4">

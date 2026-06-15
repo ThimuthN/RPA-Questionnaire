@@ -18,6 +18,7 @@ export type BoardCandidate = {
   stage: string;
   currentTitle: string | null;
   roleLabel: string | null;
+  staleDays: number;
 };
 
 export type BoardColumn = {
@@ -48,6 +49,7 @@ export default async function CandidateBoardPage() {
       email: true,
       stage: true,
       currentTitle: true,
+      updatedAt: true,
       role: { select: { label: true } },
     },
     orderBy: { updatedAt: "desc" },
@@ -66,6 +68,7 @@ export default async function CandidateBoardPage() {
         stage: c.stage,
         currentTitle: c.currentTitle,
         roleLabel: c.role?.label ?? null,
+        staleDays: Math.floor((Date.now() - c.updatedAt.getTime()) / 86_400_000),
       })),
   }));
 
