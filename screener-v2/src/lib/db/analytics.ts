@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { candidateStageLabels } from "@/lib/candidates/types";
 
 const STAGE_ORDER = [
   "applicant",
@@ -24,22 +25,13 @@ export async function getFunnelConversion(): Promise<FunnelRow[]> {
 
   const countByStage = new Map(groups.map((g) => [g.stage, g._count.id]));
 
-  const labels: Record<string, string> = {
-    applicant: "Applicant",
-    pipeline: "Pipeline",
-    screening: "Screening",
-    interview: "Interview",
-    advanced_review: "Advanced Review",
-    finalized: "Finalized",
-  };
-
   const rows: FunnelRow[] = [];
   let prev: number | null = null;
   for (const stage of STAGE_ORDER) {
     const count = countByStage.get(stage) ?? 0;
     const conversion =
       prev !== null && prev > 0 ? Math.round((count / prev) * 100) : null;
-    rows.push({ stage, label: labels[stage] ?? stage, count, conversionFromPrev: conversion });
+    rows.push({ stage, label: candidateStageLabels[stage] ?? stage, count, conversionFromPrev: conversion });
     prev = count;
   }
   return rows;
@@ -54,13 +46,6 @@ export type StageTimeRow = {
 
 export async function getStageTimings(): Promise<StageTimeRow[]> {
   const stages = ["pipeline", "screening", "interview", "advanced_review"] as const;
-  const labels: Record<string, string> = {
-    pipeline: "Pipeline",
-    screening: "Screening",
-    interview: "Interview",
-    advanced_review: "Advanced Review",
-  };
-
   const results = await Promise.all(
     stages.map((stage) =>
       prisma.candidate.findMany({
@@ -73,14 +58,14 @@ export async function getStageTimings(): Promise<StageTimeRow[]> {
 
   return stages.map((stage, i) => {
     const rows = results[i];
-    if (rows.length === 0) return { stage, label: labels[stage]!, avgDays: 0, medianDays: 0 };
+    if (rows.length === 0) return { stage, label: candidateStageLabels[stage] ?? stage, avgDays: 0, medianDays: 0 };
     const days = rows
       .map((r) => (r.updatedAt.getTime() - r.createdAt.getTime()) / 86_400_000)
       .sort((a, b) => a - b);
     const avg = Math.round(days.reduce((s, d) => s + d, 0) / days.length);
     const mid = Math.floor(days.length / 2);
     const median = Math.round(days.length % 2 === 0 ? (days[mid - 1]! + days[mid]!) / 2 : days[mid]!);
-    return { stage, label: labels[stage]!, avgDays: avg, medianDays: median };
+    return { stage, label: candidateStageLabels[stage] ?? stage, avgDays: avg, medianDays: median };
   });
 }
 

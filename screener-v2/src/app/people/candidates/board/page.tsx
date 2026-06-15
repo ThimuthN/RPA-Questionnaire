@@ -1,5 +1,6 @@
 import { requirePageSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { candidateStageLabels } from "@/lib/candidates/types";
 
 import { SceneTransition } from "@/components/motion/SceneTransition";
 import { SceneShell } from "@/components/scene/SceneShell";
@@ -27,13 +28,6 @@ export type BoardColumn = {
   candidates: BoardCandidate[];
 };
 
-const STAGE_LABELS: Record<BoardStage, string> = {
-  pipeline: "Pipeline",
-  screening: "Screening",
-  interview: "Interview",
-  advanced_review: "Review",
-  finalized: "Final",
-};
 
 export default async function CandidateBoardPage() {
   const session = await requirePageSession("/people/candidates/board");
@@ -58,7 +52,7 @@ export default async function CandidateBoardPage() {
 
   const columns: BoardColumn[] = BOARD_STAGES.map((stage) => ({
     stage,
-    label: STAGE_LABELS[stage],
+    label: candidateStageLabels[stage] ?? stage,
     candidates: candidates
       .filter((c) => c.stage === stage)
       .map((c) => ({

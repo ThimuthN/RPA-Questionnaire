@@ -1,4 +1,5 @@
 import type { CandidateActivityItem } from "./workspace";
+import { candidateStageLabels } from "./types";
 
 export type ActivityColorKey =
   | "blue"
@@ -19,15 +20,6 @@ export type FormattedActivityItem = {
   body?: string;
 };
 
-const stageLabels: Record<string, string> = {
-  pipeline: "Pipeline",
-  new: "New",
-  applicant: "Applicant",
-  screening: "Screening",
-  interview: "Interview",
-  advanced_review: "Review",
-  finalized: "Final"
-};
 
 const statusLabels: Record<string, string> = {
   not_started: "Not Started",
@@ -51,7 +43,7 @@ function toTitle(s: string): string {
 }
 
 function labelStage(s: string): string {
-  return stageLabels[s?.trim()] ?? toTitle(s);
+  return candidateStageLabels[s?.trim() as keyof typeof candidateStageLabels] ?? toTitle(s);
 }
 
 function labelStatus(s: string): string {
