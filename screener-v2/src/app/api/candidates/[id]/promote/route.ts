@@ -1,4 +1,5 @@
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
+import { logError } from "@/lib/server/logger";
 import {
   canAdvanceCandidateStage,
   candidateStageOrder,
@@ -164,7 +165,13 @@ export async function POST(
       entityType: "candidate",
       entityId: candidateId,
       entityHref: `/people/candidates/${candidateId}`,
-    }).catch(() => undefined);
+    }).catch((err: unknown) => {
+      logError("stage_advance_notification_failed", {
+        candidateId,
+        userId: fullCandidate.hrOwnerId ?? null,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 
   return Response.json({ success: true, stage: next });

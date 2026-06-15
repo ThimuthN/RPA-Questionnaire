@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
+import { logError } from "@/lib/server/logger";
 import {
   deriveMilestoneStatus,
   milestoneCheckDefs,
@@ -543,7 +544,12 @@ export async function upsertInterviewPanelForMilestone(input: {
     if (scheduledAt) {
       import("@/lib/integrations/calendar-sync")
         .then(({ syncPanelToCalendar }) => syncPanelToCalendar(result.id))
-        .catch(() => undefined);
+        .catch((err: unknown) => {
+          logError("calendar_sync_fire_and_forget_failed", {
+            panelId: result.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
     }
     return result;
   });
