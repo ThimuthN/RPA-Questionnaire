@@ -3,17 +3,18 @@ import { ReactNode } from "react";
 export type BannerTone = "success" | "error" | "warning" | "info";
 
 function getToneStyles(tone: BannerTone): string {
+  const base = "rounded-[20px] border p-4 text-sm";
   switch (tone) {
     case "success":
-      return "rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-100";
+      return `${base} border-[color:var(--app-success)]/30 bg-[color:var(--app-success-soft)] text-[color:var(--app-success)]`;
     case "error":
-      return "rounded-[20px] border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100";
+      return `${base} border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger-soft)] text-[color:var(--app-danger)]`;
     case "warning":
-      return "rounded-[20px] border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-100";
+      return `${base} border-[color:var(--app-warning)]/30 bg-[color:var(--app-warning-soft)] text-[color:var(--app-warning)]`;
     case "info":
-      return "rounded-[20px] border border-blue-400/30 bg-blue-500/10 p-4 text-sm text-blue-100";
+      return `${base} border-[color:var(--app-primary)]/30 bg-[color:var(--app-primary)]/10 text-[color:var(--app-primary)]`;
     default:
-      return "rounded-[20px] border border-slate-400/30 bg-slate-500/10 p-4 text-sm text-slate-100";
+      return `${base} border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[color:var(--app-muted)]`;
   }
 }
 

@@ -220,7 +220,7 @@ export function CandidateWorkspaceTable({
                   <span className="sr-only">Select</span>
                 </th>
                 <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Owner</th>
+                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Assigned to</th>
                 <th scope="col" className="w-[20%] px-4 py-3 font-medium">Stage</th>
                 <th scope="col" className="w-[15%] px-4 py-3 font-medium">Role / department</th>
                 <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
