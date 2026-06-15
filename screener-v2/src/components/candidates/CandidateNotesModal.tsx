@@ -103,6 +103,7 @@ function NoteItem({
             disabled={isSaving || isDeleting}
             className="rounded-lg p-2 text-xs hover:bg-[color:var(--app-control-bg)] disabled:opacity-50"
             title={isEditing ? "Cancel" : "Edit note"}
+            aria-label={isEditing ? "Cancel editing" : "Edit note"}
           >
             {isEditing ? <X size={16} /> : <Pencil size={16} />}
           </button>
@@ -111,6 +112,7 @@ function NoteItem({
             disabled={isSaving || isDeleting}
             className="rounded-lg p-2 text-xs hover:bg-[color:var(--app-danger-soft)] disabled:opacity-50"
             title="Delete note"
+            aria-label="Delete note"
           >
             <Trash2 size={16} />
           </button>

@@ -267,6 +267,7 @@ export function EmailComposerModal({
                 </div>
                 <button
                   onClick={() => !sending && setOpen(false)}
+                  aria-label="Close email composer"
                   className="flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
                 >
                   <X size={15} />
@@ -422,7 +423,7 @@ export function EmailComposerModal({
                             className="inline-flex items-center gap-1 rounded-full bg-[color:var(--app-surface-soft)] border border-[color:var(--app-border)] px-2.5 py-1 text-[11px] text-[color:var(--app-muted)]"
                           >
                             {email}
-                            <button type="button" onClick={() => removeCc(email)} className="hover:text-red-400">
+                            <button type="button" onClick={() => removeCc(email)} aria-label={`Remove ${email} from CC`} className="hover:text-red-400">
                               <X size={10} />
                             </button>
                           </span>

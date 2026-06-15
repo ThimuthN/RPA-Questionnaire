@@ -352,6 +352,7 @@ export function CandidateWorkspaceTable({
                             }
                           }}
                           title="Quick actions"
+                          aria-label={`Quick actions for ${candidate.fullName}`}
                         >
                           <MoreHorizontal size={16} />
                         </button>

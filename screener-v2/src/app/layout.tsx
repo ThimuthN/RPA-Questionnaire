@@ -9,6 +9,7 @@ import { CommandPalette, CommandPaletteTrigger } from "@/components/search/Comma
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getAppSession } from "@/lib/auth/app-session";
 import { listDepartments } from "@/lib/db/departments";
+import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -72,6 +73,7 @@ export default async function RootLayout({
           Skip to main content
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <MotionProvider>
         <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
           <WorkspaceRail
             viewer={session ? { email: session.email, name: session.name, roleId: session.roleId, permissions: session.permissions, departmentId: session.departmentId } : null}
@@ -98,6 +100,7 @@ export default async function RootLayout({
           <ThemeToggle />
           {session ? <CommandPalette /> : null}
         </div>
+        </MotionProvider>
       </body>
     </html>
   );
