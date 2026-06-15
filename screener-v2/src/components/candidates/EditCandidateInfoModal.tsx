@@ -6,14 +6,9 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
+import { LocationPicker } from "@/components/candidates/LocationPicker";
 import { resumeSourceOptions } from "@/lib/candidates/types";
 import type { CandidateDetail } from "@/lib/db/candidates";
-
-interface UserOption {
-  id: string;
-  name: string | null;
-  email: string;
-}
 
 export function EditCandidateInfoModal({
   candidate,
@@ -37,34 +32,11 @@ export function EditCandidateInfoModal({
   }, [onOpenChange]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [owners, setOwners] = useState<UserOption[]>([]);
-  const [selectedOwnerId, setSelectedOwnerId] = useState<string>(candidate.hrOwnerId || "");
-
-  async function loadOwners(deptId: string) {
-    if (!deptId) {
-      setOwners([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/users?departmentId=${encodeURIComponent(deptId)}`, { cache: "no-store" });
-      const data = (await response.json()) as { ok?: boolean; users?: UserOption[] };
-      if (Array.isArray(data.users)) {
-        setOwners(data.users);
-      }
-    } catch {
-      // Silently fail - owners are optional
-    }
-  }
 
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
-
-  useEffect(() => {
-    loadOwners(candidate.departmentId || "");
-  }, [candidate.departmentId]);
 
   useEffect(() => {
     if (!open) return;
@@ -159,7 +131,8 @@ export function EditCandidateInfoModal({
                             {submitError}
                           </div>
                         )}
-                        <input type="hidden" name="hrOwnerId" value={selectedOwnerId} />
+                        {/* Owner is managed via the hiring team (primary owner). Preserve the existing value so saving the basics never clears it. */}
+                        <input type="hidden" name="hrOwnerId" value={candidate.hrOwnerId || ""} />
                         {returnTo ? <input type="hidden" name="returnTo" value={returnTo} /> : null}
 
                         <div className="grid gap-4 md:grid-cols-2">
@@ -192,7 +165,6 @@ export function EditCandidateInfoModal({
                               name="phone"
                               defaultValue={candidate.phone || ""}
                               disabled={isSubmitting}
-                              placeholder="Add a contact number"
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
@@ -203,21 +175,13 @@ export function EditCandidateInfoModal({
                               name="currentTitle"
                               defaultValue={candidate.currentTitle || ""}
                               disabled={isSubmitting}
-                              placeholder="e.g. Senior Software Engineer"
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
 
-                          <label className="grid gap-1">
-                            <span className="text-sm text-[color:var(--app-text)]">Location</span>
-                            <input
-                              name="location"
-                              defaultValue={candidate.location || ""}
-                              disabled={isSubmitting}
-                              placeholder="e.g. New York, NY"
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
-                            />
-                          </label>
+                          <div className="md:col-span-2">
+                            <LocationPicker name="location" defaultValue={candidate.location} disabled={isSubmitting} />
+                          </div>
 
                           <label className="grid gap-1">
                             <span className="text-sm text-[color:var(--app-text)]">Salary expectation</span>
@@ -225,59 +189,37 @@ export function EditCandidateInfoModal({
                               name="salaryExpectation"
                               defaultValue={candidate.salaryExpectation || ""}
                               disabled={isSubmitting}
-                              placeholder="e.g. $80,000–$100,000"
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
 
-                          <label className="grid gap-1 md:col-span-2">
+                          <label className="grid gap-1">
                             <span className="text-sm text-[color:var(--app-text)]">LinkedIn URL</span>
                             <input
                               name="linkedInUrl"
                               type="url"
                               defaultValue={candidate.linkedInUrl || ""}
                               disabled={isSubmitting}
-                              placeholder="https://linkedin.com/in/..."
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
 
-                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
-                            <span className="text-sm text-[color:var(--app-text)]">Registered</span>
-                            <p className="text-sm text-[color:var(--app-heading)]">
+                          <div className="grid gap-0.5 rounded-[18px] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                            <span className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--app-muted)]">Registered</span>
+                            <p className="text-sm font-medium text-[color:var(--app-heading)]">
                               {new Date(candidate.createdAt).toLocaleDateString()}
                             </p>
-                            <p className="text-xs text-[color:var(--app-muted)]">Original intake date for this candidate record.</p>
                           </div>
 
-                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
-                            <span className="text-sm text-[color:var(--app-text)]">Department</span>
-                            <p className="text-sm text-[color:var(--app-heading)]">{candidate.departmentName || "Not assigned"}</p>
-                            <p className="text-xs text-[color:var(--app-muted)]">Use Transfer department to change this bucket.</p>
+                          <div className="grid gap-0.5 rounded-[18px] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                            <span className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--app-muted)]">Department</span>
+                            <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={candidate.departmentName || "Not assigned"}>{candidate.departmentName || "Not assigned"}</p>
                           </div>
 
-                          <div className="grid gap-1 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
-                            <span className="text-sm text-[color:var(--app-text)]">Role</span>
-                            <p className="text-sm text-[color:var(--app-heading)]">{candidate.roleLabel || "Role not set"}</p>
-                            <p className="text-xs text-[color:var(--app-muted)]">Role changes follow the same transfer flow.</p>
+                          <div className="grid gap-0.5 rounded-[18px] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                            <span className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--app-muted)]">Role</span>
+                            <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={candidate.roleLabel || "Role not set"}>{candidate.roleLabel || "Role not set"}</p>
                           </div>
-
-                          <label className="grid gap-1">
-                            <span className="text-sm text-[color:var(--app-text)]">Owner</span>
-                            <select
-                              value={selectedOwnerId}
-                              onChange={(e) => setSelectedOwnerId(e.target.value)}
-                              disabled={isSubmitting}
-                              className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
-                            >
-                              <option value="">Unassigned</option>
-                              {owners.map((owner) => (
-                                <option key={owner.id} value={owner.id}>
-                                  {owner.name || owner.email}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
 
                           <label className="grid gap-1">
                             <span className="text-sm text-[color:var(--app-text)]">Batch / cohort</span>
@@ -285,7 +227,6 @@ export function EditCandidateInfoModal({
                               name="batchId"
                               defaultValue={candidate.batchId || ""}
                               disabled={isSubmitting}
-                              placeholder="Optional intake group"
                               className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                             />
                           </label>
@@ -308,8 +249,8 @@ export function EditCandidateInfoModal({
                           <span className="text-sm text-[color:var(--app-text)]">Folder link</span>
                           <input
                             name="candidateFolderUrl"
+                            type="url"
                             defaultValue={candidate.candidateFolderUrl || ""}
-                            placeholder="https://..."
                             disabled={isSubmitting}
                             className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80 disabled:opacity-50"
                           />
