@@ -1,5 +1,4 @@
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import {
   CANDIDATE_PRIVACY_POLICY_VERSION,
@@ -14,13 +13,12 @@ export default function PrivacyPage() {
 
   return (
     <PublicSiteFrame current="privacy">
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow="Legal"
-        title="Privacy Policy"
-        subtitle="How candidate and hiring data is collected, used, retained, and protected in the current Northstar recruiting workflow."
-      >
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--pub-brand)]">Legal</p>
+          <h1 className="font-display text-3xl font-semibold text-[color:var(--app-heading)]">Privacy Policy</h1>
+          <p className="text-sm leading-6 text-[color:var(--app-muted)]">How candidate and hiring data is collected, used, retained, and protected in the current {orgName} recruiting workflow.</p>
+        </div>
         <div className="space-y-5">
           <StagePanel tone="summary" className="space-y-3">
             <p className="text-sm text-[color:var(--app-text)]">
@@ -57,7 +55,7 @@ export default function PrivacyPage() {
             body="Northstar is designed to restrict access through authenticated sessions, permission checks, audit activity, and controlled storage of hiring records. No system should be treated as risk-free, so sensitive access and retention settings should be reviewed before production use."
           />
         </div>
-      </SceneShell>
+      </div>
     </PublicSiteFrame>
   );
 }

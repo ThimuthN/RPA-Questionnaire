@@ -6,7 +6,6 @@ import { Button } from "@/components/primitives/Button";
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { ApplicationDraftCleaner } from "@/components/jobs/JobApplicationForm";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
@@ -53,13 +52,7 @@ export default async function PublicJobDetailPage({
 
   return (
     <PublicSiteFrame current="careers">
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow=""
-        title=""
-        hideHeader
-      >
+      <div>
         {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
 
       {/* ── Job header card ── */}
@@ -246,7 +239,7 @@ export default async function PublicJobDetailPage({
           </StagePanel>
         </div>
       </div>
-      </SceneShell>
+      </div>
     </PublicSiteFrame>
   );
 }

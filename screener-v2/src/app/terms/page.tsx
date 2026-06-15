@@ -1,5 +1,4 @@
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { publicOrgName, SITE_POLICY_LAST_UPDATED } from "@/lib/legal/site-policy";
 
@@ -8,13 +7,12 @@ export default function TermsPage() {
 
   return (
     <PublicSiteFrame current="terms">
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow="Legal"
-        title="Terms of Use"
-        subtitle="Baseline terms for using the public careers pages, candidate application flow, and hiring workspace interfaces."
-      >
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--pub-brand)]">Legal</p>
+          <h1 className="font-display text-3xl font-semibold text-[color:var(--app-heading)]">Terms of Use</h1>
+          <p className="text-sm leading-6 text-[color:var(--app-muted)]">Baseline terms for using the public careers pages, candidate application flow, and hiring workspace interfaces.</p>
+        </div>
         <div className="space-y-5">
           <StagePanel tone="summary" className="space-y-3">
             <p className="text-sm text-[color:var(--app-text)]">
@@ -40,7 +38,7 @@ export default function TermsPage() {
             body="Features, workflows, and integrations may change over time. Organizations should validate internal operating procedures and legal notices whenever the hiring process materially changes."
           />
         </div>
-      </SceneShell>
+      </div>
     </PublicSiteFrame>
   );
 }

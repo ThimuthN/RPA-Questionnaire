@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { BriefcaseBusiness, Building2, ClipboardList, PlugZap, Shield, Users, Users2 } from "lucide-react";
+import { BriefcaseBusiness, Building2, ClipboardList, Home, PlugZap, Shield, Users, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -21,7 +21,7 @@ export function getNavItems(
   workspace?: string | null
 ): NavItem[] {
   if (!viewer) {
-    return [{ href: "/jobs" as Route, label: "Careers", icon: BriefcaseBusiness }];
+    return [];
   }
 
   const canManageUsers = viewer.permissions.includes("manage_users");
@@ -63,8 +63,9 @@ export function getNavItems(
     return items;
   }
 
-  // Default fallback (no workspace selected yet): show minimal items
-  return [];
+  // Default fallback: authenticated user on a non-workspace page (marketing, careers, etc.)
+  // Show a home link so they can navigate back to the app
+  return [{ href: "/departments" as Route, label: "Home", icon: Home }];
 }
 
 export function isNavItemActive(pathname: string, href: string) {

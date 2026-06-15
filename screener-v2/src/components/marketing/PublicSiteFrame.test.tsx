@@ -10,6 +10,10 @@ vi.mock("@/components/brand/AppLogo", () => ({
   AppLogo: () => <div>Northstar</div>
 }));
 
+vi.mock("@/components/marketing/PublicMobileMenu", () => ({
+  PublicMobileMenu: () => null
+}));
+
 describe("PublicSiteFrame", () => {
   it("renders public legal and careers navigation links", () => {
     const markup = renderToStaticMarkup(
@@ -21,6 +25,6 @@ describe("PublicSiteFrame", () => {
     expect(markup).toContain('href="/privacy"');
     expect(markup).toContain('href="/terms"');
     expect(markup).toContain('href="/jobs"');
-    expect(markup).toContain("Policy set updated");
+    expect(markup).toContain("Policy updated");
   });
 });

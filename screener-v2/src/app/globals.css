@@ -41,6 +41,20 @@ html[data-theme="light"] {
   --app-bg-accent-top: rgba(10, 166, 160, 0.26);
   --app-bg-accent-bottom: rgba(72, 118, 148, 0.20);
   --app-header-bg: linear-gradient(135deg, rgba(7,84,80,0.97), rgba(8,74,98,0.97) 52%, rgba(10,64,88,0.97));
+
+  /* Public site frame — light mode */
+  --pub-header-bg: rgba(255, 255, 255, 0.96);
+  --pub-footer-bg: rgba(244, 250, 251, 0.98);
+  --pub-border: rgba(180, 200, 210, 0.7);
+  --pub-brand: #0aa6a0;
+  --pub-heading: #0f2336;
+  --pub-nav-text: #3d607a;
+  --pub-muted: #5a7a8e;
+  --pub-active-bg: rgba(10, 166, 160, 0.12);
+  --pub-active-text: #087570;
+  --pub-hover-bg: rgba(10, 50, 80, 0.05);
+  --pub-btn-bg: rgba(255, 255, 255, 0.9);
+  --pub-btn-hover: rgba(240, 248, 250, 1);
   --app-header-border: rgba(255, 255, 255, 0.14);
   --app-header-surface: rgba(255, 255, 255, 0.16);
   --app-header-surface-hover: rgba(255, 255, 255, 0.26);
@@ -184,6 +198,20 @@ html[data-theme="dark"] {
   --app-rail-section-text: rgba(217, 229, 240, 0.36);
   --app-rail-divider: rgba(255, 255, 255, 0.08);
   --app-rail-stage-dot: rgba(255, 255, 255, 0.18);
+
+  /* Public site frame — dark mode */
+  --pub-header-bg: rgba(6, 14, 26, 0.96);
+  --pub-footer-bg: rgba(5, 11, 21, 0.98);
+  --pub-border: rgba(255, 255, 255, 0.08);
+  --pub-brand: #18b5ae;
+  --pub-heading: #f0f6fb;
+  --pub-nav-text: rgba(200, 220, 236, 0.75);
+  --pub-muted: #8aa0b6;
+  --pub-active-bg: rgba(24, 181, 174, 0.15);
+  --pub-active-text: #18b5ae;
+  --pub-hover-bg: rgba(255, 255, 255, 0.06);
+  --pub-btn-bg: rgba(255, 255, 255, 0.07);
+  --pub-btn-hover: rgba(255, 255, 255, 0.12);
 }
 
 * {

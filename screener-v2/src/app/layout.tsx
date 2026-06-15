@@ -61,7 +61,6 @@ export default async function RootLayout({
 }>) {
   const session = await getAppSession();
 
-  // Fetch departments for workspace selector (only active departments)
   const departments = session
     ? await listDepartments(false)
     : [];
@@ -74,32 +73,41 @@ export default async function RootLayout({
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <MotionProvider>
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
-          <WorkspaceRail
-            viewer={session ? { email: session.email, name: session.name, roleId: session.roleId, permissions: session.permissions, departmentId: session.departmentId } : null}
-            departments={departments}
-          />
-          <div className="min-w-0 flex-1">
-            <header className="northstar-ribbon-shell sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">
-              <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5">
-                <Link href="/" className="transition hover:opacity-95">
-                  <AppLogo compact />
-                </Link>
-                <div className="flex items-center gap-2">
-                  {session ? <NotificationBell /> : null}
-                  {session ? <CommandPaletteTrigger /> : null}
-                </div>
-                <MainNav
-                  viewer={session ? { email: session.email, name: session.name, permissions: session.permissions, departmentId: session.departmentId } : null}
-                  departments={departments}
-                />
-              </nav>
-            </header>
-            <main id="main-content" className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-10">{children}</main>
-          </div>
-          <ThemeToggle />
-          {session ? <CommandPalette /> : null}
-        </div>
+          {session ? (
+            /* ── Authenticated: full sidebar layout ── */
+            <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
+              <WorkspaceRail
+                viewer={{ email: session.email, name: session.name, roleId: session.roleId, permissions: session.permissions, departmentId: session.departmentId }}
+                departments={departments}
+              />
+              <div className="min-w-0 flex-1">
+                <header className="northstar-ribbon-shell sticky top-0 z-30 border-b border-[color:var(--app-header-border)] bg-[color:var(--app-header-bg)] backdrop-blur-xl md:hidden">
+                  <nav className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3.5">
+                    <Link href="/" className="transition hover:opacity-95">
+                      <AppLogo compact />
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      <NotificationBell />
+                      <CommandPaletteTrigger />
+                    </div>
+                    <MainNav
+                      viewer={{ email: session.email, name: session.name, permissions: session.permissions, departmentId: session.departmentId }}
+                      departments={departments}
+                    />
+                  </nav>
+                </header>
+                <main id="main-content" className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-10">{children}</main>
+              </div>
+              <ThemeToggle />
+              <CommandPalette />
+            </div>
+          ) : (
+            /* ── Public / unauthenticated: no sidebar, full-width ── */
+            <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)]">
+              <main id="main-content">{children}</main>
+              <ThemeToggle />
+            </div>
+          )}
         </MotionProvider>
       </body>
     </html>

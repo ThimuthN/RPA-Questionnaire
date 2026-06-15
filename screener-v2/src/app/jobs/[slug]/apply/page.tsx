@@ -5,7 +5,6 @@ import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { ApplicationDraftCleaner, JobApplicationForm } from "@/components/jobs/JobApplicationForm";
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobApplicationContextBySlug } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
@@ -47,18 +46,17 @@ export default async function ApplyPage({
 
   return (
     <PublicSiteFrame current="careers">
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow="Application"
-        title={`Apply to ${job.title}`}
-        subtitle={`${orgName} - ${subtitle}`}
-        utility={
-          <Link href={backToRole}>
-            <Button variant="secondary">Back to role</Button>
+      <div>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--pub-brand)]">Application</p>
+            <h1 className="font-display text-2xl font-semibold text-[color:var(--app-heading)] sm:text-3xl">Apply to {job.title}</h1>
+            <p className="text-sm text-[color:var(--app-muted)]">{orgName} · {subtitle}</p>
+          </div>
+          <Link href={backToRole} className="shrink-0 mt-1">
+            <Button variant="secondary">← Back to role</Button>
           </Link>
-        }
-      >
+        </div>
         <div className="max-w-3xl space-y-6">
         {pageState.submitted ? (
           <>
@@ -145,7 +143,7 @@ export default async function ApplyPage({
           </>
         ) : null}
         </div>
-      </SceneShell>
+      </div>
     </PublicSiteFrame>
   );
 }

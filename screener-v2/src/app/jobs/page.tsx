@@ -3,9 +3,9 @@ import Link from "next/link";
 import { DollarSign, Search } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
-import { SceneShell } from "@/components/scene/SceneShell";
 import { listPublicJobPostings } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
+import { getAppSession } from "@/lib/auth/app-session";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,7 @@ export default async function PublicJobsPage({
 }) {
   if (!PUBLIC_JOBS_ENABLED) notFound();
 
+  const session = await getAppSession();
   const orgName = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
   const params = await searchParams;
   const allJobs = await listPublicJobPostings();
@@ -63,15 +64,16 @@ export default async function PublicJobsPage({
     : `${allJobs.length} open ${allJobs.length === 1 ? "role" : "roles"}`;
 
   return (
-    <PublicSiteFrame current="careers">
-      <SceneShell
-        variant="results"
-        tone="page"
-        eyebrow={`${orgName} careers`}
-        title="Find your next role"
-        subtitle="Browse open roles and apply online."
-      >
-        <div className="space-y-8">
+    <PublicSiteFrame current="careers" backHref={session ? "/departments" : undefined}>
+      <div className="space-y-8">
+        {/* Page header */}
+        <div className="space-y-1.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--pub-brand)]">{orgName} Careers</p>
+          <h1 className="font-display text-3xl font-semibold text-[color:var(--app-heading)] sm:text-4xl">Find your next role</h1>
+          <p className="text-sm text-[color:var(--app-muted)]">Browse open positions and apply directly online.</p>
+        </div>
+
+        <div>
 
         {/* ── Search + filter bar ── */}
         <div className="space-y-4">
@@ -220,7 +222,7 @@ export default async function PublicJobsPage({
           </div>
         )}
         </div>
-      </SceneShell>
+      </div>
     </PublicSiteFrame>
   );
 }
