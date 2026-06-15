@@ -333,9 +333,11 @@ export async function listPublicJobPostings(filters: ListPublicJobPostingsFilter
           label: true
         }
       },
-      applications: {
+      _count: {
         select: {
-          status: true
+          applications: {
+            where: { status: { in: ["submitted", "under_review"] } }
+          }
         }
       }
     }

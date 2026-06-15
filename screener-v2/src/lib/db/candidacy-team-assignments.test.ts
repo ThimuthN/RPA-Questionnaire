@@ -5,11 +5,11 @@ const tx = {
     findUnique: vi.fn()
   },
   user: {
-    findUnique: vi.fn()
+    findMany: vi.fn()
   },
   departmentCandidacyTeamAssignment: {
     updateMany: vi.fn(),
-    findUnique: vi.fn(),
+    findMany: vi.fn(),
     update: vi.fn(),
     create: vi.fn()
   }
@@ -36,17 +36,14 @@ describe("candidacy-team-assignments", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     tx.departmentCandidacy.findUnique.mockResolvedValue({ departmentId: "dept-1" });
-    tx.user.findUnique.mockResolvedValue({ id: "user-1", isActive: true });
+    tx.user.findMany.mockResolvedValue([{ id: "user-1", isActive: true }]);
     tx.departmentCandidacyTeamAssignment.updateMany.mockResolvedValue({ count: 1 });
   });
 
   it("reactivates an existing assignment instead of creating a duplicate row", async () => {
-    tx.departmentCandidacyTeamAssignment.findUnique.mockResolvedValue({
-      candidacyId: "cand-1",
-      userId: "user-1",
-      role: "owner",
-      isActive: false
-    });
+    tx.departmentCandidacyTeamAssignment.findMany.mockResolvedValue([
+      { userId: "user-1", role: "owner" }
+    ]);
     tx.departmentCandidacyTeamAssignment.update.mockResolvedValue({
       id: "existing-assignment",
       user: { id: "user-1", name: "Owner", email: "owner@example.com" }

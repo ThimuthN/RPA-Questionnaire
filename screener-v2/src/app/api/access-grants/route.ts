@@ -115,7 +115,8 @@ export async function GET(request: Request) {
       department: { select: { id: true, name: true } },
       role: { select: { id: true, slug: true, label: true } }
     },
-    orderBy: [{ scope: "desc" }, { department: { name: "asc" } }]
+    orderBy: [{ scope: "desc" }, { department: { name: "asc" } }],
+    take: 100,
   });
 
   return NextResponse.json({ ok: true, grants });

@@ -34,7 +34,8 @@ export async function GET(
           }
         }
       },
-      orderBy: { user: { name: "asc" } }
+      orderBy: { user: { name: "asc" } },
+      take: 200,
     });
 
     return NextResponse.json({

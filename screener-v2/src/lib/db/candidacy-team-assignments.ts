@@ -144,28 +144,32 @@ export async function replaceCandidacyTeamAssignments(
       data: { isActive: false }
     });
 
-    const created: any[] = [];
+    const userIds = [...new Set(assignments.map((a) => a.userId))];
+
+    // Batch user validation — one query instead of one per assignment
+    const users = await tx.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, isActive: true },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
     for (const assignment of assignments) {
-      const user = await tx.user.findUnique({
-        where: { id: assignment.userId },
-        select: { id: true, isActive: true }
-      });
-
+      const user = userMap.get(assignment.userId);
       if (!user || !user.isActive) {
         throw new Error(`User ${assignment.userId} not found or inactive`);
       }
+    }
 
-      const existing = await tx.departmentCandidacyTeamAssignment.findUnique({
-        where: {
-          candidacyId_userId_role: {
-            candidacyId,
-            userId: assignment.userId,
-            role: assignment.role
-          }
-        }
-      });
+    // Batch existing-assignment lookup — one query instead of one per assignment
+    const existingAssignments = await tx.departmentCandidacyTeamAssignment.findMany({
+      where: { candidacyId, userId: { in: userIds } },
+      select: { userId: true, role: true },
+    });
+    const existingSet = new Set(existingAssignments.map((e) => `${e.userId}:${e.role}`));
 
+    const created: Array<Awaited<ReturnType<typeof tx.departmentCandidacyTeamAssignment.update>>> = [];
+
+    for (const assignment of assignments) {
       const assignmentData = {
         source: assignment.source ?? "manual",
         templateId: assignment.templateId ?? null,
@@ -176,7 +180,7 @@ export async function replaceCandidacyTeamAssignments(
         updatedAt: new Date()
       };
 
-      const nextAssignment = existing
+      const nextAssignment = existingSet.has(`${assignment.userId}:${assignment.role}`)
         ? await tx.departmentCandidacyTeamAssignment.update({
             where: {
               candidacyId_userId_role: {
