@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
+import { LocationPicker } from "@/components/candidates/LocationPicker";
 import {
   clearApplicationDraft,
   draftKey,
@@ -29,6 +30,9 @@ type FormValues = {
   fullName: string;
   email: string;
   phone: string;
+  currentTitle: string;
+  location: string;
+  linkedInUrl: string;
   coverNote: string;
   source: string;
   referredBy: string;
@@ -130,6 +134,9 @@ export function JobApplicationForm({
     fullName: "",
     email: "",
     phone: "",
+    currentTitle: "",
+    location: "",
+    linkedInUrl: "",
     coverNote: "",
     source: "",
     referredBy: "",
@@ -148,6 +155,9 @@ export function JobApplicationForm({
         fullName: draft.fullName,
         email: draft.email,
         phone: draft.phone,
+        currentTitle: draft.currentTitle ?? "",
+        location: draft.location ?? "",
+        linkedInUrl: draft.linkedInUrl ?? "",
         coverNote: draft.coverNote,
         source: draft.source ?? "",
         referredBy: draft.referredBy ?? "",
@@ -190,6 +200,9 @@ export function JobApplicationForm({
       fullName: "",
       email: "",
       phone: "",
+      currentTitle: "",
+      location: "",
+      linkedInUrl: "",
       coverNote: "",
       source: "",
       referredBy: "",
@@ -308,6 +321,35 @@ export function JobApplicationForm({
             maxLength={PHONE_MAX}
             placeholder="+94 77 123 4567"
             autoComplete="tel"
+            className={inputClassName}
+          />
+        </label>
+        <label className="grid gap-1.5">
+          <span className="text-sm text-[color:var(--app-text)]">Current title (optional)</span>
+          <input
+            name="currentTitle"
+            value={values.currentTitle}
+            onChange={updateValue("currentTitle")}
+            maxLength={120}
+            autoComplete="organization-title"
+            className={inputClassName}
+          />
+        </label>
+        <LocationPicker
+          key={initialized ? "loc-ready" : "loc-init"}
+          name="location"
+          defaultValue={values.location}
+          onChange={(loc) => setValues((v) => (v.location === loc ? v : { ...v, location: loc }))}
+        />
+        <label className="grid gap-1.5">
+          <span className="text-sm text-[color:var(--app-text)]">LinkedIn URL (optional)</span>
+          <input
+            name="linkedInUrl"
+            type="url"
+            value={values.linkedInUrl}
+            onChange={updateValue("linkedInUrl")}
+            maxLength={300}
+            autoComplete="url"
             className={inputClassName}
           />
         </label>
@@ -436,6 +478,9 @@ export function JobApplicationForm({
           <ReviewRow label="Full name" value={values.fullName} />
           <ReviewRow label="Email" value={values.email} />
           {values.phone ? <ReviewRow label="Phone" value={values.phone} /> : null}
+          {values.currentTitle ? <ReviewRow label="Current title" value={values.currentTitle} /> : null}
+          {values.location ? <ReviewRow label="Location" value={values.location} /> : null}
+          {values.linkedInUrl ? <ReviewRow label="LinkedIn" value={values.linkedInUrl} /> : null}
           <ReviewRow label="Resume" value={resumeFileName ?? "No resume attached"} />
           {values.source ? (
             <ReviewRow

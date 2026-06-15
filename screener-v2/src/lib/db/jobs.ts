@@ -1019,6 +1019,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   fullName: string;
   email: string;
   phone?: string;
+  currentTitle?: string;
+  location?: string;
+  linkedInUrl?: string;
   coverNote?: string;
   consentGivenAt?: Date;
   consentVersion?: string;
@@ -1089,6 +1092,9 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         fullName: input.fullName,
         email: normalizedEmail,
         phone: input.phone,
+        currentTitle: input.currentTitle?.trim() || undefined,
+        location: input.location?.trim() || undefined,
+        linkedInUrl: input.linkedInUrl?.trim() || undefined,
         roleId: job.roleId ?? undefined,
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
@@ -1114,6 +1120,10 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         data: {
           fullName: input.fullName.trim(),
           phone: input.phone?.trim() || undefined,
+          // Preserve applicant-provided profile details (only set when provided; never blanks out existing values)
+          currentTitle: input.currentTitle?.trim() || undefined,
+          location: input.location?.trim() || undefined,
+          linkedInUrl: input.linkedInUrl?.trim() || undefined,
           roleId: job.roleId ?? undefined,
           departmentId: job.role?.departmentId ?? undefined,
           positionAppliedFor: job.title

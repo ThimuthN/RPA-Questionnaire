@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LOCATION_COUNTRIES } from "@/lib/locations/locations";
 
 const selectClassName =
@@ -62,11 +62,13 @@ function parseInitial(value: string) {
 export function LocationPicker({
   name,
   defaultValue,
-  disabled
+  disabled,
+  onChange
 }: {
   name: string;
   defaultValue?: string | null;
   disabled?: boolean;
+  onChange?: (composed: string) => void;
 }) {
   const initial = useMemo(() => parseInitial(defaultValue ?? ""), [defaultValue]);
   const [countryCode, setCountryCode] = useState(initial.countryCode);
@@ -80,6 +82,15 @@ export function LocationPicker({
   const composed = [area.trim(), city, region, country?.name]
     .filter((part) => part && part.length > 0)
     .join(", ");
+
+  // Mirror the composed value to an optional parent (kept lint-safe + loop-free via a ref).
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+  useEffect(() => {
+    onChangeRef.current?.(composed);
+  }, [composed]);
 
   return (
     <div className="grid gap-2">
