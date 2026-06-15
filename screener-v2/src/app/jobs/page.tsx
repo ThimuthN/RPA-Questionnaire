@@ -108,7 +108,7 @@ export default async function PublicJobsPage({
             </select>
             <button
               type="submit"
-              className="rounded-full bg-brand-500 px-6 py-3 text-sm font-medium text-white transition hover:bg-brand-400 active:scale-95"
+              className="rounded-full bg-[color:var(--app-brand)] px-6 py-3 text-sm font-medium text-white transition hover:brightness-110 active:scale-95"
             >
               Search
             </button>
@@ -121,7 +121,7 @@ export default async function PublicJobsPage({
               href={buildHref({ department: undefined })}
               className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                 !params.department
-                  ? "bg-brand-400/15 text-brand-300 ring-1 ring-brand-300/40"
+                  ? "bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand)] ring-1 ring-[color:var(--app-brand)]/40"
                   : "text-[color:var(--app-muted)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
               }`}
             >
@@ -133,7 +133,7 @@ export default async function PublicJobsPage({
                 href={buildHref({ department: dept })}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   params.department === dept
-                    ? "bg-brand-400/15 text-brand-300 ring-1 ring-brand-300/40"
+                    ? "bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand)] ring-1 ring-[color:var(--app-brand)]/40"
                     : "text-[color:var(--app-muted)] hover:text-[color:var(--app-text)] hover:bg-[color:var(--app-surface-soft)]"
                 }`}
               >
@@ -176,43 +176,49 @@ export default async function PublicJobsPage({
               return (
                 <article
                   key={job.id}
-                  className="group flex items-start gap-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-5 transition-all hover:border-brand-300/30 hover:bg-[color:var(--app-surface-soft)] hover:shadow-lg hover:shadow-black/20"
+                  className="group flex items-start gap-4 rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 transition-all hover:border-[color:var(--app-brand)]/40 hover:bg-[color:var(--app-surface-soft)] hover:shadow-[var(--app-shadow)] sm:p-5"
                 >
                   {/* Company avatar */}
-                  <div className="h-12 w-12 shrink-0 rounded-xl border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_18%,var(--app-surface-soft)),var(--app-surface-muted))] flex items-center justify-center text-base font-bold text-[color:var(--app-brand)]">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_18%,var(--app-surface-soft)),var(--app-surface-muted))] text-base font-bold text-[color:var(--app-brand)]">
                     {orgName.charAt(0)}
                   </div>
 
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <h2 className="font-semibold text-[color:var(--app-heading)] group-hover:text-brand-200 transition-colors leading-snug">
+                        <h2 className="truncate text-[15px] font-semibold leading-snug text-[color:var(--app-heading)] transition-colors group-hover:text-[color:var(--app-brand)]" title={job.title}>
                           {job.title}
                         </h2>
-                        <p className="mt-0.5 text-sm text-[color:var(--app-muted)]">
+                        <p className="mt-0.5 truncate text-sm text-[color:var(--app-muted)]">
                           {orgName}{meta ? ` · ${meta}` : ""}
                         </p>
                       </div>
-                      <Link href={`/jobs/${job.slug}` as Route} className="shrink-0 mt-0.5">
-                        <Button variant="secondary">View role</Button>
+                      <Link href={`/jobs/${job.slug}` as Route} className="mt-0.5 shrink-0">
+                        <Button variant="secondary" className="px-4 py-2 text-xs">View role</Button>
                       </Link>
                     </div>
 
                     {job.summary ? (
-                      <p className="mt-2 text-sm leading-6 text-[color:var(--app-muted)] line-clamp-2">
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--app-muted)]">
                         {job.summary}
                       </p>
                     ) : null}
 
-                    <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[color:var(--app-muted)]">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-[color:var(--app-muted)]">
                       {salaryLabel ? (
-                        <span className="flex items-center gap-1 text-[color:var(--app-text)]">
+                        <span className="flex items-center gap-1 font-medium text-[color:var(--app-text)]">
                           <DollarSign className="h-3 w-3" />
                           {salaryLabel}
                         </span>
                       ) : null}
-                      {job.roleLabel ? <span>{job.roleLabel}</span> : null}
+                      {job.roleLabel ? (
+                        <>
+                          {salaryLabel ? <span className="opacity-40">·</span> : null}
+                          <span>{job.roleLabel}</span>
+                        </>
+                      ) : null}
+                      <span className="opacity-40">·</span>
                       <span>Updated {updatedAtFormatter.format(new Date(job.updatedAt))}</span>
                     </div>
                   </div>
