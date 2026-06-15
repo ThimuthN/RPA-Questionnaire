@@ -76,7 +76,59 @@ async function ensureSystemAdminRole() {
     skipDuplicates: true
   });
 
-  return { systemDept, adminRole };
+  // Canonical access role that isSystemAdmin()/getAppSession() actually recognize:
+  // an "access_role" with the HYPHEN slug "system-admin", granted via a system-scoped AccessGrant.
+  // (The legacy underscore "system_admin" job-designation above is kept for backward compatibility.)
+  let accessRole = await prisma.roleCatalog.findFirst({
+    where: { slug: "system-admin", departmentId: systemDept.id }
+  });
+
+  if (!accessRole) {
+    accessRole = await prisma.roleCatalog.create({
+      data: {
+        slug: "system-admin",
+        label: "System Admin",
+        kind: "access_role",
+        applicability: "both",
+        isActive: true,
+        departmentId: systemDept.id
+      }
+    });
+  } else if (accessRole.kind !== "access_role" || accessRole.applicability !== "both" || !accessRole.isActive) {
+    accessRole = await prisma.roleCatalog.update({
+      where: { id: accessRole.id },
+      data: { kind: "access_role", applicability: "both", isActive: true }
+    });
+  }
+
+  await prisma.rolePermissionTemplate.createMany({
+    data: APP_ACTIONS.map((permission) => ({
+      roleId: accessRole.id,
+      permission,
+      scope: "global"
+    })),
+    skipDuplicates: true
+  });
+
+  return { systemDept, adminRole, accessRole };
+}
+
+/** Idempotently ensure the user holds an active system-scoped grant to the canonical system-admin access role. */
+async function ensureSystemAdminGrant(userId: string, accessRoleId: string, systemDeptId: string) {
+  const existing = await prisma.accessGrant.findFirst({
+    where: { userId, roleId: accessRoleId, departmentId: systemDeptId, status: "active" }
+  });
+  if (!existing) {
+    await prisma.accessGrant.create({
+      data: {
+        userId,
+        roleId: accessRoleId,
+        departmentId: systemDeptId,
+        scope: "system",
+        status: "active"
+      }
+    });
+  }
 }
 
 export async function ensureBootstrapAdmin() {
@@ -88,7 +140,7 @@ export async function ensureBootstrapAdmin() {
     return;
   }
 
-  const { systemDept, adminRole } = await ensureSystemAdminRole();
+  const { systemDept, adminRole, accessRole } = await ensureSystemAdminRole();
   const existing = await prisma.user.findUnique({ where: { email } });
 
   if (existing) {
@@ -102,10 +154,11 @@ export async function ensureBootstrapAdmin() {
         }
       });
     }
+    await ensureSystemAdminGrant(existing.id, accessRole.id, systemDept.id);
     return;
   }
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       email,
       name,
@@ -115,6 +168,7 @@ export async function ensureBootstrapAdmin() {
       isActive: true
     }
   });
+  await ensureSystemAdminGrant(created.id, accessRole.id, systemDept.id);
 }
 
 export async function authenticateAppUser(email: string, password: string): Promise<AppSession | null> {
