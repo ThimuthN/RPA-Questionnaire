@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { logError } from "@/lib/server/logger";
 
 const schema = z.object({ note: z.string().optional() });
 
@@ -57,7 +58,9 @@ export async function POST(
       entityId: id,
       detail: `${auth.session.name ?? auth.session.email ?? "An approver"} rejected the offer approval step and returned the offer to draft.`
     }
-  }).catch(() => undefined);
+  }).catch((err: unknown) => {
+    logError("offer_rejected_activity_failed", { candidateId: id, error: err instanceof Error ? err.message : String(err) });
+  });
 
   return NextResponse.json({ ok: true, status: "draft" });
 }

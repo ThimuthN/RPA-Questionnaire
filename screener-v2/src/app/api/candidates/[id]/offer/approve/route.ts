@@ -4,6 +4,7 @@ import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { sendEmailSafe, adHocEmail, getOrgName } from "@/lib/email";
 import { createNotification } from "@/lib/notifications/service";
+import { logError } from "@/lib/server/logger";
 
 const schema = z.object({ note: z.string().optional() });
 
@@ -69,16 +70,20 @@ export async function POST(
         entityId: id,
         detail: `${auth.session.name ?? auth.session.email ?? "An approver"} approved this step. Next approver: ${next.approver.email}.`
       }
-    }).catch(() => undefined);
+    }).catch((err: unknown) => {
+      logError("offer_approval_step_activity_failed", { candidateId: id, error: err instanceof Error ? err.message : String(err) });
+    });
     void createNotification({
       userId: next.approver.id,
       type: "offer_submitted_for_approval",
-      title: `Offer approval required â€” ${offer.candidate.fullName}`,
+      title: `Offer approval required - ${offer.candidate.fullName}`,
       body: "You are the current approver for this offer.",
       entityType: "candidate",
       entityId: id,
       entityHref: `/people/candidates/${id}`,
-    }).catch(() => undefined);
+    }).catch((err: unknown) => {
+      logError("offer_approval_step_notification_failed", { candidateId: id, approverId: next.approver.id, error: err instanceof Error ? err.message : String(err) });
+    });
     return NextResponse.json({ ok: true, status: "submitted_for_approval" });
   }
 
@@ -99,7 +104,9 @@ export async function POST(
       entityId: id,
       detail: `${auth.session.name ?? auth.session.email ?? "An approver"} completed the final approval step.`
     }
-  }).catch(() => undefined);
+  }).catch((err: unknown) => {
+    logError("offer_fully_approved_activity_failed", { candidateId: id, error: err instanceof Error ? err.message : String(err) });
+  });
 
   // Notify all approvers that the offer is fully approved
   const approverIds = [...new Set(offer.approvalSteps.map((s) => s.approverId).filter(Boolean))] as string[];
@@ -108,14 +115,16 @@ export async function POST(
       createNotification({
         userId,
         type: "offer_approved",
-        title: `Offer approved — ${offer.candidate.fullName}`,
+        title: `Offer approved - ${offer.candidate.fullName}`,
         body: "All approval steps completed. The offer is ready to send.",
         entityType: "candidate",
         entityId: id,
         entityHref: `/people/candidates/${id}`,
       })
     )
-  ).catch(() => undefined);
+  ).catch((err: unknown) => {
+    logError("offer_fully_approved_notifications_failed", { candidateId: id, error: err instanceof Error ? err.message : String(err) });
+  });
 
   return NextResponse.json({ ok: true, status: updated.status });
 }

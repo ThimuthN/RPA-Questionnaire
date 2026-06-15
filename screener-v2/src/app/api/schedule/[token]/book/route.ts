@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { resolveSchedulingToken, markSchedulingTokenUsed } from "@/lib/scheduling/token";
+import { logError } from "@/lib/server/logger";
 
 const bookSchema = z.object({
   windowId: z.string().min(1),
@@ -54,7 +55,9 @@ export async function POST(
   // Fire calendar sync if Microsoft integration is connected (fire-and-forget)
   import("@/lib/integrations/calendar-sync")
     .then(({ syncPanelToCalendar }) => syncPanelToCalendar(panel.id))
-    .catch(() => undefined);
+    .catch((err: unknown) => {
+      logError("self_schedule_calendar_sync_failed", { panelId: panel.id, error: err instanceof Error ? err.message : String(err) });
+    });
 
   return NextResponse.json({ ok: true });
 }
