@@ -920,6 +920,7 @@ model OfferApprovalChainStep {
   approver   User     @relation("OfferApprovalChainStepApprover", fields: [approverId], references: [id], onDelete: Cascade)
 
   @@index([chainId, sortOrder])
+  @@index([approverId])
 }
 
 model OfferApprovalStep {
@@ -1085,6 +1086,7 @@ model EmailLog {
   @@index([candidateId, sentAt])
   @@index([status])
   @@index([status, sentAt])
+  @@index([sentById])
 }
 
 model IntegrationProviderApp {
@@ -1259,6 +1261,7 @@ model InterviewKit {
 
   @@index([departmentId])
   @@index([isGlobal])
+  @@index([createdById])
 }
 
 model InterviewKitCompetency {
