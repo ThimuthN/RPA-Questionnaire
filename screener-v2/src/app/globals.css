@@ -123,6 +123,14 @@ html[data-theme="light"] {
   --app-rail-section-text: rgba(220, 232, 242, 0.44);
   --app-rail-divider: rgba(255, 255, 255, 0.10);
   --app-rail-stage-dot: rgba(255, 255, 255, 0.22);
+
+  /* Hero section — light mode */
+  --hero-heading: #0f2336;
+  --hero-subtext: #2c4a5e;
+  --hero-muted: #5a7a8e;
+  --hero-accent-brand: #1a5bbf;
+  --hero-accent-teal: #0a7d78;
+  --hero-accent-amber: #8c6009;
 }
 
 html[data-theme="dark"] {
@@ -198,6 +206,14 @@ html[data-theme="dark"] {
   --app-rail-section-text: rgba(217, 229, 240, 0.36);
   --app-rail-divider: rgba(255, 255, 255, 0.08);
   --app-rail-stage-dot: rgba(255, 255, 255, 0.18);
+
+  /* Hero section — dark mode */
+  --hero-heading: #ffffff;
+  --hero-subtext: #d9e5f0;
+  --hero-muted: #8aa0b6;
+  --hero-accent-brand: #8ab8ff;
+  --hero-accent-teal: #5eead4;
+  --hero-accent-amber: #fcd34d;
 
   /* Public site frame — dark mode */
   --pub-header-bg: rgba(6, 14, 26, 0.96);
@@ -276,6 +292,60 @@ html[data-theme="light"] .northstar-ribbon-shell {
     radial-gradient(circle at 82% 12%, rgba(70, 150, 220, 0.14), transparent 22%),
     linear-gradient(145deg, rgba(6,78,74,0.97) 0%, rgba(8,78,100,0.97) 52%, rgba(10,62,86,0.97) 100%);
   box-shadow: 0 12px 32px rgba(6, 30, 50, 0.18);
+}
+
+/* ── Hero section ── */
+.hero-card {
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(10, 166, 160, 0.11), transparent 40%),
+    radial-gradient(ellipse at 85% 20%, rgba(47, 134, 255, 0.07), transparent 35%),
+    linear-gradient(160deg, #eef6ff 0%, #e8f2ff 50%, #eef0ff 100%);
+}
+
+html[data-theme="dark"] .hero-card {
+  background:
+    radial-gradient(circle at top left, rgba(47, 134, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 78% 14%, rgba(157, 140, 255, 0.10), transparent 22%),
+    linear-gradient(180deg, rgba(16, 39, 73, 0.84), rgba(5, 11, 22, 0.96));
+}
+
+.hero-signal-card {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(150, 190, 220, 0.48);
+  box-shadow: 0 4px 12px rgba(10, 35, 55, 0.07);
+  backdrop-filter: blur(8px);
+}
+
+html[data-theme="dark"] .hero-signal-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(10, 35, 55, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 35, 55, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+html[data-theme="dark"] .hero-grid-overlay {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Public logo mark (on light nav background) ── */
+html[data-theme="light"] .pub-logo-mark {
+  background: rgba(10, 166, 160, 0.10) !important;
+  border-color: rgba(10, 166, 160, 0.22) !important;
+  box-shadow: 0 2px 8px rgba(10, 35, 55, 0.08) !important;
+}
+
+html[data-theme="light"] .pub-logo-mark .northstar-icon-asset,
+html[data-theme="light"] .pub-logo-mark .northstar-logo-asset {
+  filter: none !important;
 }
 
 

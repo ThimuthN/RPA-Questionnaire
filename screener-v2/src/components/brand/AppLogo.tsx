@@ -1,12 +1,17 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 
-function StarryCompactMark() {
+function NorthstarCompactMark({ pubStyle = false }: { pubStyle?: boolean }) {
   return (
-    <div className="northstar-mark-shell relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-[14px] border border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)] shadow-[var(--app-shadow-soft)]">
+    <div className={cn(
+      "northstar-mark-shell relative h-10 w-10 overflow-hidden rounded-[14px] border shadow-[var(--app-shadow-soft)]",
+      pubStyle
+        ? "pub-logo-mark border-[color:var(--pub-border)] bg-[color:var(--pub-active-bg)]"
+        : "border-[color:var(--app-header-border)] bg-[color:var(--app-header-surface)]"
+    )}>
       <Image
         src="/brand/northstar-icon-clean.png"
-        alt="Starry"
+        alt="Northstar"
         fill
         sizes="40px"
         className="northstar-asset northstar-icon-asset object-contain p-1.5"
@@ -16,25 +21,25 @@ function StarryCompactMark() {
   );
 }
 
-function StarryWordmark() {
+function NorthstarWordmark({ pubStyle = false }: { pubStyle?: boolean }) {
   return (
-    <div className="flex flex-col items-start justify-center gap-0">
-      <div className="flex items-center gap-1.5">
-        <span
-          aria-hidden="true"
-          className="northstar-asset northstar-icon-asset select-none text-[17px] leading-none"
-          style={{ fontFamily: "serif" }}
-        >
-          ✦
-        </span>
-        <span
-          className="northstar-asset northstar-logo-asset select-none font-display text-[19px] font-semibold leading-none tracking-[-0.02em]"
-        >
-          Starry
-        </span>
+    <div className={cn(
+      "hidden min-[1080px]:flex min-[1080px]:min-w-[248px] flex-col items-center justify-center gap-0.5",
+      pubStyle && "pub-logo-mark"
+    )}>
+      <div className="relative h-[34px] w-[248px] overflow-hidden">
+        <Image
+          src="/brand/northstar-logo-clean.png"
+          alt="Northstar"
+          width={248}
+          height={50}
+          sizes="248px"
+          className="northstar-asset northstar-logo-asset block h-full w-full object-contain object-center"
+          priority
+        />
       </div>
-      <p className="northstar-tagline ml-[25px] text-[9px] uppercase tracking-[0.24em] leading-none mt-[3px]">
-        Talent OS
+      <p className="northstar-tagline text-[10px] uppercase tracking-[0.22em]">
+        Tracking trajectory
       </p>
     </div>
   );
@@ -42,23 +47,24 @@ function StarryWordmark() {
 
 export function AppLogo({
   className,
-  compact = false
+  compact = false,
+  pubStyle = false
 }: {
   className?: string;
   compact?: boolean;
+  pubStyle?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center",
+        compact ? "flex shrink-0 items-center" : "flex shrink-0 items-center min-[1080px]:min-w-[248px]",
         className
       )}
     >
-      {compact ? <StarryCompactMark /> : (
-        <div className="flex items-center gap-3">
-          <StarryCompactMark />
-          <StarryWordmark />
-        </div>
+      {compact ? (
+        <NorthstarCompactMark pubStyle={pubStyle} />
+      ) : (
+        <NorthstarWordmark pubStyle={pubStyle} />
       )}
     </div>
   );

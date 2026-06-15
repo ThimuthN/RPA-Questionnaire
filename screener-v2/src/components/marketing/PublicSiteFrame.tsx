@@ -31,15 +31,11 @@ export function PublicSiteFrame({
       <header className="sticky top-0 z-40 w-full border-b border-[color:var(--pub-border)] bg-[color:var(--pub-header-bg)] backdrop-blur-xl">
         <div className="relative mx-auto flex h-[60px] max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
 
-          {/* Left: logo + wordmark */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Left: logo */}
+          <div className="flex items-center shrink-0">
             <Link href="/" aria-label={`${orgName} home`} className="transition hover:opacity-90">
-              <AppLogo compact />
+              <AppLogo compact pubStyle />
             </Link>
-            <div className="hidden sm:block border-l border-[color:var(--pub-border)] pl-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--pub-brand)]">Hiring OS</p>
-              <p className="text-[11px] leading-tight text-[color:var(--pub-muted)]">by {orgName}</p>
-            </div>
           </div>
 
           {/* Center: desktop nav */}
@@ -99,8 +95,8 @@ export function PublicSiteFrame({
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <AppLogo compact />
-                <span className="text-sm font-semibold text-[color:var(--pub-heading)]">{orgName} Hiring OS</span>
+                <AppLogo compact pubStyle />
+                <span className="text-sm font-semibold text-[color:var(--pub-heading)]">{orgName}</span>
               </div>
               <p className="max-w-md text-sm leading-6 text-[color:var(--pub-muted)]">
                 Candidate applications, assessments, and hiring decisions processed in a controlled recruiting workflow.

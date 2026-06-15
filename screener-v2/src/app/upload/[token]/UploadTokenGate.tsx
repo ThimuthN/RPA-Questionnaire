@@ -64,11 +64,10 @@ export function UploadSuccessScreen({ alreadyUsed = false }: { alreadyUsed?: boo
 export function UploadShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#080f1c] flex flex-col items-center justify-center px-4 py-12">
-      {/* Starry wordmark */}
+      {/* Northstar wordmark */}
       <div className="mb-10 flex items-center gap-2">
         <span className="text-[18px] text-[#18b5ae]" style={{ fontFamily: "serif" }}>✦</span>
-        <span className="font-semibold text-[18px] text-white tracking-tight">Starry</span>
-        <span className="ml-1 text-[10px] uppercase tracking-[0.22em] text-slate-500">Talent OS</span>
+        <span className="font-semibold text-[18px] text-white tracking-tight">Northstar</span>
       </div>
 
       <div className="w-full max-w-md rounded-[24px] border border-white/[0.08] bg-white/[0.04] p-8 backdrop-blur-xl shadow-[0_32px_64px_rgba(0,0,0,0.6)]">
@@ -76,7 +75,7 @@ export function UploadShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <p className="mt-8 text-[11px] text-slate-600">
-        Secure upload powered by Starry Talent OS
+        Secure upload powered by Northstar
       </p>
     </div>
   );

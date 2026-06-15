@@ -54,19 +54,19 @@ export default async function MarketingHomePage() {
             label: "Ready for review",
             value: String(candidateWorkspace.summary.readyForReview),
             detail: "Candidates waiting on a hiring decision.",
-            tone: "text-teal-300"
+            tone: "text-[color:var(--hero-accent-teal)]"
           },
           {
             label: "Recent results",
             value: String(resultWorkspace.rows.length),
             detail: "Latest outcomes already tied into the workflow.",
-            tone: "text-brand-300"
+            tone: "text-[color:var(--hero-accent-brand)]"
           },
           {
             label: "Needs attention",
             value: String(candidateWorkspace.summary.stalled),
             detail: "Work that has gone quiet and needs a follow-up.",
-            tone: "text-amber-300"
+            tone: "text-[color:var(--hero-accent-amber)]"
           }
         ]
       : [
@@ -74,19 +74,19 @@ export default async function MarketingHomePage() {
             label: "One workflow",
             value: "Track",
             detail: "Keep the candidate, role, owner, and history in one place.",
-            tone: "text-brand-300"
+            tone: "text-[color:var(--hero-accent-brand)]"
           },
           {
             label: "Shared review",
             value: "Review",
             detail: "Assessments, notes, and candidate context stay connected.",
-            tone: "text-teal-300"
+            tone: "text-[color:var(--hero-accent-teal)]"
           },
           {
             label: "Clear next step",
             value: "Decide",
             detail: "Move forward, hold, or follow up with context intact.",
-            tone: "text-amber-300"
+            tone: "text-[color:var(--hero-accent-amber)]"
           }
         ];
 
@@ -94,31 +94,31 @@ export default async function MarketingHomePage() {
     <SceneTransition>
       <PublicSiteFrame current="home" backHref={session ? "/departments" : undefined}>
           <StaggerGroup className="space-y-10">
-          <section className="relative overflow-hidden rounded-[34px] border border-[color:var(--app-border)] bg-[radial-gradient(circle_at_top_left,rgba(47,134,255,0.18),transparent_30%),radial-gradient(circle_at_78%_14%,rgba(157,140,255,0.10),transparent_22%),linear-gradient(180deg,rgba(16,39,73,0.84),rgba(5,11,22,0.96))] px-7 py-8 shadow-[var(--app-shadow)] md:px-10 md:py-10">
+          <section className="hero-card relative overflow-hidden rounded-[34px] border border-[color:var(--app-border)] px-7 py-8 shadow-[var(--app-shadow)] md:px-10 md:py-10">
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.06),transparent_36%,transparent_60%,rgba(111,215,255,0.03))]" />
-            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50" />
+            <div className="hero-grid-overlay pointer-events-none absolute inset-0 opacity-50" />
             <div className="pointer-events-none absolute inset-0 rounded-[34px] shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_0_0_1px_rgba(255,255,255,0.02)]" />
             <div className="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-end">
               <StaggerGroup className="space-y-6" delay={0.04}>
                 <StaggerItem>
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Tracking trajectory</p>
+                      <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--pub-brand)]">Tracking trajectory</p>
                     </div>
                     <div className="max-w-4xl space-y-3">
-                      <h1 className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl">Track candidates.</h1>
-                      <div className="font-display text-5xl leading-[0.94] text-white sm:text-6xl md:text-7xl" aria-hidden="true">
+                      <h1 className="font-display text-5xl leading-[0.94] text-[color:var(--hero-heading)] sm:text-6xl md:text-7xl">Track candidates.</h1>
+                      <div className="font-display text-5xl leading-[0.94] text-[color:var(--hero-heading)] sm:text-6xl md:text-7xl" aria-hidden="true">
                         <TypedWordCycle
                           prefix=""
                           words={["Review clearly.", "Follow progress.", "Decide faster."]}
-                          className="text-white"
+                          className="text-[color:var(--hero-heading)]"
                         />
                       </div>
                     </div>
                   </div>
                 </StaggerItem>
                 <StaggerItem>
-                  <p className="max-w-2xl text-base leading-8 text-[color:var(--app-scene-text)] sm:text-lg">
+                  <p className="max-w-2xl text-base leading-8 text-[color:var(--hero-subtext)] sm:text-lg">
                     Northstar helps hiring teams manage jobs, applicants, assessments, and final decisions in one place.
                   </p>
                 </StaggerItem>
@@ -151,13 +151,13 @@ export default async function MarketingHomePage() {
               <StaggerGroup className="grid gap-3 self-stretch sm:grid-cols-3 xl:grid-cols-1" delay={0.08}>
                 {heroSignals.map((signal, index) => (
                   <StaggerItem key={signal.label}>
-                    <div className="h-full rounded-[22px] border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.12),rgba(255,255,255,0.05))] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
+                    <div className="hero-signal-card h-full rounded-[22px] p-4">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--app-scene-muted)]">{signal.label}</p>
-                        <span className="text-[11px] text-[color:var(--app-scene-muted)]">0{index + 1}</span>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--hero-muted)]">{signal.label}</p>
+                        <span className="text-[11px] text-[color:var(--hero-muted)]">0{index + 1}</span>
                       </div>
                       <p className={`mt-4 font-display text-3xl leading-none ${signal.tone}`}>{signal.value}</p>
-                      <p className="mt-3 text-sm leading-6 text-[color:var(--app-scene-text)]">{signal.detail}</p>
+                      <p className="mt-3 text-sm leading-6 text-[color:var(--hero-subtext)]">{signal.detail}</p>
                     </div>
                   </StaggerItem>
                 ))}
