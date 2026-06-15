@@ -42,6 +42,7 @@ export type JobPostingListItem = {
   applicantCount: number;
   salaryMin?: number;
   salaryMax?: number;
+  salaryCurrency?: string;
   teamSize?: number;
   techStack?: string;
   remotePolicy?: string;

@@ -1,4 +1,5 @@
 import { Building2, DollarSign, Laptop, MapPin, Users } from "lucide-react";
+import { formatSalaryRange } from "@/lib/jobs/currency";
 
 interface QuickFact {
   icon: React.ReactNode;
@@ -9,6 +10,7 @@ interface QuickFact {
 export function JobQuickFactsCard({
   salaryMin,
   salaryMax,
+  salaryCurrency,
   teamSize,
   techStack,
   remotePolicy,
@@ -16,6 +18,7 @@ export function JobQuickFactsCard({
 }: {
   salaryMin?: number | null;
   salaryMax?: number | null;
+  salaryCurrency?: string | null;
   teamSize?: number | null;
   techStack?: string | null;
   remotePolicy?: string | null;
@@ -31,14 +34,8 @@ export function JobQuickFactsCard({
   });
 
   // Only show facts that have values
-  if (salaryMin || salaryMax) {
-    const salaryDisplay =
-      salaryMin && salaryMax
-        ? `$${(salaryMin / 1000).toFixed(0)}K - $${(salaryMax / 1000).toFixed(0)}K`
-        : salaryMin
-          ? `$${(salaryMin / 1000).toFixed(0)}K+`
-          : `$${(salaryMax! / 1000).toFixed(0)}K`;
-
+  const salaryDisplay = formatSalaryRange(salaryMin, salaryMax, salaryCurrency);
+  if (salaryDisplay) {
     facts.push({
       icon: <DollarSign className="h-4 w-4" />,
       label: "Salary",

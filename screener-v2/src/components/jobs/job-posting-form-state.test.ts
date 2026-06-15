@@ -16,6 +16,7 @@ const baseValues: JobPostingFormValues = {
   techStack: "TypeScript, Playwright",
   salaryMin: "90000",
   salaryMax: "120000",
+  salaryCurrency: "USD",
   screenerPresetId: "preset-1",
   isPublished: true,
   isOpen: true

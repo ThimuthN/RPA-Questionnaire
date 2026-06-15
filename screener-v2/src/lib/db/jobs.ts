@@ -30,6 +30,7 @@ import {
   mapApplicationScreeningAddonResult
 } from "@/lib/jobs/screening-results";
 import { cuidLike } from "@/lib/tokens/token-service";
+import { normalizeSalaryCurrency } from "@/lib/jobs/currency";
 
 type JobPostingRow = {
   id: string;
@@ -41,6 +42,7 @@ type JobPostingRow = {
   description: string;
   salaryMin: number | null;
   salaryMax: number | null;
+  salaryCurrency?: string | null;
   teamSize: number | null;
   techStack: string | null;
   remotePolicy: string | null;
@@ -82,6 +84,7 @@ export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     description: row.description,
     salaryMin: row.salaryMin ?? undefined,
     salaryMax: row.salaryMax ?? undefined,
+    salaryCurrency: row.salaryCurrency ?? undefined,
     teamSize: row.teamSize ?? undefined,
     techStack: row.techStack ?? undefined,
     remotePolicy: row.remotePolicy ?? undefined,
@@ -580,6 +583,7 @@ export async function createJobPosting(input: {
   description: string;
   salaryMin?: number;
   salaryMax?: number;
+  salaryCurrency?: string;
   teamSize?: number;
   techStack?: string;
   remotePolicy?: string;
@@ -598,6 +602,7 @@ export async function createJobPosting(input: {
       description: input.description.trim(),
       salaryMin: input.salaryMin ?? null,
       salaryMax: input.salaryMax ?? null,
+      salaryCurrency: normalizeSalaryCurrency(input.salaryCurrency),
       teamSize: input.teamSize ?? null,
       techStack: input.techStack?.trim() || null,
       remotePolicy: input.remotePolicy?.trim() || null,
@@ -702,6 +707,7 @@ export async function updateJobPosting(
     description: string;
     salaryMin?: number | string | null;
     salaryMax?: number | string | null;
+    salaryCurrency?: string;
     teamSize?: number | string | null;
     techStack?: string;
     remotePolicy?: string;
@@ -725,6 +731,7 @@ export async function updateJobPosting(
       description: input.description.trim(),
       salaryMin: getSalaryMin(input.salaryMin),
       salaryMax: getSalaryMax(input.salaryMax),
+      salaryCurrency: input.salaryCurrency ? normalizeSalaryCurrency(input.salaryCurrency) : undefined,
       teamSize: getTeamSize(input.teamSize),
       techStack: input.techStack?.trim() || null,
       remotePolicy: input.remotePolicy?.trim() || null,

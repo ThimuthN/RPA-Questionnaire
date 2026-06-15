@@ -13,6 +13,7 @@ import {
   parseTeamSizeField,
   validateSalaryRange
 } from "@/lib/jobs/validation";
+import { normalizeSalaryCurrency } from "@/lib/jobs/currency";
 
 const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
 
@@ -57,6 +58,7 @@ const updateJobSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters.").optional(),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
+  salaryCurrency: z.string().optional(),
   teamSize: z.string().optional(),
   techStack: z.string().optional(),
   remotePolicy: z.string().optional(),
@@ -173,6 +175,7 @@ export async function POST(
       description,
       salaryMin: salaryMin ?? null,
       salaryMax: salaryMax ?? null,
+      salaryCurrency: body.salaryCurrency ? normalizeSalaryCurrency(body.salaryCurrency) : undefined,
       teamSize: parseTeamSizeField(body.teamSize) ?? null,
       techStack: body.techStack?.trim(),
       remotePolicy: body.remotePolicy?.trim(),

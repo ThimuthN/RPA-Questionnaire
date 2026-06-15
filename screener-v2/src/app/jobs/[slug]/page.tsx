@@ -8,6 +8,7 @@ import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { ApplicationDraftCleaner } from "@/components/jobs/JobApplicationForm";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
+import { formatSalaryRange } from "@/lib/jobs/currency";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 export const dynamic = "force-dynamic";
@@ -43,12 +44,7 @@ export default async function PublicJobDetailPage({
   const hasConfirmation = Boolean(pageState.applied || pageState.alreadyApplied);
   const applyHref = `/jobs/${job.slug}/apply` as Route;
 
-  const salaryLabel =
-    job.salaryMin && job.salaryMax
-      ? `$${(job.salaryMin / 1000).toFixed(0)}k–$${(job.salaryMax / 1000).toFixed(0)}k`
-      : job.salaryMin
-        ? `$${(job.salaryMin / 1000).toFixed(0)}k+`
-        : null;
+  const salaryLabel = formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
   return (
     <PublicSiteFrame current="careers">

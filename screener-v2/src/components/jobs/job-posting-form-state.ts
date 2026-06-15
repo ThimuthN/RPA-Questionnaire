@@ -49,6 +49,7 @@ export type JobPostingFormValues = {
   techStack: string;
   salaryMin: string;
   salaryMax: string;
+  salaryCurrency: string;
   screenerPresetId: string;
   isPublished: boolean;
   isOpen: boolean;
@@ -178,6 +179,7 @@ export function normalizeStoredJobPostingDraft(
           techStack: readString(rawValues.techStack, fallbackValues.techStack),
           salaryMin: readString(rawValues.salaryMin, fallbackValues.salaryMin),
           salaryMax: readString(rawValues.salaryMax, fallbackValues.salaryMax),
+          salaryCurrency: readString(rawValues.salaryCurrency, fallbackValues.salaryCurrency),
           screenerPresetId: readString(rawValues.screenerPresetId, fallbackValues.screenerPresetId),
           isPublished: readBoolean(rawValues.isPublished, fallbackValues.isPublished),
           isOpen: readBoolean(rawValues.isOpen, fallbackValues.isOpen)

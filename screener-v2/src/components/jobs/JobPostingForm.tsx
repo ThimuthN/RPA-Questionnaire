@@ -27,6 +27,7 @@ import {
 } from "@/components/jobs/job-posting-form-state";
 import { jobDescriptionTextContent } from "@/lib/jobs/rich-text";
 import type { JobPostingListItem } from "@/lib/jobs/types";
+import { SALARY_CURRENCY_OPTIONS, currencySymbol, normalizeSalaryCurrency } from "@/lib/jobs/currency";
 import { cn } from "@/lib/utils";
 
 const baseInputClassName =
@@ -186,6 +187,7 @@ export function JobPostingForm({
       techStack: job?.techStack ?? "",
       salaryMin: job?.salaryMin != null ? String(job.salaryMin) : "",
       salaryMax: job?.salaryMax != null ? String(job.salaryMax) : "",
+      salaryCurrency: normalizeSalaryCurrency(job?.salaryCurrency),
       screenerPresetId: job?.screenerPresetId ?? "",
       isPublished: job?.isPublished ?? false,
       isOpen: job?.isOpen ?? true
@@ -533,8 +535,22 @@ export function JobPostingForm({
       </div>
 
       <div className={step === 2 ? "space-y-4" : "hidden"}>
-        <p className={hintClassName}>Annual salary range in dollars. Both fields are optional.</p>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <p className={hintClassName}>Annual salary range. Both fields are optional.</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="grid gap-1.5">
+            <span className="text-sm text-[color:var(--app-text)]">Currency</span>
+            <select
+              name="salaryCurrency"
+              value={vals.salaryCurrency}
+              onChange={setFromInput("salaryCurrency")}
+              className={fieldClassName(false)}
+            >
+              {SALARY_CURRENCY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </label>
+
           <label className="grid gap-1.5">
             <span className="text-sm text-[color:var(--app-text)]">Salary min</span>
             <input
@@ -645,13 +661,13 @@ export function JobPostingForm({
           {vals.salaryMin ? (
             <ReviewRow
               label="Salary min"
-              value={`$${Number(vals.salaryMin).toLocaleString()}`}
+              value={`${currencySymbol(vals.salaryCurrency)}${Number(vals.salaryMin).toLocaleString()}`}
             />
           ) : null}
           {vals.salaryMax ? (
             <ReviewRow
               label="Salary max"
-              value={`$${Number(vals.salaryMax).toLocaleString()}`}
+              value={`${currencySymbol(vals.salaryCurrency)}${Number(vals.salaryMax).toLocaleString()}`}
             />
           ) : null}
           {vals.screenerPresetId && presetLabel ? (

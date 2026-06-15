@@ -4,6 +4,7 @@ import { DollarSign, Search } from "lucide-react";
 import { Button } from "@/components/primitives/Button";
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
 import { listPublicJobPostings } from "@/lib/db/jobs";
+import { formatSalaryRange } from "@/lib/jobs/currency";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 import { getAppSession } from "@/lib/auth/app-session";
 import { notFound } from "next/navigation";
@@ -162,12 +163,7 @@ export default async function PublicJobsPage({
         ) : (
           <div className="space-y-3">
             {jobs.map((job) => {
-              const salaryLabel =
-                job.salaryMin && job.salaryMax
-                  ? `$${(job.salaryMin / 1000).toFixed(0)}k–$${(job.salaryMax / 1000).toFixed(0)}k`
-                  : job.salaryMin
-                    ? `$${(job.salaryMin / 1000).toFixed(0)}k+`
-                    : null;
+              const salaryLabel = formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency);
 
               const meta = [job.roleDepartment, job.remotePolicy]
                 .filter(Boolean)

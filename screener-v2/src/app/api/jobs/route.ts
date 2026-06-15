@@ -4,6 +4,7 @@ import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/gu
 import { createJobPosting, validateJobPostingWorkspaceSelection } from "@/lib/db/jobs";
 import { jobDescriptionTextContent, sanitizeJobDescriptionHtml } from "@/lib/jobs/rich-text";
 import { JobValidationError, parseSalaryField, parseTeamSizeField, validateSalaryRange } from "@/lib/jobs/validation";
+import { normalizeSalaryCurrency } from "@/lib/jobs/currency";
 
 const ALLOWED_RETURN_PATHS = ["/people/candidates/jobs", "/departments/"];
 
@@ -47,6 +48,7 @@ const jobSchema = z.object({
   description: z.string().min(20, "Description must be at least 20 characters."),
   salaryMin: z.string().optional(),
   salaryMax: z.string().optional(),
+  salaryCurrency: z.string().optional(),
   teamSize: z.string().optional(),
   techStack: z.string().optional(),
   remotePolicy: z.string().optional(),
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
       description,
       salaryMin,
       salaryMax,
+      salaryCurrency: normalizeSalaryCurrency(body.salaryCurrency),
       teamSize: parseTeamSizeField(body.teamSize),
       techStack: body.techStack?.trim(),
       remotePolicy: body.remotePolicy?.trim(),

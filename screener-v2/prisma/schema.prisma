@@ -650,6 +650,7 @@ model JobPosting {
   description String
   salaryMin   Int?
   salaryMax   Int?
+  salaryCurrency String @default("USD")
   teamSize    Int?
   techStack   String?
   remotePolicy String?
