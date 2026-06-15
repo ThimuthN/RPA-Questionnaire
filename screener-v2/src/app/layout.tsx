@@ -10,6 +10,7 @@ import { CommandPalette, CommandPaletteTrigger } from "@/components/search/Comma
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getAppSession } from "@/lib/auth/app-session";
 import { getConfiguredAppUrl } from "@/lib/server/app-url";
+import { brandThemeCss } from "@/lib/brand/theme";
 import { listDepartments } from "@/lib/db/departments";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
@@ -76,6 +77,7 @@ export default async function RootLayout({
   const session = await getAppSession();
   const pathname = (await headers()).get("x-pathname") ?? "";
   const showSidebar = Boolean(session) && !isPublicShellPath(pathname);
+  const brandCss = brandThemeCss();
 
   const departments = showSidebar
     ? await listDepartments(false)
@@ -88,6 +90,7 @@ export default async function RootLayout({
           Skip to main content
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        {brandCss ? <style dangerouslySetInnerHTML={{ __html: brandCss }} /> : null}
         <MotionProvider>
           {showSidebar && session ? (
             /* ── Authenticated app routes: full sidebar layout ── */
