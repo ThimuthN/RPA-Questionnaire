@@ -9,10 +9,7 @@ import type {
   CandidateAssessmentRecord,
   CandidateExternalAssessmentRecord
 } from "@/lib/db/candidates/types";
-import {
-  candidateApplicationStatusLabels,
-  type ApplicationScreeningStatus
-} from "@/lib/jobs/types";
+import type { ApplicationScreeningStatus } from "@/lib/jobs/types";
 
 export type CandidateProfilePlatformAssessment = CandidateAssessmentRecord & {
   title: string;
@@ -45,20 +42,43 @@ function formatTimestamp(value?: string) {
   return new Date(value).toLocaleString();
 }
 
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-0.5">
-      <p className="text-[10px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">{label}</p>
-      <p className="text-sm text-[color:var(--app-text)]">{value}</p>
-    </div>
-  );
-}
-
 function SectionLabel({ children, count }: { children: React.ReactNode; count?: number }) {
   return (
     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
       {children}{typeof count === "number" && count > 0 ? <span className="ml-1 font-normal opacity-60">· {count}</span> : null}
     </p>
+  );
+}
+
+/** Compact inline metadata line: "a · b · c" — truncates with a hover tooltip instead of a 4-col grid dump. */
+function MetaLine({ items }: { items: Array<string | null | undefined> }) {
+  const parts = items.filter((item): item is string => Boolean(item));
+  if (parts.length === 0) return null;
+  const full = parts.join("  ·  ");
+  return (
+    <p className="truncate text-xs text-[color:var(--app-muted)]" title={full}>
+      {parts.map((part, index) => (
+        <span key={index}>
+          {index > 0 ? <span className="mx-1.5 opacity-40">·</span> : null}
+          {part}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+/** Hero score chip — leads the eye to the number, ATS-style. */
+function ScoreChip({ value, tone = "blue" }: { value: string; tone?: "blue" | "emerald" | "red" | "amber" }) {
+  const toneClass = {
+    blue: "border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] text-[color:var(--pill-blue-text)]",
+    emerald: "border-[color:var(--pill-emerald-border)] bg-[color:var(--pill-emerald-bg)] text-[color:var(--pill-emerald-text)]",
+    red: "border-[color:var(--pill-red-border)] bg-[color:var(--pill-red-bg)] text-[color:var(--pill-red-text)]",
+    amber: "border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] text-[color:var(--pill-amber-text)]"
+  }[tone];
+  return (
+    <span className={`inline-flex items-baseline gap-1 rounded-[10px] border px-2.5 py-1 text-sm font-semibold tabular-nums ${toneClass}`}>
+      {value}
+    </span>
   );
 }
 
@@ -116,38 +136,33 @@ export function CandidateAssessmentsPanel({
         {platformAssessments.length === 0 ? (
           <p className="text-sm text-[color:var(--app-muted)]">No platform assessments assigned yet.</p>
         ) : (
-          <div className="divide-y divide-[color:var(--app-border)] rounded-[16px] border border-[color:var(--app-border)]">
+          <div className="space-y-2.5">
             {platformAssessments.map((assessment) => (
-              <div key={assessment.id} className="space-y-3 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">{assessment.title}</p>
-                    <p className="text-xs text-[color:var(--app-muted)]">
-                      Invite {assessment.inviteSlug.toUpperCase()}
-                    </p>
+              <div key={assessment.id} className="rounded-[14px] bg-[color:var(--app-surface-soft)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[color:var(--app-heading)]" title={assessment.title}>{assessment.title}</p>
+                    <MetaLine
+                      items={[
+                        `Invite ${assessment.inviteSlug.toUpperCase()}`,
+                        `Assigned ${new Date(assessment.createdAt).toLocaleDateString()}`,
+                        assessment.startedAt ? `Started ${formatTimestamp(assessment.startedAt)}` : "Not started",
+                        assessment.submittedAt ? `Submitted ${formatTimestamp(assessment.submittedAt)}` : "Not submitted"
+                      ]}
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-shrink-0 items-center gap-2">
                     <CandidateAssessmentPill status={assessment.status} />
                     {typeof assessment.finalPercent === "number" ? (
-                      <StatusPill label={`${assessment.finalPercent.toFixed(1)} / 100`} tone="blue" />
+                      <ScoreChip value={`${assessment.finalPercent.toFixed(1)}`} />
                     ) : null}
                   </div>
-                </div>
-
-                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetaRow label="Assigned" value={new Date(assessment.createdAt).toLocaleDateString()} />
-                  <MetaRow label="Started" value={formatTimestamp(assessment.startedAt) ?? "Not started"} />
-                  <MetaRow label="Submitted" value={formatTimestamp(assessment.submittedAt) ?? "Pending"} />
-                  <MetaRow
-                    label="Result"
-                    value={typeof assessment.finalPercent === "number" ? `${assessment.finalPercent.toFixed(1)} / 100` : "Awaiting"}
-                  />
                 </div>
 
                 {assessment.resultHref ? (
                   <Link
                     href={assessment.resultHref as never}
-                    className="text-sm font-medium text-[color:var(--app-brand)] hover:underline"
+                    className="mt-3 inline-block text-sm font-medium text-[color:var(--app-brand)] hover:underline"
                   >
                     Open result →
                   </Link>
@@ -165,71 +180,68 @@ export function CandidateAssessmentsPanel({
         {applicationAssessments.length === 0 ? (
           <p className="text-sm text-[color:var(--app-muted)]">No screening assessments recorded.</p>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {applicationAssessments.map((application) => (
               <div
                 key={application.id}
-                className="rounded-[14px] border border-[color:var(--app-border)] p-4 space-y-3"
+                className="rounded-[14px] bg-[color:var(--app-surface-soft)] p-4"
               >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">{application.jobTitle}</p>
-                    <p className="text-xs text-[color:var(--app-muted)]">
-                      {application.screenerPresetLabel
-                        ? `${application.screenerPresetLabel} · Submitted ${new Date(application.createdAt).toLocaleDateString()}`
-                        : `Submitted ${new Date(application.createdAt).toLocaleDateString()}`}
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[color:var(--app-heading)]" title={application.jobTitle}>{application.jobTitle}</p>
+                    <MetaLine
+                      items={[
+                        application.roleLabel,
+                        application.screenerPresetLabel,
+                        `Submitted ${new Date(application.createdAt).toLocaleDateString()}`,
+                        application.screeningAddonResults.length > 0
+                          ? `${application.screeningAddonResults.length} package${application.screeningAddonResults.length === 1 ? "" : "s"}`
+                          : null
+                      ]}
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-shrink-0 items-center gap-2">
                     <StatusPill
                       label={screeningResultLabel(application.screeningStatus)}
                       tone={screeningResultTone(application.screeningStatus)}
                     />
-                    <StatusPill
-                      label={candidateApplicationStatusLabels[application.status]}
-                      tone="neutral"
-                    />
                   </div>
                 </div>
 
-                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetaRow label="Role" value={application.roleLabel ?? "—"} />
-                  <MetaRow label="Job stage" value={candidateApplicationStatusLabels[application.status]} />
-                  <MetaRow label="Screening" value={screeningResultLabel(application.screeningStatus)} />
-                  <MetaRow label="Packages" value={String(application.screeningAddonResults.length)} />
-                </div>
-
                 {application.screeningAddonResults.length > 0 ? (
-                  <div className="border-t border-[color:var(--app-border)] pt-1">
-                    {application.screeningAddonResults.map((addon, index) => (
-                      <div
-                        key={`${application.id}:${addon.addonLabel}:${index}`}
-                        className="border-b border-[color:var(--app-border)]/50 py-3 last:border-0"
-                      >
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="space-y-0.5">
-                            <p className="text-sm font-medium text-[color:var(--app-heading)]">{addon.addonLabel}</p>
-                            <p className="text-xs text-[color:var(--app-muted)]">
-                              {addon.isMandatory ? "Required" : "Optional"}
-                              {addon.weight > 0 ? ` · Weight ${addon.weight}` : ""}
-                            </p>
+                  <div className="mt-3 space-y-2 border-t border-[color:var(--app-border)]/60 pt-3">
+                    {application.screeningAddonResults.map((addon, index) => {
+                      const scoreTone = addon.status === "passed" ? "emerald" : addon.status === "failed" ? "red" : "blue";
+                      return (
+                        <div
+                          key={`${application.id}:${addon.addonLabel}:${index}`}
+                          className="rounded-[10px] bg-[color:var(--app-surface)] px-3 py-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={addon.addonLabel}>{addon.addonLabel}</p>
+                              <MetaLine
+                                items={[
+                                  addon.isMandatory ? "Required" : "Optional",
+                                  addon.weight > 0 ? `Weight ${addon.weight}` : null,
+                                  `Pass mark ${formatPercent(addon.requiredPercent)}`,
+                                  `${addon.pointsEarned}/${addon.pointsPossible} pts`,
+                                  `${addon.responses.length} response${addon.responses.length === 1 ? "" : "s"}`
+                                ]}
+                              />
+                            </div>
+                            <div className="flex flex-shrink-0 items-center gap-2">
+                              <StatusPill
+                                label={screeningResultLabel(addon.status)}
+                                tone={screeningResultTone(addon.status)}
+                              />
+                              <ScoreChip value={formatPercent(addon.applicantPercent)} tone={scoreTone} />
+                            </div>
                           </div>
-                          <StatusPill
-                            label={screeningResultLabel(addon.status)}
-                            tone={screeningResultTone(addon.status)}
-                          />
+                          <ScreeningResponsesDisclosure responses={addon.responses} />
                         </div>
-
-                        <div className="mt-3 grid gap-3 sm:grid-cols-4">
-                          <MetaRow label="Required" value={formatPercent(addon.requiredPercent)} />
-                          <MetaRow label="Score" value={formatPercent(addon.applicantPercent)} />
-                          <MetaRow label="Points" value={`${addon.pointsEarned} / ${addon.pointsPossible}`} />
-                          <MetaRow label="Responses" value={String(addon.responses.length)} />
-                        </div>
-
-                        <ScreeningResponsesDisclosure responses={addon.responses} />
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : null}
               </div>
@@ -243,57 +255,49 @@ export function CandidateAssessmentsPanel({
         <SectionLabel count={externalAssessments.length}>External assessments</SectionLabel>
 
         {externalAssessments.length > 0 && (
-          <div className="divide-y divide-[color:var(--app-border)] rounded-[16px] border border-[color:var(--app-border)]">
+          <div className="space-y-2.5">
             {externalAssessments.map((ext) => (
-              <div key={ext.id} className="space-y-3 p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-[color:var(--app-heading)]">{ext.title}</p>
-                    {ext.sourceLabel && (
-                      <p className="text-xs text-[color:var(--app-muted)]">{ext.sourceLabel}</p>
-                    )}
+              <div key={ext.id} className="rounded-[14px] bg-[color:var(--app-surface-soft)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-[color:var(--app-heading)]" title={ext.title}>{ext.title}</p>
+                    <MetaLine
+                      items={[
+                        ext.sourceLabel,
+                        `Recorded ${new Date(ext.createdAt).toLocaleDateString()}`,
+                        ext.completedAt ? `Completed ${new Date(ext.completedAt).toLocaleDateString()}` : null,
+                        ext.attachments.length > 0 ? `${ext.attachments.length} file${ext.attachments.length === 1 ? "" : "s"}` : null
+                      ]}
+                    />
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-shrink-0 items-center gap-2">
                     <StatusPill label={externalStatusLabel(ext.status)} tone={externalStatusTone(ext.status)} />
                     {typeof ext.scorePercent === "number" && (
-                      <StatusPill label={ext.scoreLabel ?? `${ext.scorePercent.toFixed(1)}%`} tone="blue" />
+                      <ScoreChip value={ext.scoreLabel ?? `${ext.scorePercent.toFixed(1)}%`} />
                     )}
                   </div>
-                </div>
-
-                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MetaRow label="Recorded" value={new Date(ext.createdAt).toLocaleDateString()} />
-                  <MetaRow label="Completed" value={ext.completedAt ? new Date(ext.completedAt).toLocaleDateString() : "—"} />
-                  <MetaRow
-                    label="Score"
-                    value={typeof ext.scorePercent === "number" ? ext.scoreLabel ?? `${ext.scorePercent.toFixed(1)}%` : "—"}
-                  />
-                  <MetaRow label="Files" value={String(ext.attachments.length)} />
                 </div>
 
                 {ext.summary && (
-                  <p className="border-t border-[color:var(--app-border)] pt-3 text-sm leading-relaxed text-[color:var(--app-muted)]">
+                  <p className="mt-3 border-t border-[color:var(--app-border)]/60 pt-3 text-sm leading-relaxed text-[color:var(--app-muted)]">
                     {ext.summary}
                   </p>
                 )}
 
                 {ext.attachments.length > 0 && (
-                  <div className="border-t border-[color:var(--app-border)] pt-3">
-                    <p className="mb-2 text-[10px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">Attachments</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ext.attachments.map((file) => (
-                        <a
-                          key={file.id}
-                          href={file.storageUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] px-3 py-1 text-xs font-medium text-[color:var(--app-heading)] transition hover:border-[color:var(--app-brand)]/40 hover:text-[color:var(--app-brand)]"
-                        >
-                          {file.fileName}
-                          <span className="text-[color:var(--app-muted)]">({(file.sizeBytes / 1024).toFixed(0)} KB)</span>
-                        </a>
-                      ))}
-                    </div>
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--app-border)]/60 pt-3">
+                    {ext.attachments.map((file) => (
+                      <a
+                        key={file.id}
+                        href={file.storageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--app-surface)] px-3 py-1 text-xs font-medium text-[color:var(--app-heading)] transition hover:text-[color:var(--app-brand)]"
+                      >
+                        {file.fileName}
+                        <span className="text-[color:var(--app-muted)]">({(file.sizeBytes / 1024).toFixed(0)} KB)</span>
+                      </a>
+                    ))}
                   </div>
                 )}
 

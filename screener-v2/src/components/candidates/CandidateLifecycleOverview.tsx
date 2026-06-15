@@ -268,12 +268,12 @@ export function CandidateApplicationHistoryPanel({
           return (
             <div
               key={application.id}
-              className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
+              className="rounded-[16px] bg-[color:var(--app-surface-soft)] p-4"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-[color:var(--app-heading)]">{application.jobTitle}</p>
-                  <p className="text-xs text-[color:var(--app-muted)]">
+                <div className="min-w-0 space-y-1">
+                  <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={application.jobTitle}>{application.jobTitle}</p>
+                  <p className="truncate text-xs text-[color:var(--app-muted)]" title={`${application.roleLabel ?? "No role linked"}${application.roleDepartment ? ` • ${application.roleDepartment}` : ""}`}>
                     {application.roleLabel ?? "No role linked"}
                     {application.roleDepartment ? ` • ${application.roleDepartment}` : ""}
                   </p>
@@ -292,7 +292,7 @@ export function CandidateApplicationHistoryPanel({
                 </div>
               </div>
 
-              <div className="mt-4 grid gap-3 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="mt-4 grid gap-3 border-t border-[color:var(--app-border)]/60 pt-4 sm:grid-cols-2 xl:grid-cols-4">
                 <HistoryMeta label="Applied" value={formatShortDate(application.createdAt)} />
                 <HistoryMeta label="Updated" value={formatRelativeDay(application.updatedAt)} />
                 <HistoryMeta
@@ -305,7 +305,7 @@ export function CandidateApplicationHistoryPanel({
                 />
               </div>
               {application.coverNote ? (
-                <div className="mt-4 space-y-1.5 border-t border-[color:var(--app-border)] pt-4">
+                <div className="mt-4 space-y-1.5 border-t border-[color:var(--app-border)]/60 pt-4">
                   <p className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
                     Cover note
                   </p>
@@ -322,9 +322,9 @@ export function CandidateApplicationHistoryPanel({
 
 function HistoryMeta({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-0.5">
+    <div className="min-w-0 space-y-0.5">
       <p className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">{label}</p>
-      <p className="text-sm text-[color:var(--app-text)]">{value}</p>
+      <p className="truncate text-sm text-[color:var(--app-text)]" title={value}>{value}</p>
     </div>
   );
 }
