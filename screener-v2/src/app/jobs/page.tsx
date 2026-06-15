@@ -30,7 +30,7 @@ export default async function PublicJobsPage({
   const allJobs = await listPublicJobPostings();
   const departments = Array.from(
     new Set(allJobs.map((job) => job.roleDepartment).filter(Boolean))
-  ).slice(0, 8) as string[];
+  ).slice(0, 20) as string[];
 
   const jobs =
     params.q || params.department || params.sort

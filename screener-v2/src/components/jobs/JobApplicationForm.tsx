@@ -33,6 +33,7 @@ type FormValues = {
   currentTitle: string;
   location: string;
   linkedInUrl: string;
+  salaryExpectation: string;
   coverNote: string;
   source: string;
   referredBy: string;
@@ -137,6 +138,7 @@ export function JobApplicationForm({
     currentTitle: "",
     location: "",
     linkedInUrl: "",
+    salaryExpectation: "",
     coverNote: "",
     source: "",
     referredBy: "",
@@ -158,6 +160,7 @@ export function JobApplicationForm({
         currentTitle: draft.currentTitle ?? "",
         location: draft.location ?? "",
         linkedInUrl: draft.linkedInUrl ?? "",
+        salaryExpectation: draft.salaryExpectation ?? "",
         coverNote: draft.coverNote,
         source: draft.source ?? "",
         referredBy: draft.referredBy ?? "",
@@ -203,6 +206,7 @@ export function JobApplicationForm({
       currentTitle: "",
       location: "",
       linkedInUrl: "",
+      salaryExpectation: "",
       coverNote: "",
       source: "",
       referredBy: "",
@@ -353,6 +357,17 @@ export function JobApplicationForm({
             className={inputClassName}
           />
         </label>
+        <label className="grid gap-1.5">
+          <span className="text-sm text-[color:var(--app-text)]">Salary expectation (optional)</span>
+          <input
+            name="salaryExpectation"
+            value={values.salaryExpectation}
+            onChange={updateValue("salaryExpectation")}
+            maxLength={120}
+            placeholder="e.g. USD 80,000–100,000 / year"
+            className={inputClassName}
+          />
+        </label>
         <div className="grid gap-1.5">
           <label htmlFor="source-select" className="text-sm text-[color:var(--app-text)]">
             How did you hear about us? (optional)
@@ -481,6 +496,7 @@ export function JobApplicationForm({
           {values.currentTitle ? <ReviewRow label="Current title" value={values.currentTitle} /> : null}
           {values.location ? <ReviewRow label="Location" value={values.location} /> : null}
           {values.linkedInUrl ? <ReviewRow label="LinkedIn" value={values.linkedInUrl} /> : null}
+          {values.salaryExpectation ? <ReviewRow label="Salary expectation" value={values.salaryExpectation} /> : null}
           <ReviewRow label="Resume" value={resumeFileName ?? "No resume attached"} />
           {values.source ? (
             <ReviewRow

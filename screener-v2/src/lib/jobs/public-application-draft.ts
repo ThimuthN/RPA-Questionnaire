@@ -12,6 +12,7 @@ export type ApplicationDraft = {
   currentTitle?: string;
   linkedInUrl?: string;
   location?: string;
+  salaryExpectation?: string;
   screeningAnswers: Record<string, Record<string, unknown>>;
   step: number;
 };

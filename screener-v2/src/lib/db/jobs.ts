@@ -50,7 +50,7 @@ type JobPostingRow = {
   isOpen: boolean;
   createdAt: Date;
   updatedAt: Date;
-  role: { label: string; department: string | null; departmentId?: string | null } | null;
+  role: { label: string; department: string | null; departmentId?: string | null; dept?: { name: string } | null } | null;
   screenerPreset: { id: string; label: string } | null;
   applications?: Array<{ status: string }>;
   _count?: { applications?: number };
@@ -77,7 +77,8 @@ export function mapJobPosting(row: JobPostingRow): JobPostingListItem {
     departmentId: row.role?.departmentId ?? undefined,
     roleId: row.roleId ?? undefined,
     roleLabel: row.role?.label ?? undefined,
-    roleDepartment: row.role?.department ?? undefined,
+    // Fall back to the canonical Department name when the denormalized role.department string is empty.
+    roleDepartment: row.role?.department ?? row.role?.dept?.name ?? undefined,
     screenerPresetId: row.screenerPresetId ?? undefined,
     screenerPresetLabel: row.screenerPreset?.label ?? undefined,
     summary: row.summary,
@@ -327,7 +328,8 @@ export async function listPublicJobPostings(filters: ListPublicJobPostingsFilter
         select: {
           label: true,
           department: true,
-          departmentId: true
+          departmentId: true,
+          dept: { select: { name: true } }
         }
       },
       screenerPreset: {
@@ -1029,6 +1031,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   currentTitle?: string;
   location?: string;
   linkedInUrl?: string;
+  salaryExpectation?: string;
   coverNote?: string;
   consentGivenAt?: Date;
   consentVersion?: string;
@@ -1102,6 +1105,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         currentTitle: input.currentTitle?.trim() || undefined,
         location: input.location?.trim() || undefined,
         linkedInUrl: input.linkedInUrl?.trim() || undefined,
+        salaryExpectation: input.salaryExpectation?.trim() || undefined,
         roleId: job.roleId ?? undefined,
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
@@ -1132,6 +1136,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
           currentTitle: input.currentTitle?.trim() || undefined,
           location: input.location?.trim() || undefined,
           linkedInUrl: input.linkedInUrl?.trim() || undefined,
+          salaryExpectation: input.salaryExpectation?.trim() || undefined,
           roleId: job.roleId ?? undefined,
           departmentId: job.role?.departmentId ?? undefined,
           positionAppliedFor: job.title
