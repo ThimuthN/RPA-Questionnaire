@@ -8,6 +8,7 @@ import {
   candidateExternalAssessmentAttachmentMaxSizeBytes,
   candidateExternalAssessmentAttachmentMaxFiles
 } from "@/lib/candidates/external-assessment-config";
+import { checkAuthRateLimit } from "@/lib/server/rate-limit";
 
 const ALLOWED_MIME = new Set([
   "application/pdf",
@@ -55,9 +56,28 @@ export async function POST(
 
   const { assessment } = result.record;
 
+  // This is the only unauthenticated external upload surface — throttle per IP and per token.
+  const rate = await checkAuthRateLimit({
+    request,
+    identifier: token,
+    scope: "public-upload",
+    ipMax: 30,
+    idMax: 10
+  });
+  if (!rate.ok) {
+    return NextResponse.json({ error: rate.message }, { status: 429 });
+  }
+
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
     return NextResponse.json({ error: "Must use multipart/form-data" }, { status: 400 });
+  }
+
+  // Reject oversized payloads before buffering the multipart body.
+  const maxTotalBytes = candidateExternalAssessmentAttachmentMaxSizeBytes * candidateExternalAssessmentAttachmentMaxFiles;
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(contentLength) && contentLength > maxTotalBytes + 1_000_000) {
+    return NextResponse.json({ error: "Upload too large." }, { status: 413 });
   }
 
   let formData: FormData;
