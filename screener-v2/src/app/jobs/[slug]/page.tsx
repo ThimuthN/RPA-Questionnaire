@@ -1,4 +1,4 @@
-import type { Route } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Briefcase, CheckCircle2, DollarSign, MapPin, Users } from "lucide-react";
@@ -8,16 +8,78 @@ import { JobDescriptionContent } from "@/components/jobs/JobDescriptionContent";
 import { ApplicationDraftCleaner } from "@/components/jobs/JobApplicationForm";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { getPublicJobPostingBySlug } from "@/lib/db/jobs";
-import { formatSalaryRange } from "@/lib/jobs/currency";
+import { formatSalaryRange, normalizeSalaryCurrency } from "@/lib/jobs/currency";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 
 export const dynamic = "force-dynamic";
+
+const ORG_NAME = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   month: "short",
   day: "numeric",
   year: "numeric"
 });
+
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  if (!PUBLIC_JOBS_ENABLED) return {};
+  const { slug } = await params;
+  const job = await getPublicJobPostingBySlug(slug).catch(() => null);
+  if (!job) return {};
+
+  const titleBits = [job.title, job.roleDepartment].filter(Boolean).join(" · ");
+  const title = `${titleBits} — ${ORG_NAME} Careers`;
+  const description =
+    job.summary?.trim() ||
+    `Apply for ${job.title} at ${ORG_NAME}. View the role details and submit your application online.`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/jobs/${job.slug}` },
+    openGraph: { title, description, type: "website", siteName: ORG_NAME },
+    twitter: { card: "summary_large_image", title, description }
+  };
+}
+
+function jobPostingJsonLd(job: NonNullable<Awaited<ReturnType<typeof getPublicJobPostingBySlug>>>) {
+  const data: Record<string, unknown> = {
+    "@context": "https://schema.org/",
+    "@type": "JobPosting",
+    title: job.title,
+    description: job.summary || job.title,
+    datePosted: new Date(job.createdAt).toISOString(),
+    employmentType: "FULL_TIME",
+    directApply: true,
+    hiringOrganization: { "@type": "Organization", name: ORG_NAME },
+    industry: job.roleDepartment || undefined
+  };
+
+  // Remote vs on-site signal (helps Google Jobs eligibility).
+  if (job.remotePolicy && /remote/i.test(job.remotePolicy)) {
+    data.jobLocationType = "TELECOMMUTE";
+    data.applicantLocationRequirements = { "@type": "Country", name: "Anywhere" };
+  }
+
+  if (typeof job.salaryMin === "number" || typeof job.salaryMax === "number") {
+    data.baseSalary = {
+      "@type": "MonetaryAmount",
+      currency: normalizeSalaryCurrency(job.salaryCurrency),
+      value: {
+        "@type": "QuantitativeValue",
+        ...(typeof job.salaryMin === "number" ? { minValue: job.salaryMin } : {}),
+        ...(typeof job.salaryMax === "number" ? { maxValue: job.salaryMax } : {}),
+        unitText: "YEAR"
+      }
+    };
+  }
+
+  return data;
+}
 
 export default async function PublicJobDetailPage({
   params,
@@ -50,6 +112,11 @@ export default async function PublicJobDetailPage({
     <PublicSiteFrame current="careers">
       <div>
         {hasConfirmation && <ApplicationDraftCleaner slug={job.slug} />}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingJsonLd(job)) }}
+        />
+
 
       {/* ── Job header card ── */}
       <div className="mb-8 rounded-[28px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6 md:p-8 space-y-5">

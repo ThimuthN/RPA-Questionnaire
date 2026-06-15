@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { CommandPalette, CommandPaletteTrigger } from "@/components/search/CommandPalette";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getAppSession } from "@/lib/auth/app-session";
+import { getConfiguredAppUrl } from "@/lib/server/app-url";
 import { listDepartments } from "@/lib/db/departments";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
@@ -32,6 +33,7 @@ const fontMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getConfiguredAppUrl() ?? "http://localhost:3000"),
   title: {
     default: "Northstar",
     template: "%s | Northstar"
