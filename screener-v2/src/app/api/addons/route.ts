@@ -13,6 +13,12 @@ export async function GET(request: Request) {
   if (!auth.ok) {
     return auth.response;
   }
+  // Close open catalog enumeration: only assessment managers may read the catalog over the API.
+  // (The app's pages load the catalog server-side via listAddonCatalog, so no UI depends on this.)
+  const permission = await requireGlobalPermission(auth.session, "manage_addons");
+  if (!permission.ok) {
+    return permission.response;
+  }
 
   const { searchParams } = new URL(request.url);
   const includeInactive = searchParams.get("includeInactive") === "1";
