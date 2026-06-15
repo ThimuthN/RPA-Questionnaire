@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/db/prisma";
 import { candidateStageLabels } from "@/lib/candidates/types";
 
@@ -17,7 +18,7 @@ export type FunnelRow = {
   conversionFromPrev: number | null;
 };
 
-export async function getFunnelConversion(): Promise<FunnelRow[]> {
+export const getFunnelConversion = cache(async function(): Promise<FunnelRow[]> {
   const groups = await prisma.candidate.groupBy({
     by: ["stage"],
     _count: { id: true },
@@ -35,7 +36,7 @@ export async function getFunnelConversion(): Promise<FunnelRow[]> {
     prev = count;
   }
   return rows;
-}
+});
 
 export type StageTimeRow = {
   stage: string;
@@ -44,7 +45,7 @@ export type StageTimeRow = {
   medianDays: number;
 };
 
-export async function getStageTimings(): Promise<StageTimeRow[]> {
+export const getStageTimings = cache(async function(): Promise<StageTimeRow[]> {
   const stages = ["pipeline", "screening", "interview", "advanced_review"] as const;
   const results = await Promise.all(
     stages.map((stage) =>
@@ -67,7 +68,7 @@ export async function getStageTimings(): Promise<StageTimeRow[]> {
     const median = Math.round(days.length % 2 === 0 ? (days[mid - 1]! + days[mid]!) / 2 : days[mid]!);
     return { stage, label: candidateStageLabels[stage] ?? stage, avgDays: avg, medianDays: median };
   });
-}
+});
 
 export type InterviewerLoadRow = {
   userId: string;
@@ -78,7 +79,7 @@ export type InterviewerLoadRow = {
   submissionRate: number;
 };
 
-export async function getInterviewerLoad(days = 30): Promise<InterviewerLoadRow[]> {
+export const getInterviewerLoad = cache(async function(days = 30): Promise<InterviewerLoadRow[]> {
   const since = new Date(Date.now() - days * 86_400_000);
 
   const members = await prisma.interviewPanelMember.findMany({
@@ -121,7 +122,7 @@ export async function getInterviewerLoad(days = 30): Promise<InterviewerLoadRow[
       submissionRate: d.panels > 0 ? Math.round((d.submitted / d.panels) * 100) : 0,
     }))
     .sort((a, b) => b.panelCount - a.panelCount);
-}
+});
 
 export type RoleAgingRow = {
   id: string;
@@ -133,7 +134,7 @@ export type RoleAgingRow = {
   isStalled: boolean;
 };
 
-export async function getRoleAging(): Promise<RoleAgingRow[]> {
+export const getRoleAging = cache(async function(): Promise<RoleAgingRow[]> {
   const now = new Date();
   const jobs = await prisma.jobPosting.findMany({
     where: { isOpen: true, isPublished: true },
@@ -175,7 +176,7 @@ export async function getRoleAging(): Promise<RoleAgingRow[]> {
       isStalled: daysOpen >= 14 && applicantCount === 0,
     };
   });
-}
+});
 
 export type SourceBreakdownRow = {
   source: string;
@@ -184,29 +185,29 @@ export type SourceBreakdownRow = {
   pct: number;
 };
 
-export async function getSourceBreakdown(): Promise<SourceBreakdownRow[]> {
+const SOURCE_LABELS: Record<string, string> = {
+  referral: "Referral",
+  linkedin: "LinkedIn",
+  job_board: "Job Board",
+  direct: "Direct",
+  agency: "Agency",
+  other: "Other",
+};
+
+export const getSourceBreakdown = cache(async function(): Promise<SourceBreakdownRow[]> {
   const groups = await prisma.candidateApplication.groupBy({
     by: ["source"],
     _count: { id: true },
   });
-
-  const labels: Record<string, string> = {
-    referral: "Referral",
-    linkedin: "LinkedIn",
-    job_board: "Job Board",
-    direct: "Direct",
-    agency: "Agency",
-    other: "Other",
-  };
 
   const total = groups.reduce((s, g) => s + g._count.id, 0);
   return groups
     .filter((g) => g.source)
     .map((g) => ({
       source: g.source!,
-      label: labels[g.source!] ?? g.source!,
+      label: SOURCE_LABELS[g.source!] ?? g.source!,
       count: g._count.id,
       pct: total > 0 ? Math.round((g._count.id / total) * 100) : 0,
     }))
     .sort((a, b) => b.count - a.count);
-}
+});
