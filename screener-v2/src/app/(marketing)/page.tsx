@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -17,10 +18,29 @@ import { ViewportReveal } from "@/components/motion/ViewportReveal";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { PublicSiteFrame } from "@/components/marketing/PublicSiteFrame";
+import { MarketingStory } from "@/components/marketing/MarketingStory";
 import { buildLoginHref, getAppSession } from "@/lib/auth/app-session";
 import { candidateStageLabels } from "@/lib/candidates/types";
 import { listCandidateWorkspacePage } from "@/lib/db/candidates";
 import { listResultWorkspacePage } from "@/lib/db/repositories";
+
+const ORG_NAME = process.env.NEXT_PUBLIC_ORG_NAME ?? "Northstar";
+
+export const metadata: Metadata = {
+  title: `${ORG_NAME} — Hiring, in one place`,
+  description: `${ORG_NAME} helps hiring teams manage jobs, applicants, assessments, and final decisions on one timeline — with encrypted integrations, role-based access, and a full audit trail.`,
+  openGraph: {
+    title: `${ORG_NAME} — Hiring, in one place`,
+    description: `Manage jobs, applicants, assessments, and offers on one timeline. Built for trust: encrypted integrations, role-based access, and a complete audit trail.`,
+    type: "website",
+    siteName: ORG_NAME
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${ORG_NAME} — Hiring, in one place`,
+    description: `Manage jobs, applicants, assessments, and offers on one timeline.`
+  }
+};
 
 function candidateStatusTone(stage: string) {
   if (stage === "interview") return "amber";
@@ -167,9 +187,9 @@ export default async function MarketingHomePage() {
 
           <ViewportReveal delay={0.06}>
             <section className="relative overflow-hidden rounded-[30px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] px-6 py-6 shadow-[var(--app-shadow-soft)] md:px-7">
-              <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(138,184,255,0.95),transparent)]" />
+              <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,color-mix(in_srgb,var(--app-brand)_85%,transparent),transparent)]" />
               <div className="space-y-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">How it works</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--app-brand)]">How it works</p>
                 <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
                   <ScrambleReveal text="Know who to review. Know what to do next." className="text-scramble-glow" />
                 </h2>
@@ -179,7 +199,7 @@ export default async function MarketingHomePage() {
               </div>
               <div className="mt-8 grid gap-5 md:grid-cols-3 md:gap-8">
                 {[
-                  ["01", "Track", "See the candidate, role, owner, and history right away.", "text-brand-300"],
+                  ["01", "Track", "See the candidate, role, owner, and history right away.", "text-[color:var(--app-brand)]"],
                   ["02", "Review", "Keep assessments, notes, and resume context in the same workflow.", "text-teal-300"],
                   ["03", "Decide", "Use the full picture to move forward, hold, or follow up.", "text-amber-300"]
                 ].map(([step, label, body, tone], index) => (
@@ -201,7 +221,7 @@ export default async function MarketingHomePage() {
             <section className="relative overflow-hidden rounded-[30px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] px-6 py-6 shadow-[var(--app-shadow-soft)] md:px-7">
               <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(18,179,168,0.8),transparent)]" />
               <div className="space-y-3">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-brand-300">Where it fits</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-[color:var(--app-brand)]">Where it fits</p>
                 <h2 className="text-4xl leading-[0.96] text-[color:var(--app-heading)]">
                   <ScrambleReveal text="Built for recruiting teams." className="text-scramble-glow" />
                 </h2>
@@ -233,7 +253,7 @@ export default async function MarketingHomePage() {
                   <div className="pointer-events-none absolute left-0 top-0 h-px w-28 bg-[linear-gradient(90deg,rgba(255,255,255,0.45),transparent)]" />
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-[0.24em] text-brand-300">Inside the workspace</p>
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--app-brand)]">Inside the workspace</p>
                       <p className="max-w-3xl text-sm leading-7 text-[color:var(--app-text)]">
                         See what needs setup, what is ready for review, and what has gone quiet.
                       </p>
@@ -278,7 +298,7 @@ export default async function MarketingHomePage() {
                   <section className="space-y-3 border-t border-[color:var(--app-border)] pt-4 md:border-l md:border-t-0 md:pl-6 md:pt-0">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-brand-300" />
+                        <CheckCircle2 className="h-4 w-4 text-[color:var(--app-brand)]" />
                         <p className="text-sm text-[color:var(--app-text)]">Ready for review</p>
                       </div>
                       <StatusPill label={String(candidateWorkspace.summary.readyForReview)} tone="blue" />
@@ -395,7 +415,11 @@ export default async function MarketingHomePage() {
                 </StaggerItem>
               </div>
             </StaggerGroup>
-          ) : null}
+          ) : (
+            <ViewportReveal delay={0.1}>
+              <MarketingStory orgName={ORG_NAME} />
+            </ViewportReveal>
+          )}
           </StaggerGroup>
       </PublicSiteFrame>
     </SceneTransition>
