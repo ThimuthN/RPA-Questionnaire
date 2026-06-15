@@ -5,7 +5,7 @@ import type { Route } from "next";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { FileText, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { getSourceLabel } from "@/lib/candidates/source";
@@ -25,7 +25,7 @@ const tableHeadClassName =
   "bg-[color:var(--app-table-head)] border-b border-[color:var(--app-border)] text-left text-xs font-medium uppercase tracking-[0.16em] text-[color:var(--app-muted)]";
 
 const tableCellClassName =
-  "px-4 py-4 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
+  "px-3 py-3.5 text-sm text-[color:var(--app-text)] align-middle border-t border-[color:var(--app-border)]";
 
 const iconButtonClassName =
   "inline-flex items-center justify-center h-8 w-8 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]";
@@ -217,16 +217,16 @@ export function CandidateWorkspaceTable({
           <table className="w-full table-fixed text-left">
             <thead className={tableHeadClassName}>
               <tr>
-                <th scope="col" className="w-10 px-4 py-3 font-medium">
+                <th scope="col" className="w-10 px-3 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="w-[22%] px-4 py-3 font-medium">Candidate</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Assigned to</th>
-                <th scope="col" className="w-[18%] px-4 py-3 font-medium">Stage</th>
-                <th scope="col" className="w-[13%] px-4 py-3 font-medium">Role / dept</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Source</th>
-                <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
-                <th scope="col" className="w-[20%] px-4 py-3 font-medium text-right">Actions</th>
+                <th scope="col" className="px-3 py-3 font-medium">Candidate</th>
+                <th scope="col" className="w-[16%] px-3 py-3 font-medium">Stage</th>
+                <th scope="col" className="hidden w-[15%] px-3 py-3 font-medium lg:table-cell">Role / dept</th>
+                <th scope="col" className="hidden w-[12%] px-3 py-3 font-medium xl:table-cell">Assigned</th>
+                <th scope="col" className="hidden w-[100px] px-3 py-3 font-medium md:table-cell">Source</th>
+                <th scope="col" className="w-[96px] px-3 py-3 font-medium">Updated</th>
+                <th scope="col" className="w-[150px] px-3 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -238,7 +238,6 @@ export function CandidateWorkspaceTable({
                 // so the sidebar stays in department context when navigating from a global view
                 const effectiveWorkspaceId = workspaceId ?? candidate.departmentId;
                 const action = contextualAction(candidate, effectiveWorkspaceId, currentPathAndQuery);
-                const candidateResumeHref = resumeHref(candidate);
                 const profileHref = buildCandidateProfileHref(candidate.id, effectiveWorkspaceId, currentPathAndQuery);
                 return (
                   <tr key={candidate.id} className="min-h-[88px] cursor-pointer transition hover:bg-[color:var(--app-table-row-hover)]">
@@ -263,35 +262,37 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      {candidate.teamOwnerSummary ? (
-                        <span className="truncate text-sm text-[color:var(--app-text)]">{candidate.teamOwnerSummary}</span>
-                      ) : (
-                        <StatusPill label="Unassigned" tone="amber" />
-                      )}
-                    </td>
-                    <td className={tableCellClassName}>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         {promoteError[candidate.id] && (
                           <p className="text-xs text-[color:var(--app-danger)]">{promoteError[candidate.id]}</p>
                         )}
-                        <p className="text-sm font-medium text-[color:var(--app-heading)]">{getCandidateStageLabel(stage)}</p>
-                        <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
-                        {decision ? (
-                          <StatusPill label={decision} tone={candidate.finalizedAs === "hired" ? "emerald" : "red"} />
-                        ) : null}
+                        <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={getCandidateStageLabel(stage)}>{getCandidateStageLabel(stage)}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <CandidateAssessmentPill status={candidate.latestAssessmentStatus} />
+                          {decision ? (
+                            <StatusPill label={decision} tone={candidate.finalizedAs === "hired" ? "emerald" : "red"} />
+                          ) : null}
+                        </div>
                       </div>
                     </td>
-                    <td className={tableCellClassName}>
-                      <div className="space-y-1">
-                        <p className="truncate text-sm text-[color:var(--app-text)]">
+                    <td className={`${tableCellClassName} hidden lg:table-cell`}>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm text-[color:var(--app-text)]" title={candidate.roleLabel || candidate.positionAppliedFor || "No role"}>
                           {candidate.roleLabel || candidate.positionAppliedFor || "No role"}
                         </p>
-                        <p className="truncate text-xs text-[color:var(--app-muted)]">
+                        <p className="truncate text-xs text-[color:var(--app-muted)]" title={candidate.departmentName || candidate.roleDepartment || "No department"}>
                           {candidate.departmentName || candidate.roleDepartment || "No department"}
                         </p>
                       </div>
                     </td>
-                    <td className={tableCellClassName}>
+                    <td className={`${tableCellClassName} hidden xl:table-cell`}>
+                      {candidate.teamOwnerSummary ? (
+                        <span className="block truncate text-sm text-[color:var(--app-text)]" title={candidate.teamOwnerSummary}>{candidate.teamOwnerSummary}</span>
+                      ) : (
+                        <StatusPill label="Unassigned" tone="amber" />
+                      )}
+                    </td>
+                    <td className={`${tableCellClassName} hidden md:table-cell`}>
                       {candidate.resumeSource ? (
                         <span className="inline-flex items-center rounded-full border border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--pill-blue-text)]">
                           {getSourceLabel(candidate.resumeSource)}
@@ -301,38 +302,28 @@ export function CandidateWorkspaceTable({
                       )}
                     </td>
                     <td className={tableCellClassName}>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 whitespace-nowrap">
                         {candidate.staleDays >= 30 ? (
                           <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[color:var(--app-danger)]" title="Stale: 30+ days inactive" />
                         ) : candidate.staleDays >= 7 ? (
                           <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[color:var(--app-warning)]" title="Stale: 7+ days inactive" />
                         ) : null}
                         <span className={candidate.staleDays >= 30 ? "text-[color:var(--app-danger)]" : candidate.staleDays >= 7 ? "text-[color:var(--app-warning)]" : ""}>
-                          {candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}
+                          {candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d`}
                         </span>
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <div className="flex flex-wrap items-center justify-end gap-2">
+                      <div className="flex flex-nowrap items-center justify-end gap-1.5">
                         {action ? (
                           <Link href={action.href} className={quickAccessPrimaryLinkClassName} title={action.label}>
                             {action.shortLabel}
                           </Link>
-                        ) : null}
-                        <Link href={profileHref} className={quickAccessLinkClassName} title="Open candidate profile">
-                          Profile
-                        </Link>
-                        {candidateResumeHref ? (
-                          <a
-                            href={candidateResumeHref}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={iconButtonClassName}
-                            title="View resume"
-                          >
-                            <FileText size={16} />
-                          </a>
-                        ) : null}
+                        ) : (
+                          <Link href={profileHref} className={quickAccessLinkClassName} title="Open candidate profile">
+                            Profile
+                          </Link>
+                        )}
                         <button
                           type="button"
                           className={iconButtonClassName}

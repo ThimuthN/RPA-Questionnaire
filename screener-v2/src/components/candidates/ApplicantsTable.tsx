@@ -135,123 +135,116 @@ export function ApplicantsTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
+      <div className="overflow-hidden rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow-soft)]">
         {hasSelections && (
-          <div className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 flex items-center justify-between">
-            <p className="text-sm text-[color:var(--app-text)]">
+          <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-2.5">
+            <p className="text-sm font-medium text-[color:var(--app-text)]">
               {selectedIds.length} selected
             </p>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
                 onClick={() => setIsModalOpen(true)}
-                className="px-3 py-2 text-xs"
+                className="px-3 py-1.5 text-xs"
               >
                 Assign team
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setSelectedIds([])}
-                className="px-3 py-2 text-xs"
+                className="px-3 py-1.5 text-xs"
               >
                 Clear
               </Button>
             </div>
           </div>
         )}
-        <div className="overflow-x-auto">
-          <table className="min-w-[1100px] w-full table-fixed text-left">
-            <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-xs uppercase tracking-[0.16em] text-[color:var(--app-muted)]">
-              <tr>
-                <th scope="col" className="w-[4%] px-4 py-3 font-medium">
+        <table className="w-full table-fixed text-left">
+          <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] text-[11px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+            <tr>
+              <th scope="col" className="w-10 px-3 py-2.5 font-medium">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === rows.length && rows.length > 0}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 cursor-pointer rounded border-[color:var(--app-border-strong)]"
+                  aria-label="Select all applicants"
+                />
+              </th>
+              <th scope="col" className="px-3 py-2.5 font-medium">Person</th>
+              <th scope="col" className="hidden px-3 py-2.5 font-medium md:table-cell">Position</th>
+              <th scope="col" className="hidden w-[110px] px-3 py-2.5 font-medium lg:table-cell">Applied</th>
+              <th scope="col" className="w-[96px] px-3 py-2.5 font-medium">Resume</th>
+              <th scope="col" className="w-[130px] px-3 py-2.5 font-medium">Status</th>
+              <th scope="col" className="hidden w-[140px] px-3 py-2.5 font-medium xl:table-cell">Assigned</th>
+              <th scope="col" className="w-[120px] px-3 py-2.5 text-right font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-surface-soft)]">
+                <td className="px-3 py-3">
                   <input
                     type="checkbox"
-                    checked={selectedIds.length === rows.length && rows.length > 0}
-                    onChange={handleSelectAll}
-                    className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-                    aria-label="Select all applicants"
+                    checked={selectedIds.includes(row.id)}
+                    onChange={() => handleSelectRow(row.id)}
+                    className="h-4 w-4 cursor-pointer rounded border-[color:var(--app-border-strong)]"
+                    aria-label={`Select ${row.candidateName}`}
                   />
-                </th>
-                <th scope="col" className="w-[22%] px-4 py-3 font-medium">Person</th>
-                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Position</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Queue age</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Review status</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Assigned to</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium text-right">Next step</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-surface-soft)]/70">
-                  <td className="px-4 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(row.id)}
-                      onChange={() => handleSelectRow(row.id)}
-                      className="h-4 w-4 rounded border-gray-300 cursor-pointer"
-                      aria-label={`Select ${row.candidateName}`}
-                    />
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-[color:var(--app-heading)]">{row.candidateName}</p>
-                      <p className="text-xs text-[color:var(--app-muted)]">{row.candidateEmail}</p>
-                      {sourceLabel(row.source) ? (
-                        <StatusPill label={sourceLabel(row.source)!} tone="neutral" />
+                </td>
+                <td className="px-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-[color:var(--app-heading)]" title={row.candidateName}>{row.candidateName}</p>
+                    <p className="truncate text-xs text-[color:var(--app-muted)]" title={row.candidateEmail}>{row.candidateEmail}</p>
+                  </div>
+                </td>
+                <td className="hidden px-3 py-3 md:table-cell">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-[color:var(--app-text)]" title={row.jobTitle}>{row.jobTitle}</p>
+                    <p className="truncate text-xs text-[color:var(--app-muted)]" title={row.roleLabel || sourceLabel(row.source) || ""}>
+                      {row.roleLabel || sourceLabel(row.source) || "No role linked"}
+                    </p>
+                  </div>
+                </td>
+                <td className="hidden px-3 py-3 lg:table-cell">
+                  <span className="whitespace-nowrap text-sm text-[color:var(--app-text)]" title={dayLabel(row.updatedAt, "Updated")}>
+                    {dayLabel(row.appliedAt)}
+                  </span>
+                </td>
+                <td className="px-3 py-3">
+                  <StatusPill label={row.hasResume ? "Attached" : "Missing"} tone={row.hasResume ? "emerald" : "amber"} />
+                </td>
+                <td className="px-3 py-3">
+                  <span title={statusHint(row.status)}>
+                    <StatusPill label={candidateApplicationStatusLabels[row.status]} tone={statusTone(row.status)} />
+                  </span>
+                </td>
+                <td className="hidden px-3 py-3 xl:table-cell">
+                  {row.teamAssignments && row.teamAssignments.length > 0 ? (
+                    <p
+                      className="truncate text-sm text-[color:var(--app-text)]"
+                      title={row.teamAssignments.map((a) => `${a.name} (${a.role.replace(/_/g, " ")})`).join(", ")}
+                    >
+                      {row.teamAssignments[0]!.name}
+                      {row.teamAssignments.length > 1 ? (
+                        <span className="ml-1 text-[10px] text-[color:var(--app-muted)]">+{row.teamAssignments.length - 1}</span>
                       ) : null}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-[color:var(--app-heading)]">{row.jobTitle}</p>
-                      <p className="text-xs text-[color:var(--app-muted)]">{row.roleLabel || "No role linked"}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1 text-sm text-[color:var(--app-text)]">
-                      <p>{dayLabel(row.appliedAt)}</p>
-                      <p className="text-xs text-[color:var(--app-muted)]">{dayLabel(row.updatedAt, "Updated")}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <StatusPill label={row.hasResume ? "Attached" : "Missing"} tone={row.hasResume ? "emerald" : "amber"} />
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="space-y-1">
-                      <StatusPill label={candidateApplicationStatusLabels[row.status]} tone={statusTone(row.status)} />
-                      <p className="text-xs text-[color:var(--app-muted)]">{statusHint(row.status)}</p>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    {row.teamAssignments && row.teamAssignments.length > 0 ? (
-                      <div className="space-y-0.5">
-                        <p className="text-sm text-[color:var(--app-text)]" title={row.teamAssignments.map((a) => `${a.name} (${a.role.replace(/_/g, " ")})`).join(", ")}>
-                          {row.teamAssignments[0]!.name}
-                          {row.teamAssignments.length > 1 ? (
-                            <span className="ml-1 text-[10px] text-[color:var(--app-muted)]">+{row.teamAssignments.length - 1}</span>
-                          ) : null}
-                        </p>
-                        <p className="text-[10px] text-[color:var(--app-muted)] capitalize">{row.teamAssignments[0]!.role.replace(/_/g, " ")}</p>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-[color:var(--app-muted)]">Unassigned</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link href={reviewHref(row.id)}>
-                        <Button type="button" className="px-3 py-2 text-xs">
-                          {nextStepLabel(row.status)}
-                        </Button>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </p>
+                  ) : (
+                    <span className="text-sm text-[color:var(--app-muted)]">Unassigned</span>
+                  )}
+                </td>
+                <td className="px-3 py-3 text-right">
+                  <Link href={reviewHref(row.id)} className="inline-block">
+                    <Button type="button" variant="secondary" className="whitespace-nowrap px-3 py-1.5 text-xs">
+                      {nextStepLabel(row.status)}
+                    </Button>
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       <AssignmentModal
