@@ -1105,7 +1105,8 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         roleId: job.roleId ?? undefined,
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
-        resumeSource: "direct",
+        // Attribute the candidate's source to what the applicant actually selected (not always "direct")
+        resumeSource: input.source ?? "direct",
         stage: "applicant"
       });
       existingCandidate = {
