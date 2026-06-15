@@ -1,1 +1,6 @@
 .vercel
+
+# Local env dumps (never commit secrets)
+tmp-screenerlive-env/
+*.env.local
+.env.preview.local
