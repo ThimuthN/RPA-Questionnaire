@@ -128,26 +128,35 @@ export default async function PublicJobDetailPage({
         </div>
       </div>
 
-      {/* ── Backward-compat success banner ── */}
+      {/* ── Success confirmation ── */}
       {pageState.applied ? (
-        <div className="mb-8 flex items-start gap-3 rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-5">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-emerald-50">Application received</p>
-            <p className="text-sm text-emerald-100/80">
-              Your application has been saved.
-              {pageState.resumeError
-                ? " The resume upload did not finish — only your contact details were saved."
-                : ""}
-            </p>
+        <div className="mb-8 rounded-[20px] border border-emerald-400/30 bg-emerald-500/10 p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-emerald-50">Application received — you&apos;re in the queue</p>
+              <p className="text-sm text-emerald-100/80">
+                {pageState.resumeError
+                  ? "Your application was saved, but the resume upload did not complete. Only your contact details were recorded — you may reapply to attach your CV."
+                  : `Your application for ${job.title} has been submitted to the ${orgName} hiring team.`}
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-emerald-400/20 pt-4 space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-emerald-300">What happens next</p>
+            <ol className="space-y-1.5 text-sm text-emerald-100/80 list-none">
+              <li className="flex gap-2"><span className="text-emerald-400 font-semibold shrink-0">1.</span>Our team reviews your application, usually within 5–7 business days.</li>
+              <li className="flex gap-2"><span className="text-emerald-400 font-semibold shrink-0">2.</span>If shortlisted, you&apos;ll receive an email to schedule a screening call.</li>
+              <li className="flex gap-2"><span className="text-emerald-400 font-semibold shrink-0">3.</span>Selected candidates proceed to interviews and assessments.</li>
+            </ol>
           </div>
         </div>
       ) : null}
       {pageState.alreadyApplied ? (
-        <div className="mb-8 rounded-[20px] border border-brand-300/30 bg-brand-500/10 p-5">
-          <p className="text-sm font-medium text-[color:var(--app-heading)]">Application already received</p>
-          <p className="mt-1 text-sm text-[color:var(--app-muted)]">
-            We already have an application for this email on this job.
+        <div className="mb-8 rounded-[20px] border border-brand-300/30 bg-brand-500/10 p-5 space-y-1">
+          <p className="text-sm font-medium text-[color:var(--app-heading)]">Application already on file</p>
+          <p className="text-sm text-[color:var(--app-muted)]">
+            We already have an application for this email address on this role. Our team will be in touch if you are shortlisted — no further action is needed.
           </p>
         </div>
       ) : null}

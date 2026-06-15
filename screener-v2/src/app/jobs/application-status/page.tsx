@@ -7,6 +7,13 @@ import { getPublicApplicationStatus } from "@/lib/db/jobs";
 import { PUBLIC_JOBS_ENABLED } from "@/lib/jobs/public-access";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
 
+const STATUS_EXPLANATIONS: Record<string, string> = {
+  submitted: "Your application has been received and is waiting for an initial review by our hiring team. No action is needed — we'll reach out if you're shortlisted.",
+  under_review: "A member of our hiring team is currently reviewing your application. This stage typically takes 5–10 business days. We'll contact you with next steps.",
+  moved_to_pipeline: "Congratulations — you've progressed to the active hiring pipeline. Expect to hear from us shortly to schedule next steps.",
+  closed: "Your application for this role has been closed. We appreciate your interest and encourage you to explore other open positions.",
+};
+
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationStatusPage({
@@ -88,6 +95,11 @@ export default async function ApplicationStatusPage({
                   <p className="mt-2 text-base text-[color:var(--app-heading)]">{candidateApplicationStatusLabels[status.status]}</p>
                 </div>
               </div>
+              {STATUS_EXPLANATIONS[status.status] ? (
+                <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+                  <p className="text-sm text-[color:var(--app-text)]">{STATUS_EXPLANATIONS[status.status]}</p>
+                </div>
+              ) : null}
               <div className="rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
                 <p className="text-sm text-[color:var(--app-muted)]">Applied on</p>
                 <p className="mt-1 text-base text-[color:var(--app-heading)]">{new Date(status.appliedAt).toLocaleDateString()}</p>
