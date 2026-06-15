@@ -69,7 +69,7 @@ export async function TalentPoolWorkspaceView({
           header: "Position",
           width: "w-[22%]",
           render: (c) => (
-            <p className="text-sm text-[color:var(--app-muted)] truncate">{c.positionAppliedFor ?? "—"}</p>
+            <p className="text-sm text-[color:var(--app-muted)] truncate" title={c.positionAppliedFor ?? undefined}>{c.positionAppliedFor ?? "—"}</p>
           ),
         },
         {

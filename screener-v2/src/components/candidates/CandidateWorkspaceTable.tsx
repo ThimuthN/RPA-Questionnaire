@@ -239,7 +239,7 @@ export function CandidateWorkspaceTable({
                 const candidateResumeHref = resumeHref(candidate);
                 const profileHref = buildCandidateProfileHref(candidate.id, effectiveWorkspaceId, currentPathAndQuery);
                 return (
-                  <tr key={candidate.id} className="min-h-[88px] transition hover:bg-[color:var(--app-table-row-hover)]">
+                  <tr key={candidate.id} className="min-h-[88px] cursor-pointer transition hover:bg-[color:var(--app-table-row-hover)]">
                     <td className={tableCellClassName}>
                       {canManageCandidates ? (
                         <input
