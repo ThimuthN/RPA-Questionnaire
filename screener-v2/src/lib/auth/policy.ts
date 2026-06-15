@@ -1,6 +1,5 @@
 const authRequiredPrefixes = [
   "/assessments",
-  "/candidates",
   "/addons",
   "/create-test",
   "/people",
