@@ -471,6 +471,7 @@ export default async function CandidateDetailPage({
             activeApplication={activeApplication}
             teamCount={teamCount}
             teamNames={teamNames}
+            offerStatus={offerForPanel?.status ?? null}
           />
         </div>
 

@@ -62,6 +62,26 @@ function applicationSourceLabel(source: string): string {
   return SOURCE_LABELS[source] ?? source;
 }
 
+const OFFER_STATUS_LABELS: Record<string, string> = {
+  draft: "Offer draft",
+  submitted_for_approval: "Awaiting approval",
+  approved: "Offer approved",
+  sent: "Offer sent",
+  accepted: "Offer accepted",
+  rejected: "Offer declined",
+  expired: "Offer expired",
+};
+
+const OFFER_STATUS_TONES: Record<string, "neutral" | "blue" | "amber" | "emerald"> = {
+  draft: "neutral",
+  submitted_for_approval: "amber",
+  approved: "blue",
+  sent: "blue",
+  accepted: "emerald",
+  rejected: "neutral",
+  expired: "neutral",
+};
+
 export function CandidateSidebar({
   candidate,
   currentDetailPath,
@@ -75,6 +95,7 @@ export function CandidateSidebar({
   activeApplication,
   teamCount,
   teamNames,
+  offerStatus,
 }: {
   candidate: CandidateDetail;
   currentDetailPath: string;
@@ -88,6 +109,7 @@ export function CandidateSidebar({
   activeApplication: CandidateApplicationRecord | null;
   teamCount: number;
   teamNames: string[];
+  offerStatus?: string | null;
 }) {
   const folderHref = safeExternalUrl(candidate.candidateFolderUrl);
   const linkedInHref = safeExternalUrl(candidate.linkedInUrl);
@@ -133,6 +155,11 @@ export function CandidateSidebar({
             {candidate.location ? (
               <ContactRow icon={<MapPin size={12} />} value={candidate.location} />
             ) : null}
+            {(!candidate.phone || !candidate.location) ? (
+              <p className="text-[10px] text-[color:var(--app-muted)] italic">
+                {[!candidate.phone && "Phone missing", !candidate.location && "Location missing"].filter(Boolean).join(" · ")}
+              </p>
+            ) : null}
             {linkedInHref ? (
               <a
                 href={linkedInHref}
@@ -177,12 +204,28 @@ export function CandidateSidebar({
                 label={candidateApplicationStatusLabels[activeApplication.status]}
                 tone={applicationStatusTone(activeApplication.status)}
               />
+              <p className="text-[10px] text-[color:var(--app-muted)]">
+                Applied {new Date(activeApplication.createdAt).toLocaleDateString()}
+              </p>
               {activeApplication.source ? (
                 <MetaRow label="Via" value={applicationSourceLabel(activeApplication.source)} />
               ) : null}
               {activeApplication.source === "referral" && activeApplication.referredBy ? (
                 <MetaRow label="Referred by" value={activeApplication.referredBy} />
               ) : null}
+            </div>
+          ) : null}
+
+          {/* Offer status (surface without making user open the Offer tab) */}
+          {offerStatus && offerStatus !== "draft" ? (
+            <div className="space-y-1.5 border-t border-[color:var(--app-border)] pt-3">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+                Offer
+              </p>
+              <StatusPill
+                label={OFFER_STATUS_LABELS[offerStatus] ?? offerStatus}
+                tone={OFFER_STATUS_TONES[offerStatus] ?? "neutral"}
+              />
             </div>
           ) : null}
 
