@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { IBM_Plex_Mono, Manrope, Sora } from "next/font/google";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { MainNav } from "@/components/navigation/MainNav";
@@ -54,14 +55,27 @@ const themeInitScript = `
   }
 `;
 
+/**
+ * Public-facing routes render their own chrome (PublicSiteFrame / full-screen shells),
+ * so they must NOT get the authenticated app sidebar even when a session exists.
+ */
+function isPublicShellPath(pathname: string) {
+  if (pathname === "/") return true;
+  return ["/jobs", "/privacy", "/terms", "/login", "/upload"].some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const session = await getAppSession();
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const showSidebar = Boolean(session) && !isPublicShellPath(pathname);
 
-  const departments = session
+  const departments = showSidebar
     ? await listDepartments(false)
     : [];
 
@@ -73,8 +87,8 @@ export default async function RootLayout({
         </a>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <MotionProvider>
-          {session ? (
-            /* ── Authenticated: full sidebar layout ── */
+          {showSidebar && session ? (
+            /* ── Authenticated app routes: full sidebar layout ── */
             <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)] md:flex">
               <WorkspaceRail
                 viewer={{ email: session.email, name: session.name, roleId: session.roleId, permissions: session.permissions, departmentId: session.departmentId }}
@@ -102,7 +116,7 @@ export default async function RootLayout({
               <CommandPalette />
             </div>
           ) : (
-            /* ── Public / unauthenticated: no sidebar, full-width ── */
+            /* ── Public routes (and unauthenticated): no sidebar, full-width ── */
             <div className="min-h-screen bg-[radial-gradient(circle_at_top,var(--app-bg-accent-top),transparent_28%),linear-gradient(180deg,var(--app-bg),var(--app-bg))] text-[color:var(--app-text)]">
               <main id="main-content">{children}</main>
               <ThemeToggle />

@@ -21,34 +21,24 @@ export async function middleware(request: NextRequest) {
   const isApi = pathname.startsWith("/api/");
   const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
+  // Expose the current pathname to server components (e.g. the root layout decides
+  // whether to render the app sidebar or the public shell).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
   if (isAuthRequiredPath(pathname)) {
     if (!hasSessionCookie) {
       return isApi ? unauthorizedApi("Login required.") : redirectToLogin(request);
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
 export const config = {
+  // Run on all page + API routes (auth enforcement is still gated by isAuthRequiredPath),
+  // excluding Next internals and static assets.
   matcher: [
-    "/login",
-    "/assessments/:path*",
-    "/candidates/:path*",
-    "/addons/:path*",
-    "/create-test/:path*",
-    "/people/:path*",
-    "/results/:path*",
-    "/users/:path*",
-    "/api/candidates/:path*",
-    "/api/candidate-applications/:path*",
-    "/api/results/:path*",
-    "/api/jobs/:path*",
-    "/api/invites/create",
-    "/api/auth/magic/request",
-    "/api/users/:path*",
-    "/api/roles/:path*",
-    "/api/addons/:path*",
-    "/api/addon-presets/:path*"
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|json|woff|woff2|ttf|css|js)$).*)"
   ]
 };
