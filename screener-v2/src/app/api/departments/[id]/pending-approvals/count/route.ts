@@ -10,10 +10,12 @@ export async function GET(
   if (!auth.ok) return auth.response;
 
   const { id } = await params;
+  const userId = auth.session.userId;
+  if (!userId) return NextResponse.json({ count: 0 });
 
   const count = await prisma.offerApprovalStep.count({
     where: {
-      approverId: auth.session.userId,
+      approverId: userId,
       status: "pending",
       offer: {
         status: "submitted_for_approval",

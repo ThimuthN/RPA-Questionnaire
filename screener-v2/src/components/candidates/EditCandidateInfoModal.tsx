@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
@@ -17,15 +17,26 @@ interface UserOption {
 
 export function EditCandidateInfoModal({
   candidate,
-  returnTo
+  returnTo,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   candidate: CandidateDetail;
   returnTo?: string;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpenRef = useRef<(v: boolean) => void>(() => {});
+  setOpenRef.current = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
+  function setOpen(v: boolean) { setOpenRef.current(v); }
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [owners, setOwners] = useState<UserOption[]>([]);
@@ -75,9 +86,11 @@ export function EditCandidateInfoModal({
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-        Edit info
-      </Button>
+      {controlledOpen === undefined ? (
+        <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+          Edit info
+        </Button>
+      ) : null}
 
       {mounted
         ? createPortal(

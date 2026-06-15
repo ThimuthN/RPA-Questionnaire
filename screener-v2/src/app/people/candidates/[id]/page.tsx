@@ -446,16 +446,47 @@ export default async function CandidateDetailPage({
   const filesHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "files") as Route;
   const emailsHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "emails") as Route;
 
+  const breadcrumbEyebrow =
+    workspaceContext.kind === "department" ? (
+      <span className="flex items-center gap-1.5">
+        <Link
+          href={workspaceContext.workspaceHref as Route}
+          className="opacity-70 transition-opacity hover:opacity-100"
+        >
+          {workspaceContext.label}
+        </Link>
+        <span className="opacity-30">/</span>
+        <Link
+          href={workspaceContext.candidateListHref}
+          className="opacity-70 transition-opacity hover:opacity-100"
+        >
+          Candidates
+        </Link>
+      </span>
+    ) : (
+      <Link
+        href={workspaceContext.candidateListHref}
+        className="opacity-70 transition-opacity hover:opacity-100"
+      >
+        Candidates
+      </Link>
+    );
+
+  const backLabel =
+    workspaceContext.kind === "department"
+      ? `← ${workspaceContext.label} Candidates`
+      : "← Candidates";
+
   return (
     <SceneShell
       variant="results"
       tone="page"
-      eyebrow={workspaceContext.kind === "department" ? workspaceContext.label : "Candidates"}
+      eyebrow={breadcrumbEyebrow}
       title={candidate.fullName}
       subtitle={candidate.roleLabel ?? candidate.email}
       utility={
         <Link href={workspaceContext.backHref}>
-          <Button variant="secondary">Back</Button>
+          <Button variant="secondary">{backLabel}</Button>
         </Link>
       }
     >

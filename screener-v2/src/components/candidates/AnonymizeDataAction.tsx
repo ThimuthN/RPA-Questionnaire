@@ -8,16 +8,22 @@ import { Button } from "@/components/primitives/Button";
 export function AnonymizeDataAction({
   candidateId,
   candidateName,
-  backHref
+  backHref,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   candidateId: string;
   candidateName: string;
   backHref: string;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (v: boolean) => { if (onOpenChange) onOpenChange(v); else setInternalOpen(v); };
 
   async function handleAnonymize() {
     setBusy(true);
@@ -36,9 +42,11 @@ export function AnonymizeDataAction({
 
   return (
     <>
-      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-        Anonymize data
-      </Button>
+      {controlledOpen === undefined ? (
+        <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+          Anonymize data
+        </Button>
+      ) : null}
 
       {open ? createPortal(
         <div

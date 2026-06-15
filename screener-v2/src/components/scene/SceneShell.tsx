@@ -27,7 +27,7 @@ export function SceneShell({
 }: PropsWithChildren<{
   variant: SceneVariant;
   title: ReactNode;
-  eyebrow: string;
+  eyebrow: ReactNode;
   subtitle?: string;
   utility?: ReactNode;
   hideHeader?: boolean;

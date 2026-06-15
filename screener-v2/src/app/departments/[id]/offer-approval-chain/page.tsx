@@ -14,6 +14,8 @@ export default async function OfferApprovalChainPage({
   const { id } = await params;
 
   const session = await requirePageSession(`/departments/${id}/offer-approval-chain`);
+  const userId = session.userId;
+  if (!userId) notFound();
 
   const [canManage, department, offerApprovalChain, accessGrantTeam, pendingSteps] = await Promise.all([
     canUsePermissionForDepartment(session, "manage_users", id),
@@ -34,7 +36,7 @@ export default async function OfferApprovalChainPage({
     }),
     prisma.offerApprovalStep.findMany({
       where: {
-        approverId: session.userId,
+        approverId: userId,
         status: "pending",
         offer: {
           status: "submitted_for_approval",

@@ -1,12 +1,7 @@
 import type { Route } from "next";
-import { Mail, Phone, MapPin, ExternalLink, Linkedin } from "lucide-react";
+import { Mail, Phone, MapPin, Linkedin } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
-import { Button } from "@/components/primitives/Button";
-import { ConfirmSubmitButton } from "@/components/primitives/ConfirmSubmitButton";
-import { EditCandidateInfoModal } from "@/components/candidates/EditCandidateInfoModal";
-import { TransferCandidateAction } from "@/components/candidates/TransferCandidateAction";
-import { AnonymizeDataAction } from "@/components/candidates/AnonymizeDataAction";
-import { TalentPoolToggleAction } from "@/components/candidates/TalentPoolToggleAction";
+import { CandidateSidebarActionsMenu } from "@/components/candidates/CandidateSidebarActionsMenu";
 import type { CandidateDetail } from "@/lib/db/candidates";
 import type { CandidateStage } from "@/lib/candidates/types";
 import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
@@ -117,12 +112,6 @@ export function CandidateSidebar({
 
   const showMoveToPipeline =
     candidate.stage === "applicant" && !!activeApplication && canPromote;
-  const hasActions =
-    showMoveToPipeline ||
-    canManage ||
-    !!resumeDownloadUrl ||
-    !!folderHref ||
-    canDelete;
 
   return (
     <aside>
@@ -258,77 +247,19 @@ export function CandidateSidebar({
         </div>
 
         {/* ── Actions ── */}
-        {hasActions ? (
-          <div className="space-y-2 border-t border-[color:var(--app-border)] p-4">
-            {showMoveToPipeline ? (
-              <form action={`/api/candidate-applications/${activeApplication!.id}`} method="post">
-                <input type="hidden" name="action" value="promote" />
-                <input type="hidden" name="returnTo" value={currentDetailPath} />
-                <Button type="submit" className="w-full">
-                  Move to pipeline
-                </Button>
-              </form>
-            ) : null}
-
-            {canManage ? (
-              <EditCandidateInfoModal candidate={candidate} returnTo={currentDetailPath} />
-            ) : null}
-
-            {resumeDownloadUrl && resumeFileName ? (
-              <a
-                href={resumeDownloadUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]"
-              >
-                Download resume
-              </a>
-            ) : null}
-
-            {folderHref ? (
-              <a
-                href={folderHref}
-                target="_blank"
-                rel="noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-xs font-medium text-[color:var(--app-text)] transition hover:border-[color:var(--app-border-strong)] hover:bg-[color:var(--app-surface-soft)]"
-              >
-                <ExternalLink size={12} />
-                Open shared folder
-              </a>
-            ) : null}
-
-            {canManage && candidate.orgStage !== "finalized" ? (
-              <TalentPoolToggleAction
-                candidateId={candidate.id}
-                candidateName={candidate.fullName}
-                isInPool={candidate.orgStatus === "talent_pool"}
-              />
-            ) : null}
-
-            {canManage && candidate.orgStage !== "finalized" ? (
-              <TransferCandidateAction candidateId={candidate.id} />
-            ) : null}
-
-            {canDelete ? (
-              <>
-                <AnonymizeDataAction
-                  candidateId={candidate.id}
-                  candidateName={candidate.fullName}
-                  backHref={String(backHref)}
-                />
-                <form action={`/api/candidates/${candidate.id}/delete`} method="post">
-                  <input type="hidden" name="returnTo" value={backHref} />
-                  <ConfirmSubmitButton
-                    variant="secondary"
-                    confirmMessage={`Delete ${candidate.fullName}? This permanently removes the candidate and all linked lifecycle data. Use "Anonymize data" instead to preserve pipeline history.`}
-                  >
-                    Delete record
-                  </ConfirmSubmitButton>
-                </form>
-              </>
-            ) : null}
-          </div>
-        ) : null}
+        <CandidateSidebarActionsMenu
+          candidate={candidate}
+          currentDetailPath={currentDetailPath}
+          backHref={String(backHref)}
+          resumeDownloadUrl={resumeDownloadUrl}
+          resumeFileName={resumeFileName}
+          folderHref={folderHref ?? undefined}
+          canManage={canManage}
+          canDelete={canDelete}
+          isInPool={candidate.orgStatus === "talent_pool"}
+          showMoveToPipeline={showMoveToPipeline}
+          activeApplicationId={activeApplication?.id}
+        />
       </div>
     </aside>
   );

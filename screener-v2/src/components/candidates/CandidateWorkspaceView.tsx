@@ -417,6 +417,11 @@ export async function CandidateWorkspaceView({
           <ActiveFilterChips items={activeFilters} clearAllHref={`${basePath}?clearView=1` as Route} />
 
           <div className="flex flex-wrap gap-2">
+            {session.userId ? (
+              <Link href={buildHref(basePath, query, { owner: session.userId, page: "1" })}>
+                <Button variant="ghost">Assigned to me</Button>
+              </Link>
+            ) : null}
             <Link href={buildHref(basePath, query, { assessmentStatus: "none", sort: "inbox", page: "1" })}>
               <Button variant="ghost">No assessment</Button>
             </Link>

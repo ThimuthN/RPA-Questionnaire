@@ -1092,7 +1092,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         roleId: job.roleId ?? undefined,
         departmentId: job.role?.departmentId ?? undefined,
         positionAppliedFor: job.title,
-        resumeSource: "Company Website",
+        resumeSource: "direct",
         stage: "applicant"
       });
       existingCandidate = {

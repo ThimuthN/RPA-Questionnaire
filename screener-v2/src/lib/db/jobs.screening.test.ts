@@ -250,7 +250,7 @@ describe("createCandidateApplicationFromPublicSubmission", () => {
       expect.objectContaining({
         email: "alice@example.com",
         stage: "applicant",
-        resumeSource: "Company Website"
+        resumeSource: "direct"
       })
     );
     expect(prismaMocks.txCandidateApplicationCreate).toHaveBeenCalledTimes(1);

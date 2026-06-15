@@ -221,7 +221,10 @@ export function CandidateAssessmentsPanel({
         ) : (
           <div className="space-y-4">
             {applicationAssessments.map((application) => (
-              <StagePanel key={application.id} tone="flat" className="space-y-4">
+              <div
+                key={application.id}
+                className="rounded-[18px] bg-[color:var(--app-surface-soft)] p-5 space-y-4"
+              >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-1">
                     <h4 className="text-base font-semibold text-[color:var(--app-heading)]">
@@ -245,7 +248,7 @@ export function CandidateAssessmentsPanel({
                   </div>
                 </div>
 
-                <div className="grid gap-3 border-t border-[color:var(--app-border)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 border-t border-[color:var(--app-border)]/40 pt-4 sm:grid-cols-2 xl:grid-cols-4">
                   <AssessmentMeta label="Role" value={application.roleLabel ?? "Not assigned"} />
                   <AssessmentMeta
                     label="Job stage"
@@ -261,53 +264,55 @@ export function CandidateAssessmentsPanel({
                   />
                 </div>
 
-                <div className="space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                  {application.screeningAddonResults.map((addon, index) => (
-                    <div
-                      key={`${application.id}:${addon.addonLabel}:${index}`}
-                      className="rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4"
-                    >
-                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-0.5">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">
-                            {addon.addonLabel}
-                          </p>
-                          <p className="text-xs text-[color:var(--app-muted)]">
-                            {addon.isMandatory ? "Required" : "Optional"}
-                            {addon.weight > 0 ? ` • Weight ${addon.weight}` : ""}
-                            {!addon.inlineSupported ? " • Needs manual review" : ""}
-                          </p>
+                {application.screeningAddonResults.length > 0 ? (
+                  <div className="space-y-0 border-t border-[color:var(--app-border)]/40 pt-1">
+                    {application.screeningAddonResults.map((addon, index) => (
+                      <div
+                        key={`${application.id}:${addon.addonLabel}:${index}`}
+                        className="border-b border-[color:var(--app-border)]/40 py-4 last:border-0"
+                      >
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="space-y-0.5">
+                            <p className="text-sm font-medium text-[color:var(--app-heading)]">
+                              {addon.addonLabel}
+                            </p>
+                            <p className="text-xs text-[color:var(--app-muted)]">
+                              {addon.isMandatory ? "Required" : "Optional"}
+                              {addon.weight > 0 ? ` • Weight ${addon.weight}` : ""}
+                              {!addon.inlineSupported ? " • Needs manual review" : ""}
+                            </p>
+                          </div>
+                          <StatusPill
+                            label={screeningResultLabel(addon.status)}
+                            tone={screeningResultTone(addon.status)}
+                          />
                         </div>
-                        <StatusPill
-                          label={screeningResultLabel(addon.status)}
-                          tone={screeningResultTone(addon.status)}
-                        />
-                      </div>
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                        <AssessmentMeta
-                          label="Required"
-                          value={formatPercent(addon.requiredPercent)}
-                        />
-                        <AssessmentMeta
-                          label="Score"
-                          value={formatPercent(addon.applicantPercent)}
-                        />
-                        <AssessmentMeta
-                          label="Points"
-                          value={`${addon.pointsEarned} / ${addon.pointsPossible}`}
-                        />
-                        <AssessmentMeta
-                          label="Responses"
-                          value={String(addon.responses.length)}
-                        />
-                      </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                          <AssessmentMeta
+                            label="Required"
+                            value={formatPercent(addon.requiredPercent)}
+                          />
+                          <AssessmentMeta
+                            label="Score"
+                            value={formatPercent(addon.applicantPercent)}
+                          />
+                          <AssessmentMeta
+                            label="Points"
+                            value={`${addon.pointsEarned} / ${addon.pointsPossible}`}
+                          />
+                          <AssessmentMeta
+                            label="Responses"
+                            value={String(addon.responses.length)}
+                          />
+                        </div>
 
-                      <ScreeningResponsesDisclosure responses={addon.responses} />
-                    </div>
-                  ))}
-                </div>
-              </StagePanel>
+                        <ScreeningResponsesDisclosure responses={addon.responses} />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         )}
