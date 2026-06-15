@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { validateAssignableAccessRole } from "@/lib/auth/access-roles";
+import { revokeDepartmentAccess } from "@/lib/auth/access-grants";
+import { logAudit } from "@/lib/auth/audit";
 import { prisma } from "@/lib/db/prisma";
 
 const assignUserSchema = z.object({
@@ -102,7 +104,6 @@ export async function DELETE(
   try {
     const body = removeUserSchema.parse(await request.json());
 
-    // Verify user exists and belongs to this department
     const user = await prisma.user.findUnique({
       where: { id: body.userId },
       select: { departmentId: true }
@@ -113,23 +114,37 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    if (user.departmentId !== departmentId) {
+
+    // Revoke the department-scoped AccessGrant(s) — this is what actually drops effective
+    // access (authz reads AccessGrant, not the legacy User columns).
+    const { revoked } = await revokeDepartmentAccess({ userId: body.userId, departmentId });
+
+    // Backward-compat: also clear the legacy columns when they point at this department.
+    const legacyMatch = user.departmentId === departmentId;
+    if (legacyMatch) {
+      await prisma.user.update({
+        where: { id: body.userId },
+        data: { departmentId: null, roleId: null }
+      });
+    }
+
+    if (revoked === 0 && !legacyMatch) {
       return NextResponse.json(
         { ok: false, message: "User does not belong to this department" },
         { status: 400 }
       );
     }
 
-    // Remove user from department and role
-    await prisma.user.update({
-      where: { id: body.userId },
-      data: {
-        departmentId: null,
-        roleId: null
-      }
+    await logAudit({
+      action: "department_access_revoked",
+      actorId: auth.session.userId ?? null,
+      actorEmail: auth.session.email ?? undefined,
+      targetId: body.userId,
+      targetType: "user",
+      after: { departmentId, revokedGrants: revoked }
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, revoked });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

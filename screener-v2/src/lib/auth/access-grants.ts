@@ -240,6 +240,24 @@ export async function searchUsers(query: string, limit: number = 20) {
 }
 
 /**
+ * Revoke (deactivate) a user's active department-scoped access grants for a department.
+ * This is what actually drops effective access on offboarding, since authz reads AccessGrant.
+ * Returns the number of grants revoked.
+ */
+export async function revokeDepartmentAccess(input: { userId: string; departmentId: string }) {
+  const result = await prisma.accessGrant.updateMany({
+    where: {
+      userId: input.userId,
+      departmentId: input.departmentId,
+      scope: "department",
+      status: "active"
+    },
+    data: { status: "inactive" }
+  });
+  return { revoked: result.count };
+}
+
+/**
  * Get user's current access grants (summary).
  */
 export async function getUserAccessSummary(userId: string) {
