@@ -1,6 +1,7 @@
 import type { Route } from "next";
 import { Mail, Phone, MapPin, Linkedin } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { CandidateAvatarUpload } from "@/components/candidates/CandidateAvatarUpload";
 import { CandidateSidebarActionsMenu } from "@/components/candidates/CandidateSidebarActionsMenu";
 import type { CandidateDetail } from "@/lib/db/candidates";
 import type { CandidateStage } from "@/lib/candidates/types";
@@ -8,20 +9,12 @@ import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
 import type { CandidateApplicationRecord } from "@/lib/db/candidates/types";
 import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
+import { getSourceLabel, isReferralSource } from "@/lib/candidates/source";
 
 function stageTone(stage: CandidateStage): "amber" | "blue" | "emerald" | "neutral" {
   if (stage === "applicant") return "amber";
   if (stage === "finalized") return "emerald";
   return "blue";
-}
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((n) => n[0] ?? "")
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 function safeExternalUrl(value?: string | null): string | undefined {
@@ -42,19 +35,6 @@ function applicationStatusTone(
   if (status === "moved_to_pipeline") return "emerald";
   if (status === "closed") return "blue";
   return "neutral";
-}
-
-const SOURCE_LABELS: Record<string, string> = {
-  direct: "Company website",
-  linkedin: "LinkedIn",
-  job_board: "Job board",
-  referral: "Referral",
-  agency: "Agency",
-  other: "Other",
-};
-
-function applicationSourceLabel(source: string): string {
-  return SOURCE_LABELS[source] ?? source;
 }
 
 const OFFER_STATUS_LABELS: Record<string, string> = {
@@ -119,9 +99,12 @@ export function CandidateSidebar({
         {/* ── Identity ── */}
         <div className="p-5 space-y-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] text-sm font-semibold text-white select-none">
-              {initials(candidate.fullName)}
-            </div>
+            <CandidateAvatarUpload
+              candidateId={candidate.id}
+              fullName={candidate.fullName}
+              avatarUrl={candidate.avatarUrl}
+              canManage={canManage}
+            />
             <div className="min-w-0 flex-1 space-y-1">
               <p className="font-semibold leading-tight text-[color:var(--app-heading)] truncate">
                 {candidate.fullName}
@@ -197,9 +180,9 @@ export function CandidateSidebar({
                 Applied {new Date(activeApplication.createdAt).toLocaleDateString()}
               </p>
               {activeApplication.source ? (
-                <MetaRow label="Via" value={applicationSourceLabel(activeApplication.source)} />
+                <MetaRow label="Via" value={getSourceLabel(activeApplication.source)} />
               ) : null}
-              {activeApplication.source === "referral" && activeApplication.referredBy ? (
+              {isReferralSource(activeApplication.source) && activeApplication.referredBy ? (
                 <MetaRow label="Referred by" value={activeApplication.referredBy} />
               ) : null}
             </div>

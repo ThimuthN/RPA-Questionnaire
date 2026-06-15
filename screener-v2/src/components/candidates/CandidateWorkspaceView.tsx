@@ -7,6 +7,7 @@ import { PaginationBar } from "@/components/workspace/PaginationBar";
 import { PersistedTableState } from "@/components/workspace/PersistedTableState";
 import { ActiveFilterChips, type ActiveFilterChipItem } from "@/components/workspace/ActiveFilterChips";
 import { CandidateWorkspaceTable } from "@/components/candidates/CandidateWorkspaceTable";
+import { CandidateFilterForm } from "@/components/candidates/CandidateFilterForm";
 import { CandidateCsvImportModal } from "@/components/candidates/CandidateCsvImportModal";
 import { CandidatesViewSwitch, type CandidatesView } from "@/components/candidates/CandidatesViewSwitch";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -44,10 +45,6 @@ type CandidateWorkspacePageState = {
 };
 
 const transientBannerKeys = ["deleted", "error", "updated", "imported", "skipped", "clearView"] as const;
-
-function filterFieldClassName() {
-  return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
-}
 
 function messageTone(type: "success" | "error") {
   return type === "success"
@@ -326,93 +323,29 @@ export async function CandidateWorkspaceView({
             ) : null}
           </div>
 
-          <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.6fr)_repeat(5,minmax(0,0.9fr))_auto_auto]">
-            <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
-            <input
-              name="q"
-              defaultValue={params.q ?? ""}
-              placeholder="Search candidate, email, or owner"
-              className={filterFieldClassName()}
-            />
-            <select
-              name="roleId"
-              defaultValue={params.roleId ?? ""}
-              className={filterFieldClassName()}
-            >
-              <option value="">All roles</option>
-              {page.roleOptions.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-            {scope === "global" && isGlobalViewCandidates ? (
-              <select
-                name="departmentId"
-                defaultValue={params.departmentId ?? ""}
-                className={filterFieldClassName()}
-              >
-                <option value="">All departments</option>
-                {departments.map((department) => (
-                  <option key={department.id} value={department.id}>
-                    {department.name}
-                  </option>
-                ))}
-              </select>
-            ) : null}
-            <select
-              name="owner"
-              defaultValue={params.owner ?? ""}
-              className={filterFieldClassName()}
-            >
-              <option value="">All owners</option>
-              {page.ownerOptions.map((owner) => (
-                <option key={owner.id} value={owner.id}>
-                  {owner.label}
-                </option>
-              ))}
-            </select>
-            <select
-              name="assessmentStatus"
-              defaultValue={params.assessmentStatus ?? ""}
-              className={filterFieldClassName()}
-            >
-              <option value="">Assessment status</option>
-              {candidateAssessmentStatusValues.map((status) => (
-                <option key={status} value={status}>
-                  {candidateAssessmentStatusLabels[status]}
-                </option>
-              ))}
-            </select>
-            {isFinalizedView ? (
-              <select
-                name="finalizedAs"
-                defaultValue={params.finalizedAs ?? ""}
-                className={filterFieldClassName()}
-              >
-                <option value="">All finalized</option>
-                <option value="hired">Hired</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            ) : null}
-            <select
-              name="sort"
-              defaultValue={params.sort ?? "inbox"}
-              className={filterFieldClassName()}
-            >
-              <option value="inbox">Sort by</option>
-              <option value="updated_desc">Recently updated</option>
-              <option value="updated_asc">Least recently updated</option>
-              <option value="stale_desc">Longest inactive</option>
-              <option value="name_asc">Name (A–Z)</option>
-            </select>
-            <Button>Apply</Button>
-            <Link href={`${basePath}?clearView=1` as Route}>
-              <Button type="button" variant="secondary">
-                Reset
-              </Button>
-            </Link>
-          </form>
+          <CandidateFilterForm
+            action={basePath}
+            resetHref={`${basePath}?clearView=1` as Route}
+            initialValues={{
+              q: params.q,
+              roleId: params.roleId,
+              departmentId: params.departmentId,
+              owner: params.owner,
+              assessmentStatus: params.assessmentStatus,
+              finalizedAs: params.finalizedAs,
+              sort: params.sort
+            }}
+            roleOptions={page.roleOptions.map((r) => ({ value: r.id, label: r.label }))}
+            ownerOptions={page.ownerOptions.map((o) => ({ value: o.id, label: o.label }))}
+            assessmentStatusOptions={candidateAssessmentStatusValues.map((s) => ({
+              value: s,
+              label: candidateAssessmentStatusLabels[s]
+            }))}
+            departmentOptions={departments.map((d) => ({ value: d.id, label: d.name }))}
+            showDepartment={scope === "global" && isGlobalViewCandidates}
+            showFinalizedAs={isFinalizedView}
+            pageSize={params.pageSize ?? String(page.pageSize)}
+          />
 
           <ActiveFilterChips items={activeFilters} clearAllHref={`${basePath}?clearView=1` as Route} />
 

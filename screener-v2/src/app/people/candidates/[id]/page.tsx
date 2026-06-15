@@ -6,6 +6,10 @@ import {
   CandidateAssessmentsPanel,
   type CandidateProfilePlatformAssessment
 } from "@/components/candidates/CandidateAssessmentsPanel";
+import {
+  CandidateScorecardsPanel,
+  type ScorecardPanelItem
+} from "@/components/candidates/CandidateScorecardsPanel";
 import { CandidateMilestoneTimeline } from "@/components/candidates/CandidateMilestoneTimeline";
 import { CandidateNotesModal } from "@/components/candidates/CandidateNotesModal";
 import {
@@ -16,6 +20,7 @@ import { DefaultJourneySkeleton } from "@/components/candidates/DefaultJourneySk
 import { CandidateSidebar } from "@/components/candidates/CandidateSidebar";
 import { CandidatePipelineProgress } from "@/components/candidates/CandidatePipelineProgress";
 import { CandidateOfferPanel } from "@/components/candidates/CandidateOfferPanel";
+import { NextActionCard } from "@/components/candidates/NextActionCard";
 import { EmailComposerModal } from "@/components/candidates/EmailComposerModal";
 import { EmailLogPanel } from "@/components/candidates/EmailLogPanel";
 import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
@@ -48,6 +53,7 @@ type CandidateData = NonNullable<Awaited<ReturnType<typeof getCandidateDetail>>>
 const profileTabs = [
   { key: "pipeline", label: "Overview" },
   { key: "assessments", label: "Assessments" },
+  { key: "scorecards", label: "Scorecards" },
   { key: "notes", label: "Notes" },
   { key: "files", label: "Files" },
   { key: "emails", label: "Emails" },
@@ -306,6 +312,39 @@ export default async function CandidateDetailPage({
     }).catch(() => [] as Array<{ id: string; fileName: string; mimeType: string; sizeBytes: number; storageUrl: string; label: string | null; uploadedAt: Date }>),
   ]);
 
+  const scorecardPanels: ScorecardPanelItem[] = currentTab === "scorecards"
+    ? await prisma.interviewPanel.findMany({
+        where: { candidateId: candidate.id },
+        orderBy: { roundNumber: "asc" },
+        include: {
+          feedbacks: {
+            orderBy: { createdAt: "asc" },
+            include: { interviewer: { select: { id: true, name: true, email: true } } }
+          }
+        }
+      }).then((rows) =>
+        rows.map((p) => ({
+          id: p.id,
+          roundNumber: p.roundNumber,
+          roundName: p.roundName,
+          format: p.format,
+          scheduledAt: p.scheduledAt?.toISOString() ?? null,
+          status: p.status,
+          feedbacks: p.feedbacks.map((fb) => ({
+            id: fb.id,
+            interviewerName: fb.interviewer.name,
+            interviewerEmail: fb.interviewer.email,
+            overallRating: fb.overallRating,
+            recommendation: fb.recommendation,
+            competencyJson: fb.competencyJson,
+            strengths: fb.strengths,
+            concerns: fb.concerns,
+            submittedAt: fb.submittedAt?.toISOString() ?? null
+          }))
+        }))
+      ).catch(() => [])
+    : [];
+
   const scopeDepartmentId =
     candidate.departmentId ??
     departmentCandidacy?.department.id ??
@@ -445,6 +484,7 @@ export default async function CandidateDetailPage({
   const assessmentsHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "assessments") as Route;
   const filesHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "files") as Route;
   const emailsHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "emails") as Route;
+  const offerHref = buildDetailPath(candidate.id, requestedWorkspaceId, returnTo, "offer") as Route;
 
   const breadcrumbEyebrow =
     workspaceContext.kind === "department" ? (
@@ -570,6 +610,19 @@ export default async function CandidateDetailPage({
             />
           ) : null}
 
+          <NextActionCard
+            hasResume={!!currentResume}
+            hasLinkedJourney={hasLinkedJourney}
+            hasTeam={hasResponsibleTeam}
+            latestAssessmentStatus={candidate.assessments[0]?.status ?? null}
+            assessmentsHref={assessmentsHref}
+            filesHref={filesHref}
+            pipelineHref={pipelineHref}
+            offerStatus={offerForPanel?.status ?? null}
+            offerHref={offerHref}
+            candidateStage={candidate.stage}
+          />
+
           <ProfileTabs
             candidateId={candidate.id}
             currentTab={currentTab}
@@ -658,11 +711,25 @@ export default async function CandidateDetailPage({
               </div>
               <CandidateAssessmentsPanel
                 candidateId={candidate.id}
+                candidateEmail={candidate.email}
                 platformAssessments={platformAssessments}
                 applicationAssessments={candidate.applicationAssessments}
                 externalAssessments={candidate.externalAssessments}
                 canManage={canManageCandidate}
               />
+            </div>
+          ) : null}
+
+          {/* Scorecards tab */}
+          {currentTab === "scorecards" ? (
+            <div className="space-y-5">
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-[color:var(--app-heading)]">Scorecards</h2>
+                <p className="text-sm text-[color:var(--app-muted)]">
+                  Interviewer feedback and ratings, aggregated by round.
+                </p>
+              </div>
+              <CandidateScorecardsPanel panels={scorecardPanels} />
             </div>
           ) : null}
 

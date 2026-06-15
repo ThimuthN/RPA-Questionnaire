@@ -396,6 +396,7 @@ model Candidate {
   location           String?
   currentTitle       String?
   salaryExpectation  String?
+  avatarUrl          String?
   orgStatus          String   @default("active")
   orgStage           String   @default("active")
   finalizedAs        String?
@@ -529,9 +530,24 @@ model CandidateExternalAssessment {
   updatedAt     DateTime @updatedAt
   candidate     Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   attachments   CandidateExternalAssessmentAttachment[]
+  uploadTokens  CandidateExternalAssessmentUploadToken[]
 
   @@index([candidateId, createdAt])
   @@index([candidateId, completedAt])
+}
+
+model CandidateExternalAssessmentUploadToken {
+  id           String   @id @default(cuid())
+  token        String   @unique @default(cuid())
+  assessmentId String
+  label        String?
+  usedAt       DateTime?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  assessment   CandidateExternalAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@index([assessmentId])
+  @@index([token])
 }
 
 model CandidateExternalAssessmentAttachment {

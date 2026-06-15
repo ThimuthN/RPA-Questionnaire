@@ -143,7 +143,7 @@ export function WorkspaceRail({
               type="button"
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
               onClick={() => setCollapsed(!collapsed)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/16 bg-white/10 text-[color:var(--app-scene-text)] shadow-[var(--app-shadow-soft)] transition-all duration-300 hover:bg-white/18 hover:text-white"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[color:var(--app-rail-divider)] bg-[color:var(--app-rail-item-hover-bg)] text-[color:var(--app-rail-item-text)] shadow-[var(--app-shadow-soft)] transition-all duration-300 hover:bg-[color:var(--app-rail-item-active-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
             >
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </button>
@@ -187,7 +187,7 @@ export function WorkspaceRail({
                   <div key={`${item.href}-group`}>
                     {showSectionLabel && (
                       <p className={cn(
-                        "px-3 pb-1.5 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-scene-text)]/50",
+                        "px-3 pb-1.5 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-rail-section-text)]",
                         index === 0 ? "pt-0.5" : "pt-4"
                       )}>
                         {item.section}
@@ -201,8 +201,8 @@ export function WorkspaceRail({
                           "group flex items-center rounded-[14px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
                           collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
                           active
-                            ? "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]"
-                            : "border-transparent text-[color:var(--app-scene-text)] hover:border-white/12 hover:bg-white/8 hover:text-white"
+                            ? "border-[color:var(--app-rail-item-active-border)] bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
+                            : "border-transparent text-[color:var(--app-rail-item-text)] hover:border-[color:var(--app-rail-item-hover-border)] hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
                         )}
                       >
                         <Icon className="h-5 w-5 shrink-0" />
@@ -225,7 +225,7 @@ export function WorkspaceRail({
               })}
             </nav>
 
-            <div className="mt-auto -mx-4 border-t border-[color:var(--app-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.09))] px-4 pb-5 pt-4 backdrop-blur-md">
+            <div className="mt-auto -mx-4 border-t border-[color:var(--app-rail-divider)] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.10))] px-4 pb-5 pt-4 backdrop-blur-md">
               {viewer ? (
                 <div className="space-y-2">
                   <div

@@ -44,6 +44,7 @@ export function mapCandidate(row: {
   stage: string;
   nextAction: string;
   screeningStatus: string | null;
+  avatarUrl?: string | null;
   candidateFolderUrl: string | null;
   notesSummary: string | null;
   linkedInUrl?: string | null;
@@ -77,6 +78,7 @@ export function mapCandidate(row: {
     orgStatus: (row.orgStatus as "active" | "talent_pool" | "org_rejected" | null) ?? undefined,
     orgStage: (row.orgStage as "active" | "finalized" | null) ?? undefined,
     finalizedAs: (row.finalizedAs as "hired" | "rejected" | null) ?? undefined,
+    avatarUrl: row.avatarUrl ?? undefined,
     candidateFolderUrl: row.candidateFolderUrl ?? undefined,
     notesSummary: row.notesSummary ?? undefined,
     linkedInUrl: row.linkedInUrl ?? undefined,

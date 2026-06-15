@@ -45,6 +45,7 @@ export interface CandidateRecord {
   orgStatus?: "active" | "talent_pool" | "org_rejected";
   orgStage?: "active" | "finalized";
   finalizedAs?: "hired" | "rejected";
+  avatarUrl?: string;
   candidateFolderUrl?: string;
   notesSummary?: string;
   linkedInUrl?: string;

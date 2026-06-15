@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
+import { InfoTooltip } from "@/components/primitives/InfoTooltip";
 
 type OfferStatus = "draft" | "submitted_for_approval" | "approved" | "sent" | "accepted" | "rejected" | "expired";
 
@@ -359,17 +360,16 @@ export function CandidateOfferPanel({
 
       {(editing || !offer) && canManage ? (
         <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-5 space-y-4">
-          <h3 className="text-base font-semibold text-[color:var(--app-heading)]">
-            {offer ? "Edit offer" : "Create offer"}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-semibold text-[color:var(--app-heading)]">
+              {offer ? "Edit offer" : "Create offer"}
+            </h3>
+            <InfoTooltip content="Submit for approval routes the offer through this department's approval chain. If no chain is configured, the offer is auto-approved and can be sent immediately." />
+          </div>
 
           {error ? (
             <p className="rounded-[14px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">{error}</p>
           ) : null}
-
-          <div className="rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2.5 text-xs leading-5 text-[color:var(--app-muted)]">
-            Submit for approval routes the offer through this department&apos;s approval chain. If no chain is configured, the offer is auto-approved and can be sent immediately.
-          </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">

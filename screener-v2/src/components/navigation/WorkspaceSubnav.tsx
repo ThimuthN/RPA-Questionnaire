@@ -137,8 +137,8 @@ function NavTooltip({ label, enabled, children }: { label: string; enabled: bool
 const itemBase = cn(
   "group flex items-center rounded-[14px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
 );
-const itemActive = "border-[color:var(--pill-teal-border)] bg-[linear-gradient(135deg,var(--pill-teal-bg),color-mix(in_srgb,var(--pill-blue-bg)_70%,white))] text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)]";
-const itemInactive = "border-transparent text-[color:var(--app-scene-text)] hover:border-white/12 hover:bg-white/8 hover:text-white";
+const itemActive = "border-[color:var(--app-rail-item-active-border)] bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]";
+const itemInactive = "border-transparent text-[color:var(--app-rail-item-text)] hover:border-[color:var(--app-rail-item-hover-border)] hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]";
 
 // Level 2 inside Settings — slightly smaller padding, same active styles
 const settingsItemBase = cn(
@@ -215,7 +215,7 @@ export function WorkspaceSubnav({
     <nav className="space-y-0.5">
       {/* Section label — only in expanded mode */}
       {!collapsed && (
-        <p className="px-3 pb-2 pt-0.5 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-scene-text)]/50">
+        <p className="px-3 pb-2 pt-0.5 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-rail-section-text)]">
           {departmentName ?? "Workspace"}
         </p>
       )}
@@ -259,7 +259,7 @@ export function WorkspaceSubnav({
                   candidatesExpanded ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
                 )}
               >
-                <div className="mt-0.5 ml-3.5 space-y-0.5 border-l border-white/10 pl-3">
+                <div className="mt-0.5 ml-3.5 space-y-0.5 border-l border-[color:var(--app-rail-divider)] pl-3">
                   {CANDIDATE_STAGES.map((stage) => {
                     const stageHref = `${candidatesBaseHref}?stage=${stage.stage}` as Route;
                     const isStageActive = isOnCandidatesPath && currentStage === stage.stage;
@@ -270,11 +270,11 @@ export function WorkspaceSubnav({
                         className={cn(
                           "flex items-center gap-2 rounded-[10px] px-2.5 py-[5px] text-[13px] font-medium transition-all duration-150",
                           isStageActive
-                            ? "bg-white/15 text-white"
-                            : "text-[color:var(--app-scene-text)]/60 hover:bg-white/8 hover:text-white"
+                            ? "bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
+                            : "text-[color:var(--app-rail-item-text)] opacity-70 hover:opacity-100 hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
                         )}
                       >
-                        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isStageActive ? "bg-[color:var(--app-brand)]" : "bg-white/20")} />
+                        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isStageActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-rail-stage-dot)]")} />
                         {stage.label}
                       </Link>
                     );
@@ -309,7 +309,7 @@ export function WorkspaceSubnav({
           <button
             type="button"
             onClick={() => setSettingsExpanded((v) => !v)}
-            className="flex w-full items-center gap-1.5 px-3 pb-1.5 pt-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-scene-text)]/40 hover:text-[color:var(--app-scene-text)]/60 transition-colors"
+            className="flex w-full items-center gap-1.5 px-3 pb-1.5 pt-1 text-[10px] uppercase tracking-[0.22em] font-semibold text-[color:var(--app-rail-section-text)] hover:text-[color:var(--app-rail-item-text)] transition-colors"
           >
             <Settings className="h-3 w-3 shrink-0" />
             <span className="flex-1 text-left">Settings</span>
@@ -318,7 +318,7 @@ export function WorkspaceSubnav({
         </div>
       )}
 
-      {collapsed && <div className="my-1.5 mx-2 border-t border-white/10" />}
+      {collapsed && <div className="my-1.5 mx-2 border-t border-[color:var(--app-rail-divider)]" />}
 
       {/* ── Settings items ─────────────────────────────────────── */}
       <div
@@ -401,7 +401,7 @@ export function WorkspaceSubnav({
                     isExpanded ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
                   )}
                 >
-                  <div className="mt-0.5 ml-3 space-y-0.5 border-l border-white/10 pl-3">
+                  <div className="mt-0.5 ml-3 space-y-0.5 border-l border-[color:var(--app-rail-divider)] pl-3">
                     {item.subitems.map((sub) => {
                       const subHref = sub.href.replace("{id}", departmentId) as Route;
                       const exact = "exact" in sub && sub.exact;
@@ -417,11 +417,11 @@ export function WorkspaceSubnav({
                           className={cn(
                             "flex items-center gap-2 rounded-[10px] px-2.5 py-[5px] text-[12px] font-medium transition-all duration-150",
                             isSubActive
-                              ? "bg-white/15 text-white"
-                              : "text-[color:var(--app-scene-text)]/60 hover:bg-white/8 hover:text-white"
+                              ? "bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
+                              : "text-[color:var(--app-rail-item-text)] opacity-70 hover:opacity-100 hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
                           )}
                         >
-                          <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isSubActive ? "bg-[color:var(--app-brand)]" : "bg-white/20")} />
+                          <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isSubActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-rail-stage-dot)]")} />
                           <span className="flex-1">{sub.label}</span>
                           {showBadge ? (
                             <span className="flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-bold leading-none text-black">

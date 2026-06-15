@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { FileText, MoreHorizontal } from "lucide-react";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
+import { getSourceLabel } from "@/lib/candidates/source";
 import { CandidateBulkActionsBar } from "@/components/candidates/CandidateBulkActionsBar";
 import type { CandidateStage } from "@/lib/candidates/types";
 import { getCandidateStageLabel } from "@/lib/candidates/lifecycle";
@@ -219,12 +220,13 @@ export function CandidateWorkspaceTable({
                 <th scope="col" className="w-10 px-4 py-3 font-medium">
                   <span className="sr-only">Select</span>
                 </th>
-                <th scope="col" className="w-[24%] px-4 py-3 font-medium">Candidate</th>
-                <th scope="col" className="w-[12%] px-4 py-3 font-medium">Assigned to</th>
-                <th scope="col" className="w-[20%] px-4 py-3 font-medium">Stage</th>
-                <th scope="col" className="w-[15%] px-4 py-3 font-medium">Role / department</th>
+                <th scope="col" className="w-[22%] px-4 py-3 font-medium">Candidate</th>
+                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Assigned to</th>
+                <th scope="col" className="w-[18%] px-4 py-3 font-medium">Stage</th>
+                <th scope="col" className="w-[13%] px-4 py-3 font-medium">Role / dept</th>
+                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Source</th>
                 <th scope="col" className="w-[7%] px-4 py-3 font-medium">Updated</th>
-                <th scope="col" className="w-[22%] px-4 py-3 font-medium text-right">Actions</th>
+                <th scope="col" className="w-[20%] px-4 py-3 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -290,7 +292,25 @@ export function CandidateWorkspaceTable({
                       </div>
                     </td>
                     <td className={tableCellClassName}>
-                      <span>{candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}</span>
+                      {candidate.resumeSource ? (
+                        <span className="inline-flex items-center rounded-full border border-[color:var(--pill-blue-border)] bg-[color:var(--pill-blue-bg)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--pill-blue-text)]">
+                          {getSourceLabel(candidate.resumeSource)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[color:var(--app-muted)] opacity-50">—</span>
+                      )}
+                    </td>
+                    <td className={tableCellClassName}>
+                      <div className="flex items-center gap-1.5">
+                        {candidate.staleDays >= 30 ? (
+                          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[color:var(--app-danger)]" title="Stale: 30+ days inactive" />
+                        ) : candidate.staleDays >= 7 ? (
+                          <span className="h-2 w-2 flex-shrink-0 rounded-full bg-[color:var(--app-warning)]" title="Stale: 7+ days inactive" />
+                        ) : null}
+                        <span className={candidate.staleDays >= 30 ? "text-[color:var(--app-danger)]" : candidate.staleDays >= 7 ? "text-[color:var(--app-warning)]" : ""}>
+                          {candidate.staleDays === 0 ? "Today" : `${candidate.staleDays}d ago`}
+                        </span>
+                      </div>
                     </td>
                     <td className={tableCellClassName}>
                       <div className="flex flex-wrap items-center justify-end gap-2">

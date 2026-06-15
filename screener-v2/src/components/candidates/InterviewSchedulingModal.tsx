@@ -219,27 +219,30 @@ export function InterviewSchedulingModal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-md overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl"
+              className="flex w-full max-w-xl flex-col overflow-hidden rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl"
+              style={{ maxHeight: "90vh" }}
             >
-              <div className="flex items-center justify-between border-b border-[color:var(--app-border)] bg-gradient-to-r from-[color:var(--app-surface)] to-[color:var(--app-surface-soft)] p-6">
+              {/* Sticky header */}
+              <div className="flex flex-shrink-0 items-center justify-between border-b border-[color:var(--app-border)] px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10">
-                    <MessageSquare className="h-5 w-5 text-brand-500" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--app-brand)]/10">
+                    <MessageSquare className="h-4 w-4 text-[color:var(--app-brand)]" />
                   </div>
-                  <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">
+                  <h2 className="text-base font-semibold text-[color:var(--app-heading)]">
                     {interviewPanel ? "Update interview" : "Schedule interview"}
                   </h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-1 transition hover:bg-[color:var(--app-surface-soft)]"
-                  aria-label="Close modal"
+                  className="rounded-full p-1.5 transition hover:bg-[color:var(--app-surface-soft)]"
+                  aria-label="Close"
                 >
-                  <X className="h-5 w-5 text-[color:var(--app-muted)]" />
+                  <X className="h-4 w-4 text-[color:var(--app-muted)]" />
                 </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5 p-6">
+              <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 {error ? (
                   <motion.div
                     initial={{ opacity: 0, y: -8 }}
@@ -426,7 +429,9 @@ export function InterviewSchedulingModal({
                   <p className="text-xs text-[color:var(--app-muted)]">Optional context for the hiring decision</p>
                 </label>
 
-                <div className="flex gap-3 border-t border-[color:var(--app-border)] pt-4">
+              </div>
+              {/* Sticky footer */}
+              <div className="flex flex-shrink-0 gap-3 border-t border-[color:var(--app-border)] px-6 py-4">
                   {showDeleteConfirm ? (
                     <>
                       <Button
@@ -461,24 +466,23 @@ export function InterviewSchedulingModal({
                           type="button"
                           variant="ghost"
                           onClick={() => setShowDeleteConfirm(true)}
-                          className="flex-1 gap-2 text-[color:var(--app-danger)]"
+                          className="gap-2 text-[color:var(--app-danger)]"
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete
                         </Button>
                       ) : null}
+                      <div className="flex-1" />
                       <Button
                         type="button"
                         variant="secondary"
                         onClick={onClose}
-                        className="flex-1"
                       >
                         Cancel
                       </Button>
                       <Button
                         type="submit"
                         disabled={isPending}
-                        className="flex-1"
                       >
                         {isPending ? (
                           <span className="flex items-center gap-2">

@@ -32,10 +32,10 @@ const fontMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Northstar Hiring OS",
-    template: "%s | Northstar"
+    default: "Starry — Talent OS",
+    template: "%s | Starry"
   },
-  description: "Northstar helps hiring teams manage jobs, applicants, assessments, and final decisions.",
+  description: "Starry helps hiring teams move faster — from job posting to final offer, in one focused workspace.",
   icons: {
     icon: "/icon.svg"
   }
