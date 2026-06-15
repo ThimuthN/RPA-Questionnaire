@@ -839,8 +839,30 @@ export async function listApplicantWorkspacePage(filters: {
     })
   ]);
 
+  const applicationIds = rows.map((r) => r.id);
+  const assignments = applicationIds.length > 0
+    ? await prisma.hiringAssignment.findMany({
+        where: { applicationId: { in: applicationIds }, active: true },
+        select: {
+          applicationId: true,
+          assignmentRole: true,
+          user: { select: { name: true } },
+        },
+      })
+    : [];
+
+  const assignmentsByApp = new Map<string, Array<{ name: string; role: string }>>();
+  for (const a of assignments) {
+    const list = assignmentsByApp.get(a.applicationId) ?? [];
+    list.push({ name: a.user.name ?? "Unknown", role: a.assignmentRole });
+    assignmentsByApp.set(a.applicationId, list);
+  }
+
   return {
-    rows: rows.map(mapApplication),
+    rows: rows.map((r) => ({
+      ...mapApplication(r),
+      teamAssignments: assignmentsByApp.get(r.id),
+    })),
     total,
     page,
     pageSize,

@@ -8,6 +8,9 @@ vi.mock("./prisma", () => ({
     },
     jobPosting: {
       findMany: vi.fn()
+    },
+    hiringAssignment: {
+      findMany: vi.fn().mockResolvedValue([])
     }
   }
 }));
@@ -26,6 +29,8 @@ function applicantRow(overrides: Partial<{
   candidateId: string;
   status: string;
   coverNote: string | null;
+  source: string | null;
+  referredBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   candidate: {
@@ -47,6 +52,8 @@ function applicantRow(overrides: Partial<{
     candidateId: "cand-1",
     status: "submitted",
     coverNote: null,
+    source: null,
+    referredBy: null,
     createdAt: new Date("2026-06-01T00:00:00.000Z"),
     updatedAt: new Date("2026-06-02T00:00:00.000Z"),
     candidate: {

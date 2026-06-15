@@ -10,6 +10,8 @@ import { AssignmentModal } from "./AssignmentModal";
 import type { CandidateApplicationStatus } from "@/lib/jobs/types";
 import { candidateApplicationStatusLabels } from "@/lib/jobs/types";
 
+type TeamEntry = { name: string; role: string };
+
 type ApplicantRow = {
   id: string;
   candidateName: string;
@@ -22,6 +24,7 @@ type ApplicantRow = {
   status: CandidateApplicationStatus;
   candidateOwner?: string | null;
   source?: string | null;
+  teamAssignments?: TeamEntry[];
 };
 
 type User = {
@@ -174,7 +177,7 @@ export function ApplicantsTable({
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Queue age</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium">Resume</th>
                 <th scope="col" className="w-[12%] px-4 py-3 font-medium">Review status</th>
-                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Owner</th>
+                <th scope="col" className="w-[10%] px-4 py-3 font-medium">Assigned to</th>
                 <th scope="col" className="w-[10%] px-4 py-3 font-medium text-right">Next step</th>
               </tr>
             </thead>
@@ -220,7 +223,21 @@ export function ApplicantsTable({
                       <p className="text-xs text-[color:var(--app-muted)]">{statusHint(row.status)}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-[color:var(--app-text)]">{row.candidateOwner || "Unassigned"}</td>
+                  <td className="px-4 py-4">
+                    {row.teamAssignments && row.teamAssignments.length > 0 ? (
+                      <div className="space-y-0.5">
+                        <p className="text-sm text-[color:var(--app-text)]" title={row.teamAssignments.map((a) => `${a.name} (${a.role.replace(/_/g, " ")})`).join(", ")}>
+                          {row.teamAssignments[0]!.name}
+                          {row.teamAssignments.length > 1 ? (
+                            <span className="ml-1 text-[10px] text-[color:var(--app-muted)]">+{row.teamAssignments.length - 1}</span>
+                          ) : null}
+                        </p>
+                        <p className="text-[10px] text-[color:var(--app-muted)] capitalize">{row.teamAssignments[0]!.role.replace(/_/g, " ")}</p>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-[color:var(--app-muted)]">Unassigned</span>
+                    )}
+                  </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <Link href={reviewHref(row.id)}>

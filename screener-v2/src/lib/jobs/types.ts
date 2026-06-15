@@ -51,6 +51,11 @@ export type JobPostingDetail = JobPostingListItem & {
   recentApplications: CandidateApplicationListItem[];
 };
 
+export type AssignmentSummaryEntry = {
+  name: string;
+  role: string;
+};
+
 export type CandidateApplicationListItem = {
   id: string;
   candidateId: string;
@@ -68,6 +73,7 @@ export type CandidateApplicationListItem = {
   appliedAt: string;
   updatedAt: string;
   status: CandidateApplicationStatus;
+  teamAssignments?: AssignmentSummaryEntry[];
 };
 
 export type ApplicationScreeningStatus = "passed" | "failed" | "needs_review";
