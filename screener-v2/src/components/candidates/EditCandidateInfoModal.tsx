@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
@@ -31,12 +31,10 @@ export function EditCandidateInfoModal({
   const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const setOpenRef = useRef<(v: boolean) => void>(() => {});
-  setOpenRef.current = (v: boolean) => {
+  const setOpen = useCallback((v: boolean) => {
     if (onOpenChange) onOpenChange(v);
     else setInternalOpen(v);
-  };
-  function setOpen(v: boolean) { setOpenRef.current(v); }
+  }, [onOpenChange]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [owners, setOwners] = useState<UserOption[]>([]);
