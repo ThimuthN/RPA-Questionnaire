@@ -22,6 +22,7 @@ import { FinalizeActionBar } from "@/components/candidates/FinalizeActionBar";
 import { ResponsibleTeamCard } from "@/components/candidates/ResponsibleTeamCard";
 import { ResumePreviewModal } from "@/components/candidates/ResumePreviewModal";
 import { ResumeUploader } from "@/components/candidates/ResumeUploader";
+import { CandidateAttachmentsSection } from "@/components/candidates/CandidateAttachmentsSection";
 import { Button } from "@/components/primitives/Button";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
@@ -250,7 +251,7 @@ export default async function CandidateDetailPage({
     returnTo,
   });
 
-  const [assignments, departmentCandidacy, offer, emailLogs] = await Promise.all([
+  const [assignments, departmentCandidacy, offer, emailLogs, candidateAttachments] = await Promise.all([
     activeApplication ? getApplicationAssignments(activeApplication.id) : Promise.resolve([]),
     prisma.departmentCandidacy.findFirst({
       where: { candidateId: candidate.id, status: "active" },
@@ -289,6 +290,20 @@ export default async function CandidateDetailPage({
         sentBy: { select: { id: true, name: true, email: true } },
       },
     }).catch(() => [] as Array<{ id: string; to: string; cc: string | null; subject: string; template: string; status: string; errorMsg: string | null; sentAt: Date; sentBy: { id: string; name: string | null; email: string } | null }>),
+    prisma.candidateAttachment.findMany({
+      where: { candidateId: candidate.id },
+      orderBy: { uploadedAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        fileName: true,
+        mimeType: true,
+        sizeBytes: true,
+        storageUrl: true,
+        label: true,
+        uploadedAt: true,
+      },
+    }).catch(() => [] as Array<{ id: string; fileName: string; mimeType: string; sizeBytes: number; storageUrl: string; label: string | null; uploadedAt: Date }>),
   ]);
 
   const scopeDepartmentId =
@@ -382,6 +397,12 @@ export default async function CandidateDetailPage({
     errorMsg: l.errorMsg ?? null,
     sentAt: l.sentAt instanceof Date ? l.sentAt.toISOString() : String(l.sentAt),
     sentBy: l.sentBy ? { id: l.sentBy.id, name: l.sentBy.name ?? null, email: l.sentBy.email } : null,
+  }));
+
+  const serializedAttachments = (candidateAttachments ?? []).map((a) => ({
+    ...a,
+    label: a.label ?? null,
+    uploadedAt: a.uploadedAt instanceof Date ? a.uploadedAt.toISOString() : String(a.uploadedAt),
   }));
 
   // Map offer to a safe serializable shape; enforce expiry on the server
@@ -681,6 +702,14 @@ export default async function CandidateDetailPage({
                   </div>
                 </details>
               </StagePanel>
+
+              <div className="border-t border-[color:var(--app-border)] pt-4">
+                <CandidateAttachmentsSection
+                  candidateId={candidate.id}
+                  initialAttachments={serializedAttachments}
+                  canManage={canManageCandidate}
+                />
+              </div>
 
               {safeExternalUrl(candidate.candidateFolderUrl) ? (
                 <div className="space-y-2">

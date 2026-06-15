@@ -151,6 +151,9 @@ vi.mock("@/lib/db/prisma", () => ({
     },
     emailLog: {
       findMany: vi.fn()
+    },
+    candidateAttachment: {
+      findMany: vi.fn()
     }
   }
 }));
@@ -223,6 +226,7 @@ describe("Candidate Detail Page", () => {
     vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue(null as never);
     vi.mocked(prisma.offerApprovalChain.findFirst).mockResolvedValue(null as never);
     vi.mocked(prisma.emailLog.findMany).mockResolvedValue([] as never);
+    vi.mocked(prisma.candidateAttachment.findMany).mockResolvedValue([] as never);
   });
 
   it("renders candidate sidebar", async () => {
@@ -256,7 +260,7 @@ describe("Candidate Detail Page", () => {
 
     const markup = renderToStaticMarkup(result);
     expect(markup).toContain('data-testid="journey-skeleton"');
-    expect(markup).toContain("Lifecycle summary");
+    expect(markup).toContain("At a glance");
     expect(markup).toContain("Application history");
   });
 

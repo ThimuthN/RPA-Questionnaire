@@ -406,6 +406,7 @@ model Candidate {
   department         Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   hrOwnerUser        User? @relation("HROwner", fields: [hrOwnerId], references: [id], onDelete: SetNull)
   resumes            CandidateResume[]
+  attachments        CandidateAttachment[]
   assessments        CandidateAssessment[]
   externalAssessments CandidateExternalAssessment[]
   notes              CandidateNote[]
@@ -464,6 +465,22 @@ model CandidateResume {
   storageUrl String
   uploadedAt DateTime @default(now())
   candidate  Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, storageKey])
+  @@index([candidateId, uploadedAt])
+}
+
+model CandidateAttachment {
+  id          String   @id @default(cuid())
+  candidateId String
+  fileName    String
+  mimeType    String
+  sizeBytes   Int
+  storageKey  String
+  storageUrl  String
+  label       String?
+  uploadedAt  DateTime @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@unique([candidateId, storageKey])
   @@index([candidateId, uploadedAt])

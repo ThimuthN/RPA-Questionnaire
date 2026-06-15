@@ -137,76 +137,98 @@ export function CandidateLifecycleSummaryCard({
           ? emailsHref
           : pipelineHref;
 
-  return (
-    <StagePanel tone="flat" className="space-y-4">
-      <div className="space-y-1">
-        <h3 className="text-base font-semibold text-[color:var(--app-heading)]">Lifecycle summary</h3>
-        <p className="text-sm text-[color:var(--app-muted)]">
-          The current hiring record across applications, assessments, files, and candidate communication.
-        </p>
-      </div>
+  const totalAssessments =
+    platformAssessments.length + applicationAssessments.length + externalAssessments.length;
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-        <SummaryTile
+  return (
+    <StagePanel tone="flat" className="space-y-0">
+      <h3 className="mb-4 text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+        At a glance
+      </h3>
+
+      <div className="divide-y divide-[color:var(--app-border)]/60">
+        <SummaryRow
           label="Next action"
           value={assessmentAction.label}
-          detail="Based on current record readiness"
           href={actionHref}
+          accent
         />
-        <SummaryTile
+        <SummaryRow
           label="Applications"
           value={summaryValueLabel(applications.length, "application")}
-          detail={latestApplication ? `Latest ${formatRelativeDay(latestApplication.updatedAt)}` : "No job submissions linked"}
+          sub={latestApplication ? `Latest ${formatRelativeDay(latestApplication.updatedAt)}` : undefined}
         />
-        <SummaryTile
-          label="Assessment coverage"
-          value={summaryValueLabel(platformAssessments.length + applicationAssessments.length + externalAssessments.length, "assessment")}
-          detail={`${platformAssessments.length} platform, ${applicationAssessments.length} screening, ${externalAssessments.length} external`}
-          href={assessmentsHref}
+        <SummaryRow
+          label="Assessments"
+          value={String(totalAssessments)}
+          sub={totalAssessments > 0 ? `${platformAssessments.length} platform · ${applicationAssessments.length} screening · ${externalAssessments.length} external` : undefined}
+          href={totalAssessments > 0 ? assessmentsHref : undefined}
         />
-        <SummaryTile
-          label="Candidate communication"
+        <SummaryRow
+          label="Emails"
           value={summaryValueLabel(emailLogs.length, "email")}
-          detail={latestSentEmail ? `Last sent ${formatRelativeDay(latestSentEmail.sentAt)}` : "No candidate email history yet"}
-          href={emailsHref}
+          sub={latestSentEmail ? `Last sent ${formatRelativeDay(latestSentEmail.sentAt)}` : undefined}
+          href={emailLogs.length > 0 ? emailsHref : undefined}
         />
-        <SummaryTile
-          label="Resume readiness"
-          value={hasResume ? "Resume on file" : "Resume missing"}
-          detail={hasResume ? "Profile can move through review" : "Upload before deeper review"}
+        <SummaryRow
+          label="Resume"
+          value={hasResume ? "On file" : "Missing"}
           href={filesHref}
+          warn={!hasResume}
         />
       </div>
     </StagePanel>
   );
 }
 
-function SummaryTile({
+function SummaryRow({
   label,
   value,
-  detail,
-  href
+  sub,
+  href,
+  accent = false,
+  warn = false,
 }: {
   label: string;
   value: string;
-  detail: string;
+  sub?: string;
   href?: Route;
+  accent?: boolean;
+  warn?: boolean;
 }) {
-  const content = (
-    <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
-      <p className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--app-muted)]">{label}</p>
-      <p className="mt-1 text-sm font-medium text-[color:var(--app-heading)]">{value}</p>
-      <p className="mt-1 text-xs text-[color:var(--app-muted)]">{detail}</p>
+  const inner = (
+    <div
+      className={[
+        "flex items-start justify-between gap-3 py-3",
+        href ? "group" : "",
+      ].join(" ")}
+    >
+      <p className="text-xs text-[color:var(--app-muted)]">{label}</p>
+      <div className="text-right">
+        <p
+          className={[
+            "text-sm font-medium leading-snug",
+            accent
+              ? "text-[color:var(--app-brand)]"
+              : warn
+                ? "text-amber-400"
+                : "text-[color:var(--app-heading)]",
+            href ? "group-hover:underline underline-offset-2" : "",
+          ].join(" ")}
+        >
+          {value}
+        </p>
+        {sub ? (
+          <p className="mt-0.5 text-[11px] text-[color:var(--app-muted)]">{sub}</p>
+        ) : null}
+      </div>
     </div>
   );
 
-  if (!href) return content;
-
-  return (
-    <Link href={href} className="block transition hover:-translate-y-[1px]">
-      {content}
-    </Link>
-  );
+  if (href) {
+    return <Link href={href}>{inner}</Link>;
+  }
+  return inner;
 }
 
 export function CandidateApplicationHistoryPanel({

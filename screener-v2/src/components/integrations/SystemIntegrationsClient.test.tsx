@@ -27,15 +27,14 @@ describe("SystemIntegrationsClient", () => {
 
     const markup = renderToStaticMarkup(<SystemIntegrationsClient initialProviders={providers} />);
 
-    expect(markup).toContain("Scopes (one per line)");
-    expect(markup).toContain("Use recommended scopes");
-    expect(markup).toContain("Expected input");
-    expect(markup).toContain("Enter one OAuth scope value per line");
-    expect(markup).toContain("offline_access");
-    expect(markup).toContain("User.Read");
+    // label shortened; "Expected input" block removed; help text moved to InfoTooltip
+    expect(markup).toContain("Scopes");
+    expect(markup).toContain("Use recommended");
     expect(markup).toContain("Azure / Entra tenant GUID");
-    expect(markup).toContain("Add this exact callback URL to the provider app registration.");
+    // Redirect URI still shown, instruction moved to tooltip content
+    expect(markup).toContain("Redirect URI");
     expect(markup).toContain("Validate setup");
-    expect(markup).toContain("It does not prove department OAuth consent, mailbox access, or calendar access until a department connects.");
+    // Setup check guidance is now in a tooltip on the button
+    expect(markup).toContain("Does not verify department OAuth consent or mailbox/calendar access");
   });
 });

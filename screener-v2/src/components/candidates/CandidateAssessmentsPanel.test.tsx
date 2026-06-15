@@ -83,6 +83,7 @@ describe("CandidateAssessmentsPanel", () => {
     expect(markup).toContain("Open result");
     expect(markup).toContain("Application screening");
     expect(markup).toContain("Applicant Intake Questionnaire");
-    expect(markup).toContain("Eligible to work?");
+    // responses are collapsed by default; the disclosure button is rendered but answers are hidden
+    expect(markup).toContain("View 1 response");
   });
 });

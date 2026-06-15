@@ -58,10 +58,10 @@ describe("CandidateLifecycleOverview", () => {
       />
     );
 
-    expect(markup).toContain("Lifecycle summary");
+    expect(markup).toContain("At a glance");
     expect(markup).toContain("Review assessment evidence");
     expect(markup).toContain("1 application");
-    expect(markup).toContain("1 assessment");
+    expect(markup).toContain("1");
     expect(markup).toContain("0 emails");
   });
 

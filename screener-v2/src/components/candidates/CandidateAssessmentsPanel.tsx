@@ -3,6 +3,7 @@ import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills"
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { LogExternalAssessmentForm } from "@/components/candidates/LogExternalAssessmentForm";
+import { ScreeningResponsesDisclosure } from "@/components/candidates/ScreeningResponsesDisclosure";
 import type {
   CandidateApplicationAssessmentRecord,
   CandidateAssessmentRecord,
@@ -302,33 +303,7 @@ export function CandidateAssessmentsPanel({
                         />
                       </div>
 
-                      {addon.responses.length > 0 ? (
-                        <div className="mt-4 space-y-3 border-t border-[color:var(--app-border)] pt-4">
-                          {addon.responses.map((response) => (
-                            <div
-                              key={`${application.id}:${addon.addonLabel}:${response.questionKey}`}
-                              className="rounded-[12px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-3"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="space-y-0.5">
-                                  <p className="text-sm font-medium text-[color:var(--app-heading)]">
-                                    {response.questionLabel}
-                                  </p>
-                                  <p className="text-xs text-[color:var(--app-muted)]">
-                                    {response.formatLabel}
-                                  </p>
-                                </div>
-                                <p className="text-xs text-[color:var(--app-muted)]">
-                                  {response.pointsEarned} / {response.pointsPossible}
-                                </p>
-                              </div>
-                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[color:var(--app-text)]">
-                                {response.answerText || "No answer submitted."}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
+                      <ScreeningResponsesDisclosure responses={addon.responses} />
                     </div>
                   ))}
                 </div>

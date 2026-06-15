@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Mail, RefreshCw, ChevronDown, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { InfoTooltip } from "@/components/primitives/InfoTooltip";
 import type { WorkflowChannelSummary } from "@/lib/integrations/types";
 
 interface EmailLogEntry {
@@ -116,11 +117,10 @@ interface EmailLogPanelProps {
   deliveryChannel?: WorkflowChannelSummary;
 }
 
-function channelTone(mode?: WorkflowChannelSummary["mode"]) {
-  if (mode === "department_mailbox") {
-    return "border-emerald-400/20 bg-emerald-500/8 text-emerald-100";
-  }
-  return "border-amber-400/20 bg-amber-500/8 text-amber-100";
+function channelDotClass(mode?: WorkflowChannelSummary["mode"]) {
+  return mode === "department_mailbox"
+    ? "bg-[color:var(--app-success)]"
+    : "bg-amber-400";
 }
 
 export function EmailLogPanel({ candidateId, initialLogs = [], deliveryChannel }: EmailLogPanelProps) {
@@ -144,26 +144,20 @@ export function EmailLogPanel({ candidateId, initialLogs = [], deliveryChannel }
 
   return (
     <div className="space-y-4">
-      {deliveryChannel ? (
-        <div className={`rounded-[16px] border px-4 py-3 ${channelTone(deliveryChannel.mode)}`}>
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold">{deliveryChannel.label}</p>
-            {deliveryChannel.provider ? (
-              <span className="rounded-full border border-white/10 px-2 py-0.5 text-[11px] uppercase tracking-[0.18em] text-white/75">
-                {deliveryChannel.provider}
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 text-xs text-white/70">{deliveryChannel.description}</p>
-        </div>
-      ) : null}
-
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Mail size={15} className="text-[color:var(--app-muted)]" />
           <p className="text-sm font-medium text-[color:var(--app-heading)]">
             {logs.length} email{logs.length !== 1 ? "s" : ""} sent
           </p>
+          {deliveryChannel ? (
+            <span className="flex items-center gap-1.5">
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${channelDotClass(deliveryChannel.mode)}`} />
+              <InfoTooltip
+                content={`${deliveryChannel.label}${deliveryChannel.description ? ` — ${deliveryChannel.description}` : ""}`}
+              />
+            </span>
+          ) : null}
         </div>
         <button
           type="button"

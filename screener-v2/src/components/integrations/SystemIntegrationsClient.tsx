@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { IntegrationStatusPill } from "@/components/integrations/IntegrationStatusPill";
+import { InfoTooltip } from "@/components/primitives/InfoTooltip";
 import type { ProviderAppSummary } from "@/lib/integrations";
 
 type ProviderDraft = {
@@ -260,9 +261,11 @@ export function SystemIntegrationsClient({
                 </div>
 
                 <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-xs text-[color:var(--app-muted)]">
-                  <p>Redirect URI</p>
-                  <p className="mt-1 break-all text-[color:var(--app-heading)]">{provider.redirectUri}</p>
-                  <p className="mt-2">Add this exact callback URL to the provider app registration.</p>
+                  <div className="flex items-center gap-1.5">
+                    <p>Redirect URI</p>
+                    <InfoTooltip content="Add this exact callback URL to the provider app registration before saving." />
+                  </div>
+                  <p className="mt-1 break-all font-mono text-[color:var(--app-heading)]">{provider.redirectUri}</p>
                 </div>
 
                 {provider.lastHealthError ? (
@@ -274,7 +277,10 @@ export function SystemIntegrationsClient({
 
               <div className="space-y-3">
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Client ID</span>
+                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                    Client ID
+                    <InfoTooltip content={fieldHelp(provider, "clientId")} />
+                  </span>
                   <input
                     value={draft.clientId}
                     onChange={(event) =>
@@ -286,14 +292,14 @@ export function SystemIntegrationsClient({
                     className={inputClassName()}
                     placeholder={`${provider.label} client ID`}
                   />
-                  <span className="text-xs text-[color:var(--app-muted)]">
-                    {fieldHelp(provider, "clientId")}
-                  </span>
                 </label>
 
                 {provider.provider === "microsoft" ? (
                   <label className="grid gap-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Tenant ID</span>
+                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Tenant ID
+                      <InfoTooltip content={fieldHelp(provider, "tenantId")} />
+                    </span>
                     <input
                       value={draft.tenantId}
                       onChange={(event) =>
@@ -305,15 +311,15 @@ export function SystemIntegrationsClient({
                       className={inputClassName()}
                       placeholder={tenantPlaceholder(provider)}
                     />
-                    <span className="text-xs text-[color:var(--app-muted)]">
-                      {fieldHelp(provider, "tenantId")}
-                    </span>
                   </label>
                 ) : null}
 
                 <label className="grid gap-1.5">
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Scopes (one per line)</span>
+                    <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                      Scopes
+                      <InfoTooltip content={`${fieldHelp(provider, "scopes")} Example: ${scopeExamples(provider).slice(0, 2).join(", ")}`} />
+                    </span>
                     <button
                       type="button"
                       className="text-xs font-medium text-[color:var(--app-brand)] hover:text-[color:var(--app-brand-strong)]"
@@ -327,7 +333,7 @@ export function SystemIntegrationsClient({
                         }))
                       }
                     >
-                      Use recommended scopes
+                      Use recommended
                     </button>
                   </div>
                   <textarea
@@ -343,55 +349,35 @@ export function SystemIntegrationsClient({
                     placeholder={provider.recommendedScopes.join("\n")}
                     spellCheck={false}
                   />
-                  <span className="text-xs text-[color:var(--app-muted)]">
-                    {fieldHelp(provider, "scopes")}
-                  </span>
-                  <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-3 py-2 text-xs text-[color:var(--app-muted)]">
-                    <p className="font-medium text-[color:var(--app-heading)]">Expected input</p>
-                    <p className="mt-1">Enter one OAuth scope value per line, exactly as defined by {provider.label}.</p>
-                    <p className="mt-2 font-medium text-[color:var(--app-heading)]">Examples</p>
-                    <div className="mt-1 space-y-1 font-mono text-[11px] text-[color:var(--app-text)]">
-                      {scopeExamples(provider).map((scope) => (
-                        <p key={scope}>{scope}</p>
-                      ))}
-                    </div>
-                  </div>
                 </label>
 
-                <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm text-[color:var(--app-text)]">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-[color:var(--app-heading)]">Secret status</p>
-                      <p className="text-xs text-[color:var(--app-muted)]">
-                        {provider.secretConfigured ? "A client secret is configured." : "No client secret saved yet."}
-                      </p>
-                    </div>
-                    <label className="flex items-center gap-2 text-xs text-[color:var(--app-muted)]">
-                      <input
-                        type="checkbox"
-                        checked={draft.enabled}
-                        onChange={(event) =>
-                          setDrafts((current) => ({
-                            ...current,
-                            [provider.provider]: { ...current[provider.provider], enabled: event.target.checked }
-                          }))
-                        }
-                      />
-                      Enabled
-                    </label>
+                <div className="flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[color:var(--app-heading)]">
+                      {provider.secretConfigured ? "Secret configured" : "No secret saved"}
+                    </span>
+                    <InfoTooltip content={fieldHelp(provider, "secret")} />
                   </div>
-                </div>
-
-                <div className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-xs text-[color:var(--app-muted)]">
-                  <p className="font-medium text-[color:var(--app-heading)]">Setup check</p>
-                  <p className="mt-1">
-                    Validate setup checks the provider metadata endpoint and confirms the required fields are present.
-                    It does not prove department OAuth consent, mailbox access, or calendar access until a department connects.
-                  </p>
+                  <label className="flex cursor-pointer items-center gap-2 text-xs text-[color:var(--app-muted)]">
+                    <input
+                      type="checkbox"
+                      checked={draft.enabled}
+                      onChange={(event) =>
+                        setDrafts((current) => ({
+                          ...current,
+                          [provider.provider]: { ...current[provider.provider], enabled: event.target.checked }
+                        }))
+                      }
+                    />
+                    Enabled
+                  </label>
                 </div>
 
                 <label className="grid gap-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">Client secret</span>
+                  <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--app-muted)]">
+                    Client secret
+                    <InfoTooltip content={provider.secretConfigured ? "Enter a new value only when rotating. Saved secrets are never shown again." : "Paste the client secret generated in the app registration. Stored once, never shown again."} />
+                  </span>
                   <input
                     type="password"
                     value={draft.rotateSecret}
@@ -408,19 +394,19 @@ export function SystemIntegrationsClient({
                         : `Paste the ${provider.label} client secret`
                     }
                   />
-                  <span className="text-xs text-[color:var(--app-muted)]">
-                    {fieldHelp(provider, "secret")}
-                  </span>
                 </label>
               </div>
 
-              <div className="flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-4">
+              <div className="flex flex-wrap items-center gap-2 border-t border-[color:var(--app-border)] pt-4">
                 <Button type="button" onClick={() => saveProvider(provider.provider)} disabled={Boolean(pendingAction)}>
                   {pendingAction === `save:${provider.provider}` ? "Saving..." : "Save"}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => testProvider(provider.provider)} disabled={Boolean(pendingAction)}>
-                  {pendingAction === `test:${provider.provider}` ? "Checking..." : "Validate setup"}
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <Button type="button" variant="secondary" onClick={() => testProvider(provider.provider)} disabled={Boolean(pendingAction)}>
+                    {pendingAction === `test:${provider.provider}` ? "Checking..." : "Validate setup"}
+                  </Button>
+                  <InfoTooltip content="Checks the provider metadata endpoint and confirms required fields are present. Does not verify department OAuth consent or mailbox/calendar access." />
+                </div>
                 <Button
                   type="button"
                   variant="secondary"

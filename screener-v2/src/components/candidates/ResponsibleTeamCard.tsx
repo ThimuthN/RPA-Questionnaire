@@ -160,115 +160,98 @@ export function ResponsibleTeamCard({
   return (
     <>
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h2 className="text-xl text-[color:var(--app-heading)]">Hiring team</h2>
-            <p className="text-sm text-[color:var(--app-muted)]">
-              {mode === "application"
-                ? "Hiring team members assigned to this application."
-                : "Hiring team members assigned to this department candidacy."}
-            </p>
-          </div>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-[color:var(--app-heading)]">Hiring team</h2>
           {allowEditing ? (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="rounded-lg p-2 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)]"
-              aria-label="Edit team"
+              className="rounded-[10px] p-1.5 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
+              aria-label="Edit hiring team"
               type="button"
             >
-              <Edit2 className="h-5 w-5" />
+              <Edit2 size={14} />
             </button>
           ) : null}
         </div>
 
-        {allowEditing ? (
-          <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-[color:var(--app-heading)]">{introLabel}</p>
-              <p className="text-sm text-[color:var(--app-muted)]">
-                {introCopy}
-              </p>
+        {/* Template picker — compact inline row */}
+        {allowEditing && hasTemplates ? (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <select
+                value={selectedTemplateId}
+                onChange={(event) => setSelectedTemplateId(event.target.value)}
+                className="flex-1 min-w-0 rounded-[14px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-3 py-2 text-sm text-[color:var(--app-text)] outline-none focus:border-brand-300/60"
+              >
+                <option value="">Select hiring team template</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+              <Button
+                type="button"
+                onClick={applyTemplate}
+                disabled={isApplyingTemplate || !selectedTemplateId}
+              >
+                {isApplyingTemplate ? "Applying…" : "Apply"}
+              </Button>
             </div>
-
-            {hasTemplates ? (
-              <div className="space-y-3">
-                <select
-                  value={selectedTemplateId}
-                  onChange={(event) => setSelectedTemplateId(event.target.value)}
-                  className="w-full rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)]"
-                >
-                  <option value="">Select hiring team template</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name} ({template.members.length} member{template.members.length === 1 ? "" : "s"})
-                    </option>
-                  ))}
-                </select>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button type="button" onClick={applyTemplate} disabled={isApplyingTemplate} className="flex-1">
-                    {isApplyingTemplate ? "Applying..." : "Apply template"}
-                  </Button>
-                  <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)} className="flex-1">
-                    Customize manually
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-4 py-3">
-                <p className="text-sm text-[color:var(--app-muted)]">
-                  No department hiring team templates are available yet.
-                </p>
-                <Button type="button" variant="secondary" onClick={() => setIsModalOpen(true)} className="w-full">
-                  Assign manually
-                </Button>
-              </div>
-            )}
-
             {templateError ? (
-              <div className="rounded-[16px] border border-[color:var(--app-danger)]/30 bg-[color:var(--app-danger)]/10 p-3 text-sm text-[color:var(--app-danger)]">
-                {templateError}
-              </div>
+              <p className="text-xs text-[color:var(--app-danger)]">{templateError}</p>
             ) : null}
           </div>
         ) : null}
 
-        <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-          {isEmpty ? (
-            <p className="text-sm text-[color:var(--app-muted)]">No team members assigned yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(grouped).map(([role, roleAssignments]) => (
-                <div key={role} className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--app-muted)]">
-                    {roleLabels[role] || role}
-                  </p>
-                  <div className="space-y-2">
-                    {roleAssignments.map((assignment) => (
-                      <div
-                        key={assignment.id}
-                        className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-sm bg-[color:var(--app-surface)] p-3"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[color:var(--app-heading)]">
-                            {assignment.user.name || assignment.user.email}
-                          </p>
-                          <p className="text-xs text-[color:var(--app-muted)] truncate">{assignment.user.email}</p>
-                        </div>
-                        <div className="flex flex-wrap gap-2 justify-end">
-                          <StatusPill label={roleLabels[assignment.assignmentRole] || assignment.assignmentRole} tone="neutral" />
-                          {assignment.source ? (
-                            <StatusPill label={sourceLabels[assignment.source]} tone="blue" />
-                          ) : null}
-                          {assignment.isPrimary ? <StatusPill label={primaryLabel} tone="emerald" /> : null}
-                        </div>
+        {/* Members list */}
+        {isEmpty ? (
+          <p className="text-sm text-[color:var(--app-muted)]">
+            No team members assigned.{" "}
+            {allowEditing ? (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="font-medium text-[color:var(--app-brand)] hover:underline"
+              >
+                Assign manually
+              </button>
+            ) : null}
+          </p>
+        ) : (
+          <div className="divide-y divide-[color:var(--app-border)]/60">
+            {Object.entries(grouped).map(([role, roleAssignments]) => (
+              <div key={role} className="py-3 first:pt-0 last:pb-0">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+                  {roleLabels[role] || role}
+                </p>
+                <div className="space-y-2">
+                  {roleAssignments.map((assignment) => (
+                    <div key={assignment.id} className="flex items-center gap-3">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--app-surface-soft)] text-[11px] font-semibold text-[color:var(--app-heading)]">
+                        {(assignment.user.name ?? assignment.user.email).charAt(0).toUpperCase()}
                       </div>
-                    ))}
-                  </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[color:var(--app-heading)]">
+                          {assignment.user.name || assignment.user.email}
+                        </p>
+                        {assignment.user.name ? (
+                          <p className="truncate text-[11px] text-[color:var(--app-muted)]">
+                            {assignment.user.email}
+                          </p>
+                        ) : null}
+                      </div>
+                      {assignment.isPrimary ? (
+                        <StatusPill label={primaryLabel} tone="emerald" />
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <AssignmentModal
