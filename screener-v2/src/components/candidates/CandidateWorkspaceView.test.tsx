@@ -6,6 +6,13 @@ vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>
 }));
 
+// CandidateFilterForm (rendered by the view) calls useRouter — provide a router stub for SSR rendering.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn(), back: vi.fn(), forward: vi.fn() }),
+  usePathname: () => "/people/candidates",
+  useSearchParams: () => new URLSearchParams()
+}));
+
 vi.mock("@/components/candidates/CandidateWorkspaceTable", () => ({
   CandidateWorkspaceTable: () => <div data-testid="candidate-workspace-table" />
 }));
