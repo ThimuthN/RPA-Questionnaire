@@ -49,7 +49,7 @@ export async function POST(
 
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : file.type === "image/gif" ? "gif" : "jpg";
   const pathname = `candidates/${id}/avatar.${ext}`;
-  const blob = await put(pathname, file, { access: "public", addRandomSuffix: false });
+  const blob = await put(pathname, file, { access: "public", addRandomSuffix: false, allowOverwrite: true });
 
   await prisma.candidate.update({
     where: { id },
