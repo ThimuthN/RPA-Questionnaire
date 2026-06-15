@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { WorkspaceSelector, type Department } from "@/components/navigation/WorkspaceSelector";
 import { WorkspaceSubnav } from "@/components/navigation/WorkspaceSubnav";
@@ -80,6 +80,8 @@ export function WorkspaceRail({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
+  const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
+  const currentStage = searchParams?.get("stage") ?? "pipeline";
 
   const hasAdminWorkspace =
     viewer?.permissions.includes("manage_users") ||
@@ -185,6 +187,12 @@ export function WorkspaceRail({
                 const prevItem = index > 0 ? items[index - 1] : null;
                 const showSectionLabel = !collapsed && item.section && item.section !== prevItem?.section;
 
+                const activeRowClass = active
+                  ? "border-[color:var(--app-rail-item-active-border)] bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
+                  : "border-transparent text-[color:var(--app-rail-item-text)] hover:border-[color:var(--app-rail-item-hover-border)] hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]";
+                const hasChildren = Boolean(item.children?.length);
+                const isExpanded = expandedNav[item.href] ?? active;
+
                 return (
                   <div key={`${item.href}-group`}>
                     {showSectionLabel && (
@@ -195,33 +203,74 @@ export function WorkspaceRail({
                         {item.section}
                       </p>
                     )}
-                    {/* Tooltip wrapper for collapsed state */}
-                    <div className="group/tip relative">
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "group flex items-center rounded-[14px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
-                          collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
-                          active
-                            ? "border-[color:var(--app-rail-item-active-border)] bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
-                            : "border-transparent text-[color:var(--app-rail-item-text)] hover:border-[color:var(--app-rail-item-hover-border)] hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
-                        )}
-                      >
-                        <Icon className="h-5 w-5 shrink-0" />
-                        <span className={cn("text-sm font-medium transition-all duration-200", collapsed ? "hidden" : "block")}>
-                          {item.label}
-                        </span>
-                      </Link>
-                      {/* CSS tooltip — only shown in collapsed mode */}
-                      {collapsed && (
-                        <div
-                          role="tooltip"
-                          className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
-                        >
-                          {item.label}
+
+                    {hasChildren && !collapsed ? (
+                      /* Accordion: parent link + chevron + pipeline-stage sub-items */
+                      <div>
+                        <div className={cn("flex items-center rounded-[14px] border transition-all duration-200", activeRowClass)}>
+                          <Link href={item.href} className="flex flex-1 items-center gap-3 px-3 py-2.5">
+                            <Icon className="h-5 w-5 shrink-0" />
+                            <span className="flex-1 text-sm font-medium">{item.label}</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedNav((prev) => ({ ...prev, [item.href]: !(prev[item.href] ?? active) }))}
+                            aria-label={isExpanded ? "Collapse stages" : "Expand stages"}
+                            className="flex items-center px-2.5 py-2.5"
+                          >
+                            <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200", isExpanded ? "rotate-0" : "-rotate-90", active ? "opacity-70" : "opacity-40")} />
+                          </button>
                         </div>
-                      )}
-                    </div>
+                        <div className={cn("overflow-hidden transition-all duration-200 ease-out", isExpanded ? "max-h-60 opacity-100" : "max-h-0 opacity-0")}>
+                          <div className="mt-0.5 ml-3.5 space-y-0.5 border-l border-[color:var(--app-rail-divider)] pl-3">
+                            {item.children!.map((sub) => {
+                              const isStageActive = pathname === "/people/candidates" && currentStage === sub.stage;
+                              return (
+                                <Link
+                                  key={sub.stage}
+                                  href={sub.href}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-[10px] px-2.5 py-[5px] text-[13px] font-medium transition-all duration-150",
+                                    isStageActive
+                                      ? "bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
+                                      : "text-[color:var(--app-rail-item-text)] opacity-70 hover:opacity-100 hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
+                                  )}
+                                >
+                                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isStageActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-rail-stage-dot)]")} />
+                                  {sub.label}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Tooltip wrapper for collapsed state */
+                      <div className="group/tip relative">
+                        <Link
+                          href={item.href}
+                          className={cn(
+                            "group flex items-center rounded-[14px] border transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80",
+                            collapsed ? "justify-center p-3" : "gap-3 px-3 py-2.5",
+                            activeRowClass
+                          )}
+                        >
+                          <Icon className="h-5 w-5 shrink-0" />
+                          <span className={cn("text-sm font-medium transition-all duration-200", collapsed ? "hidden" : "block")}>
+                            {item.label}
+                          </span>
+                        </Link>
+                        {/* CSS tooltip — only shown in collapsed mode */}
+                        {collapsed && (
+                          <div
+                            role="tooltip"
+                            className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100"
+                          >
+                            {item.label}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

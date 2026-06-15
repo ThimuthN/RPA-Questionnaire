@@ -4,7 +4,24 @@ import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, PlugZap, 
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
-export type NavItem = { href: Route; label: string; icon: LucideIcon; section?: string };
+export type NavSubItem = { href: Route; label: string; stage: string };
+export type NavItem = {
+  href: Route;
+  label: string;
+  icon: LucideIcon;
+  section?: string;
+  /** Optional pipeline-stage sub-items rendered as an accordion under this item (mirrors the department workspace candidates sub-nav). */
+  children?: NavSubItem[];
+};
+
+/** Global candidate pipeline stages — mirrors the department workspace CANDIDATE_STAGES. */
+export const GLOBAL_CANDIDATE_STAGES: NavSubItem[] = [
+  { href: "/people/candidates?stage=pipeline" as Route, label: "Pipeline", stage: "pipeline" },
+  { href: "/people/candidates?stage=screening" as Route, label: "Screening", stage: "screening" },
+  { href: "/people/candidates?stage=interview" as Route, label: "Interview", stage: "interview" },
+  { href: "/people/candidates?stage=advanced_review" as Route, label: "Review", stage: "advanced_review" },
+  { href: "/people/candidates?stage=finalized" as Route, label: "Final", stage: "finalized" }
+];
 
 /**
  * Get navigation items for the sidebar.
@@ -55,7 +72,7 @@ export function getNavItems(
       items.push(
         { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
         { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
-        { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2 },
+        { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2, children: GLOBAL_CANDIDATE_STAGES },
         { href: "/people/analytics" as Route, label: "Analytics", icon: BarChart3 },
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList }
       );
