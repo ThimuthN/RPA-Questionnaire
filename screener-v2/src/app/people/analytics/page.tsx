@@ -144,7 +144,7 @@ export default async function PeopleAnalyticsPage() {
             </div>
           </section>
 
-          {/* Pipeline breakdown */}
+          {/* Pipeline breakdown — visual funnel */}
           <section>
             <h2
               className="mb-4 text-sm font-semibold uppercase tracking-widest"
@@ -153,64 +153,32 @@ export default async function PeopleAnalyticsPage() {
               Pipeline Breakdown
             </h2>
             <div
-              className="rounded-[20px] border overflow-hidden"
-              style={{
-                background: "var(--app-surface)",
-                borderColor: "var(--app-border)",
-              }}
+              className="space-y-3 rounded-[20px] border p-5"
+              style={{ background: "var(--app-surface)", borderColor: "var(--app-border)" }}
             >
-              <table className="w-full text-sm">
-                <thead>
-                  <tr
-                    style={{
-                      borderBottom: "1px solid var(--app-border)",
-                      color: "var(--app-muted)",
-                    }}
-                  >
-                    <th className="px-5 py-3 text-left font-medium">Stage</th>
-                    <th className="px-5 py-3 text-right font-medium">
-                      Candidates
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { label: "Pipeline", key: "pipeline" },
-                    { label: "Screening", key: "screening" },
-                    { label: "Interview", key: "interview" },
-                    { label: "Advanced Review", key: "advanced_review" },
-                    { label: "Finalized — Hired", key: "_hired" },
-                    { label: "Finalized — Rejected", key: "_rejected" },
-                  ].map((row, i, arr) => {
-                    const count =
-                      row.key === "_hired"
-                        ? hiredCount
-                        : row.key === "_rejected"
-                        ? rejectedCount
-                        : stageCount(row.key);
-                    return (
-                      <tr
-                        key={row.key}
-                        style={{
-                          borderBottom:
-                            i < arr.length - 1
-                              ? "1px solid var(--app-border)"
-                              : undefined,
-                          color: "var(--app-text)",
-                        }}
-                      >
-                        <td className="px-5 py-3">{row.label}</td>
-                        <td
-                          className="px-5 py-3 text-right font-semibold tabular-nums"
-                          style={{ color: "var(--app-heading)" }}
-                        >
-                          {count}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              {(() => {
+                const funnel = [
+                  { label: "Pipeline", count: stageCount("pipeline"), color: "var(--pill-blue-text)" },
+                  { label: "Screening", count: stageCount("screening"), color: "var(--pill-teal-text)" },
+                  { label: "Interview", count: stageCount("interview"), color: "var(--pill-amber-text)" },
+                  { label: "Advanced Review", count: stageCount("advanced_review"), color: "var(--pill-purple-text)" },
+                  { label: "Hired", count: hiredCount, color: "var(--app-success)" },
+                  { label: "Rejected", count: rejectedCount, color: "var(--app-danger)" },
+                ];
+                const max = Math.max(1, ...funnel.map((f) => f.count));
+                return funnel.map((row) => (
+                  <div key={row.label} className="flex items-center gap-3">
+                    <span className="w-32 shrink-0 text-sm" style={{ color: "var(--app-text)" }}>{row.label}</span>
+                    <div className="relative h-7 flex-1 overflow-hidden rounded-lg" style={{ background: "var(--app-surface-soft)" }}>
+                      <div
+                        className="h-full rounded-lg transition-all"
+                        style={{ width: `${Math.max(row.count > 0 ? 6 : 0, (row.count / max) * 100)}%`, background: `color-mix(in srgb, ${row.color} 28%, transparent)`, borderRight: row.count > 0 ? `2px solid ${row.color}` : undefined }}
+                      />
+                    </div>
+                    <span className="w-10 shrink-0 text-right text-sm font-semibold tabular-nums" style={{ color: "var(--app-heading)" }}>{row.count}</span>
+                  </div>
+                ));
+              })()}
             </div>
           </section>
 
@@ -368,24 +336,29 @@ export default async function PeopleAnalyticsPage() {
                   borderColor: "var(--app-border)",
                 }}
               >
-                <div className="flex flex-wrap gap-2">
-                  {appDayEntries.map(([day, count]) => (
-                    <div key={day} className="flex flex-col items-center gap-0.5">
-                      <span
-                        className="text-xs font-semibold tabular-nums"
-                        style={{ color: "var(--app-brand)" }}
-                      >
-                        {count}
-                      </span>
-                      <span
-                        className="text-[10px]"
-                        style={{ color: "var(--app-muted)" }}
-                      >
-                        {day.slice(5)}
-                      </span>
+                {(() => {
+                  const maxCount = Math.max(1, ...appDayEntries.map(([, c]) => c));
+                  return (
+                    <div className="flex h-40 items-end gap-1.5 overflow-x-auto">
+                      {appDayEntries.map(([day, count]) => (
+                        <div key={day} className="group/bar flex min-w-[14px] flex-1 flex-col items-center gap-1" title={`${day}: ${count} application${count === 1 ? "" : "s"}`}>
+                          <span className="text-[10px] font-semibold tabular-nums opacity-0 transition-opacity group-hover/bar:opacity-100" style={{ color: "var(--app-brand)" }}>
+                            {count}
+                          </span>
+                          <div className="flex w-full flex-1 items-end">
+                            <div
+                              className="w-full rounded-t-md transition-all"
+                              style={{ height: `${(count / maxCount) * 100}%`, minHeight: count > 0 ? "4px" : "0", background: "linear-gradient(180deg, var(--app-brand), color-mix(in srgb, var(--app-brand) 55%, transparent))" }}
+                            />
+                          </div>
+                          <span className="text-[9px] tabular-nums" style={{ color: "var(--app-muted)" }}>
+                            {day.slice(5)}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()}
               </div>
             </section>
           )}
