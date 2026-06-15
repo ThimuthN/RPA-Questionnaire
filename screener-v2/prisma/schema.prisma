@@ -423,6 +423,7 @@ model Candidate {
   @@index([departmentId])
   @@index([hrOwnerId])
   @@index([stage, updatedAt])
+  @@index([stage, departmentId, orgStage])
   @@index([fullName])
   @@index(fields: [searchVector], type: Gin, map: "candidate_fts_idx")
 }
@@ -602,6 +603,7 @@ model CandidateActivityEvent {
   candidate  Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([candidateId, createdAt])
+  @@index([candidateId, event, createdAt])
 }
 
 model JobPosting {
@@ -960,6 +962,7 @@ model InterviewFeedback {
 
   @@unique([panelId, interviewerId])
   @@index([panelId])
+  @@index([panelId, submittedAt])
 }
 
 model AuditLog {
@@ -1047,6 +1050,7 @@ model EmailLog {
 
   @@index([candidateId, sentAt])
   @@index([status])
+  @@index([status, sentAt])
 }
 
 model IntegrationProviderApp {
