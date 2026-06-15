@@ -4,13 +4,7 @@ import { requireApiSession } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getKitForPanel } from "@/lib/db/interview-kits";
 import { createNotification } from "@/lib/notifications/service";
-
-const competencyRatingSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  rating: z.number().int().min(1).max(5).nullable(),
-  notes: z.string().optional(),
-});
+import { competencyRatingSchema, parseCompetencyJson } from "@/lib/jobs/json-schemas";
 
 const feedbackSchema = z.object({
   overallRating: z.number().int().min(1).max(5).nullable().optional(),
@@ -57,7 +51,7 @@ export async function GET(
           strengths: feedback.strengths,
           concerns: feedback.concerns,
           privateNotes: feedback.privateNotes,
-          competencyJson: feedback.competencyJson,
+          competencyJson: parseCompetencyJson(feedback.competencyJson),
           submittedAt: feedback.submittedAt?.toISOString() ?? null,
           interviewerName: feedback.interviewer.name ?? feedback.interviewer.email,
         }
