@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { BriefcaseBusiness, Building2, ClipboardList, Home, PlugZap, Shield, Users, Users2 } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, PlugZap, Shield, Users, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -56,6 +56,7 @@ export function getNavItems(
         { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
         { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
         { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2 },
+        { href: "/people/analytics" as Route, label: "Analytics", icon: BarChart3 },
         { href: "/assessments" as Route, label: copy.nav.create, icon: ClipboardList }
       );
     }
@@ -78,6 +79,7 @@ export function isNavItemActive(pathname: string, href: string) {
     (href === "/people/candidates/jobs" && pathname.startsWith("/people/candidates/jobs")) ||
     (href === "/people/candidates/applicants" && pathname.startsWith("/people/candidates/applicants")) ||
     (href === "/people/candidates" && pathname === "/people/candidates") ||
+    (href === "/people/analytics" && pathname.startsWith("/people/analytics")) ||
     (href === "/assessments" &&
       (pathname.startsWith("/assessments") ||
         pathname.startsWith("/create-test") ||

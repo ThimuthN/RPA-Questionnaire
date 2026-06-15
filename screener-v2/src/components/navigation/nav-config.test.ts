@@ -70,11 +70,8 @@ describe("nav-config", () => {
       expect(labels).not.toContain("Workspaces");
     });
 
-    it("includes Careers for unauthenticated users at /jobs", () => {
-      const items = getNavItems(null);
-      const careersItem = items.find((item) => item.label === "Careers");
-      expect(careersItem).toBeDefined();
-      expect(careersItem?.href).toBe("/jobs");
+    it("returns no sidebar items for unauthenticated users (public chrome handles nav)", () => {
+      expect(getNavItems(null)).toEqual([]);
     });
 
     it("does not include Live sessions for unauthenticated users", () => {
