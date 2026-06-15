@@ -36,6 +36,36 @@ interface CreateOrUpdateCandidacyInput {
   jobPostingId?: string;
 }
 
+export type CandidacyValidationError =
+  | { code: "candidate_not_found" }
+  | { code: "candidate_finalized" }
+  | { code: "role_not_found" }
+  | { code: "role_department_mismatch" };
+
+export async function validateCandidacyInputs(
+  candidateId: string,
+  roleId: string,
+  departmentId: string
+): Promise<{ ok: true; candidateDepartmentId: string | null } | { ok: false; error: CandidacyValidationError }> {
+  const [candidate, role] = await Promise.all([
+    prisma.candidate.findUnique({
+      where: { id: candidateId },
+      select: { id: true, departmentId: true, orgStage: true },
+    }),
+    prisma.roleCatalog.findUnique({
+      where: { id: roleId },
+      select: { id: true, departmentId: true },
+    }),
+  ]);
+
+  if (!candidate) return { ok: false, error: { code: "candidate_not_found" } };
+  if (candidate.orgStage === "finalized") return { ok: false, error: { code: "candidate_finalized" } };
+  if (!role) return { ok: false, error: { code: "role_not_found" } };
+  if (role.departmentId !== departmentId) return { ok: false, error: { code: "role_department_mismatch" } };
+
+  return { ok: true, candidateDepartmentId: candidate.departmentId };
+}
+
 /**
  * Create or update a department candidacy for a candidate.
  * Uses upsert on the unique constraint (candidateId, departmentId).
