@@ -93,7 +93,7 @@ function summarizeCandidacyTeam(
 
   if (!primaryOwner) {
     return {
-      teamOwnerSummary: "No owner assigned.",
+      teamOwnerSummary: undefined,
       teamOwnerId: undefined,
       teamMemberCount: uniqueUsers.size
     };
