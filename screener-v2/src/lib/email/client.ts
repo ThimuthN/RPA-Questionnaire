@@ -13,7 +13,8 @@ export function getFromAddress(): string {
 }
 
 export function getOrgName(): string {
-  return process.env.NEXT_PUBLIC_ORG_NAME ?? "Innobot Health";
+  // Single source of truth for the brand name; keep this default in sync with publicOrgName().
+  return process.env.NEXT_PUBLIC_ORG_NAME?.trim() || "Northstar";
 }
 
 export function getAppUrl(): string {

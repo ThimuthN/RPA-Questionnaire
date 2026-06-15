@@ -58,9 +58,10 @@ function resultStatusTone(status: string) {
 export default async function MarketingHomePage() {
   const session = await getAppSession();
   const workspaceHref = session ? "/people/candidates" : buildLoginHref("/people/candidates");
-  const secondaryHeroHref = session ? "/results" : "/run-test";
-  const primaryHeroLabel = session ? "Open workspace" : "See the workspace";
-  const secondaryHeroLabel = session ? "Open results" : "Watch demo";
+  // Unauthenticated visitors get an honest public destination (open roles), not the internal test runner.
+  const secondaryHeroHref = session ? "/results" : "/jobs";
+  const primaryHeroLabel = session ? "Open workspace" : "Sign in";
+  const secondaryHeroLabel = session ? "Open results" : "View open roles";
   const [candidateWorkspace, resultWorkspace] = session
       ? await Promise.all([
         listCandidateWorkspacePage({ sort: "inbox", pageSize: 5 }),
