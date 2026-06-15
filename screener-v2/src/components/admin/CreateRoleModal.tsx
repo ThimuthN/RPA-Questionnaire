@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { APP_ACTIONS, APP_ACTION_LABELS } from '@/lib/auth/permissions';
+import { OverlayBackdrop, OverlayContent, OverlayShell } from '@/components/primitives/OverlayShell';
 
 interface CreateRoleModalProps {
   isOpen: boolean;
@@ -29,27 +29,12 @@ export default function CreateRoleModal({
   defaultApplicability = 'department',
   allowSystemOnly = true
 }: CreateRoleModalProps) {
-  const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     ...emptyForm,
     applicability: defaultApplicability
   });
-
-  useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -117,10 +102,10 @@ export default function CreateRoleModal({
     }
   };
 
-  if (!isOpen || !mounted) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+  return (
+    <OverlayShell isOpen={isOpen}>
+      <OverlayBackdrop onClick={onClose} />
+      <OverlayContent>
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-[color:var(--app-surface)]">
         {/* Header — always visible */}
         <div className="flex shrink-0 items-center justify-between border-b border-[color:var(--app-border)] p-6">
@@ -129,6 +114,7 @@ export default function CreateRoleModal({
             onClick={onClose}
             className="text-[color:var(--app-muted)] transition hover:text-[color:var(--app-heading)]"
             type="button"
+            aria-label="Close"
           >
             ×
           </button>
@@ -243,7 +229,7 @@ export default function CreateRoleModal({
           </div>
         </form>
       </div>
-    </div>,
-    document.body
+      </OverlayContent>
+    </OverlayShell>
   );
 }
