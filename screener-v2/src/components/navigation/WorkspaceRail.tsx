@@ -151,6 +151,8 @@ export function WorkspaceRail({
           <div className="h-2" />
 
           <div className="flex min-h-0 flex-1 flex-col">
+            {/* Scrollable region: selector + subnav + nav all scroll together so the footer stays pinned */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
             {/* Workspace Selector - shows current workspace and switcher */}
             {currentWorkspace && (
               <WorkspaceSelector
@@ -174,7 +176,7 @@ export function WorkspaceRail({
 
             {/* Main Navigation - global items */}
             <nav className={cn(
-              "flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pr-1",
+              "flex flex-col gap-0.5",
               viewer?.departmentId ? "mt-4 pt-4 border-t border-[color:var(--app-border)]" : "mt-2"
             )}>
               {items.map((item, index) => {
@@ -224,8 +226,9 @@ export function WorkspaceRail({
                 );
               })}
             </nav>
+            </div>
 
-            <div className="mt-auto -mx-4 border-t border-[color:var(--app-rail-divider)] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.10))] px-4 pb-5 pt-4 backdrop-blur-md">
+            <div className="-mx-4 border-t border-[color:var(--app-rail-divider)] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.10))] px-4 pb-5 pt-4 backdrop-blur-md">
               {viewer ? (
                 <div className="space-y-2">
                   <div
