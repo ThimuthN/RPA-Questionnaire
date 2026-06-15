@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authenticateAppUser, ensureBootstrapAdmin } from "@/lib/auth/app-auth";
 import { createSessionToken, sanitizeNextPath, setSessionCookie } from "@/lib/auth/session";
 import { isFormRequest } from "@/lib/http/request";
+import { checkAuthRateLimit } from "@/lib/server/rate-limit";
 import {
   createRequestLogContext,
   logRouteError,
@@ -23,6 +24,19 @@ export async function POST(request: Request) {
       ? Object.fromEntries((await request.formData()).entries())
       : await request.json();
     const body = loginSchema.parse(rawBody);
+
+    // Brute-force protection: cap attempts per IP and per account before hitting auth.
+    const rate = await checkAuthRateLimit({ request, identifier: body.email, scope: "login" });
+    if (!rate.ok) {
+      if (isFormRequest(request)) {
+        const url = new URL("/login", request.url);
+        url.searchParams.set("error", rate.message);
+        url.searchParams.set("next", sanitizeNextPath(body.next));
+        return NextResponse.redirect(url, 303);
+      }
+      return NextResponse.json({ ok: false, message: rate.message }, { status: 429 });
+    }
+
     await ensureBootstrapAdmin();
     const session = await authenticateAppUser(body.email, body.password);
 

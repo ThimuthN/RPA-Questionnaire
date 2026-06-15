@@ -29,6 +29,12 @@ if (isRedisAvailable) {
 const localCache = new Map<string, RateLimitEntry>();
 const CACHE_TTL = 1000 * 60 * 5; // 5 minutes
 
+interface CounterEntry {
+  count: number;
+  expiresAt: number;
+}
+const localCounters = new Map<string, CounterEntry>();
+
 // Cleanup expired local entries every minute
 if (!isRedisAvailable) {
   setInterval(() => {
@@ -38,7 +44,76 @@ if (!isRedisAvailable) {
         localCache.delete(key);
       }
     }
+    for (const [key, entry] of localCounters.entries()) {
+      if (entry.expiresAt < now) {
+        localCounters.delete(key);
+      }
+    }
   }, 1000 * 60);
+}
+
+/**
+ * Fixed-window counter: returns the attempt count within the window after incrementing.
+ * Unlike checkRateLimit (a single-action debounce), this allows N attempts per window —
+ * the right shape for login/brute-force protection where a couple of typos are normal.
+ */
+async function incrWindow(key: string, windowMs: number): Promise<number> {
+  const now = Date.now();
+
+  if (redisClient) {
+    try {
+      const count = await redisClient.incr(key);
+      if (count === 1) {
+        await redisClient.pexpire(key, windowMs);
+      }
+      return count;
+    } catch (error) {
+      console.error("Redis counter failed, using local cache:", error);
+    }
+  }
+
+  const entry = localCounters.get(key);
+  if (!entry || entry.expiresAt < now) {
+    localCounters.set(key, { count: 1, expiresAt: now + windowMs });
+    return 1;
+  }
+  entry.count += 1;
+  return entry.count;
+}
+
+type AuthRateLimitResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Brute-force protection for authentication endpoints.
+ * Per-IP and (optionally) per-account fixed windows. Defaults: 20 / 5min per IP, 8 / 5min per account.
+ */
+export async function checkAuthRateLimit(args: {
+  request: Request;
+  identifier?: string;
+  scope?: string;
+  ipMax?: number;
+  idMax?: number;
+  windowMs?: number;
+}): Promise<AuthRateLimitResult> {
+  const scope = args.scope ?? "auth";
+  const windowMs = args.windowMs ?? 5 * 60 * 1000;
+  const ipMax = args.ipMax ?? 20;
+  const idMax = args.idMax ?? 8;
+  const ip = requestIp(args.request);
+  const id = args.identifier?.trim().toLowerCase();
+
+  const [ipCount, idCount] = await Promise.all([
+    incrWindow(`${scope}:ip:${ip}`, windowMs),
+    id ? incrWindow(`${scope}:id:${id}`, windowMs) : Promise.resolve(0)
+  ]);
+
+  if (ipCount > ipMax || idCount > idMax) {
+    return {
+      ok: false,
+      message: "Too many attempts. Please wait a few minutes before trying again."
+    };
+  }
+  return { ok: true };
 }
 
 async function checkRateLimit(key: string, windowMs: number): Promise<boolean> {
