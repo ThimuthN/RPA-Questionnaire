@@ -211,7 +211,7 @@ function SummaryRow({
             accent
               ? "text-[color:var(--app-brand)]"
               : warn
-                ? "text-amber-400"
+                ? "text-[color:var(--app-warning)]"
                 : "text-[color:var(--app-heading)]",
             href ? "group-hover:underline underline-offset-2" : "",
           ].join(" ")}
@@ -303,6 +303,15 @@ export function CandidateApplicationHistoryPanel({
                   label="Assessment status"
                   value={screening ? screeningStatusLabel(screening.screeningStatus) : "No intake screening"}
                 />
+                {application.source ? (
+                  <HistoryMeta
+                    label="Source"
+                    value={application.source.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                  />
+                ) : null}
+                {application.referredBy ? (
+                  <HistoryMeta label="Referred by" value={application.referredBy} />
+                ) : null}
               </div>
               {application.coverNote ? (
                 <div className="mt-4 space-y-1.5 border-t border-[color:var(--app-border)]/60 pt-4">
