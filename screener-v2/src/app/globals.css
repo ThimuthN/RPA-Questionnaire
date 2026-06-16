@@ -69,6 +69,16 @@ html[data-theme="light"] {
   --app-surface-muted: #e8f2f4;
   --app-control-bg: #ffffff;
   --app-control-bg-strong: #ffffff;
+  /* Aliases for legacy var names some components reference. They point at canonical tokens
+     via var(), so they resolve correctly in BOTH light and dark (no per-theme duplication needed). */
+  --app-primary: var(--app-brand);
+  --app-primary-hover: var(--app-brand-strong);
+  --app-button-bg: var(--app-surface-soft);
+  --app-button-text: var(--app-text);
+  --app-button-hover: var(--app-surface-muted);
+  --app-border-hover: var(--app-border-strong);
+  --app-input-bg: var(--app-control-bg);
+  --app-danger-border: var(--app-danger);
   --app-shadow: 0 4px 16px rgba(10, 35, 54, 0.11), 0 1px 4px rgba(10, 35, 54, 0.07);
   --app-shadow-soft: 0 2px 8px rgba(10, 35, 54, 0.08);
   --app-brand: #0aa6a0;
