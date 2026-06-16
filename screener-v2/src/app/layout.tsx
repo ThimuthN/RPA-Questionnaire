@@ -15,6 +15,9 @@ import { getStarryStatus } from "@/lib/ai/config";
 import { StarryDock } from "@/components/ai/StarryDock";
 import { listDepartments } from "@/lib/db/departments";
 import { MotionProvider } from "@/components/motion/MotionProvider";
+import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db/prisma";
+import { mfaRequiredForSession } from "@/lib/auth/mfa-policy";
 import "./globals.css";
 
 const fontDisplay = Sora({
@@ -86,6 +89,20 @@ export default async function RootLayout({
     showSidebar ? getStarryStatus() : Promise.resolve(null)
   ]);
   const showStarry = Boolean(starry?.enabled);
+
+  // MFA enrollment wall: when the org enforces 2FA (MFA_ENFORCEMENT), a user who
+  // is required to use it but hasn't enrolled is redirected to the security page
+  // until they do. The extra query runs only when enforcement is on AND the user
+  // is in scope, and clears itself once they enroll (no lockout risk).
+  if (showSidebar && session && session.userId && pathname !== "/account/security" && mfaRequiredForSession(session)) {
+    const mfaUser = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { mfaEnabled: true }
+    });
+    if (mfaUser && !mfaUser.mfaEnabled) {
+      redirect("/account/security?enroll=required");
+    }
+  }
 
   return (
     <html lang="en" data-theme="light" suppressHydrationWarning>

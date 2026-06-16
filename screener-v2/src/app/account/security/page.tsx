@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import { getAppSession } from "@/lib/auth/app-session";
 import { parseBackupCodes } from "@/lib/auth/mfa";
+import { mfaRequiredForSession } from "@/lib/auth/mfa-policy";
 import { MfaSecurityClient } from "@/components/mfa/MfaSecurityClient";
 
 export const metadata: Metadata = { title: "Security" };
@@ -28,6 +29,7 @@ export default async function SecurityPage() {
   if (!user) redirect("/login");
 
   const backupCodesRemaining = parseBackupCodes(user.mfaBackupCodes).length;
+  const enrollmentRequired = mfaRequiredForSession(session) && !user.mfaEnabled;
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -37,6 +39,13 @@ export default async function SecurityPage() {
           Manage your account security settings.
         </p>
       </div>
+
+      {enrollmentRequired ? (
+        <div className="rounded-xl border border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] px-4 py-3 text-sm text-[color:var(--pill-amber-text)]">
+          <span className="font-semibold">Two-factor authentication is required.</span> Your
+          organization requires 2FA for your account. Set it up below to continue using the workspace.
+        </div>
+      ) : null}
 
       <MfaSecurityClient
         mfaEnabled={user.mfaEnabled}
