@@ -1345,3 +1345,17 @@ model DataRetentionPolicy {
 
   @@index([departmentId])
 }
+
+model AiInteractionLog {
+  id            String   @id @default(cuid())
+  userId        String?
+  kind          String   @default("chat")
+  candidateId   String?
+  promptChars   Int      @default(0)
+  responseChars Int      @default(0)
+  status        String   @default("ok")
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}

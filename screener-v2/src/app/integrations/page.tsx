@@ -1,16 +1,19 @@
 import { SystemIntegrationsClient } from "@/components/integrations/SystemIntegrationsClient";
+import { StarryIntegrationCard } from "@/components/integrations/StarryIntegrationCard";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { requireGlobalPagePermission, requirePageSession } from "@/lib/auth/guards";
 import { hasIntegrationEncryptionKey, listProviderAppSummaries } from "@/lib/integrations";
+import { getStarryStatus } from "@/lib/ai/config";
 
 export default async function IntegrationsPage() {
   const session = await requirePageSession("/integrations");
   await requireGlobalPagePermission(session, "manage_integrations");
 
-  const [providers, encryptionReady] = await Promise.all([
+  const [providers, encryptionReady, starryStatus] = await Promise.all([
     listProviderAppSummaries(),
-    Promise.resolve(hasIntegrationEncryptionKey())
+    Promise.resolve(hasIntegrationEncryptionKey()),
+    getStarryStatus()
   ]);
 
   return (
@@ -35,6 +38,8 @@ export default async function IntegrationsPage() {
             and keep supported providers ready for department-level connections.
           </p>
         </div>
+
+        <StarryIntegrationCard initialStatus={starryStatus} />
 
         <SystemIntegrationsClient initialProviders={providers} />
       </div>

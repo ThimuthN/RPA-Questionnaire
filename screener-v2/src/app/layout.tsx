@@ -11,6 +11,8 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { getAppSession } from "@/lib/auth/app-session";
 import { getConfiguredAppUrl } from "@/lib/server/app-url";
 import { brandThemeCss } from "@/lib/brand/theme";
+import { getStarryStatus } from "@/lib/ai/config";
+import { StarryDock } from "@/components/ai/StarryDock";
 import { listDepartments } from "@/lib/db/departments";
 import { MotionProvider } from "@/components/motion/MotionProvider";
 import "./globals.css";
@@ -79,9 +81,11 @@ export default async function RootLayout({
   const showSidebar = Boolean(session) && !isPublicShellPath(pathname);
   const brandCss = brandThemeCss();
 
-  const departments = showSidebar
-    ? await listDepartments(false)
-    : [];
+  const [departments, starry] = await Promise.all([
+    showSidebar ? listDepartments(false) : Promise.resolve([]),
+    showSidebar ? getStarryStatus() : Promise.resolve(null)
+  ]);
+  const showStarry = Boolean(starry?.enabled);
 
   return (
     <html lang="en" data-theme="light" suppressHydrationWarning>
@@ -119,6 +123,7 @@ export default async function RootLayout({
               </div>
               <ThemeToggle />
               <CommandPalette />
+              {showStarry ? <StarryDock /> : null}
             </div>
           ) : (
             /* ── Public routes (and unauthenticated): no sidebar, full-width ── */
