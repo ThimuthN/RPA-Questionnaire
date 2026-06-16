@@ -4,8 +4,7 @@ import {
   ArrowRight,
   BriefcaseBusiness,
   CheckCircle2,
-  Clock3,
-  PlayCircle
+  Clock3
 } from "lucide-react";
 import { WorkspaceEmptyState } from "@/components/brand/WorkspaceEmptyState";
 import { CountUpValue } from "@/components/motion/CountUpValue";
@@ -152,9 +151,12 @@ export default async function MarketingHomePage() {
                       </Button>
                     </Link>
                     <Link href={secondaryHeroHref}>
-                      <Button variant="secondary" className="gap-2 border-white/15 bg-white/95 text-[color:var(--app-heading)] hover:border-white/30 hover:bg-white">
-                        <PlayCircle className="h-4 w-4" />
+                      <Button
+                        variant="secondary"
+                        className="gap-2 border border-[color:var(--hero-heading)]/25 bg-transparent text-[color:var(--hero-heading)] hover:bg-[color:var(--hero-heading)]/10"
+                      >
                         {secondaryHeroLabel}
+                        <ArrowRight className="h-4 w-4" />
                       </Button>
                     </Link>
                   </div>

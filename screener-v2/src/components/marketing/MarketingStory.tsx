@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Route } from "next";
 import {
@@ -54,6 +55,25 @@ const TRUST_POINTS: { icon: typeof Lock; title: string; body: string }[] = [
 export function MarketingStory({ orgName }: { orgName: string }) {
   return (
     <div className="space-y-10">
+      {/* ── Brand story (the designed Northstar mark + the guiding-star narrative) ── */}
+      <section className="relative overflow-hidden rounded-[30px] border border-[color:var(--app-border)] bg-[linear-gradient(160deg,color-mix(in_srgb,var(--app-brand)_12%,var(--app-surface)),var(--app-surface-soft))] px-6 py-12 text-center shadow-[var(--app-shadow-soft)] md:px-10 md:py-16">
+        <div className="hero-grid-overlay pointer-events-none absolute inset-0 opacity-40" />
+        <div className="relative z-10 flex flex-col items-center gap-5">
+          <div className="flex h-20 w-20 items-center justify-center rounded-[22px] border border-[color:var(--app-brand)]/25 bg-[color:var(--app-brand-soft)] shadow-[0_12px_30px_color-mix(in_srgb,var(--app-brand)_22%,transparent)]">
+            <Image src="/brand/northstar-icon-clean.png" alt={`${orgName} logo`} width={52} height={52} className="object-contain" priority />
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--app-brand)]">{orgName}</p>
+          <h2 className="max-w-3xl font-display text-3xl leading-tight text-[color:var(--app-heading)] sm:text-5xl">
+            Your fixed point in hiring.
+          </h2>
+          <p className="mx-auto max-w-2xl text-sm leading-7 text-[color:var(--app-muted)] sm:text-base">
+            Sailors found their way by the north star — one fixed, reliable signal. {orgName} is that for your hiring team:
+            one place where every role, applicant, assessment, and decision stays in view, so you always know where a
+            candidate stands and what comes next.
+          </p>
+        </div>
+      </section>
+
       {/* ── Value band (voice / soul) ── */}
       <section className="relative overflow-hidden rounded-[30px] border border-[color:var(--app-border)] bg-[linear-gradient(180deg,var(--app-surface),var(--app-surface-soft))] px-6 py-10 text-center shadow-[var(--app-shadow-soft)] md:px-10 md:py-14">
         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--app-brand)]">Why {orgName}</p>
