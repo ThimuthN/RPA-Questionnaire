@@ -10,7 +10,7 @@ const CSP_REPORT_ONLY = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "connect-src 'self' https:",
-  "frame-ancestors 'none'",
+  "frame-ancestors 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "object-src 'none'"
@@ -19,7 +19,8 @@ const CSP_REPORT_ONLY = [
 const SECURITY_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "DENY" },
+  // SAMEORIGIN (not DENY) so same-origin embeds work — e.g. the in-app resume PDF preview (<object>).
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), interest-cohort=()" },
   { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY }
@@ -28,6 +29,12 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   typedRoutes: true,
   devIndicators: false,
+  images: {
+    // Candidate avatars are served from Vercel Blob public storage.
+    remotePatterns: [
+      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" }
+    ]
+  },
   async headers() {
     return [
       {
