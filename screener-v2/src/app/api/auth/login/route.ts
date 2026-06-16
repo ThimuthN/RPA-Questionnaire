@@ -11,17 +11,23 @@ import {
 } from "@/lib/auth/mfa-session";
 import { hashDeviceToken } from "@/lib/auth/mfa";
 import { isFormRequest } from "@/lib/http/request";
-import { checkAuthRateLimit } from "@/lib/server/rate-limit";
+import {
+  checkAuthRateLimit,
+  checkAccountLockout,
+  recordLoginFailure,
+  clearLoginFailures
+} from "@/lib/server/rate-limit";
 import {
   createRequestLogContext,
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
 import { logAudit } from "@/lib/auth/audit";
+import { getOrgSecuritySettings } from "@/lib/auth/security-settings";
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
+  password: z.string().min(1),
   next: z.string().optional()
 });
 
@@ -45,19 +51,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, message: rate.message }, { status: 429 });
     }
 
+    // Hard lockout check — account locked after N consecutive failures
+    const lockout = await checkAccountLockout(body.email);
+    if (lockout.locked) {
+      const message = `Account locked. Try again in ${lockout.minutesRemaining} minute${lockout.minutesRemaining === 1 ? "" : "s"}.`;
+      if (isFormRequest(request)) {
+        const url = new URL("/login", request.url);
+        url.searchParams.set("error", message);
+        url.searchParams.set("next", sanitizeNextPath(body.next));
+        return NextResponse.redirect(url, 303);
+      }
+      return NextResponse.json({ ok: false, message }, { status: 429 });
+    }
+
     await ensureBootstrapAdmin();
-    const session = await authenticateAppUser(body.email, body.password);
+    const [session, securitySettings] = await Promise.all([
+      authenticateAppUser(body.email, body.password),
+      getOrgSecuritySettings()
+    ]);
 
     if (!session) {
-      void logAudit({
-        action: "user_login_failed",
-        actorId: null,
-        actorEmail: body.email,
-        targetId: body.email,
-        targetType: "user",
-        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
-        userAgent: request.headers.get("user-agent")
-      }).catch(() => undefined);
+      void Promise.all([
+        logAudit({
+          action: "user_login_failed",
+          actorId: null,
+          actorEmail: body.email,
+          targetId: body.email,
+          targetType: "user",
+          ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+          userAgent: request.headers.get("user-agent")
+        }).catch(() => undefined),
+        recordLoginFailure(
+          body.email,
+          securitySettings.lockoutThreshold,
+          securitySettings.lockoutMinutes * 60 * 1000
+        )
+      ]);
       if (isFormRequest(request)) {
         const url = new URL("/login", request.url);
         url.searchParams.set("error", "Invalid email or password.");
@@ -66,6 +95,9 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ ok: false, message: "Invalid email or password." }, { status: 401 });
     }
+
+    // Successful auth — clear any accumulated failure count
+    void clearLoginFailures(body.email);
 
     const nextPath = sanitizeNextPath(body.next);
 

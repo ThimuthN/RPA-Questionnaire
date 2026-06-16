@@ -1,6 +1,6 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, PlugZap, Shield, Users, Users2 } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, Lock, PlugZap, ScrollText, Shield, Users, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
@@ -60,7 +60,9 @@ export function getNavItems(
       items.push(
         { href: "/departments" as Route, label: "Workspaces", icon: Building2, section: "Admin" },
         { href: "/users" as Route, label: "Users", icon: Users, section: "Admin" },
-        { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" }
+        { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" },
+        { href: "/security" as Route, label: "Security", icon: Lock, section: "Admin" },
+        { href: "/audit-log" as Route, label: "Audit Log", icon: ScrollText, section: "Admin" }
       );
     }
 
@@ -102,6 +104,8 @@ export function isNavItemActive(pathname: string, href: string) {
         pathname.startsWith("/create-test") ||
         pathname.startsWith("/addons") ||
         pathname.startsWith("/results"))) ||
-    (href === "/departments" && pathname === "/departments")
+    (href === "/departments" && pathname === "/departments") ||
+    (href === "/security" && pathname.startsWith("/security")) ||
+    (href === "/audit-log" && pathname.startsWith("/audit-log"))
   );
 }

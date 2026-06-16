@@ -169,6 +169,79 @@ function requestIp(request: Request) {
   return "unknown";
 }
 
+// ── Account lockout ──────────────────────────────────────────────────────────
+// After N consecutive failed logins the account is hard-locked for M minutes —
+// regardless of IP. This is separate from IP-based rate limiting and matches
+// Greenhouse / Lever / Workday enterprise ATS behaviour.
+
+const lockoutKey = (email: string) => `lockout:${email.toLowerCase().trim()}`;
+const failCountKey = (email: string) => `loginfail:${email.toLowerCase().trim()}`;
+
+export type LockoutCheckResult =
+  | { locked: false }
+  | { locked: true; unlocksAt: Date; minutesRemaining: number };
+
+export async function checkAccountLockout(email: string): Promise<LockoutCheckResult> {
+  const key = lockoutKey(email);
+
+  if (redisClient) {
+    try {
+      const ttl = await redisClient.ttl(key); // seconds remaining, -2 if key absent
+      if (ttl > 0) {
+        return {
+          locked: true,
+          unlocksAt: new Date(Date.now() + ttl * 1000),
+          minutesRemaining: Math.ceil(ttl / 60)
+        };
+      }
+      return { locked: false };
+    } catch { /* fall through to local */ }
+  }
+
+  const entry = localCounters.get(key);
+  if (entry && entry.expiresAt > Date.now()) {
+    const msRemaining = entry.expiresAt - Date.now();
+    return {
+      locked: true,
+      unlocksAt: new Date(entry.expiresAt),
+      minutesRemaining: Math.ceil(msRemaining / 60_000)
+    };
+  }
+  return { locked: false };
+}
+
+export async function recordLoginFailure(
+  email: string,
+  threshold = 10,
+  lockoutMs = 30 * 60 * 1000
+): Promise<void> {
+  const fKey = failCountKey(email);
+  const lKey = lockoutKey(email);
+  const count = await incrWindow(fKey, lockoutMs);
+  if (count >= threshold) {
+    if (redisClient) {
+      try {
+        await redisClient.set(lKey, "1", { px: lockoutMs });
+        return;
+      } catch { /* fall through */ }
+    }
+    localCounters.set(lKey, { count: 1, expiresAt: Date.now() + lockoutMs });
+  }
+}
+
+export async function clearLoginFailures(email: string): Promise<void> {
+  const fKey = failCountKey(email);
+  const lKey = lockoutKey(email);
+  if (redisClient) {
+    try {
+      await Promise.all([redisClient.del(fKey), redisClient.del(lKey)]);
+      return;
+    } catch { /* fall through */ }
+  }
+  localCounters.delete(fKey);
+  localCounters.delete(lKey);
+}
+
 export async function checkPublicApplicationRateLimit(args: {
   request: Request;
   jobSlug: string;

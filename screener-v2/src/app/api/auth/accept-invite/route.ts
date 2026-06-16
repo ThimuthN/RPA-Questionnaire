@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
-import { hashPassword } from "@/lib/auth/password";
+import { hashPassword, validatePasswordStrength } from "@/lib/auth/password";
 import { consumeUserAuthToken } from "@/lib/auth/user-tokens";
 import { createSessionToken, setSessionCookie } from "@/lib/auth/session";
 import { getEffectivePermissions } from "@/lib/auth/permission-evaluator";
 import { logAudit } from "@/lib/auth/audit";
+import { getOrgSecuritySettings, extractPasswordPolicy } from "@/lib/auth/security-settings";
 
 const schema = z.object({
   token: z.string().min(8),
-  password: z.string().min(8, "Use at least 8 characters."),
+  password: z.string().min(1),
   name: z.string().optional()
 });
 
@@ -17,9 +18,18 @@ export async function POST(request: Request) {
   try {
     const body = schema.parse(await request.json());
 
-    const result = await consumeUserAuthToken(body.token, "invite");
+    const [result, settings] = await Promise.all([
+      consumeUserAuthToken(body.token, "invite"),
+      getOrgSecuritySettings()
+    ]);
+
     if (!result.ok) {
       return NextResponse.json({ ok: false, message: result.reason }, { status: 400 });
+    }
+
+    const strength = validatePasswordStrength(body.password, extractPasswordPolicy(settings));
+    if (!strength.ok) {
+      return NextResponse.json({ ok: false, message: strength.message }, { status: 400 });
     }
 
     await prisma.user.update({
@@ -50,8 +60,6 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent")
     });
 
-    // Auto sign-in so the invitee lands straight in the workspace (MFA enrollment,
-    // if enforced, is handled by the authenticated layout).
     const permissions = await getEffectivePermissions(user.id);
     const sessionToken = await createSessionToken({
       userId: user.id,

@@ -1,30 +1,44 @@
 import type { AppSession } from "@/lib/auth/session";
+import { getOrgSecuritySettings } from "@/lib/auth/security-settings";
 
 /**
- * Org-wide MFA enforcement, configured via the MFA_ENFORCEMENT env var:
+ * Org-wide MFA enforcement. Source of truth is the OrgSecuritySettings DB row
+ * (admin-configurable). Falls back to the MFA_ENFORCEMENT env var, then "off".
+ *
  *   "off"    — 2FA is optional (default)
  *   "admins" — required for users with admin-level permissions
  *   "all"    — required for every user
- *
- * Enforcement is applied as an enrollment wall in the authenticated layout:
- * a user who must use 2FA but hasn't enrolled is redirected to the security
- * page until they do. The wall clears automatically once mfaEnabled flips true,
- * so there is no lockout risk.
  */
 export type MfaEnforcement = "off" | "admins" | "all";
 
 const ADMIN_PERMISSIONS = ["manage_users", "manage_integrations", "manage_roles"];
 
+function parseEnforcement(value: string): MfaEnforcement {
+  const v = value.trim().toLowerCase();
+  return v === "all" || v === "admins" ? v : "off";
+}
+
+/** Sync read — env var only. Used as a fast fallback path. */
 export function mfaEnforcement(): MfaEnforcement {
-  const value = (process.env.MFA_ENFORCEMENT ?? "off").trim().toLowerCase();
-  return value === "all" || value === "admins" ? value : "off";
+  return parseEnforcement(process.env.MFA_ENFORCEMENT ?? "off");
+}
+
+/** Async read — DB first, env var fallback. Use this in layouts and guards. */
+export async function mfaEnforcementFromSettings(): Promise<MfaEnforcement> {
+  const settings = await getOrgSecuritySettings();
+  return parseEnforcement(settings.mfaEnforcement);
 }
 
 export function mfaRequiredForSession(session: Pick<AppSession, "permissions">): boolean {
   const mode = mfaEnforcement();
   if (mode === "all") return true;
-  if (mode === "admins") {
-    return session.permissions.some((permission) => ADMIN_PERMISSIONS.includes(permission));
-  }
+  if (mode === "admins") return session.permissions.some((p) => ADMIN_PERMISSIONS.includes(p));
+  return false;
+}
+
+export async function mfaRequiredForSessionAsync(session: Pick<AppSession, "permissions">): Promise<boolean> {
+  const mode = await mfaEnforcementFromSettings();
+  if (mode === "all") return true;
+  if (mode === "admins") return session.permissions.some((p) => ADMIN_PERMISSIONS.includes(p));
   return false;
 }

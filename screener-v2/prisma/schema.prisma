@@ -1404,3 +1404,20 @@ model AiInteractionLog {
   @@index([userId, createdAt])
   @@index([createdAt])
 }
+
+// Singleton row (id = "singleton") for org-wide security policy.
+// Admin-configurable from /security settings page.
+// Falls back to env vars / defaults when the row doesn't exist.
+model OrgSecuritySettings {
+  id                String   @id @default("singleton")
+  mfaEnforcement    String   @default("off")
+  passwordMinLength Int      @default(8)
+  requireUppercase  Boolean  @default(true)
+  requireNumber     Boolean  @default(true)
+  requireSpecial    Boolean  @default(false)
+  sessionDays       Int      @default(7)
+  lockoutThreshold  Int      @default(10)
+  lockoutMinutes    Int      @default(30)
+  updatedAt         DateTime @updatedAt
+  updatedById       String?
+}
