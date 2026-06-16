@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/primitives/Button";
 import { ChoicePills } from "@/components/primitives/ChoicePills";
 import { RolePicker } from "@/components/roles/RolePicker";
+import { LocationPicker } from "@/components/candidates/LocationPicker";
 import { resumeSourceOptions } from "@/lib/candidates/types";
 
 type HiringTeamRole = "owner" | "recruiter" | "hiring_manager" | "interviewer" | "reviewer" | "final_approver";
@@ -193,14 +194,10 @@ export function NewCandidateForm({
         />
       </label>
 
-      <label className="grid gap-1">
+      <div className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Location</span>
-        <input
-          name="location"
-          placeholder="e.g. New York, NY"
-          className="rounded-[18px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300/80"
-        />
-      </label>
+        <LocationPicker name="location" defaultValue="" />
+      </div>
 
       <label className="grid gap-1">
         <span className="text-sm text-[color:var(--app-text)]">Department</span>
