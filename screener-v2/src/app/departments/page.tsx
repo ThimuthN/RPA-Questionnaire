@@ -1,13 +1,14 @@
-import Link from "next/link";
-import { Button } from "@/components/primitives/Button";
-import { StatusPill } from "@/components/primitives/StatusPill";
 import { SignalCard } from "@/components/primitives/SignalCard";
 import { NotificationBanner } from "@/components/primitives/NotificationBanner";
 import { SceneShell } from "@/components/scene/SceneShell";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { DepartmentModal } from "@/components/departments/DepartmentModal";
+import { WorkspaceDirectory, type WorkspaceRow } from "@/components/departments/WorkspaceDirectory";
 import { requireAdminPageSession } from "@/lib/auth/guards";
 import { listDepartments } from "@/lib/db/departments";
+import { prisma } from "@/lib/db/prisma";
+
+export const dynamic = "force-dynamic";
 
 export default async function DepartmentsPage({
   searchParams
@@ -16,11 +17,46 @@ export default async function DepartmentsPage({
 }) {
   await requireAdminPageSession("/departments");
 
-  const departments = await listDepartments(true);
-  const params = await searchParams;
+  // Departments + per-workspace counts in a few aggregate queries (no N+1 over 23 workspaces).
+  const [departments, jobGroups, candidateGroups, grantGroups, params] = await Promise.all([
+    listDepartments(true),
+    prisma.jobPosting.groupBy({
+      by: ["departmentId"],
+      where: { departmentId: { not: null } },
+      _count: { _all: true }
+    }),
+    prisma.candidate.groupBy({
+      by: ["departmentId"],
+      where: { departmentId: { not: null } },
+      _count: { _all: true }
+    }),
+    prisma.accessGrant.groupBy({
+      by: ["departmentId"],
+      where: { scope: "department", status: "active", departmentId: { not: null } },
+      _count: { _all: true }
+    }),
+    searchParams
+  ]);
 
-  const totalDepartments = departments.length;
-  const activeDepartments = departments.filter((d) => d.isActive).length;
+  const jobMap = new Map(jobGroups.map((g) => [g.departmentId!, g._count._all]));
+  const candidateMap = new Map(candidateGroups.map((g) => [g.departmentId!, g._count._all]));
+  const grantMap = new Map(grantGroups.map((g) => [g.departmentId!, g._count._all]));
+
+  const workspaces: WorkspaceRow[] = departments.map((d) => ({
+    id: d.id,
+    slug: d.slug,
+    name: d.name,
+    isActive: d.isActive,
+    sortOrder: d.sortOrder,
+    jobs: jobMap.get(d.id) ?? 0,
+    candidates: candidateMap.get(d.id) ?? 0,
+    members: grantMap.get(d.id) ?? 0
+  }));
+
+  const totalDepartments = workspaces.length;
+  const activeDepartments = workspaces.filter((w) => w.isActive).length;
+  const totalJobs = workspaces.reduce((sum, w) => sum + w.jobs, 0);
+  const totalCandidates = workspaces.reduce((sum, w) => sum + w.candidates, 0);
 
   return (
     <SceneShell
@@ -31,122 +67,34 @@ export default async function DepartmentsPage({
       subtitle="Create, activate, and manage hiring workspaces and their configuration."
     >
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          <SignalCard label="Total" value={totalDepartments.toString()} tone="blue" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <SignalCard label="Workspaces" value={`${activeDepartments}/${totalDepartments}`} tone="blue" />
           <SignalCard label="Active" value={activeDepartments.toString()} tone="emerald" />
-          <SignalCard label="Inactive" value={(totalDepartments - activeDepartments).toString()} tone="amber" />
+          <SignalCard label="Open roles" value={totalJobs.toString()} tone="blue" />
+          <SignalCard label="Candidates" value={totalCandidates.toString()} tone="blue" />
         </div>
 
         <StagePanel className="space-y-5">
           {params.created && (
-            <NotificationBanner tone="success">
-              Department created successfully: {params.created}
-            </NotificationBanner>
+            <NotificationBanner tone="success">Workspace created: {params.created}</NotificationBanner>
           )}
-
           {params.updated && (
-            <NotificationBanner tone="success">
-              Department updated successfully: {params.updated}
-            </NotificationBanner>
+            <NotificationBanner tone="success">Workspace updated: {params.updated}</NotificationBanner>
           )}
+          {params.deleted && <NotificationBanner tone="success">Workspace deleted.</NotificationBanner>}
+          {params.error && <NotificationBanner tone="error">{params.error}</NotificationBanner>}
 
-          {params.deleted && (
-            <NotificationBanner tone="success">
-              Department deleted successfully.
-            </NotificationBanner>
-          )}
-
-          {params.error && (
-            <NotificationBanner tone="error">
-              {params.error}
-            </NotificationBanner>
-          )}
-
-          <div className="space-y-5 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-5">
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-[color:var(--app-heading)]">Workspace management</h3>
-              <p className="text-sm text-[color:var(--app-text)]">
-                Workspaces represent hiring departments or operating units. Use them to separate jobs, candidates, assessments, teams, and access.
-              </p>
-              <p className="text-xs text-[color:var(--app-muted)] mt-2">
-                Countries/markets are currently represented in workspace names. A dedicated country model can be added later.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl text-[color:var(--app-heading)]">Workspace directory</h2>
-              <p className="text-sm text-[color:var(--app-muted)]">Manage hiring workspaces, access, and settings.</p>
+              <p className="text-sm text-[color:var(--app-muted)]">
+                Each workspace is a hiring department or operating unit — separate jobs, candidates, assessments, teams, and access.
+              </p>
             </div>
             <DepartmentModal />
           </div>
 
-          <div className="overflow-hidden rounded-[22px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
-            {departments.length === 0 ? (
-              <p className="p-4 text-sm text-[color:var(--app-muted)]">No departments yet.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="border-b border-[color:var(--app-border)] bg-[color:var(--app-table-head)] text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 font-medium">Name</th>
-                      <th scope="col" className="px-4 py-3 font-medium">Status</th>
-                      <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {departments.map((department) => (
-                      <tr
-                        key={department.id}
-                        className="border-t border-[color:var(--app-border)] align-middle transition hover:bg-[color:var(--app-table-row-hover)]"
-                      >
-                        <td className="px-4 py-3">
-                          <Link
-                            href={`/departments/${department.id}`}
-                            className="text-sm font-medium text-[color:var(--app-brand)] hover:underline"
-                          >
-                            {department.name}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-3">
-                          <StatusPill
-                            label={department.isActive ? "Active" : "Inactive"}
-                            tone={department.isActive ? "emerald" : "neutral"}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link href={`/departments/${department.id}`}>
-                              <Button variant="secondary" className="px-3 py-2 text-xs">
-                                Open workspace
-                              </Button>
-                            </Link>
-                            <DepartmentModal mode="edit" department={department} />
-                            {department.isActive ? (
-                              <form action={`/api/departments/${department.id}`} method="post" className="inline">
-                                <input type="hidden" name="action" value="deactivate" />
-                                <Button type="submit" variant="secondary" className="px-3 py-2 text-xs">
-                                  Deactivate
-                                </Button>
-                              </form>
-                            ) : (
-                              <form action={`/api/departments/${department.id}`} method="post" className="inline">
-                                <input type="hidden" name="action" value="activate" />
-                                <Button type="submit" variant="secondary" className="px-3 py-2 text-xs">
-                                  Activate
-                                </Button>
-                              </form>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <WorkspaceDirectory workspaces={workspaces} />
         </StagePanel>
       </div>
     </SceneShell>
