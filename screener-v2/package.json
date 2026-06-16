@@ -28,7 +28,7 @@
     "import:candidates:dry-run": "npx tsx scripts/candidate-import-dry-run.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:deploy": "node scripts/migrate-deploy.mjs",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "vercel-build": "npm run prisma:migrate:deploy && npm run build",
     "deploy:preview": "npx vercel --cwd .. --yes",
     "deploy:prod": "npx vercel --cwd .. --prod --yes"
