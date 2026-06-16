@@ -110,7 +110,7 @@ export function AssignmentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-[201] flex items-center justify-center bg-black/50 p-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-xl">
         <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-6">
           <div>

@@ -255,8 +255,11 @@ export default async function CandidateDetailPage({
 
   const [assignments, departmentCandidacy, offer, emailLogs, candidateAttachments] = await Promise.all([
     activeApplication ? getApplicationAssignments(activeApplication.id) : Promise.resolve([]),
+    // Fetch most recent candidacy regardless of status so team/dept context survives rejection.
+    // Use isActiveCandidacy to gate write operations.
     prisma.departmentCandidacy.findFirst({
-      where: { candidateId: candidate.id, status: "active" },
+      where: { candidateId: candidate.id },
+      orderBy: { updatedAt: "desc" },
       include: {
         department: { select: { id: true, name: true } },
         teamAssignments: {
@@ -307,6 +310,8 @@ export default async function CandidateDetailPage({
       },
     }).catch(() => [] as Array<{ id: string; fileName: string; mimeType: string; sizeBytes: number; storageUrl: string; label: string | null; uploadedAt: Date }>),
   ]);
+
+  const isActiveCandidacy = departmentCandidacy?.status === "active";
 
   const scorecardPanels: ScorecardPanelItem[] = currentTab === "scorecards"
     ? await prisma.interviewPanel.findMany({
@@ -371,13 +376,12 @@ export default async function CandidateDetailPage({
     activeApplication
       ? candidate.departmentId ?? departmentCandidacy?.department.id ?? requestedWorkspaceId
       : departmentCandidacy?.department.id ?? candidate.departmentId ?? requestedWorkspaceId;
-  const offerWorkflowDepartmentId =
-    departmentCandidacy?.department.id ??
-    candidate.departmentCandidacies?.find((c) => c.status === "active")?.departmentId ??
-    candidate.departmentId ??
-    requestedWorkspaceId ??
-    null;
-  const teamOptions = teamDepartmentId
+  // Only wire offer workflow / team edit options when there is an active hiring journey
+  const offerWorkflowDepartmentId = isActiveCandidacy
+    ? (departmentCandidacy?.department.id ?? candidate.departmentId ?? requestedWorkspaceId ?? null)
+    : null;
+  const canEditTeam = canManageCandidate && Boolean(activeApplication || isActiveCandidacy);
+  const teamOptions = (teamDepartmentId && canEditTeam)
     ? await listDepartmentHiringTeamOptions(teamDepartmentId)
     : { templates: [], users: [] };
   const approvalRoute = offerWorkflowDepartmentId
@@ -586,10 +590,21 @@ export default async function CandidateDetailPage({
             </div>
           ) : null}
 
-          {(!hasLinkedJourney || !hasResponsibleTeam) ? (
+          {candidate.stage === "finalized" ? (
+            <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3 text-sm space-y-1">
+              <p className="font-medium text-[color:var(--app-heading)]">
+                {candidate.finalizedAs === "hired" ? "Hired" : "Not moving forward"}
+              </p>
+              <p className="text-[color:var(--app-muted)]">
+                {candidate.finalizedAs === "hired"
+                  ? "This candidate has been marked as hired."
+                  : "This candidate's hiring journey has been closed. Transfer them to a department to re-open their candidacy."}
+              </p>
+            </div>
+          ) : (!hasLinkedJourney || !hasResponsibleTeam) ? (
             <div className="rounded-[16px] border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 space-y-1">
-              {!hasLinkedJourney ? <p>No linked role — add an application or candidacy to begin the hiring process.</p> : null}
-              {!hasResponsibleTeam ? <p>Assign a hiring team to proceed with this candidate.</p> : null}
+              {!hasLinkedJourney ? <p>No active hiring journey — transfer this candidate to a department workspace to begin.</p> : null}
+              {!hasResponsibleTeam && hasLinkedJourney ? <p>No hiring team assigned yet — use the hiring team card below to assign one.</p> : null}
             </div>
           ) : null}
 
@@ -680,14 +695,14 @@ export default async function CandidateDetailPage({
                   permissions={session.permissions}
                 />
 
-                {(activeApplication || teamCount > 0) ? (
+                {(canManageCandidate || teamCount > 0) ? (
                   <ResponsibleTeamCard
                     mode={activeApplication ? "application" : "candidacy"}
                     entityId={activeApplication?.id || departmentCandidacy?.id || ""}
                     assignments={teamAssignments}
                     users={teamOptions.users}
                     templates={teamOptions.templates}
-                    canEdit={canManageCandidate && Boolean(activeApplication || departmentCandidacy)}
+                    canEdit={canEditTeam}
                   />
                 ) : null}
               </div>

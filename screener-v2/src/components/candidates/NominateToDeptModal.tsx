@@ -135,14 +135,14 @@ export function NominateToDeptModal({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm"
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[201] flex items-center justify-center p-4"
           >
             <div className="w-full max-w-md rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-2xl overflow-hidden">
               {/* Header */}
