@@ -35,7 +35,9 @@ const listDepartmentsUncached = async (
   includeInactive = false
 ): Promise<DepartmentRecord[]> => {
   return prisma.department.findMany({
-    where: includeInactive ? {} : { isActive: true },
+    where: includeInactive
+      ? { NOT: { slug: "system" } }
+      : { isActive: true, NOT: { slug: "system" } },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     select: {
       id: true,
