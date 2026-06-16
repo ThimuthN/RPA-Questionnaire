@@ -134,7 +134,7 @@ export function WorkspaceRail({
           "hidden md:sticky md:top-0 md:flex md:h-screen md:max-h-screen md:flex-col"
         )}
       >
-        <div className="flex h-full min-h-full flex-col gap-0 px-4 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-0 px-4 py-5">
           <div className="flex items-center justify-between gap-3 min-h-10">
             <div className={cn("transition-all duration-300", collapsed && "flex-1")}>
               <Link href="/" className="inline-flex transition hover:opacity-95">
@@ -277,7 +277,7 @@ export function WorkspaceRail({
             </nav>
             </div>
 
-            <div className="-mx-4 border-t border-[color:var(--app-rail-divider)] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.10))] px-4 pb-5 pt-4 backdrop-blur-md">
+            <div className="mt-auto -mx-4 shrink-0 border-t border-[color:var(--app-rail-divider)] bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.10))] px-4 pb-5 pt-4 backdrop-blur-md">
               {viewer ? (
                 <div className="space-y-2">
                   <div

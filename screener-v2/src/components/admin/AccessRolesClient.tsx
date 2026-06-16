@@ -1,10 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/primitives/Button';
+import { APP_ACTION_LABELS } from '@/lib/auth/permissions';
 import CreateRoleModal from '@/components/admin/CreateRoleModal';
 import DeleteRoleModal from '@/components/admin/DeleteRoleModal';
 import DuplicateRoleModal from '@/components/admin/DuplicateRoleModal';
 import EditRoleModal from '@/components/admin/EditRoleModal';
+
+const permissionLabel = (key: string) => (APP_ACTION_LABELS as Record<string, string>)[key] ?? key;
 
 type AccessRoleRecord = {
   id: string;
@@ -64,50 +68,72 @@ export default function AccessRolesClient({
     const isProtected = isStronglyProtected(role);
     const grantCount = role.accessGrantCount || 0;
     const permissionCount = role.permissions?.length ?? 0;
+    const inUse = grantCount > 0;
+    const previewPerms = (role.permissions ?? []).slice(0, 3);
+    const extraPerms = permissionCount - previewPerms.length;
 
     return (
-      <div className="space-y-3 rounded-lg border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 transition hover:border-[color:var(--app-border-hover)]">
-        <div className="flex items-start justify-between">
-          <div>
-            <h4 className="font-medium text-[color:var(--app-heading)]">{role.label}</h4>
-            <p className="text-xs text-[color:var(--app-muted)]">{role.slug}</p>
+      <div className="flex h-full flex-col gap-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] p-4 transition hover:border-[color:var(--app-border-strong)] hover:shadow-[var(--app-shadow-soft)]">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="truncate font-semibold text-[color:var(--app-heading)]">{role.label}</h4>
+            <p className="truncate text-xs text-[color:var(--app-muted)]">{role.slug}</p>
           </div>
           {isProtected ? (
-            <span className="rounded bg-red-500/10 px-2 py-1 text-xs text-red-600">System Protected</span>
+            <span className="shrink-0 rounded-full border border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--pill-amber-text)]">
+              Protected
+            </span>
+          ) : inUse ? (
+            <span className="shrink-0 rounded-full bg-[color:var(--app-surface-soft)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--app-muted)]" title={`${grantCount} user${grantCount !== 1 ? 's' : ''} hold this role`}>
+              In use · {grantCount}
+            </span>
           ) : null}
         </div>
 
-        {role.description ? <p className="text-sm text-[color:var(--app-text)]">{role.description}</p> : null}
+        {role.description ? (
+          <p className="text-sm leading-6 text-[color:var(--app-muted)]">{role.description}</p>
+        ) : null}
 
-        <div className="flex items-center justify-between border-t border-[color:var(--app-border)] pt-2">
-          <div className="text-xs text-[color:var(--app-muted)]">
+        {/* Permission preview — visibility into what the role actually grants */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          {permissionCount === 0 ? (
+            <span className="text-xs text-[color:var(--app-muted)]">No permissions</span>
+          ) : (
+            <>
+              {previewPerms.map((p) => (
+                <span key={p} className="rounded-full bg-[color:var(--app-surface-soft)] px-2 py-0.5 text-[11px] text-[color:var(--app-text)]">
+                  {permissionLabel(p)}
+                </span>
+              ))}
+              {extraPerms > 0 ? (
+                <span className="text-[11px] text-[color:var(--app-muted)]">+{extraPerms} more</span>
+              ) : null}
+            </>
+          )}
+        </div>
+
+        {/* Footer pinned to bottom so cards in a row align regardless of description length */}
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-[color:var(--app-border)] pt-3">
+          <span className="text-xs text-[color:var(--app-muted)]">
             {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
-            {grantCount > 0 ? ` · ${grantCount} active grant${grantCount !== 1 ? 's' : ''}` : ''}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setEditingRole(role)}
-              disabled={isProtected}
-              className="rounded bg-[color:var(--app-button-bg)] px-3 py-1 text-xs text-[color:var(--app-button-text)] transition hover:bg-[color:var(--app-button-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-              type="button"
-            >
+          </span>
+          <div className="flex gap-1.5">
+            <Button type="button" variant="secondary" className="px-2.5 py-1.5 text-xs" disabled={isProtected} onClick={() => setEditingRole(role)}>
               Edit
-            </button>
-            <button
-              onClick={() => setDuplicatingRole(role)}
-              className="rounded bg-[color:var(--app-button-bg)] px-3 py-1 text-xs text-[color:var(--app-button-text)] transition hover:bg-[color:var(--app-button-hover)]"
-              type="button"
-            >
+            </Button>
+            <Button type="button" variant="ghost" className="px-2.5 py-1.5 text-xs" onClick={() => setDuplicatingRole(role)}>
               Duplicate
-            </button>
-            <button
-              onClick={() => setDeletingRole(role)}
-              disabled={isProtected}
-              className="rounded bg-red-500/10 px-3 py-1 text-xs text-red-600 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
+              className="px-2.5 py-1.5 text-xs text-[color:var(--app-danger)] hover:bg-[color:var(--app-danger-soft)]"
+              disabled={isProtected || inUse}
+              title={inUse ? `In use by ${grantCount} user${grantCount !== 1 ? 's' : ''} — reassign before deleting` : isProtected ? "System-protected role" : undefined}
+              onClick={() => setDeletingRole(role)}
             >
               Delete
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -116,18 +142,16 @@ export default function AccessRolesClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-medium text-[color:var(--app-heading)]">Access Roles</h1>
-          <p className="mt-1 text-sm text-[color:var(--app-muted)]">Manage system and custom access roles for your workspace.</p>
+          <p className="mt-1 text-sm text-[color:var(--app-muted)]">
+            Manage system and custom access roles{roles.length > 0 ? ` · ${roles.length} total` : ""}.
+          </p>
         </div>
-        <button
-          onClick={() => setCreateModalOpen(true)}
-          className="rounded-lg bg-[color:var(--app-primary)] px-4 py-2 text-white transition hover:bg-[color:var(--app-primary-hover)]"
-          type="button"
-        >
+        <Button type="button" onClick={() => setCreateModalOpen(true)}>
           + New Role
-        </button>
+        </Button>
       </div>
 
       {roles.length === 0 ? (
