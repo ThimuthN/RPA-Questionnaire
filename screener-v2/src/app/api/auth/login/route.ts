@@ -17,6 +17,7 @@ import {
   logRouteError,
   messageFromError
 } from "@/lib/server/logger";
+import { logAudit } from "@/lib/auth/audit";
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -48,6 +49,15 @@ export async function POST(request: Request) {
     const session = await authenticateAppUser(body.email, body.password);
 
     if (!session) {
+      void logAudit({
+        action: "user_login_failed",
+        actorId: null,
+        actorEmail: body.email,
+        targetId: body.email,
+        targetType: "user",
+        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+        userAgent: request.headers.get("user-agent")
+      }).catch(() => undefined);
       if (isFormRequest(request)) {
         const url = new URL("/login", request.url);
         url.searchParams.set("error", "Invalid email or password.");
@@ -85,6 +95,16 @@ export async function POST(request: Request) {
             data: { lastUsedAt: new Date() }
           });
 
+          void logAudit({
+            action: "user_login",
+            actorId: session.userId,
+            actorEmail: session.email,
+            targetId: session.userId!,
+            targetType: "user",
+            after: { method: "password+trusted_device" },
+            ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+            userAgent: request.headers.get("user-agent")
+          }).catch(() => undefined);
           const token = await createSessionToken({
             userId: session.userId,
             email: session.email,
@@ -116,6 +136,16 @@ export async function POST(request: Request) {
     }
 
     // No MFA — issue full session directly
+    void logAudit({
+      action: "user_login",
+      actorId: session.userId,
+      actorEmail: session.email,
+      targetId: session.userId!,
+      targetType: "user",
+      after: { method: "password" },
+      ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+      userAgent: request.headers.get("user-agent")
+    }).catch(() => undefined);
     const token = await createSessionToken({
       userId: session.userId,
       email: session.email,
