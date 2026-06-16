@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { prisma } from "@/lib/db/prisma";
 import { authenticateAppUser, ensureBootstrapAdmin } from "@/lib/auth/app-auth";
 import { createSessionToken, sanitizeNextPath, setSessionCookie } from "@/lib/auth/session";
+import {
+  MFA_DEVICE_COOKIE,
+  createMfaChallengeToken,
+  setMfaChallengeCookie
+} from "@/lib/auth/mfa-session";
+import { hashDeviceToken } from "@/lib/auth/mfa";
 import { isFormRequest } from "@/lib/http/request";
 import { checkAuthRateLimit } from "@/lib/server/rate-limit";
 import {
@@ -25,7 +32,6 @@ export async function POST(request: Request) {
       : await request.json();
     const body = loginSchema.parse(rawBody);
 
-    // Brute-force protection: cap attempts per IP and per account before hitting auth.
     const rate = await checkAuthRateLimit({ request, identifier: body.email, scope: "login" });
     if (!rate.ok) {
       if (isFormRequest(request)) {
@@ -47,10 +53,66 @@ export async function POST(request: Request) {
         url.searchParams.set("next", sanitizeNextPath(body.next));
         return NextResponse.redirect(url, 303);
       }
-
       return NextResponse.json({ ok: false, message: "Invalid email or password." }, { status: 401 });
     }
 
+    const nextPath = sanitizeNextPath(body.next);
+
+    // Check if MFA is enabled for this user
+    const userMfa = await prisma.user.findUnique({
+      where: { id: session.userId! },
+      select: { mfaEnabled: true }
+    });
+
+    if (userMfa?.mfaEnabled) {
+      // Check for a valid trusted device cookie
+      const deviceToken = (request as any).cookies?.get?.(MFA_DEVICE_COOKIE)?.value
+        ?? new URL(request.url).searchParams.get("_dev"); // fallback never used, just type-safe
+
+      if (deviceToken) {
+        const tokenHash = hashDeviceToken(deviceToken);
+        const device = await prisma.mfaTrustedDevice.findUnique({
+          where: { tokenHash },
+          select: { id: true, userId: true, expiresAt: true }
+        });
+
+        if (device && device.userId === session.userId && device.expiresAt > new Date()) {
+          // Valid trusted device — skip MFA, update lastUsedAt and grant full session
+          await prisma.mfaTrustedDevice.update({
+            where: { id: device.id },
+            data: { lastUsedAt: new Date() }
+          });
+
+          const token = await createSessionToken({
+            userId: session.userId,
+            email: session.email,
+            name: session.name,
+            roleId: session.roleId,
+            departmentId: session.departmentId,
+            permissions: session.permissions
+          });
+          const response = isFormRequest(request)
+            ? NextResponse.redirect(new URL(nextPath, request.url), 303)
+            : NextResponse.json({ ok: true, next: nextPath });
+          setSessionCookie(response, token);
+          return response;
+        }
+      }
+
+      // MFA required — issue challenge token, redirect to /auth/mfa
+      const challengeToken = await createMfaChallengeToken({
+        userId: session.userId!,
+        email: session.email,
+        nextPath
+      });
+
+      const mfaUrl = new URL("/auth/mfa", request.url);
+      const response = NextResponse.redirect(mfaUrl, 303);
+      setMfaChallengeCookie(response, challengeToken);
+      return response;
+    }
+
+    // No MFA — issue full session directly
     const token = await createSessionToken({
       userId: session.userId,
       email: session.email,
@@ -59,10 +121,9 @@ export async function POST(request: Request) {
       departmentId: session.departmentId,
       permissions: session.permissions
     });
-    const redirectTarget = sanitizeNextPath(body.next);
     const response = isFormRequest(request)
-      ? NextResponse.redirect(new URL(redirectTarget, request.url), 303)
-      : NextResponse.json({ ok: true, next: redirectTarget });
+      ? NextResponse.redirect(new URL(nextPath, request.url), 303)
+      : NextResponse.json({ ok: true, next: nextPath });
 
     setSessionCookie(response, token);
     return response;

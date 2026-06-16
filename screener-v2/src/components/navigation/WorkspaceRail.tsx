@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronDown, LogIn, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { AppLogo } from "@/components/brand/AppLogo";
 import { WorkspaceSelector, type Department } from "@/components/navigation/WorkspaceSelector";
 import { WorkspaceSubnav } from "@/components/navigation/WorkspaceSubnav";
@@ -311,6 +311,23 @@ export function WorkspaceRail({
                             {hasAdminWorkspace ? "Administrator" : "Member"}
                           </p>
                         </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="group/tip relative">
+                    <Link
+                      href="/account/security"
+                      className={cn(
+                        "inline-flex w-full items-center rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-sm text-[color:var(--app-heading)] shadow-[var(--app-shadow-soft)] transition-all duration-200 hover:bg-[color:var(--app-surface-soft)] mb-1.5",
+                        collapsed ? "justify-center p-3" : "gap-2 px-4 py-2.5"
+                      )}
+                    >
+                      <ShieldCheck className="h-4 w-4 shrink-0" />
+                      <span className={cn("transition-all duration-200", collapsed ? "hidden" : "block")}>Security</span>
+                    </Link>
+                    {collapsed && (
+                      <div role="tooltip" className="pointer-events-none absolute left-full top-1/2 z-[200] ml-3 -translate-y-1/2 whitespace-nowrap rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-2.5 py-1.5 text-xs font-medium text-[color:var(--app-heading)] opacity-0 shadow-xl transition-opacity duration-100 group-hover/tip:opacity-100">
+                        Security
                       </div>
                     )}
                   </div>

@@ -89,6 +89,10 @@ model User {
   passwordHash            String?
   isActive                Boolean               @default(true)
   lastLoginAt             DateTime?
+  mfaEnabled              Boolean               @default(false)
+  mfaSecret               String?
+  mfaBackupCodes          String?
+  mfaEnrolledAt           DateTime?
   createdAt               DateTime              @default(now())
   updatedAt               DateTime              @updatedAt
   dept                    Department?           @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -108,6 +112,7 @@ model User {
   offerApprovalChainSteps       OfferApprovalChainStep[] @relation("OfferApprovalChainStepApprover")
   offerApprovalSteps            OfferApprovalStep[] @relation("OfferApprovalStepApprover")
   notifications                 AppNotification[]
+  mfaTrustedDevices             MfaTrustedDevice[]
 
   @@index([departmentId])
   @@index([roleId])
@@ -1014,11 +1019,27 @@ model AuditLog {
   targetType String
   before     Json?
   after      Json?
+  ipAddress  String?
+  userAgent  String?
   createdAt  DateTime @default(now())
 
   @@index([targetId, targetType])
   @@index([actorId])
   @@index([createdAt])
+}
+
+model MfaTrustedDevice {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String   @unique
+  deviceLabel String?
+  lastUsedAt  DateTime @default(now())
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model HiringTeamTemplate {

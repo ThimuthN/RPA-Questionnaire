@@ -5,6 +5,7 @@ const authRequiredPrefixes = [
   "/people",
   "/results",
   "/users",
+  "/account",
   "/api/candidates",
   "/api/candidate-applications",
   "/api/results",
@@ -14,7 +15,11 @@ const authRequiredPrefixes = [
   "/api/users",
   "/api/roles",
   "/api/addons",
-  "/api/addon-presets"
+  "/api/addon-presets",
+  "/api/auth/mfa/setup",
+  "/api/auth/mfa/disable",
+  "/api/auth/mfa/devices",
+  "/api/auth/mfa/admin-reset"
 ] as const;
 
 const adminOnlyPrefixes = ["/users", "/api/users"] as const;
