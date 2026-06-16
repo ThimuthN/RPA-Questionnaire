@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: result.userId },
-      select: { id: true, email: true, name: true, roleId: true, departmentId: true, isActive: true }
+      select: { id: true, email: true, name: true, roleId: true, departmentId: true, isActive: true, sessionVersion: true }
     });
     if (!user || !user.isActive) {
       return NextResponse.json({ ok: false, message: "Account is not available." }, { status: 400 });
@@ -59,7 +59,8 @@ export async function POST(request: Request) {
       name: user.name,
       roleId: user.roleId,
       departmentId: user.departmentId,
-      permissions
+      permissions,
+      sv: user.sessionVersion
     });
 
     const response = NextResponse.json({ ok: true, next: "/" });

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/prisma";
 import { issueUserAuthToken } from "@/lib/auth/user-tokens";
 import { sendEmailSafe, passwordResetEmail, getOrgName, getAppUrl } from "@/lib/email";
 import { checkAuthRateLimit } from "@/lib/server/rate-limit";
+import { logError } from "@/lib/server/logger";
 
 const schema = z.object({ email: z.string().email() });
 
@@ -36,7 +37,9 @@ export async function POST(request: Request) {
         resetUrl,
         expiresAt
       });
-      void sendEmailSafe({ to: email, subject, html, template: "password_reset" });
+      sendEmailSafe({ to: email, subject, html, template: "password_reset" }).catch((err: unknown) => {
+        logError("password_reset_email_failed", { email, error: err instanceof Error ? err.message : String(err) });
+      });
     }
 
     return NextResponse.json(OK);

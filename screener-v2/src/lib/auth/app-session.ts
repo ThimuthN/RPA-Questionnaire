@@ -23,6 +23,8 @@ export async function getAppSession(): Promise<AppSession | null> {
       name: true,
       roleId: true,
       departmentId: true,
+      isActive: true,
+      sessionVersion: true,
       accessGrants: {
         where: { status: "active" },
         select: {
@@ -42,7 +44,14 @@ export async function getAppSession(): Promise<AppSession | null> {
     }
   });
 
-  if (!user) {
+  if (!user || !user.isActive) {
+    return null;
+  }
+
+  // Revocation check: if the token carries a session version, it must match the
+  // current value in the DB. A mismatch means the session was invalidated (password
+  // reset, admin deactivation). Old tokens without sv pass through until they expire.
+  if (typeof session.sv === "number" && session.sv !== user.sessionVersion) {
     return null;
   }
 

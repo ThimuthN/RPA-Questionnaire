@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { getKitForPanel } from "@/lib/db/interview-kits";
 import { createNotification } from "@/lib/notifications/service";
 import { competencyRatingSchema, parseCompetencyJson } from "@/lib/jobs/json-schemas";
+import { logError } from "@/lib/server/logger";
 
 const feedbackSchema = z.object({
   overallRating: z.number().int().min(1).max(5).nullable().optional(),
@@ -126,7 +127,9 @@ export async function POST(
         entityType: "candidate",
         entityId: panel.candidateId,
         entityHref: `/people/candidates/${panel.candidateId}`,
-      }).catch(() => undefined);
+      }).catch((err: unknown) => {
+        logError("scorecard_notification_failed", { panelId, hrOwnerId, error: err instanceof Error ? err.message : String(err) });
+      });
     }
 
     return NextResponse.json({ ok: true, feedbackId: feedback.id });

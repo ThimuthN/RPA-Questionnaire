@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     // Check if MFA is enabled for this user
     const userMfa = await prisma.user.findUnique({
       where: { id: session.userId! },
-      select: { mfaEnabled: true }
+      select: { mfaEnabled: true, sessionVersion: true }
     });
 
     if (userMfa?.mfaEnabled) {
@@ -91,7 +91,8 @@ export async function POST(request: Request) {
             name: session.name,
             roleId: session.roleId,
             departmentId: session.departmentId,
-            permissions: session.permissions
+            permissions: session.permissions,
+            sv: userMfa?.sessionVersion ?? session.sv
           });
           const response = isFormRequest(request)
             ? NextResponse.redirect(new URL(nextPath, request.url), 303)
@@ -121,7 +122,8 @@ export async function POST(request: Request) {
       name: session.name,
       roleId: session.roleId,
       departmentId: session.departmentId,
-      permissions: session.permissions
+      permissions: session.permissions,
+      sv: session.sv
     });
     const response = isFormRequest(request)
       ? NextResponse.redirect(new URL(nextPath, request.url), 303)

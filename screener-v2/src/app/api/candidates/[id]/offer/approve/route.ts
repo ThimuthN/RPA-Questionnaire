@@ -59,7 +59,9 @@ export async function POST(
       bodyHtml: `An offer for <strong>${offer.candidate.fullName}</strong> requires your approval. Please log in to review and approve or reject it.`,
       subject: nextApproverEmailSubject,
     });
-    void sendEmailSafe({ to: next.approver.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined });
+    sendEmailSafe({ to: next.approver.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined }).catch((err: unknown) => {
+      logError("offer_approval_email_failed", { candidateId: id, approverEmail: next.approver.email, error: err instanceof Error ? err.message : String(err) });
+    });
     await prisma.candidateActivityEvent.create({
       data: {
         candidateId: id,

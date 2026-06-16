@@ -23,6 +23,7 @@ import { CANDIDATE_PRIVACY_POLICY_VERSION } from "@/lib/legal/site-policy";
 import { sendEmailSafe, applicationReceivedEmail, getOrgName } from "@/lib/email";
 import { createNotificationForMany } from "@/lib/notifications/service";
 import { prisma } from "@/lib/db/prisma";
+import { logError } from "@/lib/server/logger";
 
 const SOURCE_VALUES: PublicApplicationSource[] = [
   "direct", "linkedin", "job_board", "referral", "agency", "other"
@@ -172,12 +173,14 @@ export async function POST(
         day: "numeric"
       })
     });
-    void sendEmailSafe({
+    sendEmailSafe({
       to: body.email,
       subject,
       html,
       template: "application_received",
       candidateId: submission.candidateId
+    }).catch((err: unknown) => {
+      logError("application_received_email_failed", { email: body.email, candidateId: submission.candidateId, error: err instanceof Error ? err.message : String(err) });
     });
 
     // Notify hiring team members in the job's department
@@ -210,8 +213,8 @@ export async function POST(
               entityHref: `/people/candidates/${submission.candidateId}`,
             });
           }
-        } catch {
-          // fire-and-forget: never block the redirect on notification failure
+        } catch (err: unknown) {
+          logError("new_applicant_notification_failed", { candidateId: submission.candidateId, error: err instanceof Error ? err.message : String(err) });
         }
       })();
     }

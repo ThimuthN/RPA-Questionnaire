@@ -183,7 +183,8 @@ export async function authenticateAppUser(email: string, password: string): Prom
       roleId: true,
       departmentId: true,
       passwordHash: true,
-      isActive: true
+      isActive: true,
+      sessionVersion: true
     }
   });
 
@@ -210,6 +211,7 @@ export async function authenticateAppUser(email: string, password: string): Prom
     roleId: user.roleId,
     departmentId: user.departmentId,
     permissions,
+    sv: user.sessionVersion,
     exp: 0
   };
 }
@@ -360,7 +362,7 @@ export async function updateAppUser(input: {
 export async function deactivateAppUser(userId: string, actor?: AuditActor) {
   const updated = await prisma.user.update({
     where: { id: userId },
-    data: { isActive: false },
+    data: { isActive: false, sessionVersion: { increment: 1 } },
     select: {
       id: true,
       email: true,

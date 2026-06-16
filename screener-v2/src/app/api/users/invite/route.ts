@@ -7,6 +7,7 @@ import { validateAssignableAccessRole } from "@/lib/auth/access-roles";
 import { issueUserAuthToken } from "@/lib/auth/user-tokens";
 import { sendEmailSafe, userInviteEmail, getOrgName, getAppUrl } from "@/lib/email";
 import { prisma } from "@/lib/db/prisma";
+import { logError } from "@/lib/server/logger";
 
 const inviteSchema = z.object({
   name: z.string().optional(),
@@ -90,7 +91,9 @@ export async function POST(request: Request) {
       acceptUrl,
       expiresAt
     });
-    void sendEmailSafe({ to: email, subject, html, template: "user_invite" });
+    sendEmailSafe({ to: email, subject, html, template: "user_invite" }).catch((err: unknown) => {
+      logError("invite_email_failed", { email, error: err instanceof Error ? err.message : String(err) });
+    });
 
     // Return the link so the admin can copy/share it directly (useful when
     // outbound email isn't configured yet).

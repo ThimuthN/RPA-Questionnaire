@@ -61,7 +61,8 @@ export async function POST(request: Request) {
         isActive: true,
         mfaEnabled: true,
         mfaSecret: true,
-        mfaBackupCodes: true
+        mfaBackupCodes: true,
+        sessionVersion: true
       }
     });
 
@@ -131,7 +132,8 @@ export async function POST(request: Request) {
       name: user.name,
       roleId: user.roleId,
       departmentId: user.departmentId,
-      permissions
+      permissions,
+      sv: user.sessionVersion
     });
 
     const response = NextResponse.redirect(new URL(challenge.nextPath, request.url), 303);

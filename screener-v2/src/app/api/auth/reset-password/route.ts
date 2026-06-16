@@ -21,7 +21,10 @@ export async function POST(request: Request) {
 
     const user = await prisma.user.update({
       where: { id: result.userId },
-      data: { passwordHash: hashPassword(body.password) },
+      data: {
+        passwordHash: hashPassword(body.password),
+        sessionVersion: { increment: 1 }
+      },
       select: { id: true, email: true }
     });
 

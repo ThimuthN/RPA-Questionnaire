@@ -17,6 +17,7 @@ export type AppSession = {
   departmentId: string | null;
   permissions: string[];
   exp: number;
+  sv?: number; // session version — absent on old tokens, present on all new ones
 };
 
 function getSessionSecret() {

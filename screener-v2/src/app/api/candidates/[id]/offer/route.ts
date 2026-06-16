@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { sendEmailSafe, offerSentEmail, adHocEmail, getOrgName } from "@/lib/email";
+import { logError } from "@/lib/server/logger";
 
 const offerSchema = z.object({
   action: z.enum(["upsert", "send", "revoke", "submit_for_approval"]),
@@ -221,7 +222,9 @@ export async function POST(
           bodyHtml: `An offer for <strong>${candidate.fullName}</strong> has been submitted for your approval. Please log in to review and approve or reject it.`,
           subject: approvalEmailSubject,
         });
-        void sendEmailSafe({ to: firstApprover.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined });
+        sendEmailSafe({ to: firstApprover.email, subject, html, template: "ad_hoc", sentById: auth.session.userId ?? undefined }).catch((err: unknown) => {
+          logError("offer_approver_email_failed", { candidateId: id, approverEmail: firstApprover.email, error: err instanceof Error ? err.message : String(err) });
+        });
       }
 
       const updated = await prisma.candidateOffer.findUnique({
@@ -290,7 +293,7 @@ export async function POST(
         recruiterName: auth.session.name ?? undefined,
         recruiterEmail: auth.session.email ?? undefined,
       });
-      void sendEmailSafe({
+      sendEmailSafe({
         to: candidate.email,
         cc: ccEmails,
         subject,
@@ -299,6 +302,8 @@ export async function POST(
         candidateId: id,
         sentById: auth.session.userId ?? undefined,
         departmentId: effectiveDepartmentId ?? undefined
+      }).catch((err: unknown) => {
+        logError("offer_sent_email_failed", { candidateId: id, error: err instanceof Error ? err.message : String(err) });
       });
 
       await logOfferActivity({
