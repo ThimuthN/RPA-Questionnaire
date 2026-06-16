@@ -65,4 +65,7 @@ DB-backed tests intentionally refuse to use `.env` or `.env.local`.
   - run `npm run prisma:generate`
 - `npm run dev` now checks Prisma Client generation before starting. If it stops with a Prisma engine lock error, close the other Node/Next process first.
 
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for the exact Neon + Vercel steps.
+## Documentation
+- Current release status and remaining work: [docs/RELEASE_READINESS_BACKLOG.md](./docs/RELEASE_READINESS_BACKLOG.md)
+- Documentation map: [docs/README.md](./docs/README.md)
+- Deployment steps: [DEPLOYMENT.md](./DEPLOYMENT.md)

@@ -1,5 +1,7 @@
 # Deployment Guide — Northstar Hiring OS v1
 
+> Current release status is owned by `docs/RELEASE_READINESS_BACKLOG.md`. This file is the deployment runbook, not the canonical readiness tracker.
+
 **Last Updated:** 2026-06-01  
 **Release:** Batch 15X  
 **Status:** Ready for deployment
