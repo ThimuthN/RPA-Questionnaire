@@ -1,11 +1,11 @@
-import { StagePanel } from "@/components/scene/StagePanel";
+import { BrandLoader } from "@/components/brand/BrandLoader";
 
 export default function ResultsLoading() {
   return (
-    <section className="space-y-4">
-      <StagePanel>
-        <p className="text-[color:var(--app-text)]">Loading results...</p>
-      </StagePanel>
-    </section>
+    <BrandLoader
+      title="Loading results"
+      subtitle="Gathering assessment outcomes and candidate decisions."
+      minHeight="min-h-[60vh]"
+    />
   );
 }
