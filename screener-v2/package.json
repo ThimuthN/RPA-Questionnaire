@@ -29,7 +29,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "vercel-build": "npm run prisma:migrate:deploy && npm run build",
+    "vercel-build": "npm run build",
     "deploy:preview": "npx vercel --cwd .. --yes",
     "deploy:prod": "npx vercel --cwd .. --prod --yes"
   },
