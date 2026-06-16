@@ -1093,6 +1093,13 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   const screeningPackage = resolveApplicationScreeningPackageFromPreset(job.screenerPreset);
   const screeningAnswers = normalizeApplicationScreeningAnswerMap(input.screeningAnswers);
 
+  // A candidate's workspace scoping comes from the job's department. Prefer the
+  // role's department, but fall back to the JobPosting.departmentId column so a
+  // job whose role isn't bound to a department still scopes its applicants
+  // correctly (otherwise the candidate gets a null department and is invisible
+  // in every department workspace pipeline after being moved to pipeline).
+  const applyDepartmentId = job.role?.departmentId ?? job.departmentId ?? undefined;
+
   const normalizedEmail = input.email.trim().toLowerCase();
   let existingCandidate = await findExistingCandidateByEmail(normalizedEmail);
 
@@ -1138,17 +1145,17 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
           linkedInUrl: input.linkedInUrl?.trim() || undefined,
           salaryExpectation: input.salaryExpectation?.trim() || undefined,
           roleId: job.roleId ?? undefined,
-          departmentId: job.role?.departmentId ?? undefined,
+          departmentId: applyDepartmentId,
           positionAppliedFor: job.title
         }
       });
 
-      if (job.role?.departmentId) {
+      if (applyDepartmentId) {
         await tx.departmentCandidacy.upsert({
           where: {
             candidateId_departmentId: {
               candidateId,
-              departmentId: job.role.departmentId
+              departmentId: applyDepartmentId
             }
           },
           update: {
@@ -1159,7 +1166,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
           create: {
             id: cuidLike(),
             candidateId,
-            departmentId: job.role.departmentId,
+            departmentId: applyDepartmentId,
             roleId: job.roleId,
             status: "active",
             source: "job_application",
@@ -1201,12 +1208,17 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
   const profileSeed = deriveCandidateProfileSeedFromScreening(screeningEvaluation);
 
   const application = await prisma.$transaction(async (tx) => {
-    if (profileSeed.location || profileSeed.salaryExpectation) {
+    // Only backfill from screening answers when the applicant left the field
+    // blank — never overwrite what they explicitly typed (that made the profile
+    // look out of sync with the application).
+    const seedLocation = !input.location?.trim() ? profileSeed.location?.trim() : undefined;
+    const seedSalary = !input.salaryExpectation?.trim() ? profileSeed.salaryExpectation?.trim() : undefined;
+    if (seedLocation || seedSalary) {
       await tx.candidate.update({
         where: { id: existingCandidate.id },
         data: {
-          location: profileSeed.location?.trim() || undefined,
-          salaryExpectation: profileSeed.salaryExpectation?.trim() || undefined
+          ...(seedLocation ? { location: seedLocation } : {}),
+          ...(seedSalary ? { salaryExpectation: seedSalary } : {})
         }
       });
     }
@@ -1575,6 +1587,26 @@ export async function updateCandidateApplicationLifecycle(input: {
     }
 
     if (input.action === "promote") {
+      // Resolve the candidate's department from the job so promotion never leaves
+      // a candidate unscoped — a null departmentId makes them invisible in every
+      // department workspace pipeline. Prefer the candidate's existing department,
+      // then the job role's, then the JobPosting.departmentId column.
+      const context = await tx.candidateApplication.findUnique({
+        where: { id: input.applicationId },
+        select: {
+          jobPostingId: true,
+          candidate: { select: { departmentId: true, roleId: true } },
+          jobPosting: {
+            select: { departmentId: true, roleId: true, role: { select: { departmentId: true } } }
+          }
+        }
+      });
+      const resolvedDepartmentId =
+        context?.candidate?.departmentId
+        ?? context?.jobPosting?.role?.departmentId
+        ?? context?.jobPosting?.departmentId
+        ?? null;
+
       await tx.candidateApplication.update({
         where: { id: input.applicationId },
         data: {
@@ -1586,9 +1618,36 @@ export async function updateCandidateApplicationLifecycle(input: {
         where: { id: application.candidateId },
         data: {
           hrOwner: input.hrOwner?.trim() || undefined,
-          stage: "pipeline"
+          stage: "pipeline",
+          // Defensive: the pipeline view filters orgStage="active"; never let a
+          // promoted candidate get stranded with a stale non-active orgStage.
+          orgStage: "active",
+          ...(resolvedDepartmentId ? { departmentId: resolvedDepartmentId } : {})
         }
       });
+
+      // Guarantee an active candidacy so the candidate appears in the department
+      // workspace and team/candidacy linkage resolves.
+      if (resolvedDepartmentId) {
+        await tx.departmentCandidacy.upsert({
+          where: {
+            candidateId_departmentId: {
+              candidateId: application.candidateId,
+              departmentId: resolvedDepartmentId
+            }
+          },
+          update: { status: "active", updatedAt: new Date() },
+          create: {
+            id: cuidLike(),
+            candidateId: application.candidateId,
+            departmentId: resolvedDepartmentId,
+            roleId: context?.candidate?.roleId ?? context?.jobPosting?.roleId ?? null,
+            status: "active",
+            source: "job_application",
+            jobPostingId: context?.jobPostingId ?? null
+          }
+        });
+      }
     }
 
     return application;
