@@ -12,6 +12,8 @@ export function validateProfileStep(vals: {
   fullName: string;
   email: string;
   phone: string;
+  salaryExpectation: string;
+  source: string;
 }): string | null {
   const name = vals.fullName.trim();
   if (name.length < FULL_NAME_MIN) return "Full name is required (at least 2 characters).";
@@ -21,6 +23,8 @@ export function validateProfileStep(vals: {
   if (em.length > EMAIL_MAX) return "Email address is too long.";
   if (!EMAIL_RE.test(em)) return "Please enter a valid email address.";
   if (vals.phone.trim().length > PHONE_MAX) return "Phone number is too long.";
+  if (!vals.salaryExpectation.trim()) return "Salary expectation is required.";
+  if (!vals.source) return "Please tell us how you heard about us.";
   return null;
 }
 

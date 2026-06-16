@@ -40,7 +40,7 @@ type FormValues = {
 };
 
 const SOURCE_OPTIONS: { value: string; label: string }[] = [
-  { value: "", label: "How did you hear about us? (optional)" },
+  { value: "", label: "Select an option" },
   { value: "direct", label: "Company website" },
   { value: "linkedin", label: "LinkedIn" },
   { value: "job_board", label: "Job board" },
@@ -222,7 +222,13 @@ export function JobApplicationForm({
 
   function advance() {
     if (step === 0) {
-      const error = validateProfileStep(values);
+      const error = validateProfileStep({
+        fullName: values.fullName,
+        email: values.email,
+        phone: values.phone,
+        salaryExpectation: values.salaryExpectation,
+        source: values.source,
+      });
       if (error) {
         setStepError(error);
         return;
