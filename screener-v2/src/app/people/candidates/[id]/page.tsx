@@ -44,6 +44,7 @@ import { listDepartmentHiringTeamOptions } from "@/lib/db/hiring-team-templates"
 import { prisma } from "@/lib/db/prisma";
 import { getDepartmentWorkflowChannelState } from "@/lib/integrations/service";
 import { isActiveApplicationStatus } from "@/lib/jobs/types";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -67,11 +68,6 @@ function parseProfileTab(value?: string | null): CandidateProfileTab {
   // migrate old tab keys (overview was renamed to pipeline internally)
   if (value === "progress") return "pipeline";
   return profileTabs.some((t) => t.key === value) ? (value as CandidateProfileTab) : "pipeline";
-}
-
-function safeLocalPath(value?: string | null) {
-  if (!value || !value.startsWith("/")) return undefined;
-  return value;
 }
 
 function safeExternalUrl(value?: string | null) {

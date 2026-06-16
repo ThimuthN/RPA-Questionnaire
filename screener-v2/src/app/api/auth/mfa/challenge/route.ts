@@ -22,9 +22,17 @@ import { getEffectivePermissions } from "@/lib/auth/permission-evaluator";
 import { logAudit } from "@/lib/auth/audit";
 import { checkAuthRateLimit } from "@/lib/server/rate-limit";
 
+const trustDeviceSchema = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "on" || normalized === "1";
+  }
+  return value;
+}, z.boolean().optional().default(false));
+
 const schema = z.object({
   code: z.string().min(1).max(20),
-  trustDevice: z.boolean().optional().default(false)
+  trustDevice: trustDeviceSchema
 });
 
 export async function POST(request: Request) {

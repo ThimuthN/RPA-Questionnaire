@@ -93,4 +93,24 @@ describe("job-posting-form-state", () => {
       })
     });
   });
+
+  it("clamps restored draft steps when a maximum step is provided", () => {
+    const draft = normalizeStoredJobPostingDraft(
+      {
+        step: 5,
+        values: {
+          title: "Recovered title"
+        }
+      },
+      baseValues,
+      { maxStep: 4 }
+    );
+
+    expect(draft).toEqual({
+      step: 4,
+      values: expect.objectContaining({
+        title: "Recovered title"
+      })
+    });
+  });
 });

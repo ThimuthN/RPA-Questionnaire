@@ -7,29 +7,25 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import XLSX from "xlsx";
 import path from "path";
+import readXlsxFile from "read-excel-file/node";
 
 const prisma = new PrismaClient();
 
 async function importDesignations() {
   try {
-    // Find spreadsheet
     const spreadsheetPath = path.join(
       process.env.HOME || process.env.USERPROFILE || "C:\\Users\\USER",
       "Downloads",
       "Designations - Staff Growth - Agust 18th 9.xlsx"
     );
 
-    console.log(`📂 Reading: ${spreadsheetPath}`);
-    const workbook = XLSX.readFile(spreadsheetPath);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    console.log(`Reading: ${spreadsheetPath}`);
+    const rows = (await readXlsxFile(spreadsheetPath)) as unknown as Array<Array<unknown>>;
 
-    // Parse spreadsheet
-    const designations = parseSpreadsheet(sheet);
-    console.log(`✅ Found ${designations.length} designations`);
+    const designations = parseSpreadsheet(rows);
+    console.log(`Found ${designations.length} designations`);
 
-    // Get or create RPA department
     let department = await prisma.department.findUnique({
       where: { slug: "rpa" },
     });
@@ -43,10 +39,9 @@ async function importDesignations() {
           sortOrder: 1,
         },
       });
-      console.log(`✅ Created RPA department`);
+      console.log("Created RPA department");
     }
 
-    // Upsert job postings
     let created = 0;
     let updated = 0;
 
@@ -65,7 +60,6 @@ async function importDesignations() {
       });
 
       if (existing) {
-        // Update
         await prisma.jobPosting.update({
           where: { id: existing.id },
           data: {
@@ -76,7 +70,6 @@ async function importDesignations() {
         });
         updated++;
       } else {
-        // Create
         await prisma.jobPosting.create({
           data: {
             slug,
@@ -94,57 +87,49 @@ async function importDesignations() {
       }
     }
 
-    console.log(`\n✅ Import complete:`);
+    console.log("\nImport complete:");
     console.log(`   Created: ${created} new job postings`);
     console.log(`   Updated: ${updated} existing`);
     console.log(`   Total: ${created + updated} designations`);
   } catch (err) {
-    console.error("❌ Import failed:", (err as Error).message);
+    console.error("Import failed:", (err as Error).message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-function parseSpreadsheet(sheet: XLSX.WorkSheet): Array<{
-  title: string;
-  salaryMin: number;
-  salaryMax: number;
-}> {
+function cellText(value: unknown) {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function cellNumber(value: unknown) {
+  if (typeof value === "number") return Math.round(value);
+  const parsed = Number(cellText(value).replace(/,/g, ""));
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+
+function parseSpreadsheet(rows: ReadonlyArray<ReadonlyArray<unknown>>) {
   const result: Array<{
     title: string;
     salaryMin: number;
     salaryMax: number;
   }> = [];
-  const range = XLSX.utils.decode_range(sheet["!ref"] || "A1:Z1000");
 
-  // Find data start (row with "Designation" header)
-  let headerRow = -1;
-  for (let r = 0; r <= range.e.r; r++) {
-    const cell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    if (cell?.v === "Designation") {
-      headerRow = r;
-      break;
-    }
-  }
-
+  const headerRow = rows.findIndex((row) => cellText(row[0]) === "Designation");
   if (headerRow === -1) {
     throw new Error("Could not find 'Designation' header");
   }
 
-  // Parse rows after header
-  for (let r = headerRow + 1; r <= range.e.r; r++) {
-    const titleCell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    const title = titleCell?.v?.toString().trim();
+  for (let rowNumber = headerRow + 1; rowNumber < rows.length; rowNumber += 1) {
+    const row = rows[rowNumber] ?? [];
+    const title = cellText(row[0]);
 
-    if (!title) break; // End of data
+    if (!title) break;
 
-    // Find salary columns (LKR LOW, LKR HIGH, USD LOW, USD HIGH)
-    const salaryMinCell = sheet[XLSX.utils.encode_cell({ r, c: 7 })]; // Column 8 (H)
-    const salaryMaxCell = sheet[XLSX.utils.encode_cell({ r, c: 8 })]; // Column 9 (I)
-
-    const salaryMin = salaryMinCell?.v ? Math.round(Number(salaryMinCell.v)) : 0;
-    const salaryMax = salaryMaxCell?.v ? Math.round(Number(salaryMaxCell.v)) : 0;
+    const salaryMin = cellNumber(row[7]);
+    const salaryMax = cellNumber(row[8]);
 
     if (salaryMin > 0 && salaryMax > 0) {
       result.push({
@@ -158,4 +143,4 @@ function parseSpreadsheet(sheet: XLSX.WorkSheet): Array<{
   return result;
 }
 
-importDesignations();
+void importDesignations();

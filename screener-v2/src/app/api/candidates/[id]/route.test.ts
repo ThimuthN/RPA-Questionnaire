@@ -114,4 +114,26 @@ describe("/api/candidates/[id] POST", () => {
       message: "Finalized candidates must be reverted before editing."
     });
   });
+
+  it("rejects protocol-relative returnTo values for form redirects", async () => {
+    vi.mocked(updateCandidate).mockResolvedValue(undefined as never);
+
+    const formData = new FormData();
+    formData.set("fullName", "Jane Doe");
+    formData.set("email", "jane@example.com");
+    formData.set("returnTo", "//evil.example/phish");
+
+    const response = await POST(
+      new Request("http://localhost/api/candidates/cand-1", {
+        method: "POST",
+        body: formData
+      }),
+      {
+        params: Promise.resolve({ id: "cand-1" })
+      }
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("http://localhost/people/candidates/cand-1?updated=1");
+  });
 });

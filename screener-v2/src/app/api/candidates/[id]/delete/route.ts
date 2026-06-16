@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { deleteCandidate } from "@/lib/db/candidates";
 import { prisma } from "@/lib/db/prisma";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 
 function redirectUrl(request: Request, formData?: FormData) {
   const returnTo = String(formData?.get("returnTo") || "").trim();
-  return new URL(returnTo.startsWith("/") ? returnTo : "/people/candidates", request.url);
+  return new URL(safeLocalPath(returnTo) ?? "/people/candidates", request.url);
 }
 
 export async function POST(

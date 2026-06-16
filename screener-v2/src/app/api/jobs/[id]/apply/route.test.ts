@@ -35,7 +35,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 vi.mock("@/lib/email", () => ({
-  sendEmailSafe: vi.fn(),
+  sendEmailSafe: vi.fn().mockResolvedValue(undefined),
   applicationReceivedEmail: vi.fn(),
   getOrgName: vi.fn()
 }));

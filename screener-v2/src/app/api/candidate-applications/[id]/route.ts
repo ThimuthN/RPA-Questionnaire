@@ -4,6 +4,7 @@ import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/gu
 import { canUsePermissionForDepartment } from "@/lib/auth/permission-evaluator";
 import { updateCandidateApplicationLifecycle } from "@/lib/db/jobs";
 import { prisma } from "@/lib/db/prisma";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 
 const actionSchema = z.object({
   action: z.enum(["review", "promote", "close"]),
@@ -22,9 +23,7 @@ function buildApplicantRedirectUrl(
   const fallbackPath = options.departmentId
     ? `/departments/${options.departmentId}/applicants`
     : "/people/candidates/applicants";
-  const safePath = options.returnTo?.trim().startsWith("/")
-    ? options.returnTo.trim()
-    : fallbackPath;
+  const safePath = safeLocalPath(options.returnTo) ?? fallbackPath;
   const url = new URL(safePath, request.url);
   if (options.error) {
     url.searchParams.set("error", options.error);
@@ -93,8 +92,7 @@ export async function POST(
     });
 
     const fallbackCandidatePath = `/people/candidates/${result.candidateId}`;
-    const redirectTo = body.returnTo?.trim() || fallbackCandidatePath;
-    const url = new URL(redirectTo.startsWith("/") ? redirectTo : fallbackCandidatePath, request.url);
+    const url = new URL(safeLocalPath(body.returnTo) ?? fallbackCandidatePath, request.url);
     url.searchParams.set("updated", "1");
     return NextResponse.redirect(url, 303);
   } catch (error) {

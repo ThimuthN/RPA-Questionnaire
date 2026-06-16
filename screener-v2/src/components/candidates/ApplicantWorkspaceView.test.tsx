@@ -6,6 +6,12 @@ vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: React.ReactNode }) => <a href={href}>{children}</a>
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(() => ({ push: vi.fn() })),
+  notFound: vi.fn(),
+  redirect: vi.fn()
+}));
+
 vi.mock("@/components/candidates/ApplicantsTable", () => ({
   ApplicantsTable: () => <div data-testid="applicants-table" />
 }));
@@ -114,6 +120,8 @@ describe("ApplicantWorkspaceView", () => {
 
     expect(markup).toContain('data-testid="applicants-table"');
     expect(markup).toContain('data-testid="applicant-pagination"');
+    expect(markup).toContain("Filters update automatically.");
+    expect(markup).not.toContain(">Apply<");
   });
 
   it("passes departmentId into the applicant loader for department scope", async () => {
@@ -162,5 +170,7 @@ describe("ApplicantWorkspaceView", () => {
     expect(markup).toContain("Job: RPA Engineer");
     expect(markup).toContain("Status: Under review");
     expect(markup).toContain("Resume: Missing");
+    expect(markup).toContain("Resume status");
+    expect(markup).toContain("Missing resume");
   });
 });

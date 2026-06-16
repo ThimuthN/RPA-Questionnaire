@@ -221,7 +221,9 @@ export function JobPostingForm({
         return;
       }
 
-      const parsed = normalizeStoredJobPostingDraft(JSON.parse(raw), initialValues);
+      const parsed = normalizeStoredJobPostingDraft(JSON.parse(raw), initialValues, {
+        maxStep: JOB_POSTING_STEPS.length - 2
+      });
       if (parsed?.values) {
         setVals((current) => ({ ...current, ...parsed.values }));
       }
@@ -327,9 +329,13 @@ export function JobPostingForm({
     setStep((current) => Math.min(current + 1, JOB_POSTING_STEPS.length - 1));
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitForm() {
     setFormError("");
+
+    if (!isReview) {
+      setFormError("Complete the remaining steps before creating the job.");
+      return;
+    }
 
     const validationErrors = validateJobPostingForm(vals);
     if (Object.keys(validationErrors).length > 0) {
@@ -374,6 +380,11 @@ export function JobPostingForm({
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitForm();
   }
 
   const isReview = step === JOB_POSTING_STEPS.length - 1;
@@ -701,7 +712,7 @@ export function JobPostingForm({
             Next
           </Button>
         ) : (
-          <Button type="submit" disabled={isSubmitting || !draftReady}>
+          <Button type="button" onClick={() => void submitForm()} disabled={isSubmitting || !draftReady}>
             {isSubmitting ? `${submitLabel}...` : submitLabel}
           </Button>
         )}

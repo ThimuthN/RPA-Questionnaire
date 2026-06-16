@@ -4,6 +4,7 @@ import { requireApiSession } from "@/lib/auth/guards";
 import { requireCandidatePermission } from "@/lib/auth/candidate-access";
 import { prisma } from "@/lib/db/prisma";
 import { cuidLike } from "@/lib/tokens/token-service";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 import { sendEmailSafe, interviewInviteEmail, getOrgName, generateIcsEvent } from "@/lib/email";
 import {
   candidateMilestoneResultValues,
@@ -57,7 +58,7 @@ function redirectToPath(
   searchKey: string,
   value = "1"
 ) {
-  const safePath = returnTo?.trim().startsWith("/") ? returnTo.trim() : `/people/candidates/${candidateId}`;
+  const safePath = safeLocalPath(returnTo) ?? `/people/candidates/${candidateId}`;
   const url = new URL(safePath, request.url);
   url.searchParams.set(searchKey, value);
   return NextResponse.redirect(url, 303);

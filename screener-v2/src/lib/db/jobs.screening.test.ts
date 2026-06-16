@@ -258,6 +258,38 @@ describe("createCandidateApplicationFromPublicSubmission", () => {
     expect(prismaMocks.txResponseCreateMany).not.toHaveBeenCalled();
   });
 
+  it("scopes a brand-new applicant to the job department even when only JobPosting.departmentId is set", async () => {
+    prismaMocks.jobPostingFindFirst.mockResolvedValue(
+      makeJobRow({
+        departmentId: "dept-ops",
+        roleId: null,
+        role: {
+          departmentId: null
+        }
+      })
+    );
+    candidateMocks.findExistingCandidateByEmail.mockResolvedValue(null);
+    candidateMocks.createCandidate.mockResolvedValue({
+      id: "cand-1",
+      fullName: "Alice Applicant",
+      email: "alice@example.com"
+    });
+    prismaMocks.candidateApplicationFindUnique.mockResolvedValue(null);
+
+    await createCandidateApplicationFromPublicSubmission({
+      jobSlug: "rpa-engineer",
+      fullName: "Alice Applicant",
+      email: "alice@example.com"
+    });
+
+    expect(candidateMocks.createCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        departmentId: "dept-ops",
+        stage: "applicant"
+      })
+    );
+  });
+
   it("saves screening addon results and field-level responses on the application", async () => {
     prismaMocks.jobPostingFindFirst.mockResolvedValue(
       makeJobRow({

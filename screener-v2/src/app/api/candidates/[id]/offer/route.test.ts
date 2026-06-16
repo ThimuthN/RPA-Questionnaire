@@ -39,7 +39,7 @@ vi.mock("@/lib/db/prisma", () => ({
 }));
 
 vi.mock("@/lib/email", () => ({
-  sendEmailSafe: vi.fn(),
+  sendEmailSafe: vi.fn().mockResolvedValue(undefined),
   offerSentEmail: vi.fn().mockReturnValue({ subject: "Offer", html: "<p>Offer</p>" }),
   adHocEmail: vi.fn().mockReturnValue({ subject: "Approval", html: "<p>Approval</p>" }),
   getOrgName: vi.fn().mockReturnValue("TestOrg")
@@ -48,6 +48,7 @@ vi.mock("@/lib/email", () => ({
 import { GET, POST } from "./route";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { adHocEmail, getOrgName, offerSentEmail, sendEmailSafe } from "@/lib/email";
 
 const mockSession = { userId: "user-1", name: "HR User", email: "hr@example.com", permissions: ["manage_candidates"] };
 const mockCandidate = {
@@ -71,8 +72,30 @@ const mockOffer = {
   respondedAt: null
 };
 
+function seedDefaults() {
+  vi.resetAllMocks();
+  vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
+  vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
+  vi.mocked(prisma.candidateActivityEvent.create).mockResolvedValue({} as never);
+  vi.mocked(sendEmailSafe).mockResolvedValue(undefined as never);
+  vi.mocked(offerSentEmail).mockReturnValue({ subject: "Offer", html: "<p>Offer</p>" } as never);
+  vi.mocked(adHocEmail).mockReturnValue({ subject: "Approval", html: "<p>Approval</p>" } as never);
+  vi.mocked(getOrgName).mockReturnValue("TestOrg");
+  vi.mocked(prisma.$transaction).mockImplementation(async (callback: (tx: unknown) => unknown) =>
+    callback({
+      offerApprovalStep: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn()
+      },
+      candidateOffer: {
+        update: vi.fn()
+      }
+    })
+  );
+}
+
 describe("GET /api/candidates/[id]/offer", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => seedDefaults());
 
   it("returns null offer when none exists", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
@@ -114,7 +137,7 @@ describe("GET /api/candidates/[id]/offer", () => {
 });
 
 describe("POST /api/candidates/[id]/offer - upsert", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => seedDefaults());
 
   it("creates a draft offer and logs activity", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
@@ -172,7 +195,7 @@ describe("POST /api/candidates/[id]/offer - upsert", () => {
 });
 
 describe("POST /api/candidates/[id]/offer - send", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => seedDefaults());
 
   it("marks an approved offer as sent and logs activity", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
@@ -244,8 +267,122 @@ describe("POST /api/candidates/[id]/offer - send", () => {
   });
 });
 
+describe("POST /api/candidates/[id]/offer - submit_for_approval", () => {
+  beforeEach(() => seedDefaults());
+
+  it("auto-approves when no approval chain is configured for the department", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue(mockCandidate as never);
+    vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue({
+      ...mockOffer,
+      status: "draft",
+      approvalSteps: []
+    } as never);
+    vi.mocked(prisma.offerApprovalChain.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.candidateOffer.update).mockResolvedValue({
+      ...mockOffer,
+      status: "approved"
+    } as never);
+
+    const res = await POST(
+      new Request("http://localhost/api/candidates/cand-1/offer", {
+        method: "POST",
+        body: JSON.stringify({ action: "submit_for_approval" })
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) }
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(json.autoApproved).toBe(true);
+    expect(json.offer.status).toBe("approved");
+    expect(vi.mocked(prisma.candidateActivityEvent.create)).toHaveBeenCalled();
+  });
+
+  it("creates per-offer approval steps and transitions to submitted_for_approval when a chain exists", async () => {
+    const approvalChain = {
+      id: "chain-1",
+      departmentId: "dept-1",
+      steps: [
+        {
+          id: "step-1",
+          sortOrder: 1,
+          approverId: "approver-1",
+          approver: { id: "approver-1", name: "Finance Lead", email: "finance@example.com" }
+        }
+      ]
+    };
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue(mockCandidate as never);
+    vi.mocked(prisma.candidateOffer.findUnique)
+      .mockResolvedValueOnce({ ...mockOffer, id: "offer-1", status: "draft", approvalSteps: [] } as never)
+      .mockResolvedValueOnce({ ...mockOffer, id: "offer-1", status: "submitted_for_approval", approvalSteps: [] } as never);
+    vi.mocked(prisma.offerApprovalChain.findFirst).mockResolvedValue(approvalChain as never);
+
+    const res = await POST(
+      new Request("http://localhost/api/candidates/cand-1/offer", {
+        method: "POST",
+        body: JSON.stringify({ action: "submit_for_approval" })
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) }
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    // $transaction was called to create approval steps + update offer status
+    expect(vi.mocked(prisma.$transaction)).toHaveBeenCalled();
+    expect(vi.mocked(prisma.candidateActivityEvent.create)).toHaveBeenCalled();
+  });
+
+  it("returns 400 when no offer exists before submit_for_approval", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue(mockCandidate as never);
+    vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue(null);
+
+    const res = await POST(
+      new Request("http://localhost/api/candidates/cand-1/offer", {
+        method: "POST",
+        body: JSON.stringify({ action: "submit_for_approval" })
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) }
+    );
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.message).toContain("Create an offer");
+  });
+
+  it("returns 400 when offer is not in draft status", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as never);
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue(mockCandidate as never);
+    vi.mocked(prisma.candidateOffer.findUnique).mockResolvedValue({
+      ...mockOffer,
+      status: "sent",
+      approvalSteps: []
+    } as never);
+
+    const res = await POST(
+      new Request("http://localhost/api/candidates/cand-1/offer", {
+        method: "POST",
+        body: JSON.stringify({ action: "submit_for_approval" })
+      }),
+      { params: Promise.resolve({ id: "cand-1" }) }
+    );
+
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.message).toContain("Only draft offers");
+  });
+});
+
 describe("POST /api/candidates/[id]/offer - revoke", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => seedDefaults());
 
   it("revokes a sent offer back to draft and logs activity", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as never);

@@ -14,8 +14,8 @@
  */
 
 import { PrismaClient } from "@prisma/client";
-import XLSX from "xlsx";
 import path from "path";
+import readXlsxFile from "read-excel-file/node";
 
 const prisma = new PrismaClient();
 
@@ -27,21 +27,18 @@ async function importDesignations() {
       "Designations - Staff Growth - Agust 18th 9.xlsx"
     );
 
-    console.log(`📂 Reading: ${spreadsheetPath}`);
-    const workbook = XLSX.readFile(spreadsheetPath);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    console.log(`Reading: ${spreadsheetPath}`);
+    const rows = (await readXlsxFile(spreadsheetPath)) as unknown as Array<Array<unknown>>;
 
-    // Parse spreadsheet
-    const { departments, designations } = parseSpreadsheet(sheet);
-    console.log(`✅ Found ${departments.length} departments with ${designations.length} total roles\n`);
+    const { departments, designations } = parseSpreadsheet(rows);
+    console.log(`Found ${departments.length} departments with ${designations.length} total roles\n`);
 
-    // Create or update departments with IND and SL variants
-    const deptMap = new Map(); // Map to store created department IDs
+    const deptMap = new Map<string, string>();
     let deptCreated = 0;
     let deptUpdated = 0;
 
     for (const deptName of departments) {
-      for (const variant of ["IND", "SL"]) {
+      for (const variant of ["IND", "SL"] as const) {
         const slug = `${deptName.toLowerCase().replace(/\s+/g, "-")}-${variant.toLowerCase()}`;
         const fullName = `${deptName} ${variant}`;
 
@@ -71,18 +68,17 @@ async function importDesignations() {
       }
     }
 
-    console.log(`✅ Departments:`);
+    console.log("Departments:");
     console.log(`   Created: ${deptCreated}`);
     console.log(`   Updated: ${deptUpdated}\n`);
 
-    // Create or update job postings for each role in each department variant
     let jobsCreated = 0;
     let jobsUpdated = 0;
 
     for (const designation of designations) {
       const deptName = designation.department;
 
-      for (const variant of ["IND", "SL"]) {
+      for (const variant of ["IND", "SL"] as const) {
         const deptId = deptMap.get(`${deptName}|${variant}`);
         if (!deptId) continue;
 
@@ -128,41 +124,45 @@ async function importDesignations() {
       }
     }
 
-    console.log(`✅ Job Postings:`);
+    console.log("Job Postings:");
     console.log(`   Created: ${jobsCreated}`);
     console.log(`   Updated: ${jobsUpdated}\n`);
-
-    // Show summary
-    console.log(`📊 Import Summary:`);
+    console.log("Import Summary:");
     console.log(`   Departments (with IND/SL): ${deptCreated + deptUpdated}`);
     console.log(`   Job Postings: ${jobsCreated + jobsUpdated}`);
-    console.log(`\n✨ Import complete!`);
+    console.log("\nImport complete!");
   } catch (err) {
-    console.error("❌ Import failed:", (err as Error).message);
+    console.error("Import failed:", (err as Error).message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
   }
 }
 
-function parseSpreadsheet(
-  sheet: XLSX.WorkSheet
-): { departments: string[]; designations: Array<{ department: string; title: string; salaryMin: number; salaryMax: number }> } {
+function cellText(value: unknown) {
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function cellNumber(value: unknown) {
+  if (typeof value === "number") return Math.round(value);
+  const parsed = Number(cellText(value).replace(/,/g, ""));
+  return Number.isFinite(parsed) ? Math.round(parsed) : 0;
+}
+
+function parseSpreadsheet(rows: ReadonlyArray<ReadonlyArray<unknown>>) {
   const result = {
     departments: [] as string[],
     designations: [] as Array<{ department: string; title: string; salaryMin: number; salaryMax: number }>,
   };
 
-  const range = XLSX.utils.decode_range(sheet["!ref"] || "A1:Z1000");
   let currentDept = "";
 
-  for (let r = 0; r <= range.e.r; r++) {
-    const titleCell = sheet[XLSX.utils.encode_cell({ r, c: 0 })];
-    const value = titleCell?.v?.toString().trim();
+  for (const row of rows) {
+    const value = cellText(row[0]);
 
     if (!value) continue;
 
-    // Check for department header
     if (value.includes("Department -")) {
       currentDept = value.replace("Department - ", "").trim();
       if (!result.departments.includes(currentDept)) {
@@ -171,7 +171,6 @@ function parseSpreadsheet(
       continue;
     }
 
-    // Skip headers and special rows
     if (
       value === "Designation" ||
       value.includes("STAFF") ||
@@ -181,12 +180,8 @@ function parseSpreadsheet(
       continue;
     }
 
-    // Parse role row
-    const salaryMinCell = sheet[XLSX.utils.encode_cell({ r, c: 7 })]; // Column H
-    const salaryMaxCell = sheet[XLSX.utils.encode_cell({ r, c: 8 })]; // Column I
-
-    const salaryMin = salaryMinCell?.v ? Math.round(Number(salaryMinCell.v)) : 0;
-    const salaryMax = salaryMaxCell?.v ? Math.round(Number(salaryMaxCell.v)) : 0;
+    const salaryMin = cellNumber(row[7]);
+    const salaryMax = cellNumber(row[8]);
 
     if (salaryMin > 0 && salaryMax > 0 && currentDept) {
       result.designations.push({
@@ -201,4 +196,4 @@ function parseSpreadsheet(
   return result;
 }
 
-importDesignations();
+void importDesignations();

@@ -4,6 +4,7 @@ import { resultReviewStateValues } from "@/lib/assessment-engine/types";
 import { requireApiSession, requirePermission } from "@/lib/auth/guards";
 import { candidateNoteTypeValues } from "@/lib/candidates/types";
 import { bulkUpdateResults } from "@/lib/db/repositories";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 import {
   createRequestLogContext,
   logRouteError,
@@ -20,10 +21,7 @@ const bulkSchema = z.object({
 });
 
 function redirectUrl(request: Request, returnTo?: string) {
-  if (returnTo?.startsWith("/")) {
-    return new URL(returnTo, request.url);
-  }
-  return new URL("/results", request.url);
+  return new URL(safeLocalPath(returnTo) ?? "/results", request.url);
 }
 
 export async function POST(request: Request) {

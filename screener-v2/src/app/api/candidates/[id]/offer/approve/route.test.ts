@@ -20,7 +20,7 @@ vi.mock("@/lib/db/prisma", () => ({
 }));
 
 vi.mock("@/lib/email", () => ({
-  sendEmailSafe: vi.fn(),
+  sendEmailSafe: vi.fn().mockResolvedValue(undefined),
   adHocEmail: vi.fn(() => ({ subject: "Approval", html: "<p>Approval</p>" })),
   getOrgName: vi.fn(() => "Northstar")
 }));

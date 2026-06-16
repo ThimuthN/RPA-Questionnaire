@@ -110,6 +110,32 @@ describe("DELETE /api/candidates/[id]/milestones/[milestoneId]", () => {
     );
   });
 
+  it("rejects protocol-relative milestone returnTo values", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session } as any);
+    vi.mocked(requireCandidatePermission).mockResolvedValue({ ok: true, candidate: { id: "cand-1" } } as any);
+    vi.mocked(updateCandidateMilestone).mockResolvedValue(undefined as never);
+
+    const formData = new FormData();
+    formData.append("action", "save");
+    formData.append("title", "Assessment");
+    formData.append("status", "done");
+    formData.append("mode", "manual");
+    formData.append("returnTo", "//evil.example/phish");
+
+    const response = await POST(
+      new Request("http://localhost/api/candidates/cand-1/milestones/ms-1", {
+        method: "POST",
+        body: formData
+      }),
+      {
+        params: Promise.resolve({ id: "cand-1", milestoneId: "ms-1" })
+      }
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("http://localhost/people/candidates/cand-1?updated=1");
+  });
+
   it("upserts interview panel data when interview scheduling fields are submitted", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session } as any);
     vi.mocked(requireCandidatePermission).mockResolvedValue({ ok: true, candidate: { id: "cand-1" } } as any);

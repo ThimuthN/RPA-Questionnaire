@@ -10,6 +10,7 @@ import {
 } from "@/lib/candidates/types";
 import { updateCandidate } from "@/lib/db/candidates";
 import { prisma } from "@/lib/db/prisma";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 
 const updateCandidateSchema = z.object({
   fullName: z.string().min(2),
@@ -39,7 +40,7 @@ function wantsJson(request: Request) {
 }
 
 function redirectToCandidatePath(request: Request, candidateId: string, returnTo?: string, key = "updated", value = "1") {
-  const safePath = returnTo?.trim().startsWith("/") ? returnTo.trim() : `/people/candidates/${candidateId}`;
+  const safePath = safeLocalPath(returnTo) ?? `/people/candidates/${candidateId}`;
   const url = new URL(safePath, request.url);
   url.searchParams.set(key, value);
   return NextResponse.redirect(url, 303);

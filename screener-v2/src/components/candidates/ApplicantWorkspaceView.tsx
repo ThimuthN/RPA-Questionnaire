@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { Route } from "next";
 import { Button } from "@/components/primitives/Button";
 import { ApplicantsTable } from "@/components/candidates/ApplicantsTable";
+import { ApplicantFilterForm } from "@/components/candidates/ApplicantFilterForm";
 import { CandidatesViewSwitch } from "@/components/candidates/CandidatesViewSwitch";
 import { StagePanel } from "@/components/scene/StagePanel";
 import { PaginationBar } from "@/components/workspace/PaginationBar";
@@ -24,10 +25,6 @@ type ApplicantWorkspacePageState = {
   updated?: string;
   error?: string;
 };
-
-function filterFieldClassName() {
-  return "rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-sm text-[color:var(--app-text)] outline-none transition focus:border-brand-300/50 focus:bg-[color:var(--app-control-bg-strong)]";
-}
 
 function messageTone(type: "success" | "error") {
   return type === "success"
@@ -208,35 +205,18 @@ export async function ApplicantWorkspaceView({
         </div>
       </div>
 
-      <form className="grid gap-3 rounded-[24px] bg-[color:var(--app-surface)] p-4 shadow-[var(--app-shadow-soft)] ring-1 ring-[color:var(--app-border)] xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,0.9fr)_auto_auto]">
-        <input type="hidden" name="pageSize" value={params.pageSize ?? String(page.pageSize)} />
-        <input
-          name="q"
-          defaultValue={params.q ?? ""}
-          placeholder="Search applicant, email, or job"
-          className={filterFieldClassName()}
-        />
-        <select name="jobId" defaultValue={params.jobId ?? ""} className={filterFieldClassName()}>
-          <option value="">All jobs</option>
-          {page.jobOptions.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.label}
-            </option>
-          ))}
-        </select>
-        <select name="status" defaultValue={params.status ?? ""} className={filterFieldClassName()}>
-          <option value="">All statuses</option>
-          <option value="submitted">Applied</option>
-          <option value="under_review">Under review</option>
-          <option value="closed">Archived</option>
-        </select>
-        <Button>Apply</Button>
-        <Link href={basePath}>
-          <Button type="button" variant="secondary">
-            Reset
-          </Button>
-        </Link>
-      </form>
+      <ApplicantFilterForm
+        action={basePath}
+        resetHref={basePath}
+        initialValues={{
+          q: params.q,
+          jobId: params.jobId,
+          status: params.status,
+          resume: params.resume
+        }}
+        jobOptions={page.jobOptions.map((job) => ({ value: job.id, label: job.label }))}
+        pageSize={params.pageSize ?? String(page.pageSize)}
+      />
 
       <ActiveFilterChips items={activeFilters} clearAllHref={basePath} />
 

@@ -6,6 +6,7 @@ import { candidateNoteTypeValues, candidateStageValues } from "@/lib/candidates/
 import { bulkUpdateCandidates, createCandidatesBatch } from "@/lib/db/candidates";
 import { createOrUpdateDepartmentCandidacy } from "@/lib/db/candidacies";
 import { prisma } from "@/lib/db/prisma";
+import { safeLocalPath } from "@/lib/http/safe-local-path";
 import { checkBulkOpRateLimit } from "@/lib/server/rate-limit";
 
 const MAX_BULK_IDS_PER_REQUEST = 500;
@@ -25,10 +26,7 @@ const bulkSchema = z.object({
 });
 
 function redirectUrl(request: Request, returnTo?: string) {
-  if (returnTo?.startsWith("/")) {
-    return new URL(returnTo, request.url);
-  }
-  return new URL("/people/candidates", request.url);
+  return new URL(safeLocalPath(returnTo) ?? "/people/candidates", request.url);
 }
 
 export async function POST(request: Request) {

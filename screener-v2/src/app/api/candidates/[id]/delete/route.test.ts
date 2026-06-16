@@ -61,6 +61,18 @@ describe("POST /api/candidates/[id]/delete", () => {
     expect(vi.mocked(deleteCandidate)).toHaveBeenCalledWith("cand-1");
   });
 
+  it("ignores protocol-relative returnTo values and falls back to the local candidates page", async () => {
+    vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as any);
+    vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as any);
+    vi.mocked(prisma.candidate.findUnique).mockResolvedValue(makeCandidate() as any);
+    vi.mocked(deleteCandidate).mockResolvedValue(undefined as any);
+
+    const res = await postDelete("cand-1", "//evil.example/phish");
+
+    expect(res.status).toBe(303);
+    expect(res.headers.get("location")).toBe("http://localhost/people/candidates?deleted=1");
+  });
+
   it("blocks deletion of a finalized candidate", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({ ok: true, session: mockSession } as any);
     vi.mocked(requirePermissionForDepartment).mockResolvedValue({ ok: true } as any);

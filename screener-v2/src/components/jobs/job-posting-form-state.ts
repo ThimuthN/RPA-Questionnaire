@@ -66,6 +66,10 @@ export type StoredJobPostingDraft = {
   values?: Partial<JobPostingFormValues>;
 };
 
+type NormalizeStoredJobPostingDraftOptions = {
+  maxStep?: number;
+};
+
 export function validateJobPostingStep(
   values: JobPostingFormValues,
   stepIndex: number
@@ -147,7 +151,8 @@ export function firstInvalidJobPostingStep(errors: JobPostingFormErrors) {
 
 export function normalizeStoredJobPostingDraft(
   raw: unknown,
-  fallbackValues: JobPostingFormValues
+  fallbackValues: JobPostingFormValues,
+  options?: NormalizeStoredJobPostingDraftOptions
 ): StoredJobPostingDraft | null {
   if (!raw || typeof raw !== "object") {
     return null;
@@ -156,7 +161,7 @@ export function normalizeStoredJobPostingDraft(
   const candidate = raw as Record<string, unknown>;
   const step =
     typeof candidate.step === "number" && Number.isInteger(candidate.step)
-      ? clampStep(candidate.step)
+      ? clampStep(candidate.step, options?.maxStep)
       : undefined;
   const rawValues =
     candidate.values && typeof candidate.values === "object"
@@ -203,8 +208,8 @@ function pickErrors(
   return scoped;
 }
 
-function clampStep(step: number) {
-  return Math.min(Math.max(step, 0), JOB_POSTING_STEPS.length - 1);
+function clampStep(step: number, maxStep = JOB_POSTING_STEPS.length - 1) {
+  return Math.min(Math.max(step, 0), maxStep);
 }
 
 function readString(value: unknown, fallback: string) {

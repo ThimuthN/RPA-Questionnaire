@@ -1114,7 +1114,7 @@ export async function createCandidateApplicationFromPublicSubmission(input: {
         linkedInUrl: input.linkedInUrl?.trim() || undefined,
         salaryExpectation: input.salaryExpectation?.trim() || undefined,
         roleId: job.roleId ?? undefined,
-        departmentId: job.role?.departmentId ?? undefined,
+        departmentId: applyDepartmentId,
         positionAppliedFor: job.title,
         // Attribute the candidate's source to what the applicant actually selected (not always "direct")
         resumeSource: input.source ?? "direct",
@@ -1619,6 +1619,8 @@ export async function updateCandidateApplicationLifecycle(input: {
         data: {
           hrOwner: input.hrOwner?.trim() || undefined,
           stage: "pipeline",
+          orgStatus: "active",
+          finalizedAs: null,
           // Defensive: the pipeline view filters orgStage="active"; never let a
           // promoted candidate get stranded with a stale non-active orgStage.
           orgStage: "active",
