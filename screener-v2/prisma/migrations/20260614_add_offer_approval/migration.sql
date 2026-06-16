@@ -1,7 +1,3 @@
--- Add new statuses to CandidateOfferStatus enum
-ALTER TYPE "CandidateOfferStatus" ADD VALUE IF NOT EXISTS 'submitted_for_approval';
-ALTER TYPE "CandidateOfferStatus" ADD VALUE IF NOT EXISTS 'approved';
-
 -- Create OfferApprovalChain table
 CREATE TABLE "OfferApprovalChain" (
   "id"           TEXT NOT NULL,
