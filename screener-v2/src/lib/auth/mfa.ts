@@ -8,6 +8,14 @@ const BACKUP_CODE_LENGTH = 8;
 const BACKUP_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const TRUSTED_DEVICE_TTL_DAYS = 30;
 
+// HMAC key derived from the server secret (domain-separated per use) so that an
+// attacker with only the database cannot brute-force the relatively low-entropy
+// backup codes offline. Falls back to a constant only when no secret is set
+// (local/dev); production always has AUTH_SESSION_SECRET.
+function hmacKey(domain: string): string {
+  return `${process.env.AUTH_SESSION_SECRET ?? "northstar-mfa-fallback"}:${domain}`;
+}
+
 // ── Secret encryption ──────────────────────────────────────────────────────
 
 export function encryptMfaSecret(secret: string): string {
@@ -54,7 +62,7 @@ function generateOneBackupCode(): string {
 }
 
 function hashBackupCode(code: string): string {
-  return createHmac("sha256", "mfa-backup")
+  return createHmac("sha256", hmacKey("backup"))
     .update(code.replace(/-/g, "").toUpperCase())
     .digest("hex");
 }
@@ -94,12 +102,12 @@ export function verifyAndConsumeBackupCode(
 
 export function generateTrustedDeviceToken(): { token: string; tokenHash: string } {
   const token = randomBytes(32).toString("base64url");
-  const tokenHash = createHmac("sha256", "mfa-device").update(token).digest("hex");
+  const tokenHash = createHmac("sha256", hmacKey("device")).update(token).digest("hex");
   return { token, tokenHash };
 }
 
 export function hashDeviceToken(token: string): string {
-  return createHmac("sha256", "mfa-device").update(token).digest("hex");
+  return createHmac("sha256", hmacKey("device")).update(token).digest("hex");
 }
 
 export function trustedDeviceExpiresAt(): Date {

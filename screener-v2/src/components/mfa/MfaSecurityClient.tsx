@@ -165,7 +165,7 @@ export function MfaSecurityClient({ mfaEnabled, mfaEnrolledAt, backupCodesRemain
           <div className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold text-[color:var(--app-heading)]">Download an authenticator app</h2>
-              <p className="mt-1 text-sm text-[color:var(--app-muted)]">You'll need an app to generate one-time codes. Any of these work:</p>
+              <p className="mt-1 text-sm text-[color:var(--app-muted)]">You&apos;ll need an app to generate one-time codes. Any of these work:</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {[
@@ -205,7 +205,7 @@ export function MfaSecurityClient({ mfaEnabled, mfaEnrolledAt, backupCodesRemain
               </div>
               <details className="w-full">
                 <summary className="cursor-pointer text-center text-xs text-[color:var(--app-muted)] hover:text-[color:var(--app-text)]">
-                  Can't scan? Enter the code manually
+                  Can&apos;t scan? Enter the code manually
                 </summary>
                 <div className="mt-2 rounded-xl border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] px-4 py-3">
                   <p className="mb-1 text-xs text-[color:var(--app-muted)]">Secret key</p>
@@ -215,7 +215,7 @@ export function MfaSecurityClient({ mfaEnabled, mfaEnrolledAt, backupCodesRemain
             </div>
             <div className="flex gap-3">
               <button onClick={() => setWizardStep("verify")} className="flex-1 rounded-xl bg-[color:var(--app-brand)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--app-brand-strong)]">
-                I've scanned it →
+                I&apos;ve scanned it →
               </button>
               <button onClick={() => setWizardStep("app")} className="rounded-xl border border-[color:var(--app-border)] px-4 py-2.5 text-sm text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)]">
                 Back
@@ -267,7 +267,7 @@ export function MfaSecurityClient({ mfaEnabled, mfaEnrolledAt, backupCodesRemain
             <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800/40 dark:bg-amber-900/20">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <p className="text-sm text-amber-700 dark:text-amber-300">
-                <span className="font-semibold">Save these codes now.</span> They won't be shown again. Each can be used once to sign in if you lose access to your authenticator.
+                <span className="font-semibold">Save these codes now.</span> They won&apos;t be shown again. Each can be used once to sign in if you lose access to your authenticator.
               </p>
             </div>
             <div>
@@ -292,7 +292,7 @@ export function MfaSecurityClient({ mfaEnabled, mfaEnrolledAt, backupCodesRemain
               </button>
             </div>
             <button onClick={completeSetup} className="w-full rounded-xl bg-[color:var(--app-brand)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[color:var(--app-brand-strong)]">
-              I've saved my codes — finish setup
+              I&apos;ve saved my codes — finish setup
             </button>
           </div>
         )}

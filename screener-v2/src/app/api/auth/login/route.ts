@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/lib/db/prisma";
 import { authenticateAppUser, ensureBootstrapAdmin } from "@/lib/auth/app-auth";
@@ -65,9 +66,10 @@ export async function POST(request: Request) {
     });
 
     if (userMfa?.mfaEnabled) {
-      // Check for a valid trusted device cookie
-      const deviceToken = (request as any).cookies?.get?.(MFA_DEVICE_COOKIE)?.value
-        ?? new URL(request.url).searchParams.get("_dev"); // fallback never used, just type-safe
+      // Check for a valid trusted-device cookie (a Web Request has no `.cookies`,
+      // so we must read it via next/headers — otherwise MFA is never skipped).
+      const cookieStore = await cookies();
+      const deviceToken = cookieStore.get(MFA_DEVICE_COOKIE)?.value;
 
       if (deviceToken) {
         const tokenHash = hashDeviceToken(deviceToken);
