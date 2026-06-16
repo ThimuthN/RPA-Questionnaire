@@ -51,10 +51,10 @@ export function TypedWordCycle({
   return (
     <span className={cn("inline-flex items-center gap-1", className)}>
       <span>{prefix}</span>
-      <span className="bg-[linear-gradient(90deg,var(--blue-300),var(--cyan-300),#ffffff)] bg-clip-text text-transparent">
+      <span className="typed-cycle-text">
         {displayed}
       </span>
-      <span className="typed-caret text-brand-200">|</span>
+      <span className="typed-caret text-[color:var(--app-brand)]">|</span>
     </span>
   );
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Route } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
-import { AppLogo } from "@/components/brand/AppLogo";
 import { getAppSession } from "@/lib/auth/app-session";
 import { sanitizeNextPath } from "@/lib/auth/session";
 
@@ -27,7 +27,14 @@ export default async function LoginPage({
 
         {/* Branding */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <AppLogo pubStyle />
+          <Image
+            src="/brand/northstar-logo-clean.png"
+            alt="Northstar"
+            width={700}
+            height={150}
+            priority
+            className="pub-wordmark h-9 w-auto"
+          />
           <p className="text-[11px] uppercase tracking-[0.22em] text-[color:var(--pub-muted)]">
             Internal access
           </p>

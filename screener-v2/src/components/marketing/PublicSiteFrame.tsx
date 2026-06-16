@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { Route } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { AppLogo } from "@/components/brand/AppLogo";
 import { PublicMobileMenu } from "@/components/marketing/PublicMobileMenu";
 import { publicOrgName, SITE_POLICY_LAST_UPDATED } from "@/lib/legal/site-policy";
 
@@ -31,12 +31,16 @@ export function PublicSiteFrame({
       <header className="sticky top-0 z-40 w-full border-b border-[color:var(--pub-border)] bg-[color:var(--pub-header-bg)] shadow-[var(--pub-shadow)] backdrop-blur-xl">
         <div className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
 
-          {/* Left: logo + wordmark */}
-          <Link href="/" aria-label={`${orgName} home`} className="flex shrink-0 items-center gap-2.5 transition hover:opacity-90">
-            <AppLogo compact pubStyle />
-            <span className="hidden font-display text-[17px] font-semibold tracking-[-0.01em] text-[color:var(--pub-heading)] sm:inline">
-              {orgName}
-            </span>
+          {/* Left: the designed Northstar wordmark lockup */}
+          <Link href="/" aria-label={`${orgName} home`} className="flex shrink-0 items-center transition hover:opacity-90">
+            <Image
+              src="/brand/northstar-logo-clean.png"
+              alt={orgName}
+              width={700}
+              height={150}
+              priority
+              className="pub-wordmark h-[26px] w-auto sm:h-7"
+            />
           </Link>
 
           {/* Center: desktop nav */}
@@ -96,9 +100,14 @@ export function PublicSiteFrame({
         <div className="mx-auto max-w-6xl px-5 sm:px-8 py-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <AppLogo compact pubStyle />
-                <span className="text-sm font-semibold text-[color:var(--pub-heading)]">{orgName}</span>
+              <div className="flex items-center">
+                <Image
+                  src="/brand/northstar-logo-clean.png"
+                  alt={orgName}
+                  width={700}
+                  height={150}
+                  className="pub-wordmark h-6 w-auto"
+                />
               </div>
               <p className="max-w-md text-sm leading-6 text-[color:var(--pub-muted)]">
                 Candidate applications, assessments, and hiring decisions processed in a controlled recruiting workflow.

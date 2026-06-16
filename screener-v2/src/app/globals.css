@@ -298,7 +298,9 @@ html[data-theme="light"] .northstar-tagline {
 html[data-theme="light"] .northstar-ribbon-shell {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
+  /* NOTE: no `overflow: hidden` here — this element is the parent of the
+     `position: sticky` sidebar <aside>, and any overflow other than visible
+     on an ancestor silently breaks sticky (the rail scrolls away with the page). */
   background:
     radial-gradient(circle at 12% 20%, rgba(22, 210, 200, 0.22), transparent 30%),
     radial-gradient(circle at 82% 12%, rgba(70, 150, 220, 0.14), transparent 22%),
@@ -358,6 +360,29 @@ html[data-theme="light"] .pub-logo-mark {
 html[data-theme="light"] .pub-logo-mark .northstar-icon-asset,
 html[data-theme="light"] .pub-logo-mark .northstar-logo-asset {
   filter: none !important;
+}
+
+/* ── Designed Northstar wordmark on public surfaces (nav / footer / login) ──
+   The logo art is dark navy on transparent. Show it as-drawn on the light
+   public chrome; invert to white on the dark public chrome. */
+.pub-wordmark {
+  filter: none;
+}
+html[data-theme="dark"] .pub-wordmark {
+  filter: brightness(0) invert(1);
+}
+
+/* ── Hero typed-word cycle ── Theme-aware brand gradient so the rotating word
+   never washes out on the light hero (the old blue→white gradient vanished). */
+.typed-cycle-text {
+  background: linear-gradient(
+    92deg,
+    var(--app-brand) 0%,
+    color-mix(in srgb, var(--app-brand) 45%, #2f86ff) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 
@@ -521,8 +546,15 @@ select:disabled {
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(138, 184, 255, 0.9), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--app-brand) 80%, white), transparent);
   animation: loading-bar 1.6s ease-in-out infinite;
+}
+
+/* Loading visuals adapt to the active theme (seamless light + dark). */
+html[data-theme="light"] .loading-grid {
+  background-image:
+    linear-gradient(rgba(10, 35, 55, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 35, 55, 0.05) 1px, transparent 1px);
 }
 
 html[data-theme="dark"] select,

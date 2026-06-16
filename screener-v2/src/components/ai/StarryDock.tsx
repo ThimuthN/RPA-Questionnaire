@@ -10,6 +10,23 @@ type Msg = { role: "user" | "assistant"; content: string };
 const RESERVED = new Set(["applicants", "jobs", "new", "pool", "board", "analytics"]);
 const POS_KEY = "starry-dock-pos";
 
+const LAUNCHER_SIZE = 64;
+const PANEL_W = 380;
+const PANEL_H = 520;
+
+// Keep the dock fully on-screen. Without this, the open 380×520 panel can be
+// positioned from a saved launcher offset such that its header (and the close
+// button) sit off the viewport edge — so it can't be minimized again.
+function clampToViewport(p: { right: number; bottom: number }, w: number, h: number) {
+  if (typeof window === "undefined") return p;
+  const maxRight = Math.max(8, window.innerWidth - w - 8);
+  const maxBottom = Math.max(8, window.innerHeight - h - 8);
+  return {
+    right: Math.min(Math.max(8, p.right), maxRight),
+    bottom: Math.min(Math.max(8, p.bottom), maxBottom)
+  };
+}
+
 function candidateIdFromPath(pathname: string): string | undefined {
   const m = pathname.match(/^\/people\/candidates\/([^/]+)/);
   if (m && !RESERVED.has(m[1]!)) return m[1];
@@ -49,7 +66,7 @@ export function StarryDock({ configured }: { configured: boolean }) {
       if (raw) {
         const p = JSON.parse(raw);
         if (typeof p?.right === "number" && typeof p?.bottom === "number") {
-          const next = { right: p.right, bottom: p.bottom };
+          const next = clampToViewport({ right: p.right, bottom: p.bottom }, LAUNCHER_SIZE, LAUNCHER_SIZE);
           posRef.current = next;
           setPos(next);
         }
@@ -62,6 +79,31 @@ export function StarryDock({ configured }: { configured: boolean }) {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading, open]);
+
+  // Whenever we open (and on window resize), pull the dock fully into view so the
+  // header + close button are always reachable. Escape also minimizes it.
+  useEffect(() => {
+    const w = open ? PANEL_W : LAUNCHER_SIZE;
+    const h = open ? PANEL_H : LAUNCHER_SIZE;
+    const next = clampToViewport(posRef.current, w, h);
+    posRef.current = next;
+    setPos(next);
+
+    function onResize() {
+      const clamped = clampToViewport(posRef.current, w, h);
+      posRef.current = clamped;
+      setPos(clamped);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && open) setOpen(false);
+    }
+    window.addEventListener("resize", onResize);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   function commitPos(next: { right: number; bottom: number }) {
     posRef.current = next;
@@ -78,10 +120,9 @@ export function StarryDock({ configured }: { configured: boolean }) {
     const dx = e.clientX - d.x;
     const dy = e.clientY - d.y;
     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
-    commitPos({
-      right: Math.min(Math.max(8, d.right - dx), Math.max(8, window.innerWidth - 64)),
-      bottom: Math.min(Math.max(8, d.bottom - dy), Math.max(8, window.innerHeight - 64))
-    });
+    const w = open ? PANEL_W : LAUNCHER_SIZE;
+    const h = open ? PANEL_H : LAUNCHER_SIZE;
+    commitPos(clampToViewport({ right: d.right - dx, bottom: d.bottom - dy }, w, h));
   }
   function onDragEnd() {
     const d = dragRef.current;
@@ -164,7 +205,14 @@ export function StarryDock({ configured }: { configured: boolean }) {
             </p>
           </div>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Minimize" className="rounded-full p-1.5 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]">
+        <button
+          type="button"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => setOpen(false)}
+          aria-label="Minimize Starry"
+          title="Minimize (Esc)"
+          className="shrink-0 rounded-full p-1.5 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]"
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
