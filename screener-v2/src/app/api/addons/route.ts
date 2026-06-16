@@ -51,7 +51,9 @@ export async function POST(request: Request) {
       defaultDurationMinutes: body.defaultDurationMinutes,
       defaultRequiredPercent: body.defaultRequiredPercent,
       defaultWeight: body.defaultWeight,
-      isActive: body.isActive
+      isActive: body.isActive,
+      departmentId: body.departmentId ?? null,
+      sharedDepartmentIds: body.sharedDepartmentIds
     });
 
     return NextResponse.json({ ok: true, addon });

@@ -31,6 +31,8 @@ type AddonFormState = {
   defaultWeight: number;
   isActive: boolean;
   defaultConfig: Record<string, unknown>;
+  departmentId: string | null;
+  sharedDepartmentIds: string[];
 };
 
 type PresetItemForm = {
@@ -60,7 +62,9 @@ function baseAddonForm(assessmentTypeId: ExamDefinitionId = "core_exam"): AddonF
     defaultRequiredPercent: entry.buildRequiredPercent(entry.defaultConfig, 60),
     defaultWeight: entry.defaultWeight,
     isActive: true,
-    defaultConfig: structuredClone(entry.defaultConfig)
+    defaultConfig: structuredClone(entry.defaultConfig),
+    departmentId: null,
+    sharedDepartmentIds: []
   };
 }
 
@@ -91,7 +95,9 @@ function addonToForm(addon: AddonCatalogEntry): AddonFormState {
     defaultRequiredPercent: addon.defaultRequiredPercent,
     defaultWeight: addon.defaultWeight,
     isActive: addon.isActive,
-    defaultConfig: structuredClone(addon.defaultConfig)
+    defaultConfig: structuredClone(addon.defaultConfig),
+    departmentId: addon.departmentId ?? null,
+    sharedDepartmentIds: addon.sharedDepartmentIds ?? []
   };
 }
 
@@ -121,7 +127,8 @@ export function AddonLibraryClient({
   canManageAddons = false,
   canManageGlobalPresets = false,
   canManageWorkspacePresets = false,
-  managedDepartmentId
+  managedDepartmentId,
+  departments = []
 }: {
   initialAddons: AddonCatalogEntry[];
   initialPresets: AssessmentPresetEntry[];
@@ -129,6 +136,7 @@ export function AddonLibraryClient({
   canManageGlobalPresets?: boolean;
   canManageWorkspacePresets?: boolean;
   managedDepartmentId?: string;
+  departments?: Array<{ id: string; name: string }>;
 }) {
   const reduceMotion = useReducedMotion();
   const [viewMode, setViewMode] = useState<"addons" | "presets">("addons");
@@ -167,6 +175,22 @@ export function AddonLibraryClient({
     () => new Map(addons.map((addon) => [addon.id, addon])),
     [addons]
   );
+  const departmentNameById = useMemo(
+    () => new Map(departments.map((d) => [d.id, d.name])),
+    [departments]
+  );
+  function addonOwnershipLabel(addon: AddonCatalogEntry) {
+    if (!addon.departmentId) return "Global";
+    return departmentNameById.get(addon.departmentId) ?? "Department";
+  }
+  function toggleAddonShare(departmentId: string) {
+    setAddonForm((current) => ({
+      ...current,
+      sharedDepartmentIds: current.sharedDepartmentIds.includes(departmentId)
+        ? current.sharedDepartmentIds.filter((id) => id !== departmentId)
+        : [...current.sharedDepartmentIds, departmentId]
+    }));
+  }
   const selectedAddon = editingAddonId ? addonLookup.get(editingAddonId) ?? null : null;
   const selectedPreset = editingPresetId ? presets.find((preset) => preset.id === editingPresetId) ?? null : null;
   const selectedAddonEntry = getAddonAssessmentType(addonForm.assessmentTypeId);
@@ -459,6 +483,7 @@ export function AddonLibraryClient({
                   <tr>
                     <th className="px-4 py-3 font-medium">Add-on</th>
                     <th className="px-4 py-3 font-medium">Type</th>
+                    <th className="px-4 py-3 font-medium">Ownership</th>
                     <th className="px-4 py-3 font-medium">Time</th>
                     <th className="px-4 py-3 font-medium">Pass</th>
                     <th className="px-4 py-3 font-medium">Score</th>
@@ -477,6 +502,14 @@ export function AddonLibraryClient({
                       </td>
                       <td className="px-4 py-3 align-top">
                         <StatusPill label={getAddonAssessmentTypeMeta(addon.assessmentTypeId).label} tone={getAddonAssessmentTypeMeta(addon.assessmentTypeId).tone} />
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm text-[color:var(--app-text)]">{addonOwnershipLabel(addon)}</span>
+                          {addon.sharedDepartmentIds && addon.sharedDepartmentIds.length > 0 ? (
+                            <span className="text-[11px] text-[color:var(--app-muted)]">Shared · {addon.sharedDepartmentIds.length}</span>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultDurationMinutes} min</td>
                       <td className="px-4 py-3 align-top text-sm text-[color:var(--app-text)]">{addon.defaultRequiredPercent}%</td>
@@ -678,6 +711,63 @@ export function AddonLibraryClient({
                       className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
                     />
                   </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-4 rounded-[24px] border border-[color:var(--app-border)] bg-[color:var(--app-modal-body)] p-5">
+              <p className="text-xs uppercase tracking-[0.18em] text-[color:var(--app-muted)]">Ownership &amp; sharing</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2">
+                  <span className="text-sm text-[color:var(--app-text)]">Owner</span>
+                  <select
+                    value={addonForm.departmentId ?? ""}
+                    onChange={(event) =>
+                      setAddonForm((current) => ({
+                        ...current,
+                        departmentId: event.target.value || null,
+                        sharedDepartmentIds: event.target.value ? current.sharedDepartmentIds : []
+                      }))
+                    }
+                    className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] px-4 py-3 text-[color:var(--app-text)] outline-none transition focus:border-brand-300/60"
+                  >
+                    <option value="">Global (all departments)</option>
+                    {departments.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid gap-2">
+                  <span className="text-sm text-[color:var(--app-text)]">Shared with</span>
+                  {addonForm.departmentId ? (
+                    departments.filter((d) => d.id !== addonForm.departmentId).length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {departments
+                          .filter((d) => d.id !== addonForm.departmentId)
+                          .map((d) => {
+                            const checked = addonForm.sharedDepartmentIds.includes(d.id);
+                            return (
+                              <button
+                                key={d.id}
+                                type="button"
+                                onClick={() => toggleAddonShare(d.id)}
+                                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                                  checked
+                                    ? "border-[color:var(--app-brand)] bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand)]"
+                                    : "border-[color:var(--app-border)] bg-[color:var(--app-control-bg)] text-[color:var(--app-text)] hover:border-[color:var(--app-brand)]/40"
+                                }`}
+                              >
+                                {d.name}
+                              </button>
+                            );
+                          })}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[color:var(--app-muted)]">No other departments to share with.</p>
+                    )
+                  ) : (
+                    <p className="text-xs text-[color:var(--app-muted)]">Global add-ons are already visible to every department.</p>
+                  )}
                 </div>
               </div>
             </div>

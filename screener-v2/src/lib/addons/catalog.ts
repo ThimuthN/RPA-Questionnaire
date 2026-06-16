@@ -19,6 +19,10 @@ export interface AddonCatalogEntry {
   defaultWeight: number;
   isActive: boolean;
   sortOrder: number;
+  /** Owner department; null/undefined = global/system addon (visible to all). */
+  departmentId?: string;
+  /** Department IDs this addon is explicitly shared with ("allow to see"). */
+  sharedDepartmentIds?: string[];
 }
 
 export interface AssessmentPresetItemEntry {
@@ -82,6 +86,10 @@ function asInputJson(value: Record<string, unknown> | undefined): Prisma.InputJs
   return (value ?? {}) as Prisma.InputJsonValue;
 }
 
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : [];
+}
+
 function mapAddon(row: {
   id: string;
   slug: string;
@@ -94,6 +102,8 @@ function mapAddon(row: {
   defaultWeight: number;
   isActive: boolean;
   sortOrder: number;
+  departmentId?: string | null;
+  sharedDepartmentIds?: unknown;
 }): AddonCatalogEntry {
   return {
     id: row.id,
@@ -106,7 +116,9 @@ function mapAddon(row: {
     defaultRequiredPercent: row.defaultRequiredPercent,
     defaultWeight: row.defaultWeight,
     isActive: row.isActive,
-    sortOrder: row.sortOrder
+    sortOrder: row.sortOrder,
+    departmentId: row.departmentId ?? undefined,
+    sharedDepartmentIds: asStringArray(row.sharedDepartmentIds)
   };
 }
 
@@ -267,9 +279,30 @@ async function listAssessmentPresetsLegacy(includeInactive = false): Promise<Ass
   );
 }
 
-export async function listAddonCatalog(includeInactive = false): Promise<AddonCatalogEntry[]> {
+export async function listAddonCatalog(
+  includeInactive = false,
+  opts?: { departmentId?: string }
+): Promise<AddonCatalogEntry[]> {
+  const deptId = opts?.departmentId?.trim();
+  const activeWhere: Prisma.AddonCatalogWhereInput = includeInactive ? {} : { isActive: true };
+  // Department-scoped view: global (no owner) + owned + explicitly shared. No deptId = admin sees all.
+  const where: Prisma.AddonCatalogWhereInput = deptId
+    ? {
+        AND: [
+          activeWhere,
+          {
+            OR: [
+              { departmentId: null },
+              { departmentId: deptId },
+              { sharedDepartmentIds: { array_contains: deptId } }
+            ]
+          }
+        ]
+      }
+    : activeWhere;
+
   const rows = await prisma.addonCatalog.findMany({
-    where: includeInactive ? undefined : { isActive: true },
+    where,
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }]
   });
 
@@ -293,6 +326,8 @@ export async function createAddonCatalogEntry(input: {
   defaultRequiredPercent: number;
   defaultWeight: number;
   isActive?: boolean;
+  departmentId?: string | null;
+  sharedDepartmentIds?: string[];
 }) {
   const label = input.label.trim();
   if (!label) {
@@ -322,6 +357,8 @@ export async function createAddonCatalogEntry(input: {
       defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(input.defaultRequiredPercent))),
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
       isActive: input.isActive ?? true,
+      departmentId: input.departmentId?.trim() || null,
+      sharedDepartmentIds: input.sharedDepartmentIds && input.sharedDepartmentIds.length > 0 ? input.sharedDepartmentIds : undefined,
       sortOrder: await nextAddonSortOrder()
     }
   });
@@ -340,6 +377,8 @@ export async function updateAddonCatalogEntry(
     defaultRequiredPercent: number;
     defaultWeight: number;
     isActive?: boolean;
+    departmentId?: string | null;
+    sharedDepartmentIds?: string[];
   }
 ) {
   const label = input.label.trim();
@@ -372,7 +411,9 @@ export async function updateAddonCatalogEntry(
       defaultDurationMinutes: Math.max(1, Math.round(input.defaultDurationMinutes)),
       defaultRequiredPercent: Math.min(100, Math.max(0, Math.round(input.defaultRequiredPercent))),
       defaultWeight: Math.max(0, Math.round(input.defaultWeight)),
-      isActive: input.isActive ?? true
+      isActive: input.isActive ?? true,
+      ...(input.departmentId !== undefined ? { departmentId: input.departmentId?.trim() || null } : {}),
+      ...(input.sharedDepartmentIds !== undefined ? { sharedDepartmentIds: input.sharedDepartmentIds } : {})
     }
   });
 

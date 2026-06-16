@@ -362,7 +362,7 @@ export default async function CandidateDetailPage({
 
   const [assessmentAddons, assessmentPresets] = canManageCandidate
     ? await Promise.all([
-        listAddonCatalog(),
+        listAddonCatalog(false, requestedWorkspaceId ? { departmentId: requestedWorkspaceId } : undefined),
         listAssessmentPresets(
           requestedWorkspaceId
             ? { departmentId: requestedWorkspaceId, includeShared: true }

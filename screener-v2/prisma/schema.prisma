@@ -145,11 +145,16 @@ model AddonCatalog {
   defaultWeight         Int
   isActive              Boolean  @default(true)
   sortOrder             Int      @default(0)
+  // Ownership: null = global/system addon (visible to all). Otherwise owned by a department.
+  departmentId          String?
+  // Optional list of department IDs this addon is shared with ("allow to see"). JSON array of strings.
+  sharedDepartmentIds   Json?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   presetItems           AssessmentPresetItem[]
 
   @@index([isActive, sortOrder])
+  @@index([departmentId])
 }
 
 model AssessmentPreset {

@@ -12,7 +12,7 @@ import {
   hasGlobalPermission,
   isSystemAdmin
 } from "@/lib/auth/permission-evaluator";
-import { getDepartment } from "@/lib/db/departments";
+import { getDepartment, listDepartments } from "@/lib/db/departments";
 import { listAddonCatalog, listAssessmentPresets } from "@/lib/addons/catalog";
 
 const AddonLibraryClient = dynamic(
@@ -63,13 +63,15 @@ export default async function AddonsPage({
     ? await canUsePermissionForDepartment(session, "manage_addons", workspaceId)
     : false;
 
-  const [addons, presets] = await Promise.all([
-    listAddonCatalog(true),
+  const [addons, presets, departments] = await Promise.all([
+    // Global admin sees every add-on; a workspace view is scoped to global + owned + shared.
+    listAddonCatalog(true, workspaceId ? { departmentId: workspaceId } : undefined),
     listAssessmentPresets(
       workspaceId
         ? { includeInactive: true, departmentId: workspaceId, includeShared: true }
         : { includeInactive: true }
-    )
+    ),
+    globalManageAccess ? listDepartments() : Promise.resolve([])
   ]);
 
   return (
@@ -103,6 +105,7 @@ export default async function AddonsPage({
           canManageGlobalPresets={globalManageAccess}
           canManageWorkspacePresets={canManageWorkspacePresets}
           managedDepartmentId={workspaceId}
+          departments={departments.map((d) => ({ id: d.id, name: d.name }))}
         />
       </SceneShell>
     </SceneTransition>
