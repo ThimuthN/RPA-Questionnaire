@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, X, Send, Loader2, GripVertical } from "lucide-react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const RESERVED = new Set(["applicants", "jobs", "new", "pool", "board", "analytics"]);
+const POS_KEY = "starry-dock-pos";
 
 function candidateIdFromPath(pathname: string): string | undefined {
   const m = pathname.match(/^\/people\/candidates\/([^/]+)/);
@@ -27,20 +29,70 @@ const QUICK_ACTIONS_GENERAL = [
   { label: "Screening questions", prompt: "Suggest a set of strong, role-relevant screening questions. Ask me which role first." }
 ];
 
-export function StarryDock() {
+export function StarryDock({ configured }: { configured: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pos, setPos] = useState<{ right: number; bottom: number }>({ right: 20, bottom: 88 });
+  const posRef = useRef(pos);
+  const dragRef = useRef<{ x: number; y: number; right: number; bottom: number; moved: boolean } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const candidateId = candidateIdFromPath(pathname ?? "");
   const quickActions = candidateId ? QUICK_ACTIONS_CANDIDATE : QUICK_ACTIONS_GENERAL;
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem(POS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p?.right === "number" && typeof p?.bottom === "number") {
+          const next = { right: p.right, bottom: p.bottom };
+          posRef.current = next;
+          setPos(next);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading, open]);
+
+  function commitPos(next: { right: number; bottom: number }) {
+    posRef.current = next;
+    setPos(next);
+  }
+
+  function onDragStart(e: React.PointerEvent) {
+    (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    dragRef.current = { x: e.clientX, y: e.clientY, right: posRef.current.right, bottom: posRef.current.bottom, moved: false };
+  }
+  function onDragMove(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+    commitPos({
+      right: Math.min(Math.max(8, d.right - dx), Math.max(8, window.innerWidth - 64)),
+      bottom: Math.min(Math.max(8, d.bottom - dy), Math.max(8, window.innerHeight - 64))
+    });
+  }
+  function onDragEnd() {
+    const d = dragRef.current;
+    dragRef.current = null;
+    try {
+      localStorage.setItem(POS_KEY, JSON.stringify(posRef.current));
+    } catch {
+      /* ignore */
+    }
+    return d?.moved ?? false;
+  }
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -56,11 +108,10 @@ export function StarryDock() {
         body: JSON.stringify({ messages: next.slice(-12), candidateId })
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; text?: string; error?: string };
-      if (!res.ok || !data.ok) {
-        setMessages((m) => [...m, { role: "assistant", content: data.error || "Something went wrong reaching Starry." }]);
-      } else {
-        setMessages((m) => [...m, { role: "assistant", content: data.text || "(no response)" }]);
-      }
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", content: !res.ok || !data.ok ? data.error || "Something went wrong reaching Starry." : data.text || "(no response)" }
+      ]);
     } catch {
       setMessages((m) => [...m, { role: "assistant", content: "Network error reaching Starry." }]);
     } finally {
@@ -68,13 +119,19 @@ export function StarryDock() {
     }
   }
 
+  // Collapsed: draggable launcher (drag to reposition; click to open)
   if (!open) {
     return (
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Open Starry AI assistant"
-        className="fixed bottom-20 right-5 z-50 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_30%,transparent)] transition hover:-translate-y-[1px] hover:brightness-105"
+        aria-label="Open Starry AI assistant (drag to move)"
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={() => {
+          if (!onDragEnd()) setOpen(true);
+        }}
+        style={{ right: pos.right, bottom: pos.bottom, touchAction: "none" }}
+        className="fixed z-50 inline-flex cursor-grab items-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--app-brand),var(--app-brand-strong))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_28px_color-mix(in_srgb,var(--app-brand)_30%,transparent)] transition hover:brightness-105 active:cursor-grabbing"
       >
         <Sparkles className="h-4 w-4" />
         Ask Starry
@@ -83,25 +140,44 @@ export function StarryDock() {
   }
 
   return (
-    <div className="fixed bottom-20 right-5 z-50 flex h-[520px] max-h-[calc(100vh-7rem)] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow)]">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 border-b border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_14%,var(--app-surface)),var(--app-surface))] px-4 py-3">
+    <div
+      style={{ right: pos.right, bottom: pos.bottom }}
+      className="fixed z-50 flex h-[520px] max-h-[calc(100vh-7rem)] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)] shadow-[var(--app-shadow)]"
+    >
+      {/* Header — drag handle */}
+      <div
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={() => onDragEnd()}
+        style={{ touchAction: "none" }}
+        className="flex cursor-grab items-center justify-between gap-2 border-b border-[color:var(--app-border)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--app-brand)_14%,var(--app-surface)),var(--app-surface))] px-4 py-3 active:cursor-grabbing"
+      >
         <div className="flex items-center gap-2">
+          <GripVertical className="h-4 w-4 text-[color:var(--app-muted)]" />
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--app-brand-soft)] text-[color:var(--app-brand)]">
             <Sparkles className="h-4 w-4" />
           </span>
           <div className="leading-tight">
             <p className="text-sm font-semibold text-[color:var(--app-heading)]">Starry</p>
-            <p className="text-[11px] text-[color:var(--app-muted)]">{candidateId ? "Viewing candidate context" : "AI hiring assistant"}</p>
+            <p className="text-[11px] text-[color:var(--app-muted)]">
+              {!configured ? "Limited — no model connected" : candidateId ? "Viewing candidate context" : "AI hiring assistant"}
+            </p>
           </div>
         </div>
-        <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="rounded-full p-1.5 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]">
+        <button type="button" onClick={() => setOpen(false)} aria-label="Minimize" className="rounded-full p-1.5 text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] hover:text-[color:var(--app-heading)]">
           <X className="h-4 w-4" />
         </button>
       </div>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+        {!configured ? (
+          <div className="rounded-[12px] border border-[color:var(--pill-amber-border)] bg-[color:var(--pill-amber-bg)] px-3 py-2 text-xs leading-5 text-[color:var(--pill-amber-text)]">
+            Starry isn&apos;t connected to a model yet, so AI answers are unavailable. An admin can enable it in{" "}
+            <Link href="/integrations" className="font-semibold underline">Integrations</Link>.
+          </div>
+        ) : null}
+
         {messages.length === 0 ? (
           <div className="space-y-3">
             <p className="text-sm leading-6 text-[color:var(--app-muted)]">

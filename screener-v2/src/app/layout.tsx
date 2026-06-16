@@ -123,7 +123,7 @@ export default async function RootLayout({
               </div>
               <ThemeToggle />
               <CommandPalette />
-              {showStarry ? <StarryDock /> : null}
+              <StarryDock configured={showStarry} />
             </div>
           ) : (
             /* ── Public routes (and unauthenticated): no sidebar, full-width ── */
