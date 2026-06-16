@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; reset?: string }>;
 }) {
   const params = await searchParams;
   const session = await getAppSession();
@@ -48,6 +48,12 @@ export default async function LoginPage({
             <p className="text-sm text-[color:var(--app-muted)]">Use your company credentials to continue.</p>
           </div>
 
+          {params.reset ? (
+            <div className="mb-4 rounded-lg border border-[color:var(--app-brand)]/30 bg-[color:var(--app-brand-soft)] px-4 py-3 text-sm text-[color:var(--app-brand-strong)]">
+              Your password has been updated. Sign in with your new password.
+            </div>
+          ) : null}
+
           <form action="/api/auth/login" method="post" className="space-y-4">
             <input type="hidden" name="next" value={params.next || "/departments"} />
 
@@ -67,9 +73,14 @@ export default async function LoginPage({
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[color:var(--app-text)]" htmlFor="password">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-[color:var(--app-text)]" htmlFor="password">
+                  Password
+                </label>
+                <a href="/forgot-password" className="text-xs font-medium text-[color:var(--app-brand)] transition hover:underline">
+                  Forgot password?
+                </a>
+              </div>
               <input
                 id="password"
                 name="password"

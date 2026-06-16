@@ -3,8 +3,8 @@ export interface BaseEmailVars {
   previewText?: string;
 }
 
-const BRAND = "#4F46E5";
-const BRAND_DARK = "#3730A3";
+const BRAND = "#0aa6a0";
+const BRAND_DARK = "#0f2336";
 
 export function baseLayout(vars: BaseEmailVars, bodyHtml: string): string {
   return `<!DOCTYPE html>
@@ -46,7 +46,7 @@ ${vars.previewText ? `<span style="display:none;max-height:0;overflow:hidden;">$
         <tr>
           <td style="background:#f9fafb;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 16px 16px;padding:20px 32px;">
             <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
-              This email was sent by ${vars.orgName} via Screener ATS. If you believe you received this in error, please disregard it.
+              This email was sent by ${vars.orgName}. If you believe you received this in error, please disregard it.
             </p>
           </td>
         </tr>

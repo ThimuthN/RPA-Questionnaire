@@ -240,14 +240,16 @@ export async function listAppUsers(): Promise<AppUserRow[]> {
 export async function createAppUser(input: {
   email: string;
   name?: string;
-  password: string;
+  password?: string;
   departmentId?: string;
   roleId?: string;
   actorId?: string | null;
   actorEmail?: string | null;
 }) {
   const email = normalizeEmail(input.email);
-  const passwordHash = hashPassword(input.password);
+  // Omitting the password creates an invited (password-less) account: it cannot
+  // be logged into until the invitee sets a password via their invite link.
+  const passwordHash = input.password ? hashPassword(input.password) : null;
 
   const created = await prisma.user.create({
     data: {

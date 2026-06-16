@@ -69,7 +69,7 @@ const themeInitScript = `
  */
 function isPublicShellPath(pathname: string) {
   if (pathname === "/") return true;
-  return ["/jobs", "/privacy", "/terms", "/login", "/upload", "/auth"].some(
+  return ["/jobs", "/privacy", "/terms", "/login", "/upload", "/auth", "/invite", "/forgot-password", "/reset-password"].some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }

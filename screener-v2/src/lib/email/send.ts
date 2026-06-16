@@ -11,7 +11,9 @@ export type EmailTemplate =
   | "rejection"
   | "offer_sent"
   | "screener_invite"
-  | "ad_hoc";
+  | "ad_hoc"
+  | "user_invite"
+  | "password_reset";
 
 export interface SendEmailInput {
   to: string | string[];

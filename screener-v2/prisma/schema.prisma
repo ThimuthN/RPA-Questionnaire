@@ -113,9 +113,27 @@ model User {
   offerApprovalSteps            OfferApprovalStep[] @relation("OfferApprovalStepApprover")
   notifications                 AppNotification[]
   mfaTrustedDevices             MfaTrustedDevice[]
+  authTokens                    UserAuthToken[]
 
   @@index([departmentId])
   @@index([roleId])
+}
+
+// One-time tokens for account invitations and password resets. Only the HMAC of
+// the token is stored; the raw token lives only in the emailed link.
+model UserAuthToken {
+  id          String    @id @default(cuid())
+  userId      String
+  purpose     String    // "invite" | "password_reset"
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
 }
 
 model AssessmentTemplate {

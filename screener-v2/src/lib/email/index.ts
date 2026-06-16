@@ -9,3 +9,5 @@ export { rejectionEmail } from "./templates/rejection";
 export { offerSentEmail } from "./templates/offer-sent";
 export { screenerInviteEmail } from "./templates/screener-invite";
 export { adHocEmail } from "./templates/ad-hoc";
+export { userInviteEmail } from "./templates/user-invite";
+export { passwordResetEmail } from "./templates/password-reset";
