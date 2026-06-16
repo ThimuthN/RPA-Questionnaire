@@ -20,6 +20,15 @@ export function brandOrgName(): string | null {
   return process.env.NEXT_PUBLIC_ORG_NAME?.trim() || null;
 }
 
+/**
+ * Platform product name — shown in email copy ("Join Acme on [platform]"),
+ * MFA authenticator issuer, etc. Defaults to "Northstar" when not overridden.
+ * Set NEXT_PUBLIC_PLATFORM_NAME to rebrand for a different deployment.
+ */
+export function getPlatformName(): string {
+  return process.env.NEXT_PUBLIC_PLATFORM_NAME?.trim() || "Northstar";
+}
+
 export function brandLogoFull(): string {
   const value = process.env.NEXT_PUBLIC_BRAND_LOGO_FULL?.trim();
   return value && SAFE_PATH.test(value) ? value : "/brand/northstar-logo-clean.png";

@@ -9,13 +9,13 @@ export interface UserInviteVars {
 }
 
 export function userInviteEmail(vars: UserInviteVars): { subject: string; html: string } {
-  const subject = `You've been invited to ${vars.orgName}`;
+  const subject = `You've been invited to join ${vars.orgName}`;
   const greeting = vars.inviteeName?.trim() ? `Hi ${vars.inviteeName.trim()},` : "Hi,";
   const invitedBy = vars.inviterName?.trim() ? ` by ${vars.inviterName.trim()}` : "";
   const expiry = vars.expiresAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
   const body = `
-    ${h1(`Join ${vars.orgName} on Northstar`)}
+    ${h1(`Join ${vars.orgName}`)}
     ${p(greeting)}
     ${p(`You've been invited${invitedBy} to join the <strong>${vars.orgName}</strong> hiring workspace. Set a password to activate your account and get started.`)}
     ${ctaButton("Accept invitation", vars.acceptUrl)}
