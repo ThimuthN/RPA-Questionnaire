@@ -61,6 +61,8 @@ export function resolveCurrentWorkspace({
     pathname.startsWith("/access-roles") ||
     pathname.startsWith("/integrations") ||
     pathname.startsWith("/users") ||
+    pathname.startsWith("/security") ||
+    pathname.startsWith("/audit-log") ||
     pathname.startsWith("/create-test") ||
     pathname.startsWith("/addons");
   if (isAdminRoute && isAdmin) {
@@ -224,19 +226,21 @@ export function WorkspaceRail({
                         <div className={cn("overflow-hidden transition-all duration-200 ease-out", isExpanded ? "max-h-60 opacity-100" : "max-h-0 opacity-0")}>
                           <div className="mt-0.5 ml-3.5 space-y-0.5 border-l border-[color:var(--app-rail-divider)] pl-3">
                             {item.children!.map((sub) => {
-                              const isStageActive = pathname === "/people/candidates" && currentStage === sub.stage;
+                              const isSubActive = sub.stage
+                                ? pathname === "/people/candidates" && currentStage === sub.stage
+                                : pathname.startsWith(sub.href as string);
                               return (
                                 <Link
-                                  key={sub.stage}
+                                  key={sub.href}
                                   href={sub.href}
                                   className={cn(
                                     "flex items-center gap-2 rounded-[10px] px-2.5 py-[5px] text-[13px] font-medium transition-all duration-150",
-                                    isStageActive
+                                    isSubActive
                                       ? "bg-[color:var(--app-rail-item-active-bg)] text-[color:var(--app-rail-item-active-text)]"
                                       : "text-[color:var(--app-rail-item-text)] opacity-70 hover:opacity-100 hover:bg-[color:var(--app-rail-item-hover-bg)] hover:text-[color:var(--app-rail-item-hover-text)]"
                                   )}
                                 >
-                                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isStageActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-rail-stage-dot)]")} />
+                                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0 transition-colors", isSubActive ? "bg-[color:var(--app-brand)]" : "bg-[color:var(--app-rail-stage-dot)]")} />
                                   {sub.label}
                                 </Link>
                               );

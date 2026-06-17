@@ -1,10 +1,10 @@
 import type { Route } from "next";
 import type { LucideIcon } from "lucide-react";
-import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, Lock, PlugZap, ScrollText, Shield, Users, Users2 } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, Building2, ClipboardList, Home, Lock, PlugZap, ScrollText, Shield, ShieldCheck, Users, Users2 } from "lucide-react";
 import { copy } from "@/lib/design/copy";
 import type { AppSession } from "@/lib/auth/session";
 
-export type NavSubItem = { href: Route; label: string; stage: string };
+export type NavSubItem = { href: Route; label: string; stage?: string };
 export type NavItem = {
   href: Route;
   label: string;
@@ -58,11 +58,27 @@ export function getNavItems(
 
     if (canManageUsers) {
       items.push(
-        { href: "/departments" as Route, label: "Workspaces", icon: Building2, section: "Admin" },
-        { href: "/users" as Route, label: "Users", icon: Users, section: "Admin" },
-        { href: "/access-roles" as Route, label: "Access Roles", icon: Shield, section: "Admin" },
-        { href: "/security" as Route, label: "Security", icon: Lock, section: "Admin" },
-        { href: "/audit-log" as Route, label: "Audit Log", icon: ScrollText, section: "Admin" }
+        {
+          href: "/departments" as Route,
+          label: "Organization",
+          icon: Building2,
+          section: "Admin",
+          children: [
+            { href: "/departments" as Route, label: "Workspaces" },
+            { href: "/users" as Route, label: "Users" },
+            { href: "/access-roles" as Route, label: "Access Roles" },
+          ]
+        },
+        {
+          href: "/security" as Route,
+          label: "Security & Compliance",
+          icon: ShieldCheck,
+          section: "Admin",
+          children: [
+            { href: "/security" as Route, label: "Security Settings" },
+            { href: "/audit-log" as Route, label: "Audit Log" },
+          ]
+        }
       );
     }
 
@@ -72,7 +88,7 @@ export function getNavItems(
 
     if (canManageUsers) {
       items.push(
-        { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "All hiring" },
+        { href: "/people/candidates/jobs" as Route, label: "All Jobs", icon: BriefcaseBusiness, section: "Hiring" },
         { href: "/people/candidates/applicants" as Route, label: "All Applicants", icon: ClipboardList },
         { href: "/people/candidates" as Route, label: `All ${copy.nav.candidates}`, icon: Users2, children: GLOBAL_CANDIDATE_STAGES },
         { href: "/people/analytics" as Route, label: "Analytics", icon: BarChart3 },
@@ -104,8 +120,11 @@ export function isNavItemActive(pathname: string, href: string) {
         pathname.startsWith("/create-test") ||
         pathname.startsWith("/addons") ||
         pathname.startsWith("/results"))) ||
-    (href === "/departments" && pathname === "/departments") ||
-    (href === "/security" && pathname.startsWith("/security")) ||
-    (href === "/audit-log" && pathname.startsWith("/audit-log"))
+    // Organization group — active when on any of its children
+    (href === "/departments" &&
+      (pathname === "/departments" || pathname === "/users" || pathname === "/access-roles")) ||
+    // Security & Compliance group — active when on any of its children
+    (href === "/security" &&
+      (pathname.startsWith("/security") || pathname.startsWith("/audit-log")))
   );
 }
