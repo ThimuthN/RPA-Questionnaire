@@ -10,10 +10,11 @@ const TRUSTED_DEVICE_TTL_DAYS = 30;
 
 // HMAC key derived from the server secret (domain-separated per use) so that an
 // attacker with only the database cannot brute-force the relatively low-entropy
-// backup codes offline. Falls back to a constant only when no secret is set
-// (local/dev); production always has AUTH_SESSION_SECRET.
+// backup codes offline.
 function hmacKey(domain: string): string {
-  return `${process.env.AUTH_SESSION_SECRET ?? "northstar-mfa-fallback"}:${domain}`;
+  const secret = process.env.AUTH_SESSION_SECRET;
+  if (!secret) throw new Error("AUTH_SESSION_SECRET is required");
+  return `${secret}:${domain}`;
 }
 
 // ── Secret encryption ──────────────────────────────────────────────────────

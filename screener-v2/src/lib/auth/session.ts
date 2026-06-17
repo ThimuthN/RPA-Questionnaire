@@ -22,9 +22,8 @@ export type AppSession = {
 
 function getSessionSecret() {
   const secret = process.env.AUTH_SESSION_SECRET;
-  if (!secret) {
-    throw new Error("AUTH_SESSION_SECRET is not configured.");
-  }
+  if (!secret) throw new Error("AUTH_SESSION_SECRET is not configured.");
+  if (secret.length < 32) throw new Error("AUTH_SESSION_SECRET must be at least 32 characters.");
   return secret;
 }
 
@@ -70,7 +69,7 @@ export async function getSession() {
 export function setSessionCookie(response: NextResponse, token: string) {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_MAX_AGE
@@ -80,7 +79,7 @@ export function setSessionCookie(response: NextResponse, token: string) {
 export function clearSessionCookie(response: NextResponse) {
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 0

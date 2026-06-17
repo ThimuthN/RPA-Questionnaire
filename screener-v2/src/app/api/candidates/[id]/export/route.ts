@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
+import { logAudit } from "@/lib/auth/audit";
 
 export async function GET(
   _request: Request,
@@ -98,6 +99,16 @@ export async function GET(
     offer: offers,
     activityEvents,
   };
+
+  await logAudit({
+    action: "candidate_data_exported",
+    actorId: auth.session.userId,
+    actorEmail: auth.session.email,
+    targetId: id,
+    targetType: "candidate",
+    ipAddress: _request.headers.get("x-forwarded-for") ?? _request.headers.get("x-real-ip"),
+    userAgent: _request.headers.get("user-agent"),
+  });
 
   return new NextResponse(JSON.stringify(exportData, null, 2), {
     status: 200,

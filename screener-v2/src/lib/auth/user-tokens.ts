@@ -11,7 +11,9 @@ const TTL_HOURS: Record<UserTokenPurpose, number> = {
 // Keyed with the server secret so a database-only attacker can't forge a valid
 // token hash. Only the hash is stored; the raw token lives in the emailed link.
 function tokenKey(): string {
-  return `${process.env.AUTH_SESSION_SECRET ?? "northstar-token-fallback"}:user-auth-token`;
+  const secret = process.env.AUTH_SESSION_SECRET;
+  if (!secret) throw new Error("AUTH_SESSION_SECRET is required");
+  return `${secret}:user-auth-token`;
 }
 
 function hashToken(raw: string): string {
