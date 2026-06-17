@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { deleteResultAttempt } from "@/lib/db/repositories";
+import { prisma } from "@/lib/db/prisma";
 
 export async function POST(
   request: Request,
@@ -11,13 +12,26 @@ export async function POST(
     return auth.response;
   }
 
-  const perm = requirePermission(auth.session, "view_results");
-  if (!perm.ok) {
-    return perm.response;
-  }
-
   try {
     const { attemptId } = await context.params;
+
+    const attemptData = await prisma.attempt.findUnique({
+      where: { id: attemptId },
+      select: {
+        candidateAssessment: {
+          select: { candidate: { select: { departmentId: true } } }
+        }
+      }
+    });
+    const departmentId = attemptData?.candidateAssessment?.candidate?.departmentId ?? null;
+
+    const perm = await requirePermissionForDepartment(auth.session, "delete_candidate", departmentId);
+    if (!perm.ok) {
+      const url = new URL("/results", request.url);
+      url.searchParams.set("error", "Permission denied.");
+      return NextResponse.redirect(url, 303);
+    }
+
     await deleteResultAttempt(attemptId);
 
     const url = new URL("/results", request.url);

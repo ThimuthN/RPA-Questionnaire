@@ -6,7 +6,7 @@ import { getStarryStatus, saveStarryConfig } from "@/lib/ai/config";
 const bodySchema = z.object({
   providerKind: z.enum(["anthropic", "openai"]),
   model: z.string().max(120).optional(),
-  baseUrl: z.string().max(300).optional(),
+  baseUrl: z.string().url().max(300).refine((u) => u.startsWith("https://"), { message: "Base URL must use HTTPS." }).optional(),
   apiKey: z.string().max(400).optional(),
   enabled: z.boolean()
 });

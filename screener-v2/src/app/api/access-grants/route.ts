@@ -4,6 +4,7 @@ import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/gu
 import { isSystemAdmin } from "@/lib/auth/permission-evaluator";
 import { grantSystemAccess, grantDepartmentAccess } from "@/lib/auth/access-grants";
 import { prisma } from "@/lib/db/prisma";
+import { logAudit } from "@/lib/auth/audit";
 import { apiError } from "@/lib/server/api-error";
 
 const grantSchema = z.object({
@@ -48,6 +49,17 @@ export async function POST(request: Request) {
         roleSlug: body.roleSlug
       });
 
+      await logAudit({
+        action: "system_access_granted",
+        actorId: auth.session.userId,
+        actorEmail: auth.session.email,
+        targetId: body.userId,
+        targetType: "user",
+        after: { roleSlug: body.roleSlug, scope: "system" },
+        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+        userAgent: request.headers.get("user-agent"),
+      });
+
       return NextResponse.json({ ok: true, grant });
     }
 
@@ -66,6 +78,17 @@ export async function POST(request: Request) {
         userId: body.userId,
         departmentId: body.departmentId,
         roleId: body.roleId
+      });
+
+      await logAudit({
+        action: "department_access_granted",
+        actorId: auth.session.userId,
+        actorEmail: auth.session.email,
+        targetId: body.userId,
+        targetType: "user",
+        after: { roleId: body.roleId, departmentId: body.departmentId, scope: "department" },
+        ipAddress: request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip"),
+        userAgent: request.headers.get("user-agent"),
       });
 
       return NextResponse.json({ ok: true, grant });

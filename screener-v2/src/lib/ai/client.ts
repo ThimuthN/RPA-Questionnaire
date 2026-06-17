@@ -25,6 +25,9 @@ export async function runStarryChat(input: {
   try {
     if (rt.providerKind === "anthropic") {
       const base = (rt.baseUrl || "https://api.anthropic.com").replace(/\/$/, "");
+      if (!base.startsWith("https://")) {
+        return { ok: false, code: "provider_error", error: "AI provider base URL must use HTTPS." };
+      }
       const res = await fetch(`${base}/v1/messages`, {
         method: "POST",
         headers: {
@@ -53,6 +56,9 @@ export async function runStarryChat(input: {
 
     // OpenAI-compatible (OpenAI / local model with a custom base URL)
     const base = (rt.baseUrl || "https://api.openai.com").replace(/\/$/, "");
+    if (!base.startsWith("https://")) {
+      return { ok: false, code: "provider_error", error: "AI provider base URL must use HTTPS." };
+    }
     const res = await fetch(`${base}/v1/chat/completions`, {
       method: "POST",
       headers: {

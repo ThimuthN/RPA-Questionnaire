@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { requireApiSession, requirePermission } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { getResult } from "@/lib/db/repositories";
+import { prisma } from "@/lib/db/prisma";
 
 export async function GET(
   _request: Request,
@@ -11,12 +12,23 @@ export async function GET(
     return auth.response;
   }
 
-  const perm = requirePermission(auth.session, "view_results");
+  const { attemptId } = await context.params;
+
+  const attemptData = await prisma.attempt.findUnique({
+    where: { id: attemptId },
+    select: {
+      candidateAssessment: {
+        select: { candidate: { select: { departmentId: true } } }
+      }
+    }
+  });
+  const departmentId = attemptData?.candidateAssessment?.candidate?.departmentId ?? null;
+
+  const perm = await requirePermissionForDepartment(auth.session, "view_results", departmentId);
   if (!perm.ok) {
     return perm.response;
   }
 
-  const { attemptId } = await context.params;
   const row = await getResult(attemptId);
   if (!row) {
     return NextResponse.json({ ok: false, message: "Result not found." }, { status: 404 });

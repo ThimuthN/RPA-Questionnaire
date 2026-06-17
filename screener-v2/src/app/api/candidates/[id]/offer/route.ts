@@ -103,6 +103,22 @@ export async function GET(
 
   const { id } = await params;
 
+  const candidate = await prisma.candidate.findUnique({
+    where: { id },
+    select: {
+      departmentId: true,
+      departmentCandidacies: {
+        where: { status: "active" },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { departmentId: true }
+      }
+    }
+  });
+  if (!candidate) return NextResponse.json({ ok: false, message: "Candidate not found" }, { status: 404 });
+  const perm = await requirePermissionForDepartment(auth.session, "manage_candidates", resolveCandidateDepartmentId(candidate));
+  if (!perm.ok) return perm.response;
+
   const offer = await prisma.candidateOffer.findUnique({
     where: { candidateId: id },
     include: {

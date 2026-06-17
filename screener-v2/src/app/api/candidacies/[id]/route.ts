@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireApiSession } from "@/lib/auth/guards";
+import { requireApiSession, requirePermissionForDepartment } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { updateDepartmentCandidacyStatus } from "@/lib/db/candidacies";
 
@@ -37,15 +37,8 @@ export async function PATCH(
       );
     }
 
-    // Check permission: users with manage_candidates permission can update
-    const canManage = session.permissions.includes("manage_candidates");
-
-    if (!canManage) {
-      return NextResponse.json(
-        { error: "Not authorized to update this candidacy" },
-        { status: 403 }
-      );
-    }
+    const perm = await requirePermissionForDepartment(session, "manage_candidates", candidacy.departmentId);
+    if (!perm.ok) return perm.response;
 
     const body = await request.json();
     const input = updateCandidacySchema.parse(body);
@@ -132,6 +125,9 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    const perm = await requirePermissionForDepartment(auth.session, "manage_candidates", candidacy.departmentId);
+    if (!perm.ok) return perm.response;
 
     await prisma.departmentCandidacy.delete({
       where: { id: candidacyId }
