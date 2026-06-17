@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
 import { StatusPill } from "@/components/primitives/StatusPill";
@@ -103,10 +103,12 @@ export function CandidateOfferPanel({
   approvalRoute?: ApprovalRouteStep[];
 }) {
   const router = useRouter();
+  const [, startRefresh] = useTransition();
   const [offer, setOffer] = useState<OfferRecord | null>(initialOffer);
   const [editing, setEditing] = useState(!initialOffer && canManage);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [approvalNote, setApprovalNote] = useState("");
 
   const [form, setForm] = useState({
@@ -133,17 +135,21 @@ export function CandidateOfferPanel({
   async function saveOffer(action: "upsert" | "send" | "revoke" | "submit_for_approval") {
     setSaving(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const res = await fetch(`/api/candidates/${candidateId}/offer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...form }),
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; offer?: OfferRecord };
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string; offer?: OfferRecord; autoApproved?: boolean };
       if (!res.ok || data.ok === false) throw new Error(data.message ?? "Failed to save offer");
       if (data.offer) setOffer(data.offer);
       setEditing(false);
-      router.refresh();
+      if (action === "send") setSuccessMsg("Offer marked as sent. A notification email has been dispatched to the candidate.");
+      if (action === "submit_for_approval" && data.autoApproved) setSuccessMsg("No approval chain configured — offer auto-approved and ready to send.");
+      // Refresh server component data in a non-blocking transition so local state is not disrupted
+      startRefresh(() => router.refresh());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
     } finally {
@@ -184,7 +190,7 @@ export function CandidateOfferPanel({
             : current.approvalSteps
       } : current);
       setApprovalNote("");
-      router.refresh();
+      startRefresh(() => router.refresh());
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to ${action} offer`);
     } finally {
@@ -218,6 +224,10 @@ export function CandidateOfferPanel({
 
           {error ? (
             <p className="rounded-[14px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">{error}</p>
+          ) : null}
+
+          {successMsg ? (
+            <p className="rounded-[14px] border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{successMsg}</p>
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-3 border-t border-[color:var(--app-border)] pt-4">
@@ -369,6 +379,8 @@ export function CandidateOfferPanel({
 
           {error ? (
             <p className="rounded-[14px] border border-[color:var(--app-danger-border)] bg-[color:var(--app-danger-soft)] px-3 py-2 text-sm text-[color:var(--app-danger)]">{error}</p>
+          ) : successMsg ? (
+            <p className="rounded-[14px] border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">{successMsg}</p>
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
