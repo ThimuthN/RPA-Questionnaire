@@ -24,7 +24,7 @@ function initials(name: string) {
  * embedded metadata (EXIF/GPS) — important since candidate photos are PII — and
  * keeps the uploaded blob tiny and uniform.
  */
-function normalizeToSquareWebp(file: File): Promise<Blob> {
+function normalizeToSquare(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new window.Image();
@@ -43,8 +43,16 @@ function normalizeToSquareWebp(file: File): Promise<Blob> {
         const sx = (img.width - side) / 2;
         const sy = (img.height - side) / 2;
         ctx.drawImage(img, sx, sy, side, side, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+        // Try WebP first (smaller), fall back to JPEG for browsers that don't support WebP encoding
         canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error("Could not process the image."))),
+          (webpBlob) => {
+            if (webpBlob) { resolve(webpBlob); return; }
+            canvas.toBlob(
+              (jpegBlob) => (jpegBlob ? resolve(jpegBlob) : reject(new Error("Could not process the image."))),
+              "image/jpeg",
+              0.88
+            );
+          },
           "image/webp",
           0.85
         );
@@ -97,7 +105,7 @@ export function CandidateAvatarUpload({
 
     setUploading(true);
     try {
-      const normalized = await normalizeToSquareWebp(file);
+      const normalized = await normalizeToSquare(file);
       const formData = new FormData();
       formData.append("avatar", normalized, "avatar.webp");
 
@@ -193,7 +201,9 @@ export function CandidateAvatarUpload({
         </button>
       ) : null}
 
-      {error ? <p className="max-w-[8rem] text-center text-[11px] text-[color:var(--app-danger)]">{error}</p> : null}
+      {error ? (
+        <p className="max-w-[10rem] text-center text-xs font-medium text-[color:var(--app-danger)]">{error}</p>
+      ) : null}
 
       <input
         ref={inputRef}
