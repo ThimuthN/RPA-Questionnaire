@@ -132,6 +132,9 @@ async function ensureSystemAdminGrant(userId: string, accessRoleId: string, syst
 }
 
 export async function ensureBootstrapAdmin() {
+  // Only runs outside production — prevents accidental re-provisioning in live environment
+  if (process.env.NODE_ENV === "production") return;
+
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
   const name = process.env.BOOTSTRAP_ADMIN_NAME?.trim() || "Bootstrap Admin";
