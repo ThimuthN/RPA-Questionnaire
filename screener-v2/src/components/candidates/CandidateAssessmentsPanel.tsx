@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { ClipboardList, Download, ExternalLink, Monitor } from "lucide-react";
 import { CandidateAssessmentPill } from "@/components/candidates/CandidatePills";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { LogExternalAssessmentForm } from "@/components/candidates/LogExternalAssessmentForm";
@@ -43,11 +43,34 @@ function formatTimestamp(value?: string) {
   return new Date(value).toLocaleString();
 }
 
-function SectionLabel({ children, count }: { children: React.ReactNode; count?: number }) {
+function SectionHeader({
+  icon: Icon,
+  title,
+  count,
+  description
+}: {
+  icon: React.ElementType;
+  title: string;
+  count?: number;
+  description: string;
+}) {
   return (
-    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--app-muted)]">
-      {children}{typeof count === "number" && count > 0 ? <span className="ml-1 font-normal opacity-60">· {count}</span> : null}
-    </p>
+    <div className="flex items-start gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--app-border)] bg-[color:var(--app-surface)]">
+        <Icon className="h-4 w-4 text-[color:var(--app-muted)]" />
+      </div>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-[color:var(--app-heading)]">{title}</p>
+          {typeof count === "number" && count > 0 ? (
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--app-surface-soft)] px-1.5 text-[11px] font-semibold text-[color:var(--app-muted)]">
+              {count}
+            </span>
+          ) : null}
+        </div>
+        <p className="text-xs text-[color:var(--app-muted)]">{description}</p>
+      </div>
+    </div>
   );
 }
 
@@ -128,14 +151,22 @@ export function CandidateAssessmentsPanel({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="divide-y divide-[color:var(--app-border)]">
 
       {/* ── Platform assessments ── */}
-      <div className="space-y-3">
-        <SectionLabel count={platformAssessments.length}>Platform assessments</SectionLabel>
+      <div className="space-y-4 py-6 first:pt-0">
+        <SectionHeader
+          icon={Monitor}
+          title="Platform assessments"
+          count={platformAssessments.length}
+          description="Structured tests assigned and completed directly in the platform"
+        />
 
         {platformAssessments.length === 0 ? (
-          <p className="text-sm text-[color:var(--app-muted)]">No platform assessments assigned yet.</p>
+          <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-[color:var(--app-border)] px-4 py-3">
+            <Monitor className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+            <p className="text-sm text-[color:var(--app-muted)]">No platform assessments assigned yet.</p>
+          </div>
         ) : (
           <div className="space-y-2.5">
             {platformAssessments.map((assessment) => (
@@ -175,11 +206,19 @@ export function CandidateAssessmentsPanel({
       </div>
 
       {/* ── Application screening ── */}
-      <div className="space-y-3">
-        <SectionLabel count={applicationAssessments.length}>Application screening</SectionLabel>
+      <div className="space-y-4 py-6">
+        <SectionHeader
+          icon={ClipboardList}
+          title="Application screening"
+          count={applicationAssessments.length}
+          description="Pre-screening questionnaires submitted with the job application"
+        />
 
         {applicationAssessments.length === 0 ? (
-          <p className="text-sm text-[color:var(--app-muted)]">No screening assessments recorded.</p>
+          <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-[color:var(--app-border)] px-4 py-3">
+            <ClipboardList className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+            <p className="text-sm text-[color:var(--app-muted)]">No screening responses have been recorded for this candidate.</p>
+          </div>
         ) : (
           <div className="space-y-2.5">
             {applicationAssessments.map((application) => (
@@ -252,8 +291,13 @@ export function CandidateAssessmentsPanel({
       </div>
 
       {/* ── External assessments ── */}
-      <div className="space-y-3">
-        <SectionLabel count={externalAssessments.length}>External assessments</SectionLabel>
+      <div className="space-y-4 py-6 last:pb-0">
+        <SectionHeader
+          icon={ExternalLink}
+          title="External assessments"
+          count={externalAssessments.length}
+          description="Tests or assignments completed outside the platform (HackerRank, Codility, take-home, etc.)"
+        />
 
         {externalAssessments.length > 0 && (
           <div className="space-y-2.5">
@@ -331,7 +375,10 @@ export function CandidateAssessmentsPanel({
         )}
 
         {externalAssessments.length === 0 && !canManage && (
-          <p className="text-sm text-[color:var(--app-muted)]">No external assessments recorded.</p>
+          <div className="flex items-center gap-3 rounded-[14px] border border-dashed border-[color:var(--app-border)] px-4 py-3">
+            <ExternalLink className="h-4 w-4 shrink-0 text-[color:var(--app-muted)]" />
+            <p className="text-sm text-[color:var(--app-muted)]">No external assessments have been logged.</p>
+          </div>
         )}
 
         {canManage && (

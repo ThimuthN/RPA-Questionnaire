@@ -5,7 +5,7 @@ import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { CheckCircle2, MinusCircle, X, XCircle } from "lucide-react";
 import type { AddonCatalogEntry, AssessmentPresetEntry } from "@/lib/addons/catalog";
 import {
   CandidateAssessmentPill,
@@ -426,24 +426,67 @@ function ScreenerMilestoneCard({
         </div>
       ) : null}
 
-      <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Resume review</h4>
+      <div className="rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-0.5">
+            <h4 className="text-sm font-semibold text-[color:var(--app-heading)]">Resume review</h4>
+            <p className="text-xs text-[color:var(--app-muted)]">
+              {resumeReviewCheck?.status === "passed"
+                ? "Resume approved — candidate can proceed to screening."
+                : resumeReviewCheck?.status === "failed"
+                  ? "Resume did not meet requirements."
+                  : resumeReviewCheck?.status === "skipped"
+                    ? "Resume review skipped."
+                    : "Review the attached resume before advancing the candidate."}
+            </p>
+          </div>
           {resumeReviewCheck ? <CheckBadge status={resumeReviewCheck.status} /> : null}
         </div>
         {resumeReviewCheck?.notes ? (
-          <p className="text-xs text-[color:var(--app-muted)]">{resumeReviewCheck.notes}</p>
+          <p className="mt-2 text-xs text-[color:var(--app-muted)] italic">{resumeReviewCheck.notes}</p>
         ) : null}
-        {!resumeReviewCheck || resumeReviewCheck.status === "not_started" ? (
-          <div className="flex gap-2 pt-2">
-            <Button type="button" onClick={() => handleCheckAction("resume_review", "passed")} disabled={isPending} variant="secondary" className="flex-1">
+        {(!resumeReviewCheck || resumeReviewCheck.status === "not_started") ? (
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-3">
+            <button
+              type="button"
+              onClick={() => handleCheckAction("resume_review", "passed")}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-50"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
               {isPending ? "Updating…" : "Approve"}
-            </Button>
-            <Button type="button" onClick={() => handleCheckAction("resume_review", "failed")} disabled={isPending} variant="danger" className="flex-1">
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheckAction("resume_review", "failed")}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+            >
+              <XCircle className="h-3.5 w-3.5" />
               {isPending ? "Updating…" : "Reject"}
-            </Button>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCheckAction("resume_review", "skipped")}
+              disabled={isPending}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--app-border)] bg-[color:var(--app-surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--app-muted)] transition hover:bg-[color:var(--app-surface-soft)] disabled:opacity-50"
+            >
+              <MinusCircle className="h-3.5 w-3.5" />
+              Skip
+            </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-3 flex items-center gap-2 border-t border-[color:var(--app-border)] pt-3">
+            <button
+              type="button"
+              onClick={() => handleCheckAction("resume_review", "not_started")}
+              disabled={isPending}
+              className="text-xs text-[color:var(--app-muted)] underline-offset-2 transition hover:underline disabled:opacity-50"
+            >
+              Reset decision
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3 rounded-[16px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">

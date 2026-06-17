@@ -364,7 +364,7 @@ export function JobApplicationForm({
           />
         </label>
         <label className="grid gap-1.5">
-          <span className="text-sm text-[color:var(--app-text)]">Salary expectation (optional)</span>
+          <span className="text-sm text-[color:var(--app-text)]">Salary expectation</span>
           <input
             name="salaryExpectation"
             value={values.salaryExpectation}
@@ -376,7 +376,7 @@ export function JobApplicationForm({
         </label>
         <div className="grid gap-1.5">
           <label htmlFor="source-select" className="text-sm text-[color:var(--app-text)]">
-            How did you hear about us? (optional)
+            How did you hear about us?
           </label>
           <select
             id="source-select"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/primitives/Button";
+import { RotateCcw, UserCheck, UserX } from "lucide-react";
 
 export function FinalizeActionBar({
   candidateId,
@@ -54,33 +55,75 @@ export function FinalizeActionBar({
     "recorded";
 
   return (
-    <div className="space-y-3 rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
-      <div className="space-y-0.5">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
-          Hiring decision
-        </p>
-        <p className="text-sm font-semibold text-[color:var(--app-heading)]">
-          {isFinalized ? `Marked as ${finalDecisionLabel}` : "No decision recorded"}
-        </p>
+    <div className="rounded-[20px] border border-[color:var(--app-border)] bg-[color:var(--app-surface-soft)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-0.5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-[color:var(--app-muted)]">
+            Hiring decision
+          </p>
+          <p className="text-sm font-semibold text-[color:var(--app-heading)]">
+            {isFinalized
+              ? finalizedAs === "hired" ? "Marked as hired" : "Not moving forward"
+              : "No decision recorded"}
+          </p>
+          {!isFinalized && (
+            <p className="text-xs text-[color:var(--app-muted)]">
+              This is final — it closes the candidate&apos;s active hiring journey.
+            </p>
+          )}
+        </div>
+        {isFinalized && (
+          <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+            finalizedAs === "hired"
+              ? "bg-emerald-500/15 text-emerald-400"
+              : "bg-red-500/15 text-red-400"
+          }`}>
+            {finalizedAs === "hired"
+              ? <UserCheck className="h-4 w-4" />
+              : <UserX className="h-4 w-4" />}
+          </div>
+        )}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {!isFinalized && permissions.includes("manage_candidates") ? (
-          <Button type="button" disabled={Boolean(pendingAction)} onClick={() => submit("hire")}>
-            {pendingAction === "hire" ? "Marking as hired..." : "Mark as hired"}
+
+      {!isFinalized && permissions.includes("manage_candidates") ? (
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-[color:var(--app-border)] pt-3">
+          <button
+            type="button"
+            disabled={Boolean(pendingAction)}
+            onClick={() => submit("hire")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-50"
+          >
+            <UserCheck className="h-3.5 w-3.5" />
+            {pendingAction === "hire" ? "Marking…" : "Mark as hired"}
+          </button>
+          <button
+            type="button"
+            disabled={Boolean(pendingAction)}
+            onClick={() => submit("reject")}
+            className="inline-flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+          >
+            <UserX className="h-3.5 w-3.5" />
+            {pendingAction === "reject" ? "Marking…" : "Not moving forward"}
+          </button>
+        </div>
+      ) : null}
+
+      {isFinalized && permissions.includes("manage_candidates") ? (
+        <div className="mt-3 flex items-center border-t border-[color:var(--app-border)] pt-3">
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={Boolean(pendingAction)}
+            onClick={() => submit("revert")}
+            className="gap-1.5 text-xs text-[color:var(--app-muted)] hover:text-[color:var(--app-text)]"
+          >
+            <RotateCcw className="h-3 w-3" />
+            {pendingAction === "revert" ? "Reverting…" : "Revert decision"}
           </Button>
-        ) : null}
-        {!isFinalized && permissions.includes("manage_candidates") ? (
-          <Button type="button" variant="danger" disabled={Boolean(pendingAction)} onClick={() => submit("reject")}>
-            {pendingAction === "reject" ? "Marking as rejected..." : "Mark as rejected"}
-          </Button>
-        ) : null}
-        {isFinalized && permissions.includes("manage_candidates") ? (
-          <Button type="button" variant="secondary" disabled={Boolean(pendingAction)} onClick={() => submit("revert")}>
-            {pendingAction === "revert" ? "Reverting..." : "Revert final decision"}
-          </Button>
-        ) : null}
-      </div>
-      {error ? <p className="text-sm text-[color:var(--app-danger)]">{error}</p> : null}
+        </div>
+      ) : null}
+
+      {error ? <p className="mt-2 text-xs text-[color:var(--app-danger)]">{error}</p> : null}
     </div>
   );
 }
